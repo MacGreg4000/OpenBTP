@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contrat de Sous-Traitance - {{nomSousTraitant}}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      line-height: 1.5;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    h2 {
+      color: #2c3e50;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+      margin-top: 25px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo {
+      max-width: 200px;
+      margin-bottom: 20px;
+    }
+    .parties {
+      margin-bottom: 30px;
+    }
+    .article {
+      margin-bottom: 20px;
+    }
+    .signature {
+      margin-top: 50px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .signature-box {
+      width: 45%;
+    }
+    .signature-line {
+      border-top: 1px solid black;
+      margin-top: 30px;
+      width: 100%;
+    }
+    .date {
+      margin-top: 30px;
+      font-style: italic;
+    }
+    ul {
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="data:image/png;base64,{{logoBase64}}" alt="Logo" class="logo">
+  </div>
+
+  <h1>CONTRAT DE SOUS-TRAITANCE</h1>
+  
+  <div class="parties">
+    <p><strong>Entre les soussignés :</strong></p>
+    
+    <p>
+      <strong>{{nomEntreprise}}</strong><br>
+      {{adresseEntreprise}}<br>
+      TVA : {{tvaEntreprise}}<br>
+      Tél : {{telephoneEntreprise}}<br>
+      Email : {{emailEntreprise}}<br>
+      Représentée par {{representantEntreprise}}<br>
+      Ci-après dénommée "l'Entrepreneur principal"
+    </p>
+    
+    <p><strong>Et</strong></p>
+    
+    <p>
+      <strong>{{nomSousTraitant}}</strong><br>
+      {{adresseSousTraitant}}<br>
+      TVA : {{tvaSousTraitant}}<br>
+      Tél : {{telephoneSousTraitant}}<br>
+      Email : {{emailSousTraitant}}<br>
+      Représentée par {{representantSousTraitant}}<br>
+      Ci-après dénommée "le Sous-traitant"
+    </p>
+  </div>
+
+  <p><strong>Il a été convenu ce qui suit :</strong></p>
+
+  <div class="article">
+    <h2>Article 1 - Objet du contrat</h2>
+    <p>L'Entrepreneur principal confie au Sous-traitant, qui accepte, l'exécution des travaux de construction sur les chantiers qui lui seront confiés par bon de commande spécifique.</p>
+    <p>Le Sous-traitant s'engage à exécuter les travaux conformément aux règles de l'art, aux normes en vigueur et aux prescriptions techniques définies dans les bons de commande.</p>
+  </div>
+
+  <div class="article">
+    <h2>Article 2 - Durée du contrat</h2>
+    <p>Le présent contrat est conclu pour une période du {{dateDebut}} au {{dateFin}}.</p>
+    <p>Il pourra être résilié par l'une ou l'autre des parties moyennant un préavis de 30 jours notifié par lettre recommandée avec accusé de réception.</p>
+  </div>
+
+  <div class="article">
+    <h2>Article 3 - Prix et modalités de paiement</h2>
+    <p>Les prix des travaux seront fixés dans chaque bon de commande spécifique.</p>
+    <p>Le Sous-traitant établira une facture à la fin de chaque mois pour les travaux réalisés durant cette période.</p>
+    <p>Les factures seront payables à 30 jours fin de mois, par virement bancaire.</p>
+  </div>
+
+  <div class="article">
+    <h2>Article 4 - Obligations du Sous-traitant</h2>
+    <p>Le Sous-traitant s'engage à :</p>
+    <ul>
+      <li>Exécuter les travaux avec le plus grand soin et dans les délais convenus</li>
+      <li>Respecter toutes les normes de sécurité en vigueur</li>
+      <li>Fournir tout le matériel nécessaire à l'exécution des travaux</li>
+      <li>Souscrire toutes les assurances nécessaires à son activité</li>
+      <li>Respecter la législation sociale et fiscale</li>
+      <li>Ne pas sous-traiter tout ou partie des travaux sans l'accord écrit de l'Entrepreneur principal</li>
+    </ul>
+  </div>
+
+  <div class="article">
+    <h2>Article 5 - Obligations de l'Entrepreneur principal</h2>
+    <p>L'Entrepreneur principal s'engage à :</p>
+    <ul>
+      <li>Fournir au Sous-traitant toutes les informations nécessaires à la bonne exécution des travaux</li>
+      <li>Payer les factures du Sous-traitant dans les délais convenus</li>
+      <li>Permettre au Sous-traitant l'accès aux chantiers</li>
+    </ul>
+  </div>
+
+  <div class="article">
+    <h2>Article 6 - Responsabilité et garanties</h2>
+    <p>Le Sous-traitant est responsable de la bonne exécution des travaux qui lui sont confiés.</p>
+    <p>Il garantit l'Entrepreneur principal contre tous recours et actions exercés contre ce dernier, du fait de l'inexécution de ses obligations par le Sous-traitant.</p>
+    <p>Le Sous-traitant s'engage à remédier à ses frais à tous les défauts qui apparaîtraient pendant la période de garantie légale.</p>
+  </div>
+
+  <div class="article">
+    <h2>Article 7 - Confidentialité</h2>
+    <p>Le Sous-traitant s'engage à garder confidentielles toutes les informations dont il pourrait avoir connaissance dans le cadre de l'exécution du présent contrat.</p>
+  </div>
+
+  <div class="article">
+    <h2>Article 8 - Résiliation</h2>
+    <p>En cas de manquement par l'une des parties à l'une quelconque de ses obligations, l'autre partie pourra résilier le présent contrat après mise en demeure restée sans effet pendant un délai de 15 jours.</p>
+    <p>La résiliation prendra effet de plein droit à l'expiration de ce délai, sans préjudice de tous dommages et intérêts qui pourraient être réclamés à la partie défaillante.</p>
+  </div>
+
+  <div class="article">
+    <h2>Article 9 - Litiges</h2>
+    <p>En cas de litige relatif à l'interprétation ou à l'exécution du présent contrat, les parties s'efforceront de trouver une solution amiable.</p>
+    <p>À défaut d'accord amiable, le litige sera soumis aux tribunaux compétents de Liège.</p>
+  </div>
+
+  <div class="article">
+    <h2>Article 10 - Droit applicable</h2>
+    <p>Le présent contrat est soumis au droit belge.</p>
+  </div>
+
+  <p class="date">Fait à {{villeEntreprise}}, le {{dateGeneration}}, en deux exemplaires originaux.</p>
+  
+  <div class="signature">
+    <div class="signature-box">
+      <p><strong>Pour l'Entrepreneur principal</strong></p>
+      <p>{{representantEntreprise}}</p>
+      <img src="data:image/png;base64,{{signatureBase64}}" alt="Signature Entrepreneur" style="max-width: 150px; margin-top: 10px;">
+    </div>
+    
+    <div class="signature-box">
+      <p><strong>Pour le Sous-traitant</strong></p>
+      <p>{{representantSousTraitant}}</p>
+      <div class="signature-line"></div>
+    </div>
+  </div>
+</body>
+</html>

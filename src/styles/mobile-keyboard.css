@@ -1,0 +1,32 @@
+/* Gestion simple du clavier mobile */
+@media (max-width: 767px) {
+  .mobile-chat-container {
+    height: 100vh !important;
+    height: 100dvh !important; /* Support moderne */
+  }
+  
+  .message-input-container {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: white !important;
+    border-top: 1px solid #e5e7eb !important;
+    z-index: 50 !important;
+    padding: 1rem !important;
+  }
+  
+  .mobile-textarea {
+    max-height: 5rem !important;
+    font-size: 16px !important; /* Évite le zoom sur iOS */
+  }
+  
+  /* Assurer que la zone de saisie reste visible */
+  .chat-conversation-area {
+    padding-bottom: 1rem !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Scroll fluide */
+  .smooth-scroll {
+    scroll-behavior: smooth !important;
+  }
+}

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contrat de Sous-Traitance - {{nomSousTraitant}}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 2cm;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Times New Roman', serif;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #000;
+      margin: 0;
+      padding: 0;
+      background: white;
+    }
+    
+    .header {
+      border-bottom: 3px solid #1e40af;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .logo-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    
+    .logo {
+      max-height: 80px;
+      max-width: 200px;
+    }
+    
+    .company-info {
+      text-align: right;
+      font-size: 11px;
+      color: #374151;
+    }
+    
+    .document-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e40af;
+      margin: 20px 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .contract-info {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    
+    .parties-section {
+      margin: 30px 0;
+    }
+    
+    .party {
+      margin-bottom: 25px;
+      padding: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background-color: #f9fafb;
+    }
+    
+    .party-title {
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    
+    .party-info {
+      font-size: 11px;
+      line-height: 1.3;
+    }
+    
+    .article {
+      margin: 25px 0;
+    }
+    
+    .article-title {
+      font-weight: bold;
+      color: #1e40af;
+      font-size: 13px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 3px;
+    }
+    
+    .article-content {
+      font-size: 11px;
+      line-height: 1.4;
+      text-align: justify;
+    }
+    
+    .article-content ul {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+    
+    .article-content li {
+      margin-bottom: 4px;
+    }
+    
+    .signature-section {
+      margin-top: 50px;
+    }
+    
+    .signature-boxes {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+    
+    .signature-box {
+      width: 45%;
+      text-align: center;
+    }
+    
+    .signature-title {
+      font-weight: bold;
+      font-size: 12px;
+      margin-bottom: 10px;
+      color: #374151;
+    }
+    
+    .signature-name {
+      font-size: 11px;
+      margin-bottom: 20px;
+      color: #6b7280;
+    }
+    
+    .signature-image {
+      max-width: 120px;
+      max-height: 60px;
+      margin: 10px 0;
+    }
+    
+    .signature-line {
+      border-top: 1px solid #000;
+      margin-top: 30px;
+      width: 100%;
+    }
+    
+    .date-location {
+      text-align: center;
+      font-style: italic;
+      font-size: 11px;
+      margin: 30px 0;
+      color: #6b7280;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 9px;
+      color: #6b7280;
+      text-align: center;
+    }
+    
+    .highlight {
+      background-color: #fef3c7;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    
+    .important {
+      font-weight: bold;
+      color: #dc2626;
+    }
+    
+    .clause-number {
+      font-weight: bold;
+      color: #1e40af;
+    }
+  </style>
+</head>
+<body>
+  <!-- En-tête avec logo et informations -->
+  <div class="header">
+    <div class="logo-section">
+      <img src="data:image/png;base64,{{logoBase64}}" alt="Logo {{nomEntreprise}}" class="logo">
+      <div class="company-info">
+        <div><strong>{{nomEntreprise}}</strong></div>
+        <div>{{adresseEntreprise}}</div>
+        <div>{{zipCodeEntreprise}} {{villeEntreprise}}</div>
+        <div>TVA: {{tvaEntreprise}}</div>
+        <div>Tél: {{telephoneEntreprise}}</div>
+        <div>Email: {{emailEntreprise}}</div>
+      </div>
+    </div>
+    
+    <div class="document-title">
+      Contrat de Sous-Traitance
+    </div>
+    
+    <div class="contract-info">
+      <div><strong>Référence:</strong> {{referenceContrat}}</div>
+      <div><strong>Date de génération:</strong> {{dateGeneration}}</div>
+      <div><strong>Période:</strong> du {{dateDebut}} au {{dateFin}}</div>
+    </div>
+  </div>
+
+  <!-- Section des parties contractantes -->
+  <div class="parties-section">
+    <div class="party">
+      <div class="party-title">ENTREPRENEUR PRINCIPAL</div>
+      <div class="party-info">
+        <strong>{{nomEntreprise}}</strong><br>
+        {{adresseEntreprise}}<br>
+        {{zipCodeEntreprise}} {{villeEntreprise}}<br>
+        <strong>TVA:</strong> {{tvaEntreprise}}<br>
+        <strong>Tél:</strong> {{telephoneEntreprise}}<br>
+        <strong>Email:</strong> {{emailEntreprise}}<br>
+        <strong>Représenté par:</strong> {{representantEntreprise}}<br>
+        <em>Ci-après dénommée "l'Entrepreneur principal"</em>
+      </div>
+    </div>
+    
+    <div class="party">
+      <div class="party-title">SOUS-TRAITANT</div>
+      <div class="party-info">
+        <strong>{{nomSousTraitant}}</strong><br>
+        {{adresseSousTraitant}}<br>
+        <strong>TVA:</strong> {{tvaSousTraitant}}<br>
+        <strong>Tél:</strong> {{telephoneSousTraitant}}<br>
+        <strong>Email:</strong> {{emailSousTraitant}}<br>
+        <strong>Représenté par:</strong> {{representantSousTraitant}}<br>
+        <em>Ci-après dénommé "le Sous-traitant"</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- Préambule -->
+  <div class="article">
+    <div class="article-title">PRÉAMBULE</div>
+    <div class="article-content">
+      <p>Les parties susnommées ont convenu de conclure le présent contrat de sous-traitance dans les conditions définies ci-après.</p>
+      <p>Ce contrat régit les relations entre l'Entrepreneur principal et le Sous-traitant pour l'exécution de travaux de construction et de rénovation.</p>
+    </div>
+  </div>
+
+  <!-- Article 1 - Objet -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 1 -</span> OBJET DU CONTRAT</div>
+    <div class="article-content">
+      <p>L'Entrepreneur principal confie au Sous-traitant, qui accepte, l'exécution de travaux de construction, de rénovation et de maintenance sur les chantiers qui lui seront confiés par <span class="highlight">bon de commande spécifique</span>.</p>
+      <p>Le Sous-traitant s'engage à exécuter les travaux :</p>
+      <ul>
+        <li>Conformément aux règles de l'art et aux normes techniques en vigueur</li>
+        <li>Selon les prescriptions techniques définies dans les bons de commande</li>
+        <li>Dans le respect des délais convenus</li>
+        <li>En appliquant les normes de sécurité et d'hygiène</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Article 2 - Durée -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 2 -</span> DURÉE DU CONTRAT</div>
+    <div class="article-content">
+      <p>Le présent contrat est conclu pour une période déterminée du <strong>{{dateDebut}}</strong> au <strong>{{dateFin}}</strong>.</p>
+      <p>Il pourra être résilié par l'une ou l'autre des parties moyennant un <span class="important">préavis de 30 jours</span> notifié par lettre recommandée avec accusé de réception.</p>
+      <p>En cas de manquement grave, la résiliation pourra être immédiate.</p>
+    </div>
+  </div>
+
+  <!-- Article 3 - Prix et paiement -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 3 -</span> PRIX ET MODALITÉS DE PAIEMENT</div>
+    <div class="article-content">
+      <p>Les prix des travaux seront fixés dans chaque bon de commande spécifique, conformément aux tarifs convenus.</p>
+      <p>Le Sous-traitant établira une facture mensuelle pour les travaux réalisés durant la période concernée.</p>
+      <p>Les factures seront payables à <span class="important">30 jours fin de mois</span> par virement bancaire sur le compte communiqué par le Sous-traitant.</p>
+      <p>En cas de retard de paiement, des intérêts de retard au taux légal seront applicables.</p>
+    </div>
+  </div>
+
+  <!-- Article 4 - Obligations du Sous-traitant -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 4 -</span> OBLIGATIONS DU SOUS-TRAITANT</div>
+    <div class="article-content">
+      <p>Le Sous-traitant s'engage à :</p>
+      <ul>
+        <li>Exécuter les travaux avec le plus grand soin et dans les délais convenus</li>
+        <li>Respecter toutes les normes de sécurité, d'hygiène et d'environnement en vigueur</li>
+        <li>Fournir tout le matériel, outillage et équipements nécessaires à l'exécution des travaux</li>
+        <li>Souscrire toutes les assurances nécessaires à son activité (responsabilité civile, décennale)</li>
+        <li>Respecter la législation sociale, fiscale et administrative</li>
+        <li>Ne pas sous-traiter tout ou partie des travaux sans l'accord écrit préalable de l'Entrepreneur principal</li>
+        <li>Maintenir la confidentialité sur toutes les informations reçues</li>
+        <li>Respecter les règles de sécurité du chantier et les consignes données</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Article 5 - Obligations de l'Entrepreneur principal -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 5 -</span> OBLIGATIONS DE L'ENTREPRENEUR PRINCIPAL</div>
+    <div class="article-content">
+      <p>L'Entrepreneur principal s'engage à :</p>
+      <ul>
+        <li>Fournir au Sous-traitant toutes les informations et documents nécessaires à la bonne exécution des travaux</li>
+        <li>Payer les factures du Sous-traitant dans les délais convenus</li>
+        <li>Permettre au Sous-traitant l'accès aux chantiers aux heures convenues</li>
+        <li>Informer le Sous-traitant de tout changement dans les conditions d'exécution</li>
+        <li>Respecter les engagements pris dans le présent contrat</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Article 6 - Responsabilité et garanties -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 6 -</span> RESPONSABILITÉ ET GARANTIES</div>
+    <div class="article-content">
+      <p>Le Sous-traitant est responsable de la bonne exécution des travaux qui lui sont confiés et garantit leur conformité aux prescriptions techniques.</p>
+      <p>Il garantit l'Entrepreneur principal contre tous recours et actions exercés contre ce dernier, du fait de l'inexécution de ses obligations par le Sous-traitant.</p>
+      <p>Le Sous-traitant s'engage à remédier à ses frais à tous les défauts qui apparaîtraient pendant la <span class="important">période de garantie légale de 10 ans</span> pour les travaux de gros œuvre et de 2 ans pour les autres travaux.</p>
+    </div>
+  </div>
+
+  <!-- Article 7 - Confidentialité -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 7 -</span> CONFIDENTIALITÉ</div>
+    <div class="article-content">
+      <p>Le Sous-traitant s'engage à garder strictement confidentielles toutes les informations techniques, commerciales ou financières dont il pourrait avoir connaissance dans le cadre de l'exécution du présent contrat.</p>
+      <p>Cette obligation de confidentialité perdure après la fin du contrat.</p>
+    </div>
+  </div>
+
+  <!-- Article 8 - Résiliation -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 8 -</span> RÉSILIATION</div>
+    <div class="article-content">
+      <p>En cas de manquement par l'une des parties à l'une quelconque de ses obligations, l'autre partie pourra résilier le présent contrat après <span class="important">mise en demeure restée sans effet pendant un délai de 15 jours</span>.</p>
+      <p>La résiliation prendra effet de plein droit à l'expiration de ce délai, sans préjudice de tous dommages et intérêts qui pourraient être réclamés à la partie défaillante.</p>
+    </div>
+  </div>
+
+  <!-- Article 9 - Litiges -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 9 -</span> LITIGES</div>
+    <div class="article-content">
+      <p>En cas de litige relatif à l'interprétation ou à l'exécution du présent contrat, les parties s'efforceront de trouver une solution amiable.</p>
+      <p>À défaut d'accord amiable, le litige sera soumis aux <span class="important">tribunaux compétents de Liège</span>.</p>
+    </div>
+  </div>
+
+  <!-- Article 10 - Droit applicable -->
+  <div class="article">
+    <div class="article-title"><span class="clause-number">Article 10 -</span> DROIT APPLICABLE</div>
+    <div class="article-content">
+      <p>Le présent contrat est soumis au <strong>droit belge</strong>.</p>
+    </div>
+  </div>
+
+  <!-- Date et lieu -->
+  <div class="date-location">
+    Fait à {{villeEntreprise}}, le {{dateGeneration}}, en deux exemplaires originaux.
+  </div>
+
+  <!-- Section signatures -->
+  <div class="signature-section">
+    <div class="signature-boxes">
+      <div class="signature-box">
+        <div class="signature-title">Pour l'Entrepreneur principal</div>
+        <div class="signature-name">{{representantEntreprise}}</div>
+        <img src="data:image/png;base64,{{signatureBase64}}" alt="Signature Entrepreneur" class="signature-image">
+        <div class="signature-line"></div>
+      </div>
+      
+      <div class="signature-box">
+        <div class="signature-title">Pour le Sous-traitant</div>
+        <div class="signature-name">{{representantSousTraitant}}</div>
+        <div class="signature-line"></div>
+        <div style="font-size: 10px; color: #6b7280; margin-top: 5px;">
+          Signature électronique via la plateforme
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pied de page -->
+  <div class="footer">
+    <div>{{nomEntreprise}} - {{adresseEntreprise}} - {{zipCodeEntreprise}} {{villeEntreprise}} - Tél: {{telephoneEntreprise}}</div>
+    <div>Contrat généré le {{dateGeneration}} - Document confidentiel</div>
+  </div>
+</body>
+</html>

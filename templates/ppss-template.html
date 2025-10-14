@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan Particulier de Sécurité et de Protection de la Santé - {{chantierId}}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #000;
+    }
+    h1 {
+      text-align: center;
+      font-size: 18pt;
+      margin-bottom: 15mm;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    h2 {
+      font-size: 14pt;
+      margin-top: 10mm;
+      margin-bottom: 5mm;
+      font-weight: bold;
+    }
+    h3 {
+      font-size: 12pt;
+      margin-top: 8mm;
+      margin-bottom: 4mm;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10mm;
+    }
+    table, th, td {
+      border: 1px solid #000;
+    }
+    th, td {
+      padding: 2mm;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10mm;
+    }
+    .logo {
+      height: 20mm;
+    }
+    .page-break {
+      page-break-after: always;
+    }
+    .signature-block {
+      margin-top: 15mm;
+      border: 1px solid #000;
+      padding: 5mm;
+    }
+    .signature-img {
+      width: 140mm;
+      margin-top: 10mm;
+      margin-bottom: 5mm;
+    }
+    ul {
+      margin-top: 2mm;
+      margin-bottom: 2mm;
+      padding-left: 5mm;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .text-bold {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="data:image/png;base64,{{logoBase64}}" alt="Logo de l'entreprise" class="logo">
+  </div>
+
+  <h1>PLAN PARTICULIER DE SÉCURITÉ ET DE<br>PROTECTION DE LA SANTÉ (PPSS)</h1>
+
+  <h2>1. INFORMATIONS GÉNÉRALES</h2>
+  <table>
+    <tr>
+      <th width="30%">Entreprise</th>
+      <td>{{nomEntreprise}}</td>
+    </tr>
+    <tr>
+      <th>Adresse</th>
+      <td>{{adresseEntreprise}}</td>
+    </tr>
+    <tr>
+      <th>Tél.</th>
+      <td>{{telephoneEntreprise}}</td>
+    </tr>
+    <tr>
+      <th>TVA</th>
+      <td>{{tvaEntreprise}}</td>
+    </tr>
+    <tr>
+      <th>Email</th>
+      <td>{{emailEntreprise}}</td>
+    </tr>
+    <tr>
+      <th>Chantier</th>
+      <td>{{nomChantier}}</td>
+    </tr>
+    <tr>
+      <th>Coordonnées du chantier</th>
+      <td>{{adresseChantier}}</td>
+    </tr>
+  </table>
+
+  <div class="page-break"></div>
+
+  <h2>2. DESCRIPTION DES TRAVAUX</h2>
+  <p>{{nomEntreprise}} intervient sur le chantier pour la réalisation des travaux de carrelage, incluant :</p>
+  <ul>
+    <li>Préparation des surfaces : nettoyage, nivellement et application de primaires d'accrochage.</li>
+    <li>Manutention des matériaux : transport et stockage des carreaux, colles, joints et autres matériaux.</li>
+    <li>Découpe et ajustement des carreaux : utilisation d'outils manuels et électriques.</li>
+    <li>Pose du carrelage : application de la colle, installation des carreaux et réalisation des joints.</li>
+    <li>Finitions : nettoyage des surfaces, application de produits de protection si nécessaire.</li>
+    <li>Gestion des déchets : tri, stockage temporaire et évacuation des déchets conformément aux réglementations en vigueur.</li>
+  </ul>
+
+  <table>
+    <tr>
+      <th width="30%">Délai d'intervention</th>
+      <td>Commencement des travaux à partir de {{dateCommencement}}</td>
+    </tr>
+    <tr>
+      <th>Horaire de travail</th>
+      <td>7h30 - 16h00</td>
+    </tr>
+    <tr>
+      <th>Nombre de personnes prévues sur le chantier</th>
+      <td>3 en moyenne, 5 au maximum</td>
+    </tr>
+  </table>
+
+  <div class="page-break"></div>
+
+  <h2>3. ANALYSE DES RISQUES ET MESURES DE PRÉVENTION</h2>
+  <table>
+    <tr>
+      <th width="20%">Tâches</th>
+      <th width="40%">Risques</th>
+      <th width="40%">Mesures de prévention</th>
+    </tr>
+    <tr>
+      <td>Préparation des surfaces</td>
+      <td>
+        <ul>
+          <li>Exposition à la poussière</li>
+          <li>Troubles musculo-squelettiques (TMS)</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Aspiration de poussière</li>
+          <li>Port de masques</li>
+          <li>Formation aux postures de travail</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Manutention des matériaux</td>
+      <td>
+        <ul>
+          <li>Charges lourdes</li>
+          <li>Risques de chutes</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Équipements de levage</li>
+          <li>Formation à la manutention</li>
+          <li>Port de chaussures de sécurité antidérapantes</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Découpe et ajustement</td>
+      <td>
+        <ul>
+          <li>Coupures</li>
+          <li>Projections de débris</li>
+          <li>Bruit excessif</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Gants, lunettes de protection</li>
+          <li>Protections auditives</li>
+          <li>Vérification des outils</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Pose du carrelage</td>
+      <td>
+        <ul>
+          <li>Inhalation de produits chimiques</li>
+          <li>TMS</li>
+          <li>Contact avec produits chimiques</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Colles/joints à faible émission de COV</li>
+          <li>Masques, gants, genouillères</li>
+          <li>Alternance des tâches</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Finitions</td>
+      <td>
+        <ul>
+          <li>Risques de glissades</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Gants, lunettes de protection</li>
+          <li>Ventilation adéquate</li>
+          <li>Nettoyage immédiat des déversements</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Gestion des déchets</td>
+      <td>
+        <ul>
+          <li>Coupures avec débris</li>
+          <li>Stockage inapproprié</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Tri des déchets</li>
+          <li>Stockage sécurisé</li>
+          <li>Bordereau de suivi des déchets dangereux</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <h2>4. ORGANISATION DU CHANTIER</h2>
+  <ul>
+    <li>Planification des interventions : Coordination avec les autres corps de métier.</li>
+    <li>Zones de stockage : Définition d'espaces dédiés, sécurisés et accessibles.</li>
+    <li>Installations sanitaires : Sanitaires propres et suffisants pour le personnel.</li>
+    <li>Circulation : Voies dégagées et sécurisées, signalisation claire.</li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <h2>5. CONSIGNES EN CAS D'URGENCE</h2>
+  <h3>Organisation des premiers secours</h3>
+  <ol>
+    <li>Alerte : Composer le 112.</li>
+    <li>Informations à fournir :
+      <ul>
+        <li>Localisation du chantier.</li>
+        <li>Nature de l'accident.</li>
+        <li>Nombre et état des blessés.</li>
+      </ul>
+    </li>
+    <li>Premiers secours :
+      <ul>
+        <li>Application des gestes de premiers secours.</li>
+        <li>Utilisation de la trousse de secours disponible.</li>
+      </ul>
+    </li>
+    <li>Accueil des secours :
+      <ul>
+        <li>Une personne guide les secours depuis l'entrée du chantier.</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h3>Moyens de première intervention</h3>
+  <ul>
+    <li>Équipements disponibles :
+      <ul>
+        <li>Extincteurs adaptés répartis sur le chantier.</li>
+        <li>Trousse de secours vérifiée régulièrement.</li>
+      </ul>
+    </li>
+    <li>Personnel formé :
+      <ul>
+        <li>Présence d'au moins un secouriste par équipe.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>6. ÉQUIPEMENTS DE PROTECTION INDIVIDUELLE (EPI)</h2>
+  <ul>
+    <li>Casque de chantier (risque de chute d'objets).</li>
+    <li>Lunettes de protection (projections).</li>
+    <li>Masques respiratoires (poussières, vapeurs).</li>
+    <li>Gants de protection (coupures, produits chimiques).</li>
+    <li>Chaussures de sécurité (antidérapantes, embout renforcé).</li>
+    <li>Protections auditives (outils bruyants).</li>
+    <li>Genouillères (travail prolongé au sol).</li>
+  </ul>
+
+  <h2>7. GESTION DES DÉCHETS</h2>
+  <ul>
+    <li>Tri sélectif : Séparation des déchets inertes et dangereux.</li>
+    <li>Stockage temporaire : Zones dédiées, sécurisées.</li>
+    <li>Évacuation : Déchets enlevés une fois par semaine minimum.</li>
+    <li>Sensibilisation du personnel : Formation et affichage des consignes.</li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <h2>8. MESURES SPÉCIFIQUES DE PRÉVENTION</h2>
+  <h3>Coactivité sur le chantier</h3>
+  <ul>
+    <li>Coordination avec les autres corps de métier.</li>
+    <li>Définition de plages horaires spécifiques pour tâches bruyantes.</li>
+    <li>Communication avant toute tâche à risque.</li>
+  </ul>
+
+  <h3>Sécurisation des accès et circulation</h3>
+  <ul>
+    <li>Délimitation des zones de travail avec barrières.</li>
+    <li>Maintien des voies de circulation dégagées.</li>
+    <li>Accès interdit aux personnes non autorisées.</li>
+  </ul>
+
+  <h3>Travail en hauteur</h3>
+  <ul>
+    <li>Utilisation d'escabeaux et échafaudages conformes.</li>
+    <li>Port obligatoire de harnais de sécurité à +2m.</li>
+    <li>Contrôle systématique des équipements.</li>
+  </ul>
+
+  <h3>Utilisation de produits chimiques</h3>
+  <ul>
+    <li>Consultation des fiches de sécurité (FDS).</li>
+    <li>Ventilation des zones de travail.</li>
+    <li>Port de protections adaptées.</li>
+  </ul>
+
+  <h2>9. RESPONSABLES ET CONTACTS</h2>
+  <ul>
+    <li>Ligne hiérarchique :
+      <ul>
+        <li>Maccio Grégory – Tél. : 0498/324949 – Email : gregory@secotech.be</li>
+      </ul>
+    </li>
+    <li>Conseiller en prévention :
+      <ul>
+        <li>VAN NEUSS – Tél. : 081/321040 – Email : ingrid.vanneuss@idewe.be</li>
+      </ul>
+    </li>
+    <li>Service externe de prévention (SEPPT) :
+      <ul>
+        <li>IDEWE – Chaussée de Liège, 140-142 – 5100 Jambes</li>
+      </ul>
+    </li>
+    <li>Assureur Loi :
+      <ul>
+        <li>Fédérale Assurance</li>
+      </ul>
+    </li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <h2>10. VALIDATION DU PPSS</h2>
+  <p>Par la présente, {{nomEntreprise}} adhère aux mesures définies dans le PPSS de l'entreprise générale ainsi qu'au plan d'installation de chantier de celle-ci.</p>
+  
+  <div class="signature-block">
+    <p>Responsable de l'entreprise : Maccio Grégory</p>
+    <p>Date : {{dateGeneration}}</p>
+    <img src="data:image/png;base64,{{signatureBase64}}" alt="Signature" class="signature-img">
+  </div>
+</body>
+</html> 

@@ -1,0 +1,1325 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Settings {
+  id        Int      @id @default(1)
+  logo      String?
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model AdminTaskType {
+  id        String   @id @default(uuid())
+  taskType  String   @unique
+  label     String
+  category  String   @default("administrative")
+  isActive  Boolean  @default(true)
+  ordre     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_task_types")
+}
+
+model admintask {
+  id          Int       @id @default(autoincrement())
+  chantierId  String
+  completedBy String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  taskType    String
+  title       String?
+  chantier    Chantier  @relation(fields: [chantierId], references: [chantierId], map: "AdminTask_chantierId_fkey")
+  user        User?     @relation(fields: [completedBy], references: [id], map: "AdminTask_completedBy_fkey")
+
+  @@unique([chantierId, taskType], map: "AdminTask_chantierId_taskType_key")
+  @@index([chantierId], map: "AdminTask_chantierId_idx")
+  @@index([completedBy], map: "AdminTask_completedBy_idx")
+}
+
+model pret {
+  id                  String      @id
+  machineId           String
+  userId              String
+  datePret            DateTime    @default(now())
+  dateRetourPrevue    DateTime
+  dateRetourEffective DateTime?
+  statut              pret_statut @default(EN_COURS)
+  commentaire         String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime
+  emprunteur          String
+  machine             Machine     @relation(fields: [machineId], references: [id], map: "Pret_machineId_fkey")
+  user                User        @relation(fields: [userId], references: [id], map: "Pret_userId_fkey")
+
+  @@index([machineId], map: "Pret_machineId_idx")
+  @@index([userId], map: "Pret_userId_idx")
+}
+
+model soustraitant {
+  id                           String                         @id
+  nom                          String
+  email                        String                         @unique(map: "SousTraitant_email_key")
+  contact                      String?
+  adresse                      String?
+  telephone                    String?
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime
+  tva                          String?
+  actif                        Boolean                        @default(true)
+  commandes                    CommandeSousTraitant[]
+  contrats                     contrat[]
+  soustraitant_etat_avancement soustraitant_etat_avancement[]
+  soustraitantPINs             SousTraitantPIN[]
+  taskAssignments              TaskSousTraitant[]
+  ticketsSAVAssignes           TicketSAV[]                    @relation("TicketsSAVSousTraitant")
+}
+
+model contrat {
+  id             String       @id @default(cuid())
+  soustraitantId String
+  url            String
+  dateGeneration DateTime     @default(now())
+  dateSignature  DateTime?
+  estSigne       Boolean      @default(false)
+  token          String?      @unique
+  soustraitant   soustraitant @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
+
+  @@index([soustraitantId])
+}
+
+model FicheTechnique {
+  id            String   @id @default(uuid())
+  titre         String
+  categorie     String
+  sousCategorie String?
+  fichierUrl    String
+  description   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  referenceCSC  String?
+
+  @@map("fiches_techniques")
+}
+
+model Commande {
+  id             Int             @id @default(autoincrement())
+  chantierId     String
+  clientId       String?
+  dateCommande   DateTime        @default(now())
+  reference      String?
+  tauxTVA        Float           @default(20)
+  sousTotal      Float           @default(0)
+  totalOptions   Float           @default(0)
+  tva            Float           @default(0)
+  total          Float           @default(0)
+  statut         String          @default("BROUILLON")
+  estVerrouillee Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  Chantier       Chantier        @relation("CommandeToChantier", fields: [chantierId], references: [id])
+  lignes         LigneCommande[]
+
+  @@index([chantierId], map: "Commande_chantierId_idx")
+  @@index([clientId], map: "Commande_clientId_idx")
+  @@map("commande")
+}
+
+model LigneCommande {
+  id           Int      @id @default(autoincrement())
+  commandeId   Int
+  ordre        Int
+  article      String
+  description  String   @db.Text
+  type         String   @default("QP")
+  unite        String
+  prixUnitaire Float
+  quantite     Float
+  total        Float
+  estOption    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  commande     Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+
+  @@index([commandeId], map: "LigneCommande_commandeId_idx")
+  @@map("lignecommande")
+}
+
+model EtatAvancement {
+  id                           Int                            @id @default(autoincrement())
+  chantierId                   String
+  numero                       Int
+  date                         DateTime                       @default(now())
+  commentaires                 String?                        @db.Text
+  estFinalise                  Boolean                        @default(false)
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  createdBy                    String
+  mois                         String?
+  avenants                     AvenantEtatAvancement[]
+  Chantier                     Chantier                       @relation(fields: [chantierId], references: [id])
+  lignes                       LigneEtatAvancement[]
+  soustraitant_etat_avancement soustraitant_etat_avancement[]
+
+  @@unique([chantierId, numero])
+  @@index([chantierId])
+  @@map("etat_avancement")
+}
+
+model LigneEtatAvancement {
+  id                 Int            @id @default(autoincrement())
+  etatAvancementId   Int
+  ligneCommandeId    Int
+  quantitePrecedente Float          @default(0)
+  quantiteActuelle   Float          @default(0)
+  quantiteTotale     Float          @default(0)
+  montantPrecedent   Float          @default(0)
+  montantActuel      Float          @default(0)
+  montantTotal       Float          @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  article            String
+  description        String         @db.Text
+  prixUnitaire       Float
+  quantite           Float
+  type               String
+  unite              String
+  etatAvancement     EtatAvancement @relation(fields: [etatAvancementId], references: [id], onDelete: Cascade)
+
+  @@index([etatAvancementId])
+  @@map("ligne_etat_avancement")
+}
+
+model AvenantEtatAvancement {
+  id                 Int            @id @default(autoincrement())
+  etatAvancementId   Int
+  article            String
+  description        String         @db.Text
+  type               String
+  unite              String
+  prixUnitaire       Float
+  quantite           Float
+  quantitePrecedente Float          @default(0)
+  quantiteActuelle   Float          @default(0)
+  quantiteTotale     Float          @default(0)
+  montantPrecedent   Float          @default(0)
+  montantActuel      Float          @default(0)
+  montantTotal       Float          @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  etatAvancement     EtatAvancement @relation(fields: [etatAvancementId], references: [id], onDelete: Cascade)
+
+  @@index([etatAvancementId])
+  @@map("avenant_etat_avancement")
+}
+
+model companysettings {
+  id            String   @id @default("COMPANY_SETTINGS")
+  name          String
+  address       String
+  zipCode       String
+  city          String
+  phone         String
+  email         String
+  tva           String
+  logo          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  emailFrom     String?
+  emailFromName String?
+  emailHost     String?
+  emailPassword String?
+  emailPort     String?
+  emailSecure   Boolean? @default(false)
+  emailUser     String?
+  iban          String?
+}
+
+model CommandeSousTraitant {
+  id                           Int                            @id @default(autoincrement())
+  chantierId                   String
+  soustraitantId               String
+  dateCommande                 DateTime                       @default(now())
+  reference                    String?
+  tauxTVA                      Float                          @default(0)
+  sousTotal                    Float                          @default(0)
+  tva                          Float                          @default(0)
+  total                        Float                          @default(0)
+  statut                       String                         @default("BROUILLON")
+  estVerrouillee               Boolean                        @default(false)
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  Chantier                     Chantier                       @relation(fields: [chantierId], references: [id])
+  soustraitant                 soustraitant                   @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
+  lignes                       LigneCommandeSousTraitant[]
+  soustraitant_etat_avancement soustraitant_etat_avancement[]
+
+  @@index([chantierId])
+  @@index([soustraitantId])
+  @@map("commande_soustraitant")
+}
+
+model LigneCommandeSousTraitant {
+  id                     Int                  @id @default(autoincrement())
+  commandeSousTraitantId Int
+  ordre                  Int
+  article                String
+  description            String               @db.Text
+  type                   String               @default("QP")
+  unite                  String
+  prixUnitaire           Float
+  quantite               Float
+  total                  Float
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  commandeSousTraitant   CommandeSousTraitant @relation(fields: [commandeSousTraitantId], references: [id], onDelete: Cascade)
+
+  @@index([commandeSousTraitantId])
+  @@map("ligne_commande_soustraitant")
+}
+
+model avenant_soustraitant_etat_avancement {
+  id                           Int                          @id @default(autoincrement())
+  soustraitantEtatAvancementId Int
+  article                      String
+  description                  String                       @db.Text
+  type                         String
+  unite                        String
+  prixUnitaire                 Float
+  quantite                     Float
+  quantitePrecedente           Float                        @default(0)
+  quantiteActuelle             Float                        @default(0)
+  quantiteTotale               Float                        @default(0)
+  montantPrecedent             Float                        @default(0)
+  montantActuel                Float                        @default(0)
+  montantTotal                 Float                        @default(0)
+  createdAt                    DateTime                     @default(now())
+  updatedAt                    DateTime
+  soustraitant_etat_avancement soustraitant_etat_avancement @relation(fields: [soustraitantEtatAvancementId], references: [id], onDelete: Cascade)
+
+  @@index([soustraitantEtatAvancementId])
+}
+
+model ligne_soustraitant_etat_avancement {
+  id                           Int                          @id @default(autoincrement())
+  soustraitantEtatAvancementId Int
+  article                      String
+  description                  String                       @db.Text
+  type                         String
+  unite                        String
+  prixUnitaire                 Float
+  quantite                     Float
+  quantitePrecedente           Float                        @default(0)
+  quantiteActuelle             Float                        @default(0)
+  quantiteTotale               Float                        @default(0)
+  montantPrecedent             Float                        @default(0)
+  montantActuel                Float                        @default(0)
+  montantTotal                 Float                        @default(0)
+  createdAt                    DateTime                     @default(now())
+  updatedAt                    DateTime
+  soustraitant_etat_avancement soustraitant_etat_avancement @relation(fields: [soustraitantEtatAvancementId], references: [id], onDelete: Cascade)
+
+  @@index([soustraitantEtatAvancementId])
+}
+
+model soustraitant_etat_avancement {
+  id                                   Int                                    @id @default(autoincrement())
+  soustraitantId                       String
+  numero                               Int
+  date                                 DateTime                               @default(now())
+  commentaires                         String?                                @db.Text
+  estFinalise                          Boolean                                @default(false)
+  createdAt                            DateTime                               @default(now())
+  updatedAt                            DateTime                               @updatedAt
+  commandeSousTraitantId               Int?
+  etatAvancementId                     Int
+  avenant_soustraitant_etat_avancement avenant_soustraitant_etat_avancement[]
+  ligne_soustraitant_etat_avancement   ligne_soustraitant_etat_avancement[]
+  photos                               photo_soustraitant_etat_avancement[]
+  commande_soustraitant                CommandeSousTraitant?                  @relation(fields: [commandeSousTraitantId], references: [id])
+  etat_avancement                      EtatAvancement                         @relation(fields: [etatAvancementId], references: [id], onDelete: Cascade)
+  soustraitant                         soustraitant                           @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
+
+  @@unique([etatAvancementId, soustraitantId, numero])
+  @@index([commandeSousTraitantId])
+  @@index([etatAvancementId])
+  @@index([soustraitantId])
+}
+
+model photo_soustraitant_etat_avancement {
+  id                           Int                          @id @default(autoincrement())
+  soustraitantEtatAvancementId Int
+  url                          String
+  description                  String?
+  dateAjout                    DateTime                     @default(now())
+  soustraitant_etat_avancement soustraitant_etat_avancement @relation(fields: [soustraitantEtatAvancementId], references: [id], onDelete: Cascade)
+
+  @@index([soustraitantEtatAvancementId])
+}
+
+model Depense {
+  id           String   @id @default(uuid())
+  chantierId   String
+  date         DateTime @default(now())
+  montant      Float
+  description  String   @db.Text
+  categorie    String
+  fournisseur  String?
+  reference    String?
+  justificatif String?
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([chantierId])
+  @@index([createdBy])
+  @@map("depense")
+}
+
+model UserNotes {
+  id          Int      @id @default(autoincrement())
+  userId      String   @unique
+  content     String   @db.Text
+  stickyNotes String?  @db.Text
+  todos       String?  @db.Text
+  mode        String   @default("notes")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("user_notes")
+}
+
+model Rack {
+  id           String        @id @default(uuid())
+  nom          String
+  position     String
+  lignes       Int
+  colonnes     Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  emplacements Emplacement[]
+
+  @@map("rack")
+}
+
+model Emplacement {
+  id        String     @id @default(uuid())
+  rackId    String
+  ligne     Int
+  colonne   Int
+  codeQR    String     @unique
+  statut    String     @default("libre")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  rack      Rack       @relation(fields: [rackId], references: [id], onDelete: Cascade)
+  materiaux Materiau[]
+
+  @@unique([rackId, ligne, colonne])
+  @@index([rackId])
+  @@map("emplacement")
+}
+
+model Materiau {
+  id            String       @id @default(uuid())
+  nom           String
+  description   String?      @db.Text
+  quantite      Int          @default(1)
+  codeQR        String?      @unique
+  emplacementId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  emplacement   Emplacement? @relation(fields: [emplacementId], references: [id])
+
+  @@index([emplacementId])
+  @@map("materiau")
+}
+
+model Avenant {
+  id          Int      @id @default(autoincrement())
+  numero      Int
+  date        DateTime @default(now())
+  description String?
+  chantierId  String
+  marcheId    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  Chantier    Chantier @relation(fields: [chantierId], references: [chantierId])
+  Marche      Marche   @relation(fields: [marcheId], references: [id])
+
+  @@unique([chantierId, numero])
+  @@index([marcheId], map: "Avenant_marcheId_fkey")
+}
+
+model Chantier {
+  id                   String                 @id @default(cuid())
+  chantierId           String                 @unique
+  numeroIdentification String?                @unique
+  nomChantier          String
+  dateCommencement     DateTime?
+  dateFinPrevue        DateTime?
+  etatChantier         String?
+  clientAdresse        String?
+  clientEmail          String?
+  clientNom            String?
+  clientTelephone      String?
+  clientId             String?
+  contactId            String?
+  adresseChantier      String?
+  avancement           Float?
+  budget               Float?
+  couleur              String?
+  dateAcceptation      DateTime?
+  dateDebutPreparation DateTime?
+  dateFinEffective     DateTime?
+  description          String?                @db.Text
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  dureeEnJours         Int?
+  dateDebut            DateTime?
+  dateFinReelle        DateTime?
+  statut               String                 @default("A_VENIR")
+  typeDuree            String                 @default("CALENDRIER")
+  villeChantier        String?
+  avenants             Avenant[]
+  client               Client?                @relation(fields: [clientId], references: [id])
+  contact              Contact?               @relation(fields: [contactId], references: [id])
+  documents            Document[]
+  etats                Etat[]
+  ligneMarche          LigneMarche[]          @relation("ChantierToLigneMarche")
+  marches              Marche?
+  notes                Note[]
+  taches               Tache[]
+  admintasks           admintask[]
+  bonsRegie            BonRegie[]
+  commandes            Commande[]             @relation("CommandeToChantier")
+  commandeSousTraitant CommandeSousTraitant[]
+  etatsAvancement      EtatAvancement[]
+  receptionsChantier   ReceptionChantier[]
+  tasks                Task[]
+  ticketsSAV           TicketSAV[]            @relation("ChantierTicketsSAV")
+
+  @@index([clientId])
+  @@index([contactId])
+}
+
+model Client {
+  id        String     @id
+  nom       String
+  email     String?
+  adresse   String?
+  telephone String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  Chantier  Chantier[]
+  contacts  Contact[]
+}
+
+model Contact {
+  id        String     @id @default(cuid())
+  prenom    String
+  nom       String
+  email     String?
+  telephone String?
+  fonction  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  clientId  String
+  notes     String?    @db.Text
+  Chantier  Chantier[]
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId], map: "contacts_clientId_fkey")
+  @@map("contacts")
+}
+
+model Document {
+  id               Int                 @id @default(autoincrement())
+  nom              String
+  type             String
+  url              String
+  taille           Int
+  mimeType         String
+  chantierId       String
+  createdBy        String
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime
+  metadata         Json?
+  estPlan          Boolean             @default(false)
+  chantier         Chantier            @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  User             User                @relation(fields: [createdBy], references: [id])
+  remarquesSurPlan RemarqueReception[] @relation("RemarqueSurPlan")
+  tags             Tag[]               @relation("DocumentTags")
+
+  @@index([chantierId])
+  @@index([createdBy])
+  @@map("Document")
+}
+
+model DocumentOuvrier {
+  id             String    @id
+  nom            String
+  type           String
+  url            String
+  dateExpiration DateTime?
+  ouvrierId      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime
+  Ouvrier        Ouvrier   @relation(fields: [ouvrierId], references: [id], onDelete: Cascade)
+
+  @@index([ouvrierId])
+}
+
+model Etat {
+  id         Int         @id @default(autoincrement())
+  numero     Int
+  date       DateTime
+  chantierId String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime
+  Chantier   Chantier    @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  LigneEtat  LigneEtat[]
+
+  @@unique([chantierId, numero])
+}
+
+model LigneEtat {
+  id            Int         @id @default(autoincrement())
+  etatId        Int
+  ligneMarcheId Int
+  quantite      Float
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  Etat          Etat        @relation(fields: [etatId], references: [id], onDelete: Cascade)
+  LigneMarche   LigneMarche @relation(fields: [ligneMarcheId], references: [id])
+
+  @@index([etatId])
+  @@index([ligneMarcheId])
+}
+
+model LigneMarche {
+  id           Int         @id @default(autoincrement())
+  article      Int
+  descriptif   String
+  unite        String
+  quantite     Float
+  prixUnitaire Float
+  marcheId     Int
+  chantierId   String?
+  LigneEtat    LigneEtat[]
+  Chantier     Chantier?   @relation("ChantierToLigneMarche", fields: [chantierId], references: [id])
+  Marche       Marche      @relation("LigneMarcheToMarche", fields: [marcheId], references: [id], onDelete: Cascade)
+
+  @@index([marcheId])
+  @@index([chantierId], map: "LigneMarche_chantierId_fkey")
+}
+
+model Machine {
+  id           String         @id
+  nom          String
+  modele       String
+  numeroSerie  String?
+  localisation String
+  statut       Machine_statut @default(DISPONIBLE)
+  dateAchat    DateTime?
+  qrCode       String         @unique
+  commentaire  String?        @db.Text
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  pret         pret[]
+}
+
+model Marche {
+  id           Int           @id @default(autoincrement())
+  chantierId   String        @unique
+  dateImport   DateTime      @default(now())
+  montantTotal Float
+  Avenant      Avenant[]
+  LigneMarche  LigneMarche[] @relation("LigneMarcheToMarche")
+  Chantier     Chantier      @relation(fields: [chantierId], references: [chantierId])
+}
+
+model Note {
+  id         Int      @id @default(autoincrement())
+  chantierId String
+  contenu    String   @db.Text
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  Chantier   Chantier @relation(fields: [chantierId], references: [chantierId])
+  User       User     @relation(fields: [createdBy], references: [id])
+
+  @@index([chantierId])
+  @@index([createdBy])
+}
+
+model Ouvrier {
+  id              String            @id
+  nom             String
+  prenom          String
+  email           String?
+  telephone       String?
+  dateEntree      DateTime
+  poste           String
+  sousTraitantId  String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  DocumentOuvrier DocumentOuvrier[]
+
+  @@index([sousTraitantId])
+}
+
+model OuvrierInterne {
+  id              String               @id @default(cuid())
+  nom             String
+  prenom          String
+  email           String?
+  telephone       String?
+  poste           String?
+  actif           Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  taskAssignments TaskOuvrierInterne[]
+  ticketsAssignes TicketSAV[]          @relation("TicketsSAVOuvrierInterne")
+
+  @@map("ouvrier_interne")
+}
+
+model PublicAccessPIN {
+  id          String            @id @default(uuid())
+  subjectType PublicSubjectType
+  subjectId   String
+  codePIN     String            @unique
+  estActif    Boolean           @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([subjectType, subjectId])
+  @@map("public_access_pin")
+}
+
+model Tache {
+  id          String    @id
+  label       String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  chantierId  String
+  category    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  Chantier    Chantier  @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+
+  @@unique([chantierId, id])
+}
+
+model User {
+  id                          String                 @id
+  email                       String                 @unique
+  password                    String
+  role                        User_role              @default(USER)
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime
+  name                        String?
+  Document                    Document[]
+  Note                        Note[]
+  accounts                    Account[]
+  admintask                   admintask[]
+  sentMessages                ChatMessage[]
+  chatParticipations          ChatParticipant[]
+  commentairesSAV             CommentaireSAV[]       @relation("CommentairesSAVAuteur")
+  documentsSAVUploades        DocumentSAV[]          @relation("DocumentsSAVUploadedBy")
+  interventionsSAV            InterventionSAV[]      @relation("InterventionsSAVTechnicien")
+  photosInterventionSAVPrises PhotoInterventionSAV[] @relation("PhotosInterventionSAVPrisesPar")
+  photosSAVPrises             PhotoSAV[]             @relation("PhotosSAVPrisesPar")
+  pret                        pret[]
+  ragConversations            ragConversation[]
+  receptionsChantier          ReceptionChantier[]
+  remarquesCrees              RemarqueReception[]    @relation("RemarquesCreesParUser")
+  sessions                    Session[]
+  ticketsSAVCrees             TicketSAV[]            @relation("TicketsSAVCreatedBy")
+  ticketsSAVAssignes          TicketSAV[]            @relation("TicketsSAVTechnicien")
+}
+
+model BonRegie {
+  id                Int       @id @default(autoincrement())
+  dates             String
+  client            String
+  nomChantier       String
+  description       String
+  tempsPreparation  Float?
+  tempsTrajets      Float?
+  tempsChantier     Float?
+  nombreTechniciens Int?
+  materiaux         String?
+  nomSignataire     String
+  signature         String    @db.Text
+  dateSignature     DateTime
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  chantierId        String?
+  chantier          Chantier? @relation(fields: [chantierId], references: [chantierId])
+
+  @@index([chantierId])
+  @@map("bonRegie")
+}
+
+model ReceptionChantier {
+  id               String              @id @default(uuid())
+  chantierId       String
+  dateCreation     DateTime            @default(now())
+  dateLimite       DateTime
+  codePIN          String?
+  estFinalise      Boolean             @default(false)
+  createdBy        String
+  updatedAt        DateTime            @updatedAt
+  chantier         Chantier            @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  user             User                @relation(fields: [createdBy], references: [id])
+  remarques        RemarqueReception[]
+  soustraitantPINs SousTraitantPIN[]
+
+  @@index([chantierId])
+  @@index([createdBy])
+  @@map("reception_chantier")
+}
+
+model RemarqueReception {
+  id               String            @id @default(uuid())
+  receptionId      String
+  description      String            @db.Text
+  localisation     String?
+  estResolue       Boolean           @default(false)
+  dateResolution   DateTime?
+  estValidee       Boolean           @default(false)
+  estRejetee       Boolean           @default(false)
+  raisonRejet      String?           @db.Text
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  coordonneesPlan  Json?
+  planId           Int?
+  numeroSequentiel Int?
+  createdById      String?
+  photos           PhotoRemarque[]
+  createdBy        User?             @relation("RemarquesCreesParUser", fields: [createdById], references: [id])
+  planAssocie      Document?         @relation("RemarqueSurPlan", fields: [planId], references: [id])
+  reception        ReceptionChantier @relation(fields: [receptionId], references: [id], onDelete: Cascade)
+  tags             TagRemarque[]
+
+  @@unique([receptionId, numeroSequentiel])
+  @@index([receptionId])
+  @@index([planId])
+  @@index([createdById])
+  @@map("remarque_reception")
+}
+
+model PhotoRemarque {
+  id         String            @id @default(uuid())
+  remarqueId String
+  url        String
+  estPreuve  Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  remarque   RemarqueReception @relation(fields: [remarqueId], references: [id], onDelete: Cascade)
+
+  @@index([remarqueId])
+  @@map("photo_remarque")
+}
+
+model TagRemarque {
+  id         String            @id @default(uuid())
+  remarqueId String
+  nom        String
+  email      String?
+  typeTag    String            @default("PERSONNE")
+  remarque   RemarqueReception @relation(fields: [remarqueId], references: [id], onDelete: Cascade)
+
+  @@index([remarqueId])
+  @@map("tag_remarque")
+}
+
+model Chat {
+  id           String            @id @default(uuid())
+  name         String?
+  isGroup      Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  messages     ChatMessage[]
+  participants ChatParticipant[]
+
+  @@map("chat")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  chatId    String
+  senderId  String
+  content   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fileUrl   String?
+  fileName  String?
+  fileType  String?
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id])
+
+  @@index([chatId])
+  @@index([senderId])
+  @@map("chat_message")
+}
+
+model ChatParticipant {
+  id         String    @id @default(uuid())
+  chatId     String
+  userId     String
+  isAdmin    Boolean   @default(false)
+  lastReadAt DateTime?
+  joinedAt   DateTime  @default(now())
+  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+  @@map("chat_participant")
+}
+
+model SousTraitantPIN {
+  id             String            @id @default(uuid())
+  receptionId    String
+  soustraitantId String?
+  codePIN        String            @unique
+  estInterne     Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  reception      ReceptionChantier @relation(fields: [receptionId], references: [id], onDelete: Cascade)
+  soustraitant   soustraitant?     @relation(fields: [soustraitantId], references: [id])
+
+  @@index([receptionId])
+  @@index([soustraitantId])
+  @@map("soustraitant_pin")
+}
+
+model Tag {
+  id        String     @id @default(cuid())
+  nom       String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  documents Document[] @relation("DocumentTags")
+
+  @@map("tags")
+}
+
+model TicketSAV {
+  id                        String            @id @default(uuid())
+  chantierId                String?
+  numTicket                 String            @unique
+  titre                     String
+  nomLibre                  String?
+  description               String            @db.Text
+  type                      TypeTicketSAV
+  priorite                  PrioriteSAV       @default(NORMALE)
+  statut                    StatutSAV         @default(NOUVEAU)
+  localisation              String?
+  adresseIntervention       String?
+  coordonnees               Json?
+  dateDemande               DateTime          @default(now())
+  dateInterventionSouhaitee DateTime?
+  datePlanifiee             DateTime?
+  dateIntervention          DateTime?
+  dateResolution            DateTime?
+  dateCloture               DateTime?
+  technicienAssignId        String?
+  ouvrierInterneAssignId    String?
+  equipeAssignId            String?
+  soustraitantAssignId      String?
+  coutEstime                Float?            @default(0)
+  coutReel                  Float?            @default(0)
+  createdBy                 String
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  contactNom                String?
+  contactTelephone          String?
+  contactEmail              String?
+  commentaires              CommentaireSAV[]
+  documents                 DocumentSAV[]
+  interventions             InterventionSAV[]
+  photos                    PhotoSAV[]
+  tasks                     Task[]
+  chantier                  Chantier?         @relation("ChantierTicketsSAV", fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  createdByUser             User              @relation("TicketsSAVCreatedBy", fields: [createdBy], references: [id])
+  ouvrierInterneAssign      OuvrierInterne?   @relation("TicketsSAVOuvrierInterne", fields: [ouvrierInterneAssignId], references: [id])
+  soustraitantAssign        soustraitant?     @relation("TicketsSAVSousTraitant", fields: [soustraitantAssignId], references: [id])
+  technicienAssign          User?             @relation("TicketsSAVTechnicien", fields: [technicienAssignId], references: [id])
+
+  @@index([chantierId])
+  @@index([statut])
+  @@index([technicienAssignId])
+  @@index([ouvrierInterneAssignId])
+  @@index([soustraitantAssignId])
+  @@index([createdBy])
+  @@map("ticket_sav")
+}
+
+model Task {
+  id               String               @id @default(cuid())
+  title            String
+  description      String?
+  start            DateTime
+  end              DateTime
+  status           TaskStatus           @default(PREVU)
+  chantierId       String?
+  savTicketId      String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  chantier         Chantier?            @relation(fields: [chantierId], references: [chantierId])
+  savTicket        TicketSAV?           @relation(fields: [savTicketId], references: [id])
+  documents        TaskDocument[]
+  ouvriersInternes TaskOuvrierInterne[]
+  sousTraitants    TaskSousTraitant[]
+
+  @@index([start])
+  @@index([end])
+  @@index([chantierId])
+  @@index([savTicketId])
+  @@map("task")
+}
+
+model TaskOuvrierInterne {
+  id               String         @id @default(cuid())
+  taskId           String
+  ouvrierInterneId String
+  assignedAt       DateTime       @default(now())
+  ouvrierInterne   OuvrierInterne @relation(fields: [ouvrierInterneId], references: [id])
+  task             Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, ouvrierInterneId])
+  @@index([ouvrierInterneId])
+  @@map("task_ouvrier_interne")
+}
+
+model TaskSousTraitant {
+  id             String       @id @default(cuid())
+  taskId         String
+  soustraitantId String
+  assignedAt     DateTime     @default(now())
+  soustraitant   soustraitant @relation(fields: [soustraitantId], references: [id])
+  task           Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, soustraitantId])
+  @@index([soustraitantId])
+  @@map("task_soustraitant")
+}
+
+model TaskDocument {
+  id        String   @id @default(cuid())
+  taskId    String
+  url       String
+  name      String
+  mimeType  String
+  size      Int?
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_document")
+}
+
+model InterventionSAV {
+  id                 String                 @id @default(uuid())
+  ticketSAVId        String
+  titre              String
+  description        String                 @db.Text
+  type               TypeInterventionSAV    @default(DIAGNOSTIC)
+  statut             StatutInterventionSAV  @default(PLANIFIEE)
+  dateDebut          DateTime
+  dateFin            DateTime?
+  dureeReelleMinutes Int?
+  technicienId       String
+  equipeId           String?
+  materielsUtilises  String?                @db.Text
+  coutMateriel       Float?                 @default(0)
+  coutMainOeuvre     Float?                 @default(0)
+  resultat           String?                @db.Text
+  prochainAction     String?                @db.Text
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  technicien         User                   @relation("InterventionsSAVTechnicien", fields: [technicienId], references: [id])
+  ticketSAV          TicketSAV              @relation(fields: [ticketSAVId], references: [id], onDelete: Cascade)
+  photos             PhotoInterventionSAV[]
+
+  @@index([ticketSAVId])
+  @@index([technicienId])
+  @@index([dateDebut])
+  @@map("intervention_sav")
+}
+
+model DocumentSAV {
+  id             String          @id @default(uuid())
+  ticketSAVId    String
+  nom            String
+  nomOriginal    String
+  url            String
+  taille         Int
+  mimeType       String
+  type           TypeDocumentSAV @default(AUTRE)
+  description    String?         @db.Text
+  uploadedBy     String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  ticketSAV      TicketSAV       @relation(fields: [ticketSAVId], references: [id], onDelete: Cascade)
+  uploadedByUser User            @relation("DocumentsSAVUploadedBy", fields: [uploadedBy], references: [id])
+
+  @@index([ticketSAVId])
+  @@index([uploadedBy])
+  @@map("document_sav")
+}
+
+model PhotoSAV {
+  id          String       @id @default(uuid())
+  ticketSAVId String
+  url         String
+  nomOriginal String?
+  description String?      @db.Text
+  type        TypePhotoSAV @default(CONSTAT)
+  coordonnees Json?
+  orientation Float?
+  prisePar    String
+  createdAt   DateTime     @default(now())
+  prisParUser User         @relation("PhotosSAVPrisesPar", fields: [prisePar], references: [id])
+  ticketSAV   TicketSAV    @relation(fields: [ticketSAVId], references: [id], onDelete: Cascade)
+
+  @@index([ticketSAVId])
+  @@index([prisePar])
+  @@map("photo_sav")
+}
+
+model PhotoInterventionSAV {
+  id                String                  @id @default(uuid())
+  interventionSAVId String
+  url               String
+  nomOriginal       String?
+  description       String?                 @db.Text
+  type              TypePhotoSAV            @default(CONSTAT)
+  momentPrise       MomentPhotoIntervention @default(PENDANT)
+  prisePar          String
+  createdAt         DateTime                @default(now())
+  intervention      InterventionSAV         @relation(fields: [interventionSAVId], references: [id], onDelete: Cascade)
+  prisParUser       User                    @relation("PhotosInterventionSAVPrisesPar", fields: [prisePar], references: [id])
+
+  @@index([interventionSAVId])
+  @@index([prisePar])
+  @@map("photo_intervention_sav")
+}
+
+model CommentaireSAV {
+  id          String             @id @default(uuid())
+  ticketSAVId String
+  contenu     String             @db.Text
+  type        TypeCommentaireSAV @default(COMMENTAIRE)
+  estInterne  Boolean            @default(false)
+  auteurId    String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  auteur      User               @relation("CommentairesSAVAuteur", fields: [auteurId], references: [id])
+  ticketSAV   TicketSAV          @relation(fields: [ticketSAVId], references: [id], onDelete: Cascade)
+
+  @@index([ticketSAVId])
+  @@index([auteurId])
+  @@map("commentaire_sav")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId], map: "account_userId_fkey")
+  @@map("account")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "session_userId_fkey")
+  @@map("session")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtoken")
+}
+
+model documentChunk {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  metadata  String   @db.Text
+  embedding String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("documentchunks")
+}
+
+model ragConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  messages  String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "ragconversations_userId_fkey")
+  @@map("ragconversations")
+}
+
+model ContractTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  htmlContent String   @db.LongText
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contract_templates")
+}
+
+enum PublicSubjectType {
+  OUVRIER_INTERNE
+  SOUSTRAITANT
+}
+
+enum TaskStatus {
+  PREVU
+  EN_COURS
+  TERMINE
+}
+
+enum TypeTicketSAV {
+  DEFAUT_CONFORMITE
+  MALFACON
+  USURE_PREMATUREE
+  MAINTENANCE
+  REPARATION
+  RETOUCHE
+  AUTRE
+}
+
+enum PrioriteSAV {
+  CRITIQUE
+  HAUTE
+  NORMALE
+  BASSE
+}
+
+enum StatutSAV {
+  NOUVEAU
+  EN_ATTENTE
+  ASSIGNE
+  PLANIFIE
+  EN_COURS
+  EN_ATTENTE_PIECES
+  EN_ATTENTE_VALIDATION
+  RESOLU
+  CLOS
+  ANNULE
+}
+
+enum TypeInterventionSAV {
+  DIAGNOSTIC
+  REPARATION
+  REMPLACEMENT
+  RETOUCHE
+  MAINTENANCE
+  CONTROLE
+}
+
+enum StatutInterventionSAV {
+  PLANIFIEE
+  EN_COURS
+  TERMINEE
+  REPORTEE
+  ANNULEE
+}
+
+enum TypeDocumentSAV {
+  FACTURE
+  DEVIS
+  RAPPORT
+  PLAN
+  FICHE_TECHNIQUE
+  AUTRE
+}
+
+enum TypePhotoSAV {
+  CONSTAT
+  AVANT_INTERVENTION
+  PENDANT_INTERVENTION
+  APRES_INTERVENTION
+  DETAIL
+  VUE_ENSEMBLE
+}
+
+enum MomentPhotoIntervention {
+  AVANT
+  PENDANT
+  APRES
+}
+
+enum TypeCommentaireSAV {
+  COMMENTAIRE
+  NOTE_TECHNIQUE
+  INSTRUCTION
+  FEEDBACK_CLIENT
+  NOTE_INTERNE
+}
+
+enum pret_statut {
+  EN_COURS
+  TERMINE
+}
+
+enum User_role {
+  ADMIN
+  MANAGER
+  USER
+  BOT
+}
+
+enum Machine_statut {
+  DISPONIBLE
+  PRETE
+  EN_PANNE
+  EN_REPARATION
+  MANQUE_CONSOMMABLE
+}
+
+
