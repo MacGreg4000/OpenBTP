@@ -9,7 +9,39 @@ export default function NouveauChoixClientPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: {
+    nomClient: string
+    telephoneClient?: string
+    emailClient?: string
+    chantierId?: string
+    statut: string
+    notesGenerales?: string
+    documents?: string[]
+    detailsChoix?: Array<{
+      numeroChoix: number
+      couleurPlan: string
+      localisations: string[]
+      type: string
+      marque: string
+      collection?: string
+      modele: string
+      reference?: string
+      couleur?: string
+      formatLongueur?: number
+      formatLargeur?: number
+      epaisseur?: number
+      finition?: string
+      surfaceEstimee?: number
+      couleurJoint?: string
+      largeurJoint?: number
+      typeJoint?: string
+      typePose?: string
+      sensPose?: string
+      particularitesPose?: string
+      photosShowroom?: string[]
+      notes?: string
+    }>
+  }) => {
     try {
       setSaving(true)
       

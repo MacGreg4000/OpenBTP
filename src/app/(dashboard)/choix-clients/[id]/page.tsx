@@ -38,7 +38,46 @@ const TYPES_JOINT_LABELS: Record<string, string> = {
 export default function ViewChoixClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const [choixClient, setChoixClient] = useState<any>(null)
+  const [choixClient, setChoixClient] = useState<{
+    id: string
+    nomClient: string
+    telephoneClient?: string
+    emailClient?: string
+    dateVisite: string
+    statut: string
+    chantierId?: string
+    notesGenerales?: string
+    documents?: string[]
+    chantier?: {
+      chantierId: string
+      nomChantier: string
+    }
+    detailsChoix?: Array<{
+      id: string
+      numeroChoix: number
+      couleurPlan: string
+      localisations: string[]
+      type: string
+      marque: string
+      collection?: string
+      modele: string
+      reference?: string
+      couleur?: string
+      formatLongueur?: number
+      formatLargeur?: number
+      epaisseur?: number
+      finition?: string
+      surfaceEstimee?: number
+      couleurJoint?: string
+      largeurJoint?: number
+      typeJoint?: string
+      typePose?: string
+      sensPose?: string
+      particularitesPose?: string
+      photosShowroom?: string[]
+      notes?: string
+    }>
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [generatingPDF, setGeneratingPDF] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
@@ -259,7 +298,7 @@ export default function ViewChoixClientPage({ params }: { params: Promise<{ id: 
         
         {choixClient.detailsChoix && choixClient.detailsChoix.length > 0 ? (
           <div className="space-y-4">
-            {choixClient.detailsChoix.map((detail: any) => (
+            {choixClient.detailsChoix.map((detail) => (
               <div 
                 key={detail.id} 
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-gray-200 dark:border-gray-700 p-6"

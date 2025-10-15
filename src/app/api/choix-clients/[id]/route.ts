@@ -148,7 +148,31 @@ export async function PUT(
       // Créer les nouveaux détails
       if (detailsChoix.length > 0) {
         await prisma.detailChoix.createMany({
-          data: detailsChoix.map((detail: any, index: number) => ({
+          data: detailsChoix.map((detail: {
+            numeroChoix: number
+            couleurPlan: string
+            localisations: string[]
+            type: string
+            marque: string
+            collection?: string
+            modele: string
+            reference?: string
+            couleur?: string
+            formatLongueur?: number
+            formatLargeur?: number
+            epaisseur?: number
+            finition?: string
+            surfaceEstimee?: number
+            couleurJoint?: string
+            largeurJoint?: number
+            typeJoint?: string
+            typePose?: string
+            sensPose?: string
+            particularitesPose?: string
+            photosShowroom?: string[]
+            notes?: string
+            zoneDessineeData?: unknown
+          }, index: number) => ({
             choixClientId: id,
             numeroChoix: detail.numeroChoix || index + 1,
             couleurPlan: detail.couleurPlan,

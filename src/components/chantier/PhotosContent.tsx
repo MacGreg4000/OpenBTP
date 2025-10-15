@@ -149,7 +149,16 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
           // L'API peut retourner soit { success: true, documents: [...] } soit directement [...]
           const documentsList = Array.isArray(dataChantier) ? dataChantier : (dataChantier.documents || [])
           
-          const photosChantierList: PhotoChantier[] = documentsList.map((doc: any) => ({
+          const photosChantierList: PhotoChantier[] = documentsList.map((doc: {
+            id: string
+            nom: string
+            url: string
+            type: string
+            taille: number
+            createdAt: string
+            metadata?: { [key: string]: unknown }
+            User?: { name?: string }
+          }) => ({
             id: doc.id.toString(),
             nom: doc.nom,
             url: doc.url,

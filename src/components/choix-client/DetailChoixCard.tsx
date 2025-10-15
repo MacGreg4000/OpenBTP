@@ -3,10 +3,37 @@
 import { useState } from 'react'
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 
+interface DetailChoix {
+  id?: string
+  numeroChoix: number
+  couleurPlan: string
+  localisations: string[]
+  type: string
+  marque: string
+  collection?: string
+  modele: string
+  reference?: string
+  couleur?: string
+  formatLongueur?: number
+  formatLargeur?: number
+  epaisseur?: number
+  finition?: string
+  surfaceEstimee?: number
+  couleurJoint?: string
+  largeurJoint?: number
+  typeJoint?: string
+  typePose?: string
+  sensPose?: string
+  particularitesPose?: string
+  photosShowroom?: string[]
+  notes?: string
+  zoneDessineeData?: unknown
+}
+
 interface DetailChoixCardProps {
-  detail: any
+  detail: DetailChoix
   index: number
-  onUpdate: (updated: any) => void
+  onUpdate: (updated: DetailChoix) => void
   onDelete: () => void
   paletteColors: Array<{ nom: string; hex: string }>
 }
@@ -37,8 +64,8 @@ export default function DetailChoixCard({ detail, index, onUpdate, onDelete, pal
   const [localisations, setLocalisations] = useState<string[]>(detail.localisations || [])
   const [nouvelleLocalisation, setNouvelleLocalisation] = useState('')
 
-  const handleFieldChange = (field: string, value: any) => {
-    onUpdate({ [field]: value })
+  const handleFieldChange = (field: string, value: string | number | string[]) => {
+    onUpdate({ ...detail, [field]: value })
   }
 
   const handleToggleLocalisation = (loc: string) => {

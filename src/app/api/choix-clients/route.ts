@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
     const statut = searchParams.get('statut')
     const chantierId = searchParams.get('chantierId')
 
-    const whereClause: any = {}
+    const whereClause: {
+      statut?: string
+      chantierId?: string
+    } = {}
     
     if (statut) {
       whereClause.statut = statut
@@ -114,7 +117,31 @@ export async function POST(request: NextRequest) {
         notesGenerales,
         createdBy: session.user.id,
         detailsChoix: detailsChoix && detailsChoix.length > 0 ? {
-          create: detailsChoix.map((detail: any, index: number) => ({
+          create: detailsChoix.map((detail: {
+            numeroChoix: number
+            couleurPlan: string
+            localisations: string[]
+            type: string
+            marque: string
+            collection?: string
+            modele: string
+            reference?: string
+            couleur?: string
+            formatLongueur?: number
+            formatLargeur?: number
+            epaisseur?: number
+            finition?: string
+            surfaceEstimee?: number
+            couleurJoint?: string
+            largeurJoint?: number
+            typeJoint?: string
+            typePose?: string
+            sensPose?: string
+            particularitesPose?: string
+            photosShowroom?: string[]
+            notes?: string
+            zoneDessineeData?: unknown
+          }, index: number) => ({
             numeroChoix: index + 1,
             couleurPlan: detail.couleurPlan,
             localisations: detail.localisations || [],

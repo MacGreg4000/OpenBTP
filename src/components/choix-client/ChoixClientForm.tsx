@@ -5,7 +5,6 @@ import {
   PlusIcon,
   DocumentArrowUpIcon
 } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/navigation'
 import DetailChoixCard from './DetailChoixCard'
 
 interface Chantier {
@@ -13,9 +12,56 @@ interface Chantier {
   nomChantier: string
 }
 
+interface DetailChoix {
+  id?: string
+  numeroChoix: number
+  couleurPlan: string
+  localisations: string[]
+  type: string
+  marque: string
+  collection?: string
+  modele: string
+  reference?: string
+  couleur?: string
+  formatLongueur?: number
+  formatLargeur?: number
+  epaisseur?: number
+  finition?: string
+  surfaceEstimee?: number
+  couleurJoint?: string
+  largeurJoint?: number
+  typeJoint?: string
+  typePose?: string
+  sensPose?: string
+  particularitesPose?: string
+  photosShowroom?: string[]
+  notes?: string
+  zoneDessineeData?: unknown
+}
+
 interface ChoixClientFormProps {
-  initialData?: any
-  onSubmit: (data: any) => Promise<void>
+  initialData?: {
+    id?: string
+    nomClient?: string
+    telephoneClient?: string
+    emailClient?: string
+    chantierId?: string
+    dateVisite?: string
+    statut?: string
+    notesGenerales?: string
+    documents?: string[]
+    detailsChoix?: DetailChoix[]
+  }
+  onSubmit: (data: {
+    nomClient: string
+    telephoneClient?: string
+    emailClient?: string
+    chantierId?: string
+    statut: string
+    notesGenerales?: string
+    documents?: string[]
+    detailsChoix?: DetailChoix[]
+  }) => Promise<void>
   saving: boolean
 }
 
@@ -71,7 +117,7 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
   }
 
   const handleAddDetailChoix = () => {
-    const couleursUtilisees = detailsChoix.map((d: any) => d.couleurPlan)
+    const couleursUtilisees = detailsChoix.map((d: DetailChoix) => d.couleurPlan)
     const couleurDisponible = PALETTE_COULEURS.find(c => !couleursUtilisees.includes(c.hex))
     
     const nouveauDetail = {
@@ -104,14 +150,14 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
     setDetailsChoix([...detailsChoix, nouveauDetail])
   }
 
-  const handleUpdateDetailChoix = (index: number, updatedDetail: any) => {
+  const handleUpdateDetailChoix = (index: number, updatedDetail: DetailChoix) => {
     const updated = [...detailsChoix]
     updated[index] = { ...updated[index], ...updatedDetail }
     setDetailsChoix(updated)
   }
 
   const handleDeleteDetailChoix = (index: number) => {
-    setDetailsChoix(detailsChoix.filter((_: any, i: number) => i !== index))
+    setDetailsChoix(detailsChoix.filter((_, i: number) => i !== index))
   }
 
   const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +211,7 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
       statut,
       notesGenerales,
       documents,
-      detailsChoix: detailsChoix.map((detail: any, index: number) => ({
+      detailsChoix: detailsChoix.map((detail: DetailChoix, index: number) => ({
         ...detail,
         numeroChoix: index + 1
       }))
@@ -392,9 +438,9 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
           </div>
         ) : (
           <div className="space-y-6">
-            {detailsChoix.map((detail: any, index: number) => (
+            {detailsChoix.map((detail: DetailChoix, index: number) => (
               <DetailChoixCard
-                key={detail.id}
+                key={detail.id || `temp-${index}`}
                 detail={detail}
                 index={index}
                 onUpdate={(updated) => handleUpdateDetailChoix(index, updated)}

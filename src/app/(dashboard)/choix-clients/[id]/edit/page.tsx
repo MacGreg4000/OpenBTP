@@ -8,7 +8,42 @@ import ChoixClientForm from '@/components/choix-client/ChoixClientForm'
 export default function EditChoixClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const [choixClient, setChoixClient] = useState<any>(null)
+  const [choixClient, setChoixClient] = useState<{
+    id: string
+    nomClient: string
+    telephoneClient?: string
+    emailClient?: string
+    dateVisite: string
+    statut: string
+    chantierId?: string
+    notesGenerales?: string
+    documents?: string[]
+    detailsChoix?: Array<{
+      id: string
+      numeroChoix: number
+      couleurPlan: string
+      localisations: string[]
+      type: string
+      marque: string
+      collection?: string
+      modele: string
+      reference?: string
+      couleur?: string
+      formatLongueur?: number
+      formatLargeur?: number
+      epaisseur?: number
+      finition?: string
+      surfaceEstimee?: number
+      couleurJoint?: string
+      largeurJoint?: number
+      typeJoint?: string
+      typePose?: string
+      sensPose?: string
+      particularitesPose?: string
+      photosShowroom?: string[]
+      notes?: string
+    }>
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -38,7 +73,39 @@ export default function EditChoixClientPage({ params }: { params: Promise<{ id: 
     }
   }
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: {
+    nomClient: string
+    telephoneClient?: string
+    emailClient?: string
+    chantierId?: string
+    statut: string
+    notesGenerales?: string
+    documents?: string[]
+    detailsChoix?: Array<{
+      numeroChoix: number
+      couleurPlan: string
+      localisations: string[]
+      type: string
+      marque: string
+      collection?: string
+      modele: string
+      reference?: string
+      couleur?: string
+      formatLongueur?: number
+      formatLargeur?: number
+      epaisseur?: number
+      finition?: string
+      surfaceEstimee?: number
+      couleurJoint?: string
+      largeurJoint?: number
+      typeJoint?: string
+      typePose?: string
+      sensPose?: string
+      particularitesPose?: string
+      photosShowroom?: string[]
+      notes?: string
+    }>
+  }) => {
     try {
       setSaving(true)
       

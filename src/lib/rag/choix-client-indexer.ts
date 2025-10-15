@@ -21,7 +21,45 @@ function generateEmbedding(text: string): number[] {
 }
 
 // Formater un choix client en texte pour l'indexation
-export function formatChoixClientForRAG(choixClient: any): string {
+export function formatChoixClientForRAG(choixClient: {
+  id: string
+  nomClient: string
+  telephoneClient?: string
+  emailClient?: string
+  dateVisite: Date
+  statut: string
+  chantierId?: string
+  notesGenerales?: string
+  documents?: string[]
+  chantier?: {
+    chantierId: string
+    nomChantier: string
+  }
+  detailsChoix: Array<{
+    numeroChoix: number
+    couleurPlan: string
+    localisations: string[]
+    type: string
+    marque: string
+    collection?: string
+    modele: string
+    reference?: string
+    couleur?: string
+    formatLongueur?: number
+    formatLargeur?: number
+    epaisseur?: number
+    finition?: string
+    surfaceEstimee?: number
+    couleurJoint?: string
+    largeurJoint?: number
+    typeJoint?: string
+    typePose?: string
+    sensPose?: string
+    particularitesPose?: string
+    photosShowroom?: string[]
+    notes?: string
+  }>
+}): string {
   const parts: string[] = []
   
   // En-tête
@@ -49,7 +87,30 @@ export function formatChoixClientForRAG(choixClient: any): string {
   if (choixClient.detailsChoix && choixClient.detailsChoix.length > 0) {
     parts.push(`\nChoix de revêtements (${choixClient.detailsChoix.length} choix):`)
     
-    choixClient.detailsChoix.forEach((detail: any) => {
+    choixClient.detailsChoix.forEach((detail: {
+      numeroChoix: number
+      couleurPlan: string
+      localisations: string[]
+      type: string
+      marque: string
+      collection?: string
+      modele: string
+      reference?: string
+      couleur?: string
+      formatLongueur?: number
+      formatLargeur?: number
+      epaisseur?: number
+      finition?: string
+      surfaceEstimee?: number
+      couleurJoint?: string
+      largeurJoint?: number
+      typeJoint?: string
+      typePose?: string
+      sensPose?: string
+      particularitesPose?: string
+      photosShowroom?: string[]
+      notes?: string
+    }) => {
       parts.push(`\nChoix #${detail.numeroChoix} - ${detail.type}:`)
       
       if (detail.localisations && detail.localisations.length > 0) {
@@ -192,7 +253,7 @@ export async function removeChoixClientFromIndex(choixClientId: string): Promise
     console.log(`✅ Indexation du choix client ${choixClientId} supprimée`)
   } catch (error) {
     // Si le document n'existe pas, ce n'est pas une erreur
-    if ((error as any)?.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       console.log(`ℹ️ Choix client ${choixClientId} n'était pas indexé`)
       return
     }

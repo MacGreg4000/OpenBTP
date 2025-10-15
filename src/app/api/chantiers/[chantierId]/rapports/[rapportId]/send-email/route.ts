@@ -85,7 +85,13 @@ export async function POST(
       console.log(`📄 Génération d'un PDF filtré avec le tag: ${tagFilter}`)
       
       // Récupérer les métadonnées du rapport pour régénérer le PDF
-      const metadata = rapport.metadata as any
+      const metadata = rapport.metadata as {
+        photos?: Array<{ url: string; caption?: string; preview?: string }>
+        date?: string
+        personnes?: Array<{ id: string; nom: string; fonction: string }>
+        notesIndividuelles?: Array<{ id: string; contenu: string; tags: string[] }>
+        [key: string]: unknown
+      }
       
       if (!metadata) {
         return NextResponse.json(
@@ -104,23 +110,35 @@ export async function POST(
         console.warn('Logo non trouvé')
       }
 
-      // Convertir les photos en base64
+      // Convertir les photos en base64 et adapter au format RapportData
       const photosWithBase64 = await Promise.all(
-        (metadata.photos || []).map(async (photo: any) => {
+        (metadata.photos || []).map(async (photo: { url: string; caption?: string; preview?: string }) => {
           try {
+            let previewBase64 = photo.preview || photo.url
             if (photo.preview && photo.preview.startsWith('/uploads/')) {
               const imagePath = join(process.cwd(), 'public', photo.preview)
               const imageBuffer = await readFile(imagePath)
               const extension = photo.preview.split('.').pop()?.toLowerCase() || 'jpg'
               const mimeType = extension === 'png' ? 'image/png' : 
                               extension === 'webp' ? 'image/webp' : 'image/jpeg'
-              const base64 = `data:${mimeType};base64,${imageBuffer.toString('base64')}`
-              return { ...photo, preview: base64 }
+              previewBase64 = `data:${mimeType};base64,${imageBuffer.toString('base64')}`
             }
-            return photo
+            return {
+              id: photo.url, // Utiliser l'URL comme ID temporaire
+              file: null,
+              preview: previewBase64,
+              annotation: photo.caption || '',
+              tags: []
+            }
           } catch (error) {
             console.error(`Erreur conversion photo:`, error)
-            return photo
+            return {
+              id: photo.url,
+              file: null,
+              preview: photo.preview || photo.url,
+              annotation: photo.caption || '',
+              tags: []
+            }
           }
         })
       )
@@ -134,7 +152,7 @@ export async function POST(
           clientNom: chantier.clientNom || 'Client non spécifié',
           adresseChantier: chantier.adresseChantier || ''
         },
-        date: metadata.date,
+        date: metadata.date || '',
         personnes: metadata.personnes || [],
         notes: metadata.notesIndividuelles || [],
         photos: photosWithBase64,

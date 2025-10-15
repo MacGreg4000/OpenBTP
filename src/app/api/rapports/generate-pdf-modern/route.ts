@@ -56,12 +56,12 @@ export async function POST(request: Request) {
 
     console.log(`📥 Réception de ${photos?.length || 0} photo(s) depuis le front-end`)
     if (photos && photos.length > 0) {
-      console.log(`📋 URLs reçues:`, photos.map((p: any) => p.preview))
+      console.log(`📋 URLs reçues:`, photos.map((p: { preview?: string }) => p.preview))
     }
     
     // Convertir les photos en base64
     const photosWithBase64 = await Promise.all(
-      (photos || []).map(async (photo: any) => {
+      (photos || []).map(async (photo: { url: string; caption?: string; preview?: string }) => {
         try {
           console.log(`🔍 Traitement photo: ${photo.preview}`)
           // Si la photo a déjà une URL du serveur, la convertir en base64

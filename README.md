@@ -73,6 +73,16 @@ L'application sera accessible à l'adresse : http://localhost:3000
 - `npm run check-db` : Vérifie l'état de la base de données
 - `npm run reset-tasks` : Réinitialise les tâches
 
+## Démarrage automatique sur NAS Synology
+
+Pour configurer le démarrage automatique de l'application sur un NAS Synology, consultez le guide détaillé : [README_DEMARRAGE_AUTO_NAS.md](./README_DEMARRAGE_AUTO_NAS.md)
+
+**Scripts disponibles :**
+- `./start-app.sh` : Démarrage manuel (interactif)
+- `./stop-app.sh` : Arrêt manuel
+- `./start-app-auto.sh` : Démarrage automatique pour NAS (non-interactif)
+- `./stop-app-auto.sh` : Arrêt automatique pour NAS
+
 ## Structure du projet
 
 ```
