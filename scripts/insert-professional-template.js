@@ -1,46 +1,84 @@
-const { PrismaClient } = require('@prisma/client')
-const fs = require('fs')
-const path = require('path')
+const { PrismaClient } = require('@prisma/client');
+const fs = require('fs');
+const path = require('path');
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function insertProfessionalTemplate() {
   try {
-    console.log('Lecture du template professionnel...')
+    console.log('📄 Lecture du template professionnel...');
     
-    // Lire le template HTML professionnel
-    const templatePath = path.join(__dirname, '..', 'templates', 'contrat-sous-traitant-professionnel.html')
-    const htmlContent = fs.readFileSync(templatePath, 'utf8')
+    // Lire le fichier HTML du template
+    const templatePath = path.join(__dirname, '..', 'templates', 'contrat-professionnel.html');
+    const htmlContent = fs.readFileSync(templatePath, 'utf-8');
     
-    console.log('Template lu avec succès')
+    console.log('✅ Template lu avec succès');
     
-    // Désactiver tous les templates existants
-    console.log('Désactivation des templates existants...')
-    await prisma.contractTemplate.updateMany({
-      where: { isActive: true },
-      data: { isActive: false }
-    })
-    
-    // Créer le nouveau template professionnel
-    console.log('Création du template professionnel...')
-    const template = await prisma.contractTemplate.create({
-      data: {
-        name: 'Template Professionnel 2024',
-        description: 'Template de contrat de sous-traitance professionnel avec design moderne, logo, en-tête et pied de page',
-        htmlContent: htmlContent,
-        isActive: true
+    // Vérifier si le template existe déjà
+    const existingTemplate = await prisma.contractTemplate.findFirst({
+      where: {
+        name: 'Contrat de Sous-Traitance Professionnel'
       }
-    })
+    });
     
-    console.log('Template professionnel créé avec succès:', template.id)
-    console.log('Nom:', template.name)
-    console.log('Actif:', template.isActive)
+    if (existingTemplate) {
+      console.log('⚠️  Le template professionnel existe déjà (ID:', existingTemplate.id, ')');
+      console.log('   Mise à jour du template...');
+      
+      await prisma.contractTemplate.update({
+        where: {
+          id: existingTemplate.id
+        },
+        data: {
+          htmlContent,
+          description: 'Modèle professionnel de contrat de sous-traitance avec toutes les clauses légales et signatures électroniques',
+          updatedAt: new Date()
+        }
+      });
+      
+      console.log('✅ Template mis à jour avec succès !');
+    } else {
+      console.log('📝 Création du nouveau template...');
+      
+      // Créer le nouveau template
+      const template = await prisma.contractTemplate.create({
+        data: {
+          name: 'Contrat de Sous-Traitance Professionnel',
+          description: 'Modèle professionnel de contrat de sous-traitance avec toutes les clauses légales et signatures électroniques',
+          htmlContent,
+          isActive: true
+        }
+      });
+      
+      console.log('✅ Template créé avec succès !');
+      console.log('   ID:', template.id);
+      console.log('   Nom:', template.name);
+      console.log('   Actif:', template.isActive);
+    }
+    
+    // Afficher un récapitulatif
+    const allTemplates = await prisma.contractTemplate.findMany();
+    console.log('\n📋 Récapitulatif des templates:');
+    console.log('   Total:', allTemplates.length, 'template(s)');
+    allTemplates.forEach(t => {
+      console.log(`   - ${t.name} (${t.isActive ? 'ACTIF' : 'Inactif'}) - ID: ${t.id}`);
+    });
     
   } catch (error) {
-    console.error('Erreur lors de l\'insertion du template:', error)
+    console.error('❌ Erreur lors de l\'insertion du template:', error);
+    throw error;
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
+// Exécuter le script
 insertProfessionalTemplate()
+  .then(() => {
+    console.log('\n✅ Script terminé avec succès');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('\n❌ Erreur fatale:', error.message);
+    process.exit(1);
+  });
