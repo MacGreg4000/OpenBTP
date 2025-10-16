@@ -11,7 +11,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "production:build": "npm run prisma:generate && npm run build",
-    "production:start": "npm run prisma:migrate && npm run start"
+    "production:start": "npm run prisma:migrate && npm run start",
+    "sync-template": "node scripts/insert-professional-template.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

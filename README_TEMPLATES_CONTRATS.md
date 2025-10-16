@@ -82,9 +82,26 @@ Les templates HTML utilisent des variables dynamiques qui sont remplacées lors 
 - `{{dateFin}}` - Date de fin
 - `{{signatureBase64}}` - Signature en base64
 
-## 🔧 Script d'insertion du template
+## 🔄 Synchronisation automatique du template
 
-Si vous devez réinsérer le template professionnel ou mettre à jour son contenu :
+### ✨ Au démarrage de l'application
+
+Le template professionnel (`templates/contrat-professionnel.html`) est **automatiquement synchronisé** avec la base de données à chaque démarrage de l'application grâce au système d'instrumentation Next.js.
+
+Cela signifie que :
+- ✅ Si vous modifiez le fichier `templates/contrat-professionnel.html`, il sera automatiquement mis à jour dans la base de données au prochain démarrage
+- ✅ Le template est toujours disponible dans la liste des templates
+- ✅ Vous pouvez modifier le template directement depuis l'interface web
+
+### 🔧 Synchronisation manuelle
+
+Si vous voulez synchroniser manuellement le template sans redémarrer l'application :
+
+```bash
+npm run sync-template
+```
+
+Ou directement :
 
 ```bash
 node scripts/insert-professional-template.js
@@ -94,7 +111,35 @@ Ce script :
 - ✅ Lit le fichier `templates/contrat-professionnel.html`
 - ✅ Vérifie si le template existe déjà
 - ✅ Crée ou met à jour le template dans la base de données
-- ✅ Active automatiquement le template
+- ✅ Active automatiquement le template (si création)
+
+## 🔀 Workflow de modification du template
+
+Vous avez **deux façons** de modifier le template professionnel :
+
+### Option 1 : Modifier via l'interface web (recommandé)
+
+1. Allez sur https://openbtp.secotech.synology.me/admin/templates-contrats
+2. Cliquez sur l'icône **crayon** (✏️) du template professionnel
+3. Modifiez le contenu HTML
+4. Sauvegardez
+5. ✅ Le template est immédiatement mis à jour dans la base de données
+
+**Avantage** : Modifications en temps réel, prévisualisation disponible
+
+### Option 2 : Modifier le fichier HTML directement
+
+1. Modifiez le fichier `templates/contrat-professionnel.html`
+2. **Soit** : Redémarrez l'application → synchronisation automatique
+3. **Soit** : Lancez `npm run sync-template` → synchronisation manuelle
+4. ✅ Le template est mis à jour dans la base de données
+
+**Avantage** : Édition avec votre éditeur de code préféré, versioning Git
+
+### ⚙️ Synchronisation bidirectionnelle
+
+- 📤 **Fichier → Base de données** : Automatique au démarrage ou avec `npm run sync-template`
+- 📥 **Base de données → Fichier** : Utilisez l'export (à venir)
 
 ## 📁 Structure des fichiers
 
@@ -107,14 +152,17 @@ src/
 │   └── [id]/
 │       └── modifier/
 │           └── page.tsx           # Modifier un template
+├── lib/services/
+│   └── template-sync.ts           # Service de synchronisation
+└── instrumentation.ts             # Hook d'instrumentation Next.js
 
 templates/
-├── contrat-professionnel.html     # Template HTML professionnel
+├── contrat-professionnel.html     # Template HTML professionnel (source de vérité)
 ├── contrat-sous-traitant.html
 └── contrat-sous-traitant-professionnel.html
 
 scripts/
-└── insert-professional-template.js # Script d'insertion
+└── insert-professional-template.js # Script d'insertion/mise à jour
 ```
 
 ## 🎨 Bonnes pratiques
