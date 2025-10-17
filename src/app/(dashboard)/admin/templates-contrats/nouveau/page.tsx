@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast, { Toaster } from 'react-hot-toast'
+import TemplateVariablesHelp from '@/components/admin/TemplateVariablesHelp'
 
 export default function NouveauTemplatePage() {
   const router = useRouter()
@@ -113,6 +114,12 @@ export default function NouveauTemplatePage() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Contenu HTML *
             </label>
+            
+            {/* Aide sur les variables */}
+            <div className="mb-3">
+              <TemplateVariablesHelp />
+            </div>
+
             <textarea
               value={htmlContent}
               onChange={(e) => setHtmlContent(e.target.value)}
@@ -121,9 +128,6 @@ export default function NouveauTemplatePage() {
               placeholder="Entrez le code HTML du template..."
               required
             />
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Utilisez des variables comme {'{'}{'{'} nom {'}'}{'}'}, {'{'}{'{'} siret {'}'}{'}'}, etc. pour les données dynamiques
-            </p>
           </div>
 
           <div className="flex gap-4">

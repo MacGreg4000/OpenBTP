@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon, FolderIcon } from '@heroicons/react/24/outline'
 import PhotosTabContent from './PhotosTabContent'
+import FichesTechniquesTabContent from './FichesTechniquesTabContent'
 
 interface Tag {
   id: string;
@@ -512,12 +513,7 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
       ) : activeTab === 'photos' ? (
         <PhotosTabContent chantierId={chantierId} />
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <div className="text-center py-8">
-            <FolderIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" />
-            <p className="text-gray-500 dark:text-gray-400">Fiches techniques - En cours de développement</p>
-          </div>
-        </div>
+        <FichesTechniquesTabContent chantierId={chantierId} />
       )}
 
       {/* Modal de prévisualisation des photos */}

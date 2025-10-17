@@ -138,7 +138,7 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
       surfaceEstimee: null,
       couleurJoint: '',
       largeurJoint: 2,
-      typeJoint: null,
+      typeJoint: 'CIMENT',
       typePose: '',
       sensPose: '',
       particularitesPose: '',

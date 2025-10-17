@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma/client';
-import puppeteer from 'puppeteer';
+import { RemotePDFGenerator } from '@/lib/pdf/pdf-generator-remote';
 
 interface TaskForPDF {
   id: string;
@@ -468,28 +468,28 @@ export async function POST(_request: Request) {
     </html>
     `;
 
-    // Générer le PDF avec Puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    // Vérifier que le service PDF distant est accessible
+    console.log('🏥 Vérification du service PDF distant...');
+    const isHealthy = await RemotePDFGenerator.checkHealth();
+    if (!isHealthy) {
+      throw new Error('Le service PDF distant n\'est pas accessible. Assurez-vous que le conteneur Docker est démarré.');
+    }
+    console.log('✅ Service PDF distant OK');
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    
-    const pdfBuffer = await page.pdf({
+    // Générer le PDF avec le service distant
+    console.log('📦 Génération du PDF via le service distant...');
+    const pdfBuffer = await RemotePDFGenerator.generatePDF(html, {
       format: 'A3',
-      landscape: true,
-      margin: {
+      orientation: 'landscape',
+      margins: {
         top: '20mm',
         right: '20mm',
         bottom: '20mm',
         left: '20mm'
-      },
-      printBackground: true
+      }
     });
 
-    await browser.close();
+    console.log(`✅ PDF généré avec succès (${pdfBuffer.length} bytes)`);
 
     return new NextResponse(pdfBuffer, {
       headers: {
@@ -499,9 +499,15 @@ export async function POST(_request: Request) {
     });
 
   } catch (error) {
-    console.error('Erreur lors de la génération du PDF:', error);
+    console.error('❌ Erreur lors de la génération du PDF:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    console.error('Détails de l\'erreur:', errorMessage);
+    
     return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF' },
+      { 
+        error: 'Erreur lors de la génération du PDF',
+        details: errorMessage 
+      },
       { status: 500 }
     );
   }

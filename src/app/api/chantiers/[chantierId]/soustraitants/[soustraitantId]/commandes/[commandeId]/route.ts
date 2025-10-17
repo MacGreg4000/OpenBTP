@@ -33,43 +33,45 @@ export async function GET(
     }
     const chantierIdInterne = chantier.id;
 
-    // Récupérer la commande sous-traitant
-    const commande = await prisma.$queryRaw<Array<Record<string, unknown>>>`
-      SELECT 
-        c.*,
-        ch.nomChantier,
-        s.nom as soustraitantNom,
-        s.email as soustraitantEmail,
-        s.contact as soustraitantContact,
-        s.adresse as soustraitantAdresse,
-        s.telephone as soustraitantTelephone,
-        s.tva as soustraitantTVA
-      FROM commande_soustraitant c
-      JOIN chantier ch ON c.chantierId = ch.id
-      JOIN soustraitant s ON c.soustraitantId = s.id
-      WHERE c.id = ${parseInt(commandeId)}
-      AND c.chantierId = ${chantierIdInterne}
-      AND c.soustraitantId = ${soustraitantId}
-    `
+    // Récupérer la commande sous-traitant avec Prisma
+    const commande = await prisma.commandeSousTraitant.findFirst({
+      where: {
+        id: parseInt(commandeId),
+        chantierId: chantierIdInterne,
+        soustraitantId: soustraitantId
+      },
+      include: {
+        Chantier: {
+          select: {
+            nomChantier: true
+          }
+        },
+        soustraitant: {
+          select: {
+            nom: true,
+            email: true,
+            contact: true,
+            adresse: true,
+            telephone: true,
+            tva: true
+          }
+        },
+        lignes: {
+          orderBy: {
+            ordre: 'asc'
+          }
+        }
+      }
+    })
 
-    if (!commande || commande.length === 0) {
+    if (!commande) {
       return NextResponse.json(
         { error: 'Commande sous-traitant non trouvée' },
         { status: 404 }
       )
     }
 
-    // Récupérer les lignes de commande
-    const lignes = await prisma.$queryRaw<Array<{ article: string; description: string; type: string; unite: string; prixUnitaire: number; quantite: number; total: number; ordre: number }>>`
-      SELECT * FROM ligne_commande_soustraitant
-      WHERE commandeSousTraitantId = ${parseInt(commandeId)}
-      ORDER BY ordre ASC
-    `
-
-    return NextResponse.json({
-      ...commande[0],
-      lignes
-    })
+    return NextResponse.json(commande)
   } catch (error) {
     console.error('Erreur:', error)
     return NextResponse.json(

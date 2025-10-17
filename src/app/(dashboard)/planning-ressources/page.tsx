@@ -206,28 +206,32 @@ export default function PlanningRessourcesPage() {
           })
         })
 
-        if (response.ok) {
-          // Recharger le planning
-          window.location.reload()
-        } else {
-          const errorData = await response.json()
-          console.error('Erreur lors de la suppression de la journée:', errorData.error)
-          alert('Erreur lors de la suppression de la journée: ' + errorData.error)
-        }
-        return
-      }
-
-      // Sinon, suppression normale de la tâche complète
-      const response = await fetch(`/api/planning/tasks/${taskId}`, {
-        method: 'DELETE',
-      })
-
       if (response.ok) {
         // Recharger le planning
-        window.location.reload()
+        router.refresh()
+        // Force le rechargement complet de la page après un court délai
+        setTimeout(() => window.location.reload(), 100)
       } else {
-        console.error('Erreur lors de la suppression de la tâche')
+        const errorData = await response.json()
+        console.error('Erreur lors de la suppression de la journée:', errorData.error)
+        alert('Erreur lors de la suppression de la journée: ' + errorData.error)
       }
+      return
+    }
+
+    // Sinon, suppression normale de la tâche complète
+    const response = await fetch(`/api/planning/tasks/${taskId}`, {
+      method: 'DELETE',
+    })
+
+    if (response.ok) {
+      // Recharger le planning
+      router.refresh()
+      // Force le rechargement complet de la page après un court délai
+      setTimeout(() => window.location.reload(), 100)
+    } else {
+      console.error('Erreur lors de la suppression de la tâche')
+    }
     } catch (error) {
       console.error('Erreur lors de la suppression de la tâche:', error)
     }
@@ -259,6 +263,7 @@ export default function PlanningRessourcesPage() {
 
   const handleExportPDF = async () => {
     try {
+      console.log('🚀 Début de l\'export PDF...');
       const response = await fetch('/api/planning/export-pdf', {
         method: 'POST',
         headers: {
@@ -267,6 +272,7 @@ export default function PlanningRessourcesPage() {
       })
 
       if (response.ok) {
+        console.log('✅ Réponse OK, téléchargement du PDF...');
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -277,13 +283,15 @@ export default function PlanningRessourcesPage() {
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+        console.log('✅ PDF téléchargé avec succès');
       } else {
-        console.error('Erreur lors de l\'export PDF')
-        alert('Erreur lors de l\'export PDF')
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+        console.error('❌ Erreur lors de l\'export PDF:', errorData);
+        alert(`Erreur lors de l'export PDF: ${errorData.details || errorData.error || 'Erreur inconnue'}`);
       }
     } catch (error) {
-      console.error('Erreur lors de l\'export PDF:', error)
-      alert('Erreur lors de l\'export PDF')
+      console.error('❌ Erreur lors de l\'export PDF:', error)
+      alert(`Erreur lors de l'export PDF: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 

@@ -15,7 +15,7 @@ export default function SavListPage() {
   const spStr = sp.toString()
   type TicketLite = { id: string; numTicket: string; titre: string; priorite: string; statut: string; chantier?: { nomChantier?: string }; nomLibre?: string }
   type SavListResponse = { data: TicketLite[]; meta?: { page: number; totalPages: number } } | TicketLite[]
-  const { data, isLoading, error } = useSWR<SavListResponse>(() => `/api/sav?${spStr || `page=${page}&pageSize=20`}`, jsonFetcher)
+  const { data, isLoading, error, mutate } = useSWR<SavListResponse>(() => `/api/sav?${spStr || `page=${page}&pageSize=20`}`, jsonFetcher)
   const tickets: TicketLite[] = Array.isArray(data) ? (data ?? []) : (data?.data ?? [])
   const meta = !Array.isArray(data) && data?.meta ? data.meta : { page, totalPages: 1 }
 
@@ -149,7 +149,15 @@ export default function SavListPage() {
                         <XCircleIcon className="h-5 w-5 mx-auto" />
                       </button>
                       <button
-                        onClick={async ()=>{ if(confirm('Supprimer définitivement ce ticket ?')) { await fetch(`/api/sav/${t.id}`, { method: 'DELETE' }); router.refresh() } }}
+                        onClick={async ()=>{ 
+                          if(confirm('Supprimer définitivement ce ticket ?')) { 
+                            const response = await fetch(`/api/sav/${t.id}`, { method: 'DELETE' });
+                            if (response.ok) {
+                              // Revalider les données SWR pour mettre à jour la liste
+                              await mutate();
+                            }
+                          } 
+                        }}
                         className="h-8 w-8 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                         title="Supprimer définitivement"
                         aria-label="Supprimer définitivement"

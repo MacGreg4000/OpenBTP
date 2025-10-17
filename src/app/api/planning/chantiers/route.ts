@@ -61,14 +61,12 @@ export async function GET() {
       const _dateFin = chantier.dateFinReelle || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 jours si pas de date de fin
 
       return {
-        id: chantier.chantierId,
-        title: chantier.nomChantier,
-        start: dateDebut.toISOString(),
-        end: chantier.dateFinReelle ? chantier.dateFinReelle.toISOString() : null,
+        chantierId: chantier.chantierId,
+        nomChantier: chantier.nomChantier,
+        statut: etatLibelle,
         client: chantier.client?.nom || 'Client non spécifié',
-        etat: etatLibelle,
-        adresse: undefined,
-        montant: undefined,
+        dateDebut: dateDebut.toISOString(),
+        dateFin: chantier.dateFinReelle ? chantier.dateFinReelle.toISOString() : null,
         dureeEnJours: chantier.dateDebut && chantier.dateFinReelle ? 
           Math.ceil((chantier.dateFinReelle.getTime() - chantier.dateDebut.getTime()) / (1000 * 60 * 60 * 24)) : 
           30 // Durée par défaut de 30 jours

@@ -54,9 +54,21 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ d
     return NextResponse.json({ message: 'Document et son entrée supprimés avec succès' })
   } catch (error: unknown) {
     console.error('Erreur lors de la suppression du document administratif:', error)
+    
+    // Log détaillé de l'erreur
+    if (typeof error === 'object' && error) {
+      console.error('Type d\'erreur:', error.constructor.name)
+      console.error('Détails:', JSON.stringify(error, null, 2))
+    }
+    
     if (typeof error === 'object' && error && 'code' in error && (error as { code?: string }).code === 'P2025') {
       return NextResponse.json({ error: 'Document non trouvé en base de données' }, { status: 404 });
     }
-    return NextResponse.json({ error: 'Erreur serveur lors de la suppression du document' }, { status: 500 })
+    
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    return NextResponse.json({ 
+      error: 'Erreur serveur lors de la suppression du document',
+      details: errorMessage
+    }, { status: 500 })
   }
 } 

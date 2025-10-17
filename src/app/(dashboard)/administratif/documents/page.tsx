@@ -186,18 +186,24 @@ export default function DocumentsAdministratifsPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) return
 
     try {
+      console.log('🗑️ Suppression du document:', documentId)
       const response = await fetch(`/api/documents/administratifs/${documentId}`, {
         method: 'DELETE'
       })
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la suppression du document')
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        console.error('❌ Erreur de suppression:', errorData)
+        throw new Error(errorData.details || errorData.error || 'Erreur lors de la suppression du document')
       }
 
+      console.log('✅ Document supprimé avec succès')
       await fetchDocuments()
     } catch (err) {
-      console.error('Erreur:', err)
-      setError('Impossible de supprimer le document')
+      console.error('❌ Erreur:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Impossible de supprimer le document'
+      setError(errorMessage)
+      alert(errorMessage)
     }
   }
 

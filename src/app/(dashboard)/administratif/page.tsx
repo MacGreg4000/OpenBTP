@@ -5,7 +5,8 @@ import {
   DocumentTextIcon, 
   ClipboardDocumentListIcon,
   ArrowRightIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  SwatchIcon
 } from '@heroicons/react/24/outline'
 
 const administrativeModules = [
@@ -32,6 +33,18 @@ const administrativeModules = [
     bgGradient: 'from-green-500 to-green-600',
     bgLight: 'bg-green-50 dark:bg-green-900/20',
     textColor: 'text-green-600 dark:text-green-400'
+  },
+  {
+    id: 'choix-clients',
+    title: 'Choix Clients',
+    description: 'Enregistrez et gérez les choix de carrelage et revêtements des clients avec plans annotés et fiches techniques',
+    href: '/choix-clients',
+    icon: SwatchIcon,
+    color: 'orange',
+    features: ['Plans annotés', 'Fiches produits', 'Génération PDF'],
+    bgGradient: 'from-orange-500 to-orange-600',
+    bgLight: 'bg-orange-50 dark:bg-orange-900/20',
+    textColor: 'text-orange-600 dark:text-orange-400'
   }
 ]
 

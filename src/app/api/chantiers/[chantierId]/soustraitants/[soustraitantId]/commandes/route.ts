@@ -35,6 +35,11 @@ export async function GET(
         soustraitantId: params.soustraitantId
       },
       include: {
+        Chantier: {
+          select: {
+            nomChantier: true
+          }
+        },
         soustraitant: {
           select: {
             nom: true,
@@ -160,28 +165,34 @@ export async function POST(
       }))
     })
 
-    // Récupérer la commande complète
-    const commande = await prisma.$queryRaw<Array<Record<string, unknown>>>`
-      SELECT 
-        c.*,
-        s.nom as soustraitantNom,
-        s.email as soustraitantEmail
-      FROM commande_soustraitant c
-      JOIN soustraitant s ON c.soustraitantId = s.id
-      WHERE c.id = ${commandeId}
-    `
-
-    // Récupérer les lignes de la commande
-    const lignesCommande = await prisma.$queryRaw<Array<{ article: string; description: string; type: string; unite: string; prixUnitaire: number; quantite: number; total: number; ordre: number }>>`
-      SELECT * FROM ligne_commande_soustraitant
-      WHERE commandeSousTraitantId = ${commandeId}
-      ORDER BY ordre ASC
-    `
-
-    return NextResponse.json({
-      ...commande[0],
-      lignes: lignesCommande
+    // Récupérer la commande complète avec Prisma
+    const commandeComplete = await prisma.commandeSousTraitant.findUnique({
+      where: { id: commandeId },
+      include: {
+        Chantier: {
+          select: {
+            nomChantier: true
+          }
+        },
+        soustraitant: {
+          select: {
+            nom: true,
+            email: true
+          }
+        },
+        lignes: {
+          orderBy: {
+            ordre: 'asc'
+          }
+        }
+      }
     })
+
+    if (!commandeComplete) {
+      return NextResponse.json({ error: 'Erreur lors de la récupération de la commande créée' }, { status: 500 });
+    }
+
+    return NextResponse.json(commandeComplete)
   } catch (error) {
     console.error('Erreur:', error)
     return NextResponse.json(

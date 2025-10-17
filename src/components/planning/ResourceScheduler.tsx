@@ -199,11 +199,11 @@ function TaskCard({ task, onEdit, onDelete, chantierColorMap }: {
         </div>
       </div>
       
-      {task.chantier && (
+      {task.chantierId && (
         <div className="flex items-center gap-1 mb-1">
           <BuildingOfficeIcon className="h-2 w-2 text-gray-400" />
           <span className={`text-xs ${colors.text}`}>
-            {task.chantier.nomChantier}
+            {task.chantier?.nomChantier || `Chantier ${task.chantierId}`}
             {task.isMultiDay && (
               <span className="ml-1 opacity-75">(multi-jours)</span>
             )}

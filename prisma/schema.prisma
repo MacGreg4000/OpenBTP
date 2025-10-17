@@ -561,13 +561,13 @@ model Document {
   url              String
   taille           Int
   mimeType         String
-  chantierId       String
+  chantierId       String?
   createdBy        String
   createdAt        DateTime            @default(now())
   updatedAt        DateTime
   metadata         Json?
   estPlan          Boolean             @default(false)
-  chantier         Chantier            @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  chantier         Chantier?           @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
   User             User                @relation(fields: [createdBy], references: [id])
   remarquesSurPlan RemarqueReception[] @relation("RemarqueSurPlan")
   tags             Tag[]               @relation("DocumentTags")

@@ -151,7 +151,7 @@ export default function MobileInventoryPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="w-full p-3 pl-10 pr-4 border rounded-l text-lg"
+                className="w-full p-3 pl-12 pr-4 border rounded-l text-lg"
               />
               <svg 
                 className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" 

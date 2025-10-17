@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast, { Toaster } from 'react-hot-toast'
+import TemplateVariablesHelp from '@/components/admin/TemplateVariablesHelp'
 
 interface ContractTemplate {
   id: string
@@ -161,6 +162,12 @@ export default function ModifierTemplatePage({ params }: { params: Promise<{ id:
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Contenu HTML *
             </label>
+            
+            {/* Aide sur les variables */}
+            <div className="mb-3">
+              <TemplateVariablesHelp />
+            </div>
+
             <textarea
               value={htmlContent}
               onChange={(e) => setHtmlContent(e.target.value)}
@@ -168,9 +175,6 @@ export default function ModifierTemplatePage({ params }: { params: Promise<{ id:
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm dark:bg-gray-700 dark:text-white"
               required
             />
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Utilisez des variables comme {'{'}{'{'} nom {'}'}{'}'}, {'{'}{'{'} siret {'}'}{'}'}, etc. pour les données dynamiques
-            </p>
           </div>
 
           <div className="flex gap-4">

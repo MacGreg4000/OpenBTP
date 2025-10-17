@@ -78,6 +78,15 @@ function addHeader(page: PDFPage, font: PDFFont, width: number, height: number, 
   })
 }
 
+// Fonction pour normaliser les caractères spéciaux
+function normalizeText(text: string): string {
+  return text
+    .normalize('NFD') // Décompose les caractères accentués
+    .replace(/[\u0300-\u036f]/g, '') // Supprime les diacritiques
+    .replace(/[^\x00-\x7F]/g, '') // Supprime tous les caractères non-ASCII
+    .trim();
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -288,8 +297,11 @@ export async function POST(request: Request) {
           displayName = `${ficheName} - Réf CSC: ${ficheReferences[info.id]}`;
         }
 
+        // Normaliser le texte pour éviter les erreurs d'encodage
+        const normalizedDisplayName = normalizeText(displayName);
+
         // Dessiner le titre
-        tableDesMatieres.drawText(displayName, {
+        tableDesMatieres.drawText(normalizedDisplayName, {
           x: 70,
           y: currentY,
           size: 12,
@@ -365,7 +377,10 @@ export async function POST(request: Request) {
               displayName = `${ficheName} - Réf CSC: ${ficheReferences[ficheId]}`;
             }
 
-            headerPage.drawText(displayName, {
+            // Normaliser le texte pour éviter les erreurs d'encodage
+            const normalizedDisplayName = normalizeText(displayName);
+
+            headerPage.drawText(normalizedDisplayName, {
               x: 50,
               y: height - 100,
               size: 24,
@@ -374,7 +389,7 @@ export async function POST(request: Request) {
             })
 
             // Ajouter l'en-tête et le pied de page
-            addHeader(headerPage, helveticaFont, width, height, displayName)
+            addHeader(headerPage, helveticaFont, width, height, normalizedDisplayName)
             addFooter(headerPage, helveticaFont, width, height, settings)
 
             // Copier les pages de la fiche technique
@@ -382,7 +397,7 @@ export async function POST(request: Request) {
             pages.forEach(page => {
               const { width, height } = page.getSize()
               // Ajouter l'en-tête et le pied de page à chaque page
-              addHeader(page, helveticaFont, width, height, displayName)
+              addHeader(page, helveticaFont, width, height, normalizedDisplayName)
               addFooter(page, helveticaFont, width, height, settings)
               pdfDoc.addPage(page)
             })

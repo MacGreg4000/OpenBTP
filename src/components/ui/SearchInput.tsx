@@ -26,7 +26,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
     };
 
     // Masquer l'icône lorsque le champ est en focus ou a une valeur
-    const showIcon = !isFocused && !hasValue;
+    const showIcon = !isFocused && !hasValue && (!props.value || props.value.toString().length === 0);
 
     return (
       <div className="relative w-full">
