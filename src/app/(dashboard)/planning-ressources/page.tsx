@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { CalendarIcon, PlusIcon, UserIcon, BuildingOfficeIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
 import ResourceScheduler from '@/components/planning/ResourceScheduler'
 import TaskModal from '@/components/planning/TaskModal'
@@ -73,6 +74,7 @@ interface Task {
 }
 
 export default function PlanningRessourcesPage() {
+  const router = useRouter()
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState<TaskData | null>(null)
   const [chantiers, setChantiers] = useState<Chantier[]>([])

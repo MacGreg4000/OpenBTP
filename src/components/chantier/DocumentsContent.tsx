@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon, FolderIcon } from '@heroicons/react/24/outline'
+import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon } from '@heroicons/react/24/outline'
 import PhotosTabContent from './PhotosTabContent'
 import FichesTechniquesTabContent from './FichesTechniquesTabContent'
 

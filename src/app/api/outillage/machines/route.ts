@@ -49,9 +49,12 @@ export async function POST(request: Request) {
     const body = await request.json()
     console.log('Données reçues:', body)
 
-    // Générer un ID unique pour la machine et le QR code
+    // Générer un ID unique pour la machine
     const machineId = `MACH-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`.toUpperCase()
-    const qrCode = `QR-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`.toUpperCase()
+    
+    // Récupérer l'origine depuis les headers de la requête
+    const origin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://app.secotech.be'
+    const qrCode = `${origin}/outillage/${machineId}`
     
     console.log(`ID généré: ${machineId}, QR Code: ${qrCode}`)
 

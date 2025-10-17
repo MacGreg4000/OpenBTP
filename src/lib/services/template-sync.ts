@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma/client'
 import fs from 'fs'
 import path from 'path'
-
-const prisma = new PrismaClient()
 
 /**
  * Synchronise le template professionnel du fichier HTML avec la base de données

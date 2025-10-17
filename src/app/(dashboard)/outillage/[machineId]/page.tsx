@@ -5,7 +5,8 @@ import {
   PencilIcon, 
   QrCodeIcon,
   UserIcon,
-  ArrowUturnLeftIcon
+  ArrowUturnLeftIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -94,6 +95,29 @@ export default function MachinePage(props: { params: Promise<{ machineId: string
     setShowRetourModal(true)
   }
 
+  const handleDelete = async () => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la machine "${machine?.nom}" ?\n\nCette action est irréversible et supprimera également tous les prêts associés.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/outillage/machines/${params.machineId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        throw new Error(errorData.error || 'Erreur lors de la suppression')
+      }
+
+      // Rediriger vers la liste après suppression
+      router.push('/outillage')
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      alert(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    }
+  }
+
   if (!machine) return null
 
   return (
@@ -143,6 +167,14 @@ export default function MachinePage(props: { params: Promise<{ machineId: string
           >
             <QrCodeIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500" />
             QR Code
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            <TrashIcon className="-ml-1 mr-2 h-5 w-5 text-red-500" />
+            Supprimer
           </button>
         </div>
       </div>

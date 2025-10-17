@@ -1,0 +1,388 @@
+
+> openbtp@0.1.0 build
+> next build
+
+ ⚠ Invalid next.config.js options detected: 
+ ⚠     Unrecognized key(s) in object: 'instrumentationHook' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `experimental.instrumentationHook` is no longer needed, because `instrumentation.js` is available by default. You can remove it from next.config.js.
+   ▲ Next.js 15.2.4
+   - Environments: .env
+   - Experiments (use with caution):
+     · largePageDataBytes: 10485760
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+🔍 Variables d'environnement:
+  - OLLAMA_BASE_URL: http://secotech.synology.me:11434
+  - OLLAMA_MODEL: phi3:mini
+🔧 Configuration Ollama finale: {
+  baseUrl: 'http://secotech.synology.me:11434',
+  model: 'phi3:mini',
+  fromEnv: true
+}
+🔍 Variables d'environnement:
+  - OLLAMA_BASE_URL: http://secotech.synology.me:11434
+  - OLLAMA_MODEL: phi3:mini
+🔧 Configuration Ollama finale: {
+  baseUrl: 'http://secotech.synology.me:11434',
+  model: 'phi3:mini',
+  fromEnv: true
+}
+🔍 Variables d'environnement:
+  - OLLAMA_BASE_URL: http://secotech.synology.me:11434
+  - OLLAMA_MODEL: phi3:mini
+🔧 Configuration Ollama finale: {
+  baseUrl: 'http://secotech.synology.me:11434',
+  model: 'phi3:mini',
+  fromEnv: true
+}
+🔍 Variables d'environnement:
+  - OLLAMA_BASE_URL: http://secotech.synology.me:11434
+  - OLLAMA_MODEL: phi3:mini
+🔧 Configuration Ollama finale: {
+  baseUrl: 'http://secotech.synology.me:11434',
+  model: 'phi3:mini',
+  fromEnv: true
+}
+   Generating static pages (0/143) ...
+🔍 Variables d'environnement:
+  - OLLAMA_BASE_URL: http://secotech.synology.me:11434
+  - OLLAMA_MODEL: phi3:mini
+🔧 Configuration Ollama finale: {
+  baseUrl: 'http://secotech.synology.me:11434',
+  model: 'phi3:mini',
+  fromEnv: true
+}
+🔍 Variables d'environnement:
+  - OLLAMA_BASE_URL: http://secotech.synology.me:11434
+  - OLLAMA_MODEL: phi3:mini
+🔧 Configuration Ollama finale: {
+  baseUrl: 'http://secotech.synology.me:11434',
+  model: 'phi3:mini',
+  fromEnv: true
+}
+   Generating static pages (35/143) 
+   Generating static pages (71/143) 
+   Generating static pages (107/143) 
+ ✓ Generating static pages (143/143)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                                                                       Size  First Load JS
+┌ ○ /                                                                                                            828 B         226 kB
+├ ○ /_not-found                                                                                                  634 B         102 kB
+├ ○ /admin/document-categories                                                                                 44.9 kB         161 kB
+├ ○ /admin/inventory                                                                                           6.12 kB         110 kB
+├ ƒ /admin/inventory/[rackId]                                                                                  3.29 kB         108 kB
+├ ○ /admin/templates-contrats                                                                                  2.79 kB         113 kB
+├ ƒ /admin/templates-contrats/[id]/modifier                                                                    3.62 kB         119 kB
+├ ○ /admin/templates-contrats/nouveau                                                                          3.37 kB         118 kB
+├ ○ /administratif                                                                                             2.57 kB         107 kB
+├ ○ /administratif/documents                                                                                   5.42 kB         107 kB
+├ ƒ /api/admin-task-types                                                                                        634 B         102 kB
+├ ƒ /api/admin-task-types/[id]                                                                                   634 B         102 kB
+├ ƒ /api/admin-tasks                                                                                             634 B         102 kB
+├ ƒ /api/admin/contract-templates                                                                                634 B         102 kB
+├ ƒ /api/admin/contract-templates/[id]                                                                           634 B         102 kB
+├ ƒ /api/admin/contract-templates/[id]/activate                                                                  634 B         102 kB
+├ ƒ /api/auth/[...nextauth]                                                                                      634 B         102 kB
+├ ƒ /api/bon-regie/[id]                                                                                          634 B         102 kB
+├ ƒ /api/bon-regie/[id]/associate                                                                                634 B         102 kB
+├ ƒ /api/chantiers                                                                                               634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]                                                                                  634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/admin-tasks                                                                      634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/admin-tasks/[taskType]                                                           634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/bons-commande-sous-traitants                                                     634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/bons-commande-sous-traitants/[bonCommandeId]                                     634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/bons-regie                                                                       634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/commande                                                                         634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/commandes                                                                        634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/commandes-soustraitants/validees                                                 634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/commandes/[commandeId]/export-excel                                              634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/depenses                                                                         634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/depenses/[depenseId]                                                             634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/depenses/pdf-modern                                                              634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/documents                                                                        634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/documents/[documentId]                                                           634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement                                                                 634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]                                                        634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]/avenants                                               634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]/avenants/[avenantId]                                   634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]/export-excel                                           634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]/lignes                                                 634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]/lignes/[ligneId]                                       634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]/pdf-modern                                             634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/etats-avancement/[etatId]/rouvrir                                                634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/generer-ppss                                                                     634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/notes                                                                            634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/notes/[noteId]                                                                   634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/photos-externes                                                                  634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/rapports/[rapportId]/send-email                                                  634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/reception                                                                        634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/reception/[id]                                                                   634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/reception/[id]/finaliser                                                         634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/reception/[id]/pdf-modern                                                        634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/reception/[id]/pins                                                              634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/reception/[id]/remarques                                                         634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/reception/[id]/remarques/[remarqueId]                                            634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitant-etats                                                               634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitant-etats/[soustraitantEtatId]                                          634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitant-etats/[soustraitantEtatId]/finaliser                                634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/commandes                                         634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/commandes/[commandeId]                            634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/commandes/[commandeId]/lignes/[ligneId]           634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/commandes/[commandeId]/send-email                 634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/commandes/[commandeId]/unlock                     634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/commandes/[commandeId]/validate                   634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement                                  634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]                         634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]/avenants                634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]/avenants/[avenantId]    634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]/finaliser               634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]/lignes/[ligneId]        634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]/pdf-modern              634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]/photos                  634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]/rouvrir                 634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/soustraitants/commandes                                                          634 B         102 kB
+├ ƒ /api/chantiers/[chantierId]/tasks                                                                            634 B         102 kB
+├ ƒ /api/chantiers/photos/upload                                                                                 634 B         102 kB
+├ ƒ /api/choix-clients                                                                                           634 B         102 kB
+├ ƒ /api/choix-clients/[id]                                                                                      634 B         102 kB
+├ ƒ /api/choix-clients/[id]/generate-pdf                                                                         634 B         102 kB
+├ ƒ /api/choix-clients/[id]/send-email                                                                           634 B         102 kB
+├ ƒ /api/choix-clients/[id]/upload                                                                               634 B         102 kB
+├ ƒ /api/clients                                                                                                 634 B         102 kB
+├ ƒ /api/clients/[clientId]                                                                                      634 B         102 kB
+├ ƒ /api/clients/[clientId]/contacts                                                                             634 B         102 kB
+├ ƒ /api/commandes                                                                                               634 B         102 kB
+├ ƒ /api/commandes/[commandeId]                                                                                  634 B         102 kB
+├ ƒ /api/commandes/[commandeId]/lignes                                                                           634 B         102 kB
+├ ƒ /api/commandes/[commandeId]/pdf-modern                                                                       634 B         102 kB
+├ ƒ /api/commandes/[commandeId]/reopen                                                                           634 B         102 kB
+├ ƒ /api/company                                                                                                 634 B         102 kB
+├ ƒ /api/contacts/[contactId]                                                                                    634 B         102 kB
+├ ƒ /api/contrats/[token]                                                                                        634 B         102 kB
+├ ƒ /api/contrats/[token]/signer                                                                                 634 B         102 kB
+├ ƒ /api/dashboard/alertes                                                                                       634 B         102 kB
+├ ƒ /api/dashboard/chantiers                                                                                     634 B         102 kB
+├ ƒ /api/dashboard/documents                                                                                     634 B         102 kB
+├ ƒ /api/dashboard/documents-expires                                                                             634 B         102 kB
+├ ƒ /api/dashboard/etats-recents                                                                                 634 B         102 kB
+├ ƒ /api/dashboard/evolution                                                                                     634 B         102 kB
+├ ƒ /api/dashboard/machines                                                                                      634 B         102 kB
+├ ƒ /api/dashboard/receptions-en-cours                                                                           634 B         102 kB
+├ ƒ /api/dashboard/soustraitants                                                                                 634 B         102 kB
+├ ƒ /api/dashboard/stats                                                                                         634 B         102 kB
+├ ƒ /api/debug                                                                                                   634 B         102 kB
+├ ƒ /api/debug/chantiers                                                                                         634 B         102 kB
+├ ƒ /api/documents                                                                                               634 B         102 kB
+├ ƒ /api/documents/administratifs                                                                                634 B         102 kB
+├ ƒ /api/documents/administratifs/[documentId]                                                                   634 B         102 kB
+├ ƒ /api/documents/administratifs/[documentId]/tags                                                              634 B         102 kB
+├ ƒ /api/documents/administratifs/upload                                                                         634 B         102 kB
+├ ƒ /api/documents/download                                                                                      634 B         102 kB
+├ ƒ /api/documents/expiring                                                                                      634 B         102 kB
+├ ƒ /api/documents/folders                                                                                       634 B         102 kB
+├ ƒ /api/documents/preview                                                                                       634 B         102 kB
+├ ƒ /api/documents/serve/[...path]                                                                               634 B         102 kB
+├ ƒ /api/documents/structure                                                                                     634 B         102 kB
+├ ƒ /api/documents/upload                                                                                        634 B         102 kB
+├ ƒ /api/email/send-etat                                                                                         634 B         102 kB
+├ ƒ /api/errors/log                                                                                              634 B         102 kB
+├ ƒ /api/fiches-techniques/generer-dossier                                                                       634 B         102 kB
+├ ƒ /api/fiches-techniques/historique                                                                            634 B         102 kB
+├ ƒ /api/fiches-techniques/structure                                                                             634 B         102 kB
+├ ƒ /api/healthcheck                                                                                             634 B         102 kB
+├ ƒ /api/inventory/emplacements                                                                                  634 B         102 kB
+├ ƒ /api/inventory/materiaux                                                                                     634 B         102 kB
+├ ƒ /api/inventory/materiaux/[materiauId]                                                                        634 B         102 kB
+├ ƒ /api/inventory/racks                                                                                         634 B         102 kB
+├ ƒ /api/inventory/racks/[rackId]                                                                                634 B         102 kB
+├ ƒ /api/messaging/conversations                                                                                 634 B         102 kB
+├ ƒ /api/messaging/messages                                                                                      634 B         102 kB
+├ ƒ /api/messaging/messages/read                                                                                 634 B         102 kB
+├ ƒ /api/messaging/users                                                                                         634 B         102 kB
+├ ƒ /api/notes                                                                                                   634 B         102 kB
+├ ƒ /api/outillage/machines                                                                                      634 B         102 kB
+├ ƒ /api/outillage/machines/[machineId]                                                                          634 B         102 kB
+├ ƒ /api/outillage/machines/[machineId]/prets                                                                    634 B         102 kB
+├ ƒ /api/outillage/machines/find                                                                                 634 B         102 kB
+├ ƒ /api/outillage/prets/[pretId]/retour                                                                         634 B         102 kB
+├ ƒ /api/ouvriers-internes                                                                                       634 B         102 kB
+├ ƒ /api/ouvriers-internes/[id]/pin                                                                              634 B         102 kB
+├ ƒ /api/pdf/bon-regie                                                                                           634 B         102 kB
+├ ƒ /api/photos-externes/[photoId]                                                                               634 B         102 kB
+├ ƒ /api/planning/chantiers                                                                                      634 B         102 kB
+├ ƒ /api/planning/export-pdf                                                                                     634 B         102 kB
+├ ƒ /api/planning/gantt-pdf                                                                                      634 B         102 kB
+├ ƒ /api/planning/gantt-pdf-modern                                                                               634 B         102 kB
+├ ƒ /api/planning/general                                                                                        634 B         102 kB
+├ ƒ /api/planning/ouvriers-internes                                                                              634 B         102 kB
+├ ƒ /api/planning/pdf-modern                                                                                     634 B         102 kB
+├ ƒ /api/planning/ressources/tasks                                                                               634 B         102 kB
+├ ƒ /api/planning/ressources/tasks/[id]                                                                          634 B         102 kB
+├ ƒ /api/planning/ressources/tasks/[id]/attachments                                                              634 B         102 kB
+├ ƒ /api/planning/screenshot                                                                                     634 B         102 kB
+├ ƒ /api/planning/soustraitants                                                                                  634 B         102 kB
+├ ƒ /api/planning/tasks                                                                                          634 B         102 kB
+├ ƒ /api/planning/tasks/[id]                                                                                     634 B         102 kB
+├ ƒ /api/public/access                                                                                           634 B         102 kB
+├ ƒ /api/public/bon-regie                                                                                        634 B         102 kB
+├ ƒ /api/public/photos/chantiers                                                                                 634 B         102 kB
+├ ƒ /api/public/photos/upload                                                                                    634 B         102 kB
+├ ƒ /api/public/planning                                                                                         634 B         102 kB
+├ ƒ /api/public/portail/[type]/[actorId]/me                                                                      634 B         102 kB
+├ ƒ /api/public/portail/[type]/[actorId]/planning                                                                634 B         102 kB
+├ ƒ /api/public/portail/[type]/[actorId]/receptions                                                              634 B         102 kB
+├ ƒ /api/public/portail/[type]/[actorId]/sav                                                                     634 B         102 kB
+├ ƒ /api/public/portail/[type]/[actorId]/sav/[ticketId]                                                          634 B         102 kB
+├ ƒ /api/public/portail/login                                                                                    634 B         102 kB
+├ ƒ /api/public/portail/logout                                                                                   634 B         102 kB
+├ ƒ /api/public/reception                                                                                        634 B         102 kB
+├ ƒ /api/public/reception-remarque                                                                               634 B         102 kB
+├ ƒ /api/public/reception-remarque-resolver                                                                      634 B         102 kB
+├ ƒ /api/public/reception/remarque                                                                               634 B         102 kB
+├ ƒ /api/public/sav                                                                                              634 B         102 kB
+├ ƒ /api/rag/conversation                                                                                        634 B         102 kB
+├ ƒ /api/rag/health                                                                                              634 B         102 kB
+├ ƒ /api/rag/index                                                                                               634 B         102 kB
+├ ƒ /api/rag/index-all                                                                                           634 B         102 kB
+├ ƒ /api/rag/query                                                                                               634 B         102 kB
+├ ƒ /api/rag/reload-config                                                                                       634 B         102 kB
+├ ƒ /api/rag/scheduler                                                                                           634 B         102 kB
+├ ƒ /api/rag/status                                                                                              634 B         102 kB
+├ ƒ /api/rapports/generate-pdf-modern                                                                            634 B         102 kB
+├ ƒ /api/rapports/upload-photo                                                                                   634 B         102 kB
+├ ƒ /api/reception/externe/[id]                                                                                  634 B         102 kB
+├ ƒ /api/reception/externe/[id]/remarques                                                                        634 B         102 kB
+├ ƒ /api/reception/externe/verify                                                                                634 B         102 kB
+├ ƒ /api/sav                                                                                                     634 B         102 kB
+├ ƒ /api/sav/[id]                                                                                                634 B         102 kB
+├ ƒ /api/sav/[id]/commentaires                                                                                   634 B         102 kB
+├ ƒ /api/sav/[id]/documents                                                                                      634 B         102 kB
+├ ƒ /api/sav/[id]/interventions                                                                                  634 B         102 kB
+├ ƒ /api/sav/[id]/photos                                                                                         634 B         102 kB
+├ ƒ /api/settings                                                                                                634 B         102 kB
+├ ƒ /api/settings/company                                                                                        634 B         102 kB
+├ ƒ /api/settings/logo                                                                                           634 B         102 kB
+├ ƒ /api/settings/test-smtp                                                                                      634 B         102 kB
+├ ƒ /api/setup                                                                                                   634 B         102 kB
+├ ƒ /api/setup/status                                                                                            634 B         102 kB
+├ ƒ /api/sous-traitants                                                                                          634 B         102 kB
+├ ƒ /api/sous-traitants/[id]                                                                                     634 B         102 kB
+├ ƒ /api/sous-traitants/[id]/envoyer-contrat                                                                     634 B         102 kB
+├ ƒ /api/sous-traitants/[id]/generer-contrat                                                                     634 B         102 kB
+├ ƒ /api/sous-traitants/[id]/ouvriers                                                                            634 B         102 kB
+├ ƒ /api/sous-traitants/[id]/ouvriers/[ouvrierId]                                                                634 B         102 kB
+├ ƒ /api/sous-traitants/[id]/ouvriers/[ouvrierId]/documents                                                      634 B         102 kB
+├ ƒ /api/sous-traitants/[id]/ouvriers/[ouvrierId]/documents/[documentId]                                         634 B         102 kB
+├ ƒ /api/sous-traitants/[id]/pin                                                                                 634 B         102 kB
+├ ƒ /api/soustraitants                                                                                           634 B         102 kB
+├ ƒ /api/soustraitants/[soustraitantId]                                                                          634 B         102 kB
+├ ƒ /api/soustraitants/select                                                                                    634 B         102 kB
+├ ƒ /api/tags                                                                                                    634 B         102 kB
+├ ƒ /api/test                                                                                                    634 B         102 kB
+├ ƒ /api/test-db                                                                                                 634 B         102 kB
+├ ƒ /api/test-login                                                                                              634 B         102 kB
+├ ƒ /api/test-rag                                                                                                634 B         102 kB
+├ ƒ /api/test-rag-query                                                                                          634 B         102 kB
+├ ƒ /api/test-rag-status                                                                                         634 B         102 kB
+├ ƒ /api/test/[id]                                                                                               634 B         102 kB
+├ ƒ /api/users                                                                                                   634 B         102 kB
+├ ƒ /api/users/[userId]                                                                                          634 B         102 kB
+├ ƒ /api/users/[userId]/notes                                                                                    634 B         102 kB
+├ ƒ /api/users/me                                                                                                634 B         102 kB
+├ ƒ /bon-regie/[id]                                                                                            4.51 kB         112 kB
+├ ○ /bons-regie                                                                                                 5.5 kB         116 kB
+├ ○ /chantiers                                                                                                 7.25 kB         125 kB
+├ ƒ /chantiers/[chantierId]                                                                                    2.28 kB         104 kB
+├ ƒ /chantiers/[chantierId]/admin-tasks                                                                        1.22 kB         116 kB
+├ ƒ /chantiers/[chantierId]/commande                                                                            279 kB         407 kB
+├ ƒ /chantiers/[chantierId]/documents                                                                          16.1 kB         132 kB
+├ ƒ /chantiers/[chantierId]/edit                                                                               6.93 kB         117 kB
+├ ƒ /chantiers/[chantierId]/etats                                                                              17.2 kB         169 kB
+├ ƒ /chantiers/[chantierId]/etats/[etatId]                                                                     10.5 kB         140 kB
+├ ƒ /chantiers/[chantierId]/etats/soustraitants/[soustraitantId]/commande/[commandeId]                         6.07 kB         124 kB
+├ ƒ /chantiers/[chantierId]/etats/soustraitants/[soustraitantId]/etat/[etatId]                                   547 B         102 kB
+├ ƒ /chantiers/[chantierId]/etats/soustraitants/[soustraitantId]/etat/nouveau                                  4.63 kB         128 kB
+├ ƒ /chantiers/[chantierId]/etats/soustraitants/selection-postes                                                7.8 kB         127 kB
+├ ƒ /chantiers/[chantierId]/notes                                                                              4.11 kB         119 kB
+├ ƒ /chantiers/[chantierId]/rapports                                                                           9.13 kB         124 kB
+├ ƒ /chantiers/[chantierId]/rapports/edit/[documentId]                                                         1.09 kB         105 kB
+├ ƒ /chantiers/[chantierId]/rapports/nouveau                                                                   12.8 kB         136 kB
+├ ƒ /chantiers/[chantierId]/reception                                                                           4.6 kB         120 kB
+├ ƒ /chantiers/[chantierId]/reception/[id]                                                                     15.6 kB         145 kB
+├ ƒ /chantiers/[chantierId]/reception/[id]/nouvelle-remarque                                                   35.2 kB         149 kB
+├ ƒ /chantiers/[chantierId]/reception/[id]/pdf                                                                 5.04 kB         111 kB
+├ ƒ /chantiers/[chantierId]/reception/nouveau                                                                  5.29 kB         114 kB
+├ ƒ /chantiers/[chantierId]/sav                                                                                3.59 kB         122 kB
+├ ○ /chantiers/debug                                                                                           1.05 kB         105 kB
+├ ○ /chantiers/nouveau                                                                                         4.37 kB         113 kB
+├ ○ /choix-clients                                                                                              5.7 kB         121 kB
+├ ƒ /choix-clients/[id]                                                                                        5.71 kB         121 kB
+├ ƒ /choix-clients/[id]/edit                                                                                   1.28 kB         113 kB
+├ ○ /choix-clients/nouveau                                                                                     1.08 kB         113 kB
+├ ○ /clear-cache                                                                                                 786 B         102 kB
+├ ○ /clients                                                                                                    7.5 kB         123 kB
+├ ƒ /clients/[clientId]                                                                                        6.31 kB         113 kB
+├ ƒ /clients/[clientId]/edit                                                                                   5.02 kB         120 kB
+├ ○ /clients/nouveau                                                                                           5.81 kB         112 kB
+├ ○ /configuration                                                                                             10.1 kB         125 kB
+├ ƒ /contrats/[token]                                                                                          2.15 kB         109 kB
+├ ○ /dashboard                                                                                                 1.44 kB         209 kB
+├ ƒ /dashboard-test                                                                                            2.59 kB         193 kB
+├ ○ /inventory                                                                                                 7.43 kB         134 kB
+├ ○ /inventory/mobile                                                                                          3.03 kB         107 kB
+├ ○ /inventory/scanner                                                                                         4.21 kB         108 kB
+├ ○ /login                                                                                                     6.69 kB         122 kB
+├ ○ /logout                                                                                                    2.31 kB         113 kB
+├ ○ /outillage                                                                                                 5.21 kB         109 kB
+├ ƒ /outillage/[machineId]                                                                                     6.54 kB         136 kB
+├ ƒ /outillage/[machineId]/edit                                                                                2.17 kB         103 kB
+├ ○ /outillage/nouveau                                                                                         1.46 kB         103 kB
+├ ○ /outillage/scanner                                                                                         2.11 kB         103 kB
+├ ○ /parametres                                                                                                   1 kB         102 kB
+├ ○ /planning                                                                                                  10.2 kB         114 kB
+├ ○ /planning-ressources                                                                                        7.3 kB         109 kB
+├ ○ /public/bon-regie                                                                                          2.81 kB         115 kB
+├ ƒ /public/portail/[type]/[actorId]                                                                           4.57 kB         106 kB
+├ ƒ /public/portail/[type]/[actorId]/bon-regie/nouveau                                                         3.35 kB         110 kB
+├ ƒ /public/portail/[type]/[actorId]/photos                                                                    5.11 kB         112 kB
+├ ƒ /public/portail/[type]/[actorId]/planning                                                                   3.3 kB         105 kB
+├ ƒ /public/portail/[type]/[actorId]/receptions                                                                2.86 kB         104 kB
+├ ƒ /public/portail/[type]/[actorId]/sav                                                                       2.96 kB         104 kB
+├ ƒ /public/portail/[type]/[actorId]/sav/[ticketId]                                                            4.08 kB         105 kB
+├ ○ /public/reception                                                                                          2.11 kB         109 kB
+├ ƒ /public/reception/[codePIN]                                                                                10.8 kB         125 kB
+├ ○ /rag-admin                                                                                                 4.34 kB         115 kB
+├ ○ /reception/externe                                                                                           943 B         102 kB
+├ ƒ /reception/externe/[id]                                                                                    6.24 kB         119 kB
+├ ○ /reset-password                                                                                            5.25 kB         112 kB
+├ ○ /sav                                                                                                       8.98 kB         118 kB
+├ ƒ /sav/[id]                                                                                                  4.96 kB         106 kB
+├ ○ /sav/nouveau                                                                                               4.07 kB         110 kB
+├ ○ /setup                                                                                                     4.34 kB         113 kB
+├ ○ /sous-traitants                                                                                            6.44 kB         125 kB
+├ ƒ /sous-traitants/[id]/edit                                                                                  4.92 kB         117 kB
+├ ƒ /sous-traitants/[id]/ouvriers                                                                              5.23 kB         124 kB
+├ ƒ /sous-traitants/[id]/ouvriers/[ouvrierId]                                                                   4.1 kB         123 kB
+├ ƒ /sous-traitants/[id]/ouvriers/[ouvrierId]/documents                                                        6.18 kB         125 kB
+├ ƒ /sous-traitants/[id]/ouvriers/[ouvrierId]/edit                                                             4.86 kB         117 kB
+├ ƒ /sous-traitants/[id]/ouvriers/nouveau                                                                      4.25 kB         107 kB
+├ ○ /sous-traitants/nouveau                                                                                    4.49 kB         108 kB
+├ ○ /test-contrat                                                                                              1.94 kB         112 kB
+└ ○ /utilisateurs                                                                                              6.88 kB         132 kB
++ First Load JS shared by all                                                                                   101 kB
+  ├ chunks/1684-8e8e09c9e9b8c68b.js                                                                            45.8 kB
+  ├ chunks/4bd1b696-c7682765cbc74761.js                                                                        53.3 kB
+  └ other shared chunks (total)                                                                                2.19 kB
+
+
+ƒ Middleware                                                                                                   54.1 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

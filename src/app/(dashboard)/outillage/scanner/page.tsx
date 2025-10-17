@@ -13,18 +13,36 @@ export default function ScannerPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
 
-  const handleScanSuccess = (result: string) => {
+  const handleScanSuccess = async (result: string) => {
     try {
-      // Vérifier si l'URL correspond à une URL de machine
-      const url = new URL(result)
-      const path = url.pathname
-      if (path.startsWith('/outillage/')) {
-        router.push(path)
-      } else {
-        setError('QR code invalide : ce n\'est pas une machine')
+      // Essayer de parser comme URL
+      try {
+        const url = new URL(result)
+        const path = url.pathname
+        if (path.startsWith('/outillage/')) {
+          router.push(path)
+          return
+        }
+      } catch {
+        // Pas une URL, peut-être un ancien format QR-XXX ou un ID de machine direct
+        console.log('Pas une URL valide, tentative de résolution:', result)
       }
-    } catch {
-      setError('QR code invalide')
+
+      // Si c'est un ancien format (QR-XXX) ou un ID de machine (MACH-XXX)
+      if (result.startsWith('QR-') || result.startsWith('MACH-') || result.startsWith('/outillage/')) {
+        // Essayer de trouver la machine par son qrCode ou son ID
+        const response = await fetch(`/api/outillage/machines/find?q=${encodeURIComponent(result)}`)
+        if (response.ok) {
+          const machine = await response.json()
+          router.push(`/outillage/${machine.id}`)
+          return
+        }
+      }
+
+      setError('QR code invalide : machine introuvable')
+    } catch (err) {
+      console.error('Erreur lors du scan:', err)
+      setError('Erreur lors du traitement du QR code')
     }
   }
 
