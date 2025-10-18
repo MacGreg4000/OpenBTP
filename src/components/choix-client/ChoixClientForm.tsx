@@ -448,6 +448,18 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
                 paletteColors={PALETTE_COULEURS}
               />
             ))}
+            
+            {/* Bouton pour ajouter un choix en bas de la liste */}
+            <div className="flex justify-center pt-4">
+              <button
+                type="button"
+                onClick={handleAddDetailChoix}
+                className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Ajouter un choix
+              </button>
+            </div>
           </div>
         )}
       </div>
