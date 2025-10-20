@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { 
   PlusIcon, 
@@ -27,6 +28,7 @@ interface Machine {
 }
 
 export default function OutillagePage() {
+  const { data: session } = useSession()
   const [machines, setMachines] = useState<Machine[]>([])
   const [loading, setLoading] = useState(true)
   const [machineToDelete, setMachineToDelete] = useState<string | null>(null)
@@ -34,7 +36,8 @@ export default function OutillagePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchTerm, setSearchTerm] = useState('')
 
-  const isAdmin = false
+  // Vérifier si l'utilisateur est administrateur
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   useEffect(() => {
     fetchMachines()

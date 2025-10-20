@@ -43,6 +43,8 @@ export async function GET(
     const resolvedParams = await params
     const { chantierId, id } = resolvedParams
 
+    console.log(`📥 GET /api/chantiers/${chantierId}/reception/${id}`)
+
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
@@ -51,78 +53,96 @@ export async function GET(
       )
     }
 
-    // Vérifier si le chantier existe
-    const chantier = await prisma.chantier.findUnique({
-      where: { chantierId }
+    // Utiliser Prisma au lieu de SQL brut pour plus de sécurité
+    const reception = await prisma.receptionChantier.findUnique({
+      where: { 
+        id
+      },
+      include: {
+        chantier: {
+          select: {
+            chantierId: true,
+            nomChantier: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        soustraitantPINs: {
+          include: {
+            soustraitant: {
+              select: {
+                id: true,
+                nom: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
     })
 
-    if (!chantier) {
-      return NextResponse.json(
-        { error: 'Chantier non trouvé' },
-        { status: 404 }
-      )
-    }
-
-    // Récupérer les données de la réception avec les informations du créateur
-    const receptions = await prisma.$queryRaw`
-      SELECT 
-        r.id, r.chantierId, r.dateCreation, r.dateLimite, r.codePIN, r.estFinalise, r.createdBy,
-        c.nomChantier,
-        u.id as userId, u.name as userName, u.email as userEmail
-      FROM reception_chantier r
-      INNER JOIN chantier c ON r.chantierId = c.chantierId
-      INNER JOIN user u ON r.createdBy = u.id
-      WHERE r.id = ${id} AND r.chantierId = ${chantierId}
-    `;
-
-    if (!receptions || (receptions as unknown[]).length === 0) {
+    if (!reception) {
+      console.log(`❌ Réception non trouvée: ${id}`)
       return NextResponse.json(
         { error: 'Réception non trouvée' },
         { status: 404 }
       )
     }
 
-    const receptionData = (receptions as unknown as Array<{ id: string; chantierId: string; dateCreation: unknown; dateLimite: unknown; codePIN: string | null; estFinalise: number; userId: string; userName: string; userEmail: string; nomChantier: string }>)[0];
+    // Vérifier que la réception appartient bien au chantier demandé
+    if (reception.chantierId !== chantierId) {
+      console.log(`❌ La réception ${id} n'appartient pas au chantier ${chantierId}`)
+      return NextResponse.json(
+        { error: 'Réception non trouvée' },
+        { status: 404 }
+      )
+    }
 
-    // Récupérer les PINs de sous-traitants associés
-    const pins = await prisma.$queryRaw`
-      SELECT sp.*, s.id as soustraitantId, s.nom as soustraitantNom, s.email as soustraitantEmail
-      FROM soustraitant_pin sp
-      LEFT JOIN soustraitant s ON sp.soustraitantId = s.id
-      WHERE sp.receptionId = ${id}
-    `;
+    console.log(`✅ Réception trouvée: ${reception.id}`)
 
-    // Formater les résultats des PINs
-    const formattedPins = (pins as unknown as Array<{ id: string; codePIN: string; estInterne: number | boolean; soustraitantId?: string | null; soustraitantNom?: string | null; soustraitantEmail?: string | null }>).map(pin => ({
-      id: pin.id,
-      codePIN: pin.codePIN,
-      estInterne: Boolean(pin.estInterne),
-      soustraitant: pin.soustraitantId ? { id: pin.soustraitantId, nom: pin.soustraitantNom || '', email: pin.soustraitantEmail || '' } : null
-    }));
-
-    // Construire et retourner la réponse formatée
-    return NextResponse.json({
-      id: receptionData.id,
-      chantierId: receptionData.chantierId,
-      dateCreation: formatDate(receptionData.dateCreation),
-      dateLimite: formatDate(receptionData.dateLimite),
-      codePIN: receptionData.codePIN,
-      estFinalise: !!receptionData.estFinalise,
-      createdBy: {
-        id: receptionData.userId,
-        name: receptionData.userName,
-        email: receptionData.userEmail
-      },
+    // Formater la réponse
+    const response = {
+      id: reception.id,
+      chantierId: reception.chantierId,
+      dateCreation: formatDate(reception.dateCreation),
+      dateLimite: formatDate(reception.dateLimite),
+      codePIN: reception.codePIN,
+      estFinalise: reception.estFinalise,
+      createdBy: reception.user ? {
+        id: reception.user.id,
+        name: reception.user.name,
+        email: reception.user.email
+      } : null,
       chantier: {
-        chantierId: receptionData.chantierId,
-        nomChantier: receptionData.nomChantier
+        chantierId: reception.chantier.chantierId,
+        nomChantier: reception.chantier.nomChantier
       },
-      soustraitantPINs: formattedPins
-    })
+      soustraitantPINs: reception.soustraitantPINs.map(pin => ({
+        id: pin.id,
+        codePIN: pin.codePIN,
+        estInterne: pin.estInterne,
+        soustraitant: pin.soustraitant ? {
+          id: pin.soustraitant.id,
+          nom: pin.soustraitant.nom,
+          email: pin.soustraitant.email
+        } : null
+      }))
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('Erreur:', error)
+    console.error('❌ Erreur lors de la récupération de la réception:', error)
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération de la réception' },
+      { 
+        error: 'Erreur lors de la récupération de la réception',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      },
       { status: 500 }
     )
   }

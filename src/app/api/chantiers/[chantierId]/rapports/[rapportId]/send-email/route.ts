@@ -86,7 +86,7 @@ export async function POST(
       
       // Récupérer les métadonnées du rapport pour régénérer le PDF
       const metadata = rapport.metadata as {
-        photos?: Array<{ url: string; caption?: string; preview?: string }>
+        photos?: Array<{ url: string; caption?: string; preview?: string; tags?: string[] }>
         date?: string
         personnes?: Array<{ id: string; nom: string; fonction: string }>
         notesIndividuelles?: Array<{ id: string; contenu: string; tags: string[] }>
@@ -112,7 +112,7 @@ export async function POST(
 
       // Convertir les photos en base64 et adapter au format RapportData
       const photosWithBase64 = await Promise.all(
-        (metadata.photos || []).map(async (photo: { url: string; caption?: string; preview?: string }) => {
+        (metadata.photos || []).map(async (photo: { url: string; caption?: string; preview?: string; tags?: string[] }) => {
           try {
             let previewBase64 = photo.preview || photo.url
             if (photo.preview && photo.preview.startsWith('/uploads/')) {
@@ -128,7 +128,7 @@ export async function POST(
               file: null,
               preview: previewBase64,
               annotation: photo.caption || '',
-              tags: []
+              tags: photo.tags || [] // Récupérer les tags depuis les métadonnées
             }
           } catch (error) {
             console.error(`Erreur conversion photo:`, error)
@@ -137,7 +137,7 @@ export async function POST(
               file: null,
               preview: photo.preview || photo.url,
               annotation: photo.caption || '',
-              tags: []
+              tags: photo.tags || [] // Récupérer les tags depuis les métadonnées
             }
           }
         })

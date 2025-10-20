@@ -197,7 +197,7 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
     if (editingTagsDocId === null) return
 
     try {
-      const response = await fetch(`/api/chantiers/${chantierId}/documents/${editingTagsDocId}/tags`, {
+      const response = await fetch(`/api/chantiers/${chantierId}/documents/${editingTagsDocId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tags: tagsForModalEdit })
@@ -206,10 +206,15 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
       if (response.ok) {
         setEditingTagsDocId(null)
         setTagsForModalEdit([])
-        fetchDocuments() // Recharger les documents
+        await fetchDocuments() // Recharger les documents
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        console.error('Erreur lors de la mise à jour des tags:', errorData)
+        setError(errorData.error || 'Erreur lors de la mise à jour des tags')
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour des tags:', error)
+      setError('Erreur lors de la mise à jour des tags')
     }
   }
 
