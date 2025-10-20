@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { 
@@ -11,8 +12,10 @@ import {
   ChevronDownIcon,
   LinkIcon,
   CheckIcon,
-  ShareIcon
+  ShareIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 
 interface BonRegie {
   id: number
@@ -36,6 +39,7 @@ interface Chantier {
 
 export default function BonsRegiePage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [bonsRegie, setBonsRegie] = useState<BonRegie[]>([])
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,6 +53,10 @@ export default function BonsRegiePage() {
   const [updating, setUpdating] = useState(false)
   const [updateSuccess, setUpdateSuccess] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [bonToDelete, setBonToDelete] = useState<number | null>(null)
+  
+  // Vérifier si l'utilisateur est administrateur
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,6 +159,28 @@ export default function BonsRegiePage() {
       alert(errorMessage)
     } finally {
       setUpdating(false)
+    }
+  }
+
+  // Supprimer un bon de régie (admin seulement)
+  const handleDelete = async (bonId: number) => {
+    try {
+      const response = await fetch(`/api/bon-regie/${bonId}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        throw new Error(errorData.error || 'Erreur lors de la suppression')
+      }
+      
+      // Mettre à jour la liste locale
+      setBonsRegie(prev => prev.filter(bon => bon.id !== bonId))
+      setBonToDelete(null)
+      toast.success('Bon de régie supprimé avec succès')
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la suppression')
     }
   }
 
@@ -338,10 +368,49 @@ export default function BonsRegiePage() {
                     <DocumentTextIcon className="h-4 w-4 mr-1" />
                     Voir détails
                   </Link>
+                  
+                  {isAdmin && (
+                    <button
+                      onClick={() => setBonToDelete(bon.id)}
+                      className="inline-flex items-center justify-center px-3 py-1 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-gray-700 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+                      title="Supprimer ce bon de régie"
+                    >
+                      <TrashIcon className="h-4 w-4 mr-1" />
+                      Supprimer
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {bonToDelete && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Confirmer la suppression
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-300 mb-6">
+              Êtes-vous sûr de vouloir supprimer ce bon de régie ? Cette action est irréversible.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setBonToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(bonToDelete)}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-700 border border-transparent rounded-md hover:bg-red-700 dark:hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
