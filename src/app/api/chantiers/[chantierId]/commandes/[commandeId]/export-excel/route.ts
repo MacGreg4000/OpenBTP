@@ -9,14 +9,19 @@ export async function GET(
   context: { params: Promise<{ chantierId: string; commandeId: string }> }
 ) {
   try {
+    console.log('📊 Début export Excel commande')
+    
     const session = await getServerSession(authOptions)
     if (!session) {
+      console.log('❌ Session non autorisée')
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
     const { chantierId, commandeId } = await context.params
+    console.log(`📥 Paramètres: chantierId=${chantierId}, commandeId=${commandeId}`)
 
     // Vérifier que le chantier existe et récupérer ses informations
+    console.log('🔍 Recherche du chantier...')
     const chantier = await prisma.chantier.findUnique({
       where: { chantierId },
       include: {
@@ -30,10 +35,13 @@ export async function GET(
     })
 
     if (!chantier) {
+      console.log(`❌ Chantier ${chantierId} non trouvé`)
       return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 404 })
     }
+    console.log(`✅ Chantier trouvé: ${chantier.nomChantier}`)
 
     // Récupérer la commande avec ses lignes
+    console.log('🔍 Recherche de la commande...')
     const commande = await prisma.commande.findFirst({
       where: {
         id: parseInt(commandeId),
@@ -49,10 +57,13 @@ export async function GET(
     })
 
     if (!commande) {
+      console.log(`❌ Commande ${commandeId} non trouvée`)
       return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
     }
+    console.log(`✅ Commande trouvée: ${commande.lignes.length} lignes`)
 
     // Préparer les données pour l'export
+    console.log('📋 Préparation des données...')
     const exportOptions: ExportCommandeOptions = {
       chantierInfo: {
         nomChantier: chantier.nomChantier,
@@ -81,10 +92,13 @@ export async function GET(
     }
 
     // Générer le fichier Excel
+    console.log('📊 Génération du fichier Excel...')
     const buffer = await exportCommandeToExcel(exportOptions)
+    console.log(`✅ Excel généré: ${buffer.length} bytes`)
 
     // Générer le nom de fichier
     const filename = `Commande_${chantier.chantierId}_${commande.reference || commande.id}_${new Date().toISOString().split('T')[0]}.xlsx`
+    console.log(`📄 Nom de fichier: ${filename}`)
 
     // Retourner le fichier
     return new NextResponse(buffer, {
@@ -96,9 +110,23 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('Erreur lors de l\'export Excel de la commande:', error)
+    console.error('❌ Erreur lors de l\'export Excel de la commande:', error)
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
+    
+    // Détails de l'erreur pour debug
+    const errorDetails = {
+      message: error instanceof Error ? error.message : 'Erreur inconnue',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined
+    }
+    
+    console.error('📋 Détails de l\'erreur:', errorDetails)
+    
     return NextResponse.json(
-      { error: 'Erreur lors de l\'export Excel' },
+      { 
+        error: 'Erreur lors de l\'export Excel',
+        details: errorDetails.message 
+      },
       { status: 500 }
     )
   }
