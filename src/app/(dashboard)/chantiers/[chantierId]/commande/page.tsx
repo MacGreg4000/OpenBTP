@@ -663,6 +663,30 @@ export default function CommandePage(props: CommandePageProps) {
       return;
     }
 
+    // Vérifier si la commande a été enregistrée (a un ID)
+    if (!commande.id) {
+      setConfirmationModal({
+        isOpen: true,
+        title: 'Commande non enregistrée',
+        message: 'Vous devez enregistrer la commande avant de pouvoir l\'exporter en Excel.',
+        type: 'info',
+        confirmText: 'Enregistrer maintenant',
+        cancelText: 'Annuler',
+        onConfirm: async () => {
+          // Enregistrer la commande d'abord
+          await handleSave();
+          // Fermer la modale
+          setConfirmationModal({ isOpen: false, title: '', message: '', type: 'info' });
+          // Informer l'utilisateur
+          toast.success('Commande enregistrée ! Vous pouvez maintenant l\'exporter.');
+        },
+        onCancel: () => {
+          setConfirmationModal({ isOpen: false, title: '', message: '', type: 'info' });
+        }
+      });
+      return;
+    }
+
     try {
       const response = await fetch(`/api/chantiers/${chantierId}/commandes/${commande.id}/export-excel`);
       
@@ -1186,10 +1210,18 @@ export default function CommandePage(props: CommandePageProps) {
                         {commande && (
                           <button
                             onClick={exportCommandeToExcel}
-                            className="flex items-center px-4 py-2.5 text-sm md:text-base font-medium rounded-md shadow-sm bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+                            className={`flex items-center px-4 py-2.5 text-sm md:text-base font-medium rounded-md shadow-sm transition-colors ${
+                              commande.id 
+                                ? 'bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600' 
+                                : 'bg-gray-400 text-white hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500'
+                            }`}
+                            title={!commande.id ? 'Enregistrez d\'abord la commande pour pouvoir l\'exporter' : 'Exporter la commande en Excel'}
                           >
                             <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
                             Exporter Excel
+                            {!commande.id && (
+                              <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs bg-yellow-500 text-white rounded-full">!</span>
+                            )}
                           </button>
                         )}
                         {commande.id && (
