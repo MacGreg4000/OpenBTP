@@ -48,18 +48,66 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
         ) : (
           <div className="space-y-3">
             {tickets.map((tk) => (
-              <div key={tk.id} className="bg-white rounded-xl p-4 shadow border border-gray-100">
+              <div key={tk.id} className="bg-white rounded-xl p-4 shadow border border-gray-100 hover:shadow-md transition-shadow">
                 <div className="flex items-start">
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500">{tk.numTicket} • {new Date(tk.dateDemande).toLocaleDateString()}</div>
-                    <div className="font-semibold text-gray-900 mt-0.5">{tk.titre}</div>
-                    <div className="mt-1 flex items-center gap-2 text-xs">
-                      <span className="text-gray-600">{tk.chantier?.nomChantier || '—'}</span>
-                      <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{tk.priorite}</span>
-                      <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{tk.statut}</span>
+                    {/* En-tête avec numéro et date */}
+                    <div className="text-xs text-gray-500 mb-1">{tk.numTicket} • {new Date(tk.dateDemande).toLocaleDateString('fr-FR')}</div>
+                    
+                    {/* Titre du problème */}
+                    <div className="font-semibold text-gray-900 mb-2 text-sm leading-tight">{tk.titre}</div>
+                    
+                    {/* Informations du chantier - Plus visible */}
+                    <div className="mb-2">
+                      {tk.chantier?.nomChantier ? (
+                        <div className="flex items-center gap-1 text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded-md">
+                          <svg className="h-3 w-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="font-medium">{tk.chantier.nomChantier}</span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-500">{tk.chantier.chantierId}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
+                          <svg className="h-3 w-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          <span className="font-medium">Chantier non spécifié</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Badges de statut et priorité */}
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={`px-2 py-1 rounded-full font-medium ${
+                        tk.priorite === 'CRITIQUE' ? 'bg-red-100 text-red-700' :
+                        tk.priorite === 'HAUTE' ? 'bg-orange-100 text-orange-700' :
+                        tk.priorite === 'NORMALE' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {tk.priorite}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full font-medium ${
+                        tk.statut === 'NOUVEAU' ? 'bg-green-100 text-green-700' :
+                        tk.statut === 'EN_COURS' ? 'bg-blue-100 text-blue-700' :
+                        tk.statut === 'RESOLU' ? 'bg-emerald-100 text-emerald-700' :
+                        tk.statut === 'CLOS' ? 'bg-gray-100 text-gray-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {tk.statut}
+                      </span>
                     </div>
                   </div>
-                  <a href={`/public/portail/${type}/${actorId}/sav/${tk.id}`} className="ml-2 h-9 w-9 inline-flex items-center justify-center rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50"><ArrowTopRightOnSquareIcon className="h-5 w-5"/></a>
+                  
+                  {/* Bouton d'action */}
+                  <a 
+                    href={`/public/portail/${type}/${actorId}/sav/${tk.id}`} 
+                    className="ml-3 h-9 w-9 inline-flex items-center justify-center rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                    title="Voir les détails"
+                  >
+                    <ArrowTopRightOnSquareIcon className="h-5 w-5"/>
+                  </a>
                 </div>
               </div>
             ))}
