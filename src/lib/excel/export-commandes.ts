@@ -51,7 +51,7 @@ export async function exportCommandeToExcel(options: ExportCommandeOptions): Pro
     // Générer le buffer
     console.log('💾 Génération du buffer...')
     const buffer = await workbook.xlsx.writeBuffer();
-    console.log(`✅ Buffer généré: ${buffer.length} bytes`)
+    console.log(`✅ Buffer généré: ${buffer.byteLength} bytes`)
     
     return Buffer.from(buffer);
   } catch (error) {

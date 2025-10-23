@@ -19,7 +19,8 @@ import {
   ChevronDownIcon,
   ClipboardDocumentListIcon,
   DocumentDuplicateIcon,
-  SwatchIcon
+  SwatchIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
@@ -41,6 +42,7 @@ export function Navbar() {
         { name: 'Chantiers', href: '/chantiers', icon: BuildingOfficeIcon },
         { name: 'Planning chantiers', href: '/planning', icon: CalendarIcon },
         { name: 'Planning ressources', href: '/planning-ressources', icon: CalendarIcon },
+        { name: 'Journal', href: '/journal', icon: CalendarDaysIcon },
       ]
     },
     {

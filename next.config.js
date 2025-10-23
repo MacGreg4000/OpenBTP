@@ -18,7 +18,6 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
     largePageDataBytes: 10 * 1024 * 1024, // 10MB pour les réponses
-    instrumentationHook: true, // Activer l'instrumentation pour la synchronisation des templates
   },
   // Production: activer les vérifications TypeScript et ESLint
   typescript: {

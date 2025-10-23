@@ -514,6 +514,9 @@ model Chantier {
   // Relations SAV
   ticketsSAV               TicketSAV[]      @relation("ChantierTicketsSAV")
   
+  // Journal ouvrier
+  journalEntries           JournalOuvrier[] @relation("JournalChantier")
+  
   // Photos externes
   photosExternes           PhotoExterne[]
   
@@ -706,6 +709,8 @@ model OuvrierInterne {
   ticketsAssignes TicketSAV[] @relation("TicketsSAVOuvrierInterne")
   // Planning ressources
   taskAssignments TaskOuvrierInterne[]
+  // Journal
+  journalEntries JournalOuvrier[] @relation("JournalOuvrier")
 
   @@map("ouvrier_interne")
 }
@@ -1334,6 +1339,35 @@ enum TypeCommentaireSAV {
 enum pret_statut {
   EN_COURS
   TERMINE
+}
+
+// ===================================
+// MODÈLES JOURNAL OUVRIER
+// ===================================
+
+model JournalOuvrier {
+  id                String    @id @default(uuid())
+  ouvrierId         String
+  date              DateTime  @db.Date
+  heureDebut        String    // Format HH:MM
+  heureFin          String    // Format HH:MM
+  chantierId        String?   // Si travail sur chantier
+  lieuLibre         String?   // Si lieu libre (déplacement, etc.)
+  description       String    @db.Text
+  photos            Json?     // Array d'URLs des photos
+  estValide         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  modifiableJusquA  DateTime  // Date limite de modification (+48h)
+  
+  // Relations
+  ouvrier           OuvrierInterne @relation("JournalOuvrier", fields: [ouvrierId], references: [id], onDelete: Cascade)
+  chantier          Chantier?      @relation("JournalChantier", fields: [chantierId], references: [chantierId], onDelete: SetNull)
+  
+  @@index([ouvrierId])
+  @@index([date])
+  @@index([estValide])
+  @@map("journal_ouvrier")
 }
 
 enum User_role {

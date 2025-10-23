@@ -665,25 +665,14 @@ export default function CommandePage(props: CommandePageProps) {
 
     // Vérifier si la commande a été enregistrée (a un ID)
     if (!commande.id) {
-      setConfirmationModal({
-        isOpen: true,
-        title: 'Commande non enregistrée',
-        message: 'Vous devez enregistrer la commande avant de pouvoir l\'exporter en Excel.',
-        type: 'info',
-        confirmText: 'Enregistrer maintenant',
-        cancelText: 'Annuler',
-        onConfirm: async () => {
-          // Enregistrer la commande d'abord
-          await handleSave();
-          // Fermer la modale
-          setConfirmationModal({ isOpen: false, title: '', message: '', type: 'info' });
-          // Informer l'utilisateur
-          toast.success('Commande enregistrée ! Vous pouvez maintenant l\'exporter.');
-        },
-        onCancel: () => {
-          setConfirmationModal({ isOpen: false, title: '', message: '', type: 'info' });
-        }
-      });
+      const confirmed = confirm('Vous devez enregistrer la commande avant de pouvoir l\'exporter en Excel. Voulez-vous l\'enregistrer maintenant ?');
+      
+      if (confirmed) {
+        // Enregistrer la commande d'abord
+        await handleSave();
+        // Informer l'utilisateur
+        toast.success('Commande enregistrée ! Vous pouvez maintenant l\'exporter.');
+      }
       return;
     }
 

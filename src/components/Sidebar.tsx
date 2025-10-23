@@ -15,7 +15,8 @@ import {
   CogIcon,
   UserGroupIcon,
   WrenchScrewdriverIcon,
-  SwatchIcon
+  SwatchIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Chantiers', href: '/chantiers', icon: BuildingOfficeIcon },
   { name: 'Planning chantiers', href: '/planning', icon: CalendarIcon },
   { name: 'Planning ressources', href: '/planning-ressources', icon: CalendarIcon },
+  { name: 'Journal', href: '/journal', icon: CalendarDaysIcon },
   { name: 'Documents', href: '/administratif', icon: DocumentDuplicateIcon },
   { name: 'Bons de régie', href: '/bons-regie', icon: ClipboardDocumentListIcon },
   { name: 'Choix client', href: '/choix-clients', icon: SwatchIcon },

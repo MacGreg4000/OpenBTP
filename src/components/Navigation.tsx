@@ -7,7 +7,8 @@ import {
   UserGroupIcon,
   BuildingOfficeIcon,
   DocumentTextIcon,
-  CubeIcon
+  CubeIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline'
 
 export default function Navigation() {
@@ -22,6 +23,11 @@ export default function Navigation() {
     // N'afficher le lien vers les utilisateurs que pour les ADMIN et MANAGER
     ...(session?.user?.role && ['ADMIN', 'MANAGER'].includes(session.user.role) 
       ? [{ name: 'Utilisateurs', href: '/utilisateurs', icon: UserGroupIcon }]
+      : []
+    ),
+    // N'afficher le lien vers le journal que pour les ADMIN et MANAGER
+    ...(session?.user?.role && ['ADMIN', 'MANAGER'].includes(session.user.role) 
+      ? [{ name: 'Journal', href: '/journal', icon: CalendarDaysIcon }]
       : []
     ),
   ]
