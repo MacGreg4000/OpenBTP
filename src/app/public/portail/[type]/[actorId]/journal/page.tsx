@@ -62,8 +62,18 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
       const response = await fetch(`/api/chantiers?pageSize=100`)
       if (response.ok) {
         const data = await response.json()
-        // L'API retourne un objet avec pagination, on prend le tableau chantiers
-        setChantiers(data.chantiers || [])
+        console.log('Données chantiers reçues:', data)
+        // L'API retourne soit un tableau direct, soit un objet avec pagination
+        if (Array.isArray(data)) {
+          setChantiers(data)
+        } else if (data.chantiers && Array.isArray(data.chantiers)) {
+          setChantiers(data.chantiers)
+        } else {
+          console.error('Format de données chantiers inattendu:', data)
+          setChantiers([])
+        }
+      } else {
+        console.error('Erreur API chantiers:', response.status)
       }
     } catch (error) {
       console.error('Erreur lors du chargement des chantiers:', error)
@@ -395,31 +405,40 @@ function JournalForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Chantier</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lieu de travail</label>
             <select
-              value={formData.chantierId}
-              onChange={(e) => setFormData({ ...formData, chantierId: e.target.value, lieuLibre: '' })}
+              value={formData.chantierId || 'libre'}
+              onChange={(e) => {
+                if (e.target.value === 'libre') {
+                  setFormData({ ...formData, chantierId: '', lieuLibre: '' })
+                } else {
+                  setFormData({ ...formData, chantierId: e.target.value, lieuLibre: '' })
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Sélectionner un chantier</option>
+              <option value="libre">🏢 Chantier libre / Déplacement</option>
               {Array.isArray(chantiers) && chantiers.map((chantier) => (
                 <option key={chantier.chantierId} value={chantier.chantierId}>
-                  {chantier.nomChantier} ({chantier.chantierId})
+                  🏗️ {chantier.nomChantier} ({chantier.chantierId})
                 </option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lieu libre</label>
-            <input
-              type="text"
-              value={formData.lieuLibre}
-              onChange={(e) => setFormData({ ...formData, lieuLibre: e.target.value, chantierId: '' })}
-              placeholder="Déplacement, formation, etc."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {(!formData.chantierId || formData.chantierId === '') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lieu libre</label>
+              <input
+                type="text"
+                value={formData.lieuLibre}
+                onChange={(e) => setFormData({ ...formData, lieuLibre: e.target.value })}
+                placeholder="Déplacement, formation, bureau, etc."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

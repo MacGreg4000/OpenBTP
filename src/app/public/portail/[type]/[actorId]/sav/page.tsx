@@ -17,6 +17,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
     (async ()=>{
       const res = await fetch(`/api/public/portail/${type}/${actorId}/sav`)
       const data = await res.json()
+      console.log('Données SAV reçues:', data)
       setTickets(Array.isArray(data) ? data : [])
       setLoading(false)
     })()
@@ -59,7 +60,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
                     
                     {/* Informations du chantier - Plus visible */}
                     <div className="mb-2">
-                      {tk.chantier?.nomChantier ? (
+                      {tk.chantier?.nomChantier && tk.chantier.nomChantier.trim() !== '' ? (
                         <div className="flex items-center gap-1 text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded-md">
                           <svg className="h-3 w-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -73,7 +74,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
                           <svg className="h-3 w-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
-                          <span className="font-medium">Chantier non spécifié</span>
+                          <span className="font-medium">Chantier non disponible</span>
                         </div>
                       )}
                     </div>
