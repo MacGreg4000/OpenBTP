@@ -163,7 +163,7 @@ export default function ChantiersPage() {
         const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
         const res = await fetch(`/api/chantiers?${params.toString()}`)
         const json = await res.json()
-        const data = Array.isArray(json) ? json : json.data
+        const data = Array.isArray(json) ? json : (json.data || json.chantiers || [])
         setChantiers(Array.isArray(data) ? data : [])
         if (!Array.isArray(json) && json.meta?.totalPages) setTotalPages(json.meta.totalPages)
         
@@ -187,7 +187,8 @@ export default function ChantiersPage() {
   }, [clientIdFromUrl, page])
 
   const chantiersFiltrés = chantiers.filter(chantier => {
-    const matchNom = chantier.nomChantier.toLowerCase().includes(filtreNom.toLowerCase())
+    const nom = chantier.nomChantier || ''
+    const matchNom = nom.toLowerCase().includes(filtreNom.toLowerCase())
     const matchEtat = filtreEtat === '' || chantier.etatChantier === filtreEtat
     const matchClient = !filtreClientId || chantier.clientId === filtreClientId
     return matchNom && matchEtat && matchClient
