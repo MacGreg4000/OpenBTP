@@ -212,12 +212,14 @@ export default function DashboardPage() {
                 Indicateurs Clés
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KPICard 
-                  title="Total Chantiers" 
-                  value={kpis.totalChantiers} 
-                  icon={<BuildingOfficeIcon className="w-full h-full" />} 
-                  accentColor="blue"
-                />
+                <Link href="/chantiers" className="block">
+                  <KPICard 
+                    title="Total Chantiers" 
+                    value={kpis.totalChantiers} 
+                    icon={<BuildingOfficeIcon className="w-full h-full" />} 
+                    accentColor="blue"
+                  />
+                </Link>
                 <KPICard 
                   title="En cours" 
                   value={kpis.chantiersEnCours} 

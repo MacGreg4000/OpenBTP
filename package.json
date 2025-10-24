@@ -10,8 +10,9 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "production:build": "npm run prisma:generate && npm run build",
-    "production:start": "npm run prisma:migrate && npm run start",
+    "production:build": "dotenv -e .env.production -- npm run prisma:generate && dotenv -e .env.production -- npm run build",
+    "production:start": "dotenv -e .env.production -- npm run prisma:migrate && dotenv -e .env.production -- npm run start",
+    "production": "npm run production:build && npm run production:start",
     "sync-template": "node scripts/insert-professional-template.js"
   },
   "dependencies": {
@@ -64,6 +65,7 @@
     "pdfkit": "0.17.1",
     "pdfkit-table": "0.1.99",
     "pdfmake": "^0.2.20",
+    "dotenv-cli": "7.4.1",
     "puppeteer": "^24.16.2",
     "qrcode": "1.5.4",
     "react": "18.3.1",

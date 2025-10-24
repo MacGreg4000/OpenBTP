@@ -110,13 +110,16 @@ export async function GET(request: Request) {
       })
 
       const response = {
-        chantiers: formattedChantiers,
+        // primary shape used by frontend
+        data: formattedChantiers,
         meta: {
           page,
           pageSize,
           total,
           totalPages: Math.ceil(total / pageSize)
-        }
+        },
+        // backward compatibility for any older consumers
+        chantiers: formattedChantiers
       }
       
       console.log('📊 Chantiers retournés:', {
