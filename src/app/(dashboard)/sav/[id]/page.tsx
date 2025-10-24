@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import {
   InformationCircleIcon,
   WrenchScrewdriverIcon,
@@ -9,7 +9,8 @@ import {
   PhotoIcon,
   ChatBubbleLeftRightIcon,
   ArrowTopRightOnSquareIcon,
-  XMarkIcon
+  XMarkIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline'
 
 type Statut = 'NOUVEAU'|'EN_ATTENTE'|'ASSIGNE'|'PLANIFIE'|'EN_COURS'|'EN_ATTENTE_PIECES'|'EN_ATTENTE_VALIDATION'|'RESOLU'|'CLOS'|'ANNULE'
@@ -34,6 +35,7 @@ type TabKey = 'interventions'|'documents'|'photos'|'commentaires'|'infos'
 
 export default function SavDetailPage() {
   const params = useParams<{ id: string }>()
+  const router = useRouter()
   const [ticket, setTicket] = useState<TicketSAV | null>(null)
   const [tab, setTab] = useState<TabKey>('infos')
   const [newComment, setNewComment] = useState('')
@@ -113,6 +115,15 @@ export default function SavDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <button 
+                  onClick={() => router.push('/sav')}
+                  className="inline-flex items-center text-white/90 hover:text-white transition-colors"
+                >
+                  <ArrowLeftIcon className="h-5 w-5 mr-1"/>
+                  Retour à la liste
+                </button>
+              </div>
               <h1 className="text-2xl font-bold text-white tracking-tight">Ticket #{ticket.numTicket}</h1>
               <input
                 className="mt-3 w-full px-3 py-2.5 rounded-md bg-white text-gray-900 outline-none ring-1 ring-inset ring-white/20 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-500 shadow-sm"

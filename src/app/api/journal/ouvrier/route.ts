@@ -2,13 +2,24 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import { readPortalSessionFromCookie } from '@/app/public/portail/auth'
 
 // GET - Récupérer le journal d'un ouvrier
 export async function GET(request: Request) {
   try {
+    // Essayer d'abord l'authentification normale
     const session = await getServerSession(authOptions)
+    let isPortalAuth = false
+    
+    // Si pas de session normale, essayer l'authentification portail
     if (!session) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+      const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
+      if (portalSession && portalSession.t === 'OUVRIER_INTERNE') {
+        isPortalAuth = true
+        console.log('🔐 Authentification portail détectée:', portalSession)
+      } else {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+      }
     }
 
     const { searchParams } = new URL(request.url)
@@ -21,8 +32,7 @@ export async function GET(request: Request) {
     }
 
     // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
-    // Pour les ouvriers, on accepte l'actorId même si ce n'est pas l'ID de session
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
+    if (!isPortalAuth && session && session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
@@ -76,12 +86,24 @@ export async function GET(request: Request) {
 // POST - Créer une nouvelle entrée de journal
 export async function POST(request: Request) {
   try {
+    // Essayer d'abord l'authentification normale
     const session = await getServerSession(authOptions)
+    let isPortalAuth = false
+    
+    // Si pas de session normale, essayer l'authentification portail
     if (!session) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+      const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
+      if (portalSession && portalSession.t === 'OUVRIER_INTERNE') {
+        isPortalAuth = true
+        console.log('🔐 Authentification portail détectée pour POST:', portalSession)
+      } else {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+      }
     }
 
     const body = await request.json()
+    console.log('📝 Données reçues pour création journal:', body)
+    
     const { 
       ouvrierId, 
       date, 
@@ -94,7 +116,7 @@ export async function POST(request: Request) {
     } = body
 
     // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
+    if (!isPortalAuth && session && session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
@@ -110,6 +132,17 @@ export async function POST(request: Request) {
     // Calculer la date limite de modification (+48h)
     const modifiableJusquA = new Date()
     modifiableJusquA.setHours(modifiableJusquA.getHours() + 48)
+
+    console.log('💾 Création entrée journal avec données:', {
+      ouvrierId,
+      date: new Date(date),
+      heureDebut,
+      heureFin,
+      chantierId: chantierId || null,
+      lieuLibre: lieuLibre || null,
+      description,
+      modifiableJusquA
+    })
 
     const nouvelleEntree = await prisma.journalOuvrier.create({
       data: {
@@ -133,6 +166,7 @@ export async function POST(request: Request) {
       }
     })
 
+    console.log('✅ Entrée journal créée avec succès:', nouvelleEntree.id)
     return NextResponse.json(nouvelleEntree, { status: 201 })
   } catch (error) {
     console.error('Erreur lors de la création de l\'entrée journal:', error)

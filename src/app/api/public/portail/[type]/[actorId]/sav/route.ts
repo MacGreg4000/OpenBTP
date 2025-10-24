@@ -23,8 +23,7 @@ export async function GET(request: Request, props: { params: Promise<{ type: 'ou
       description: true,
       priorite: true,
       statut: true,
-      dateDemande: true,
-      chantier: { select: { chantierId: true, nomChantier: true } }
+      dateDemande: true
     }
   })
   return NextResponse.json(tickets)

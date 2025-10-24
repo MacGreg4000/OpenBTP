@@ -51,10 +51,10 @@ export default function JournalPage() {
   const [groupedEntries, setGroupedEntries] = useState<GroupedEntry[]>([])
   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([])
   const [loading, setLoading] = useState(true)
+  const [availableYears, setAvailableYears] = useState<string[]>([])
   const [filters, setFilters] = useState({
     ouvrierId: '',
-    mois: new Date().toISOString().slice(0, 7), // YYYY-MM
-    statut: ''
+    mois: new Date().toISOString().slice(0, 7) // YYYY-MM
   })
 
   const loadOuvriers = async () => {
@@ -75,12 +75,35 @@ export default function JournalPage() {
       const params = new URLSearchParams()
       if (filters.ouvrierId) params.append('ouvrierId', filters.ouvrierId)
       if (filters.mois) params.append('mois', filters.mois)
-      if (filters.statut) params.append('statut', filters.statut)
+
+      console.log('🔍 Filtres envoyés:', { filters, params: params.toString() })
 
       const response = await fetch(`/api/journal/manager?${params}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('📊 Données reçues:', data.length, 'groupes')
         setGroupedEntries(data)
+        
+        // Extraire les années disponibles depuis les données
+        const years = new Set<string>()
+        data.forEach((group: GroupedEntry) => {
+          group.entries.forEach(entry => {
+            const year = new Date(entry.date).getFullYear().toString()
+            years.add(year)
+          })
+        })
+        
+        // Ajouter l'année actuelle si pas de données
+        const currentYear = new Date().getFullYear().toString() // 2025
+        if (years.size === 0) {
+          years.add(currentYear)
+        }
+        
+        const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a))
+        setAvailableYears(sortedYears)
+        console.log('📅 Années disponibles:', sortedYears)
+      } else {
+        console.error('❌ Erreur API:', response.status)
       }
     } catch (error) {
       console.error('Erreur lors du chargement du journal:', error)
@@ -120,17 +143,6 @@ export default function JournalPage() {
     }
   }
 
-  const getStatutBadge = (estValide: boolean) => {
-    return estValide ? (
-      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-        ✅ Validé
-      </span>
-    ) : (
-      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
-        ⏳ En attente
-      </span>
-    )
-  }
 
   if (session?.user.role !== 'ADMIN' && session?.user.role !== 'MANAGER') {
     return (
@@ -192,28 +204,55 @@ export default function JournalPage() {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mois</label>
-              <input
-                type="month"
-                value={filters.mois}
-                onChange={(e) => setFilters({ ...filters, mois: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mois</label>
+                <select
+                  value={filters.mois ? filters.mois.split('-')[1] : ''}
+                  onChange={(e) => {
+                    const mois = e.target.value
+                    const annee = filters.mois ? filters.mois.split('-')[0] : new Date().getFullYear().toString()
+                    setFilters({ ...filters, mois: mois ? `${annee}-${mois.padStart(2, '0')}` : '' })
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Tous les mois</option>
+                  <option value="01">Janvier</option>
+                  <option value="02">Février</option>
+                  <option value="03">Mars</option>
+                  <option value="04">Avril</option>
+                  <option value="05">Mai</option>
+                  <option value="06">Juin</option>
+                  <option value="07">Juillet</option>
+                  <option value="08">Août</option>
+                  <option value="09">Septembre</option>
+                  <option value="10">Octobre</option>
+                  <option value="11">Novembre</option>
+                  <option value="12">Décembre</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Année</label>
+                <select
+                  value={filters.mois ? filters.mois.split('-')[0] : ''}
+                  onChange={(e) => {
+                    const annee = e.target.value
+                    const mois = filters.mois ? filters.mois.split('-')[1] : ''
+                    setFilters({ ...filters, mois: annee && mois ? `${annee}-${mois}` : '' })
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Toutes les années</option>
+                  {availableYears.map(year => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-              <select
-                value={filters.statut}
-                onChange={(e) => setFilters({ ...filters, statut: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Tous les statuts</option>
-                <option value="valide">Validé</option>
-                <option value="non_valide">Non validé</option>
-              </select>
-            </div>
           </div>
         </div>
 
@@ -232,75 +271,68 @@ export default function JournalPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {groupedEntries.map((group, index) => (
-              <div key={index} className="bg-white rounded-xl shadow">
-                {/* En-tête du groupe */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="h-5 w-5 text-gray-500"/>
-                        <span className="font-semibold text-gray-900">
-                          {group.ouvrier.prenom} {group.ouvrier.nom}
-                        </span>
-                      </div>
-                      <span className="text-gray-500">•</span>
-                      <span className="text-gray-600">
-                        {new Date(group.date).toLocaleDateString('fr-FR')}
-                      </span>
-                      {getStatutBadge(group.estValide)}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {group.entries.length} activité{group.entries.length > 1 ? 's' : ''}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Entrées du groupe */}
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {group.entries.map((entry) => (
-                      <div key={entry.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            {/* Heures */}
-                            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                              <span>{entry.heureDebut} - {entry.heureFin}</span>
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ouvrier
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Heures
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Lieu
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {groupedEntries.flatMap((group) => 
+                    group.entries.map((entry) => (
+                      <tr key={entry.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <UserIcon className="h-4 w-4 text-gray-400 mr-2"/>
+                            <div className="text-sm font-medium text-gray-900">
+                              {group.ouvrier.prenom} {group.ouvrier.nom}
                             </div>
-
-                            {/* Chantier ou lieu libre */}
-                            <div className="mb-2">
-                              {entry.chantier ? (
-                                <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-2 py-1 rounded-md">
-                                  <span className="font-medium">{entry.chantier.nomChantier}</span>
-                                  <span className="text-gray-400">•</span>
-                                  <span className="text-gray-500">{entry.chantier.chantierId}</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1 text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
-                                  <span className="font-medium">{entry.lieuLibre}</span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Description */}
-                            <p className="text-gray-900 text-sm">{entry.description}</p>
-
-                            {/* Photos */}
-                            {entry.photos && entry.photos.length > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
-                                <span>📷 {entry.photos.length} photo{entry.photos.length > 1 ? 's' : ''}</span>
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(group.date).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {entry.heureDebut} - {entry.heureFin}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {entry.chantier ? (
+                            <div className="flex items-center gap-1 text-sm">
+                              <span className="font-medium text-gray-900">{entry.chantier.nomChantier}</span>
+                              <span className="text-gray-400">•</span>
+                              <span className="text-gray-500">{entry.chantier.chantierId}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-blue-600 font-medium">{entry.lieuLibre}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <div className="truncate max-w-md" title={entry.description}>
+                            {entry.description}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

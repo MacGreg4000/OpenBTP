@@ -19,7 +19,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const ouvrierId = searchParams.get('ouvrierId')
     const mois = searchParams.get('mois') // Format YYYY-MM
-    const statut = searchParams.get('statut') // 'valide' ou 'non_valide'
+
+    console.log('🔍 Filtres reçus:', { ouvrierId, mois })
 
     const whereClause: any = {}
 
@@ -34,13 +35,10 @@ export async function GET(request: Request) {
         gte: startDate,
         lte: endDate
       }
+      console.log('📅 Filtre mois appliqué:', { startDate, endDate })
     }
 
-    if (statut === 'valide') {
-      whereClause.estValide = true
-    } else if (statut === 'non_valide') {
-      whereClause.estValide = false
-    }
+    console.log('🔍 Where clause final:', whereClause)
 
     const journalEntries = await prisma.journalOuvrier.findMany({
       where: whereClause,

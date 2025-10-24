@@ -2,15 +2,32 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { readPortalSessionFromCookie } from '@/app/public/portail/auth'
 // import { Prisma } from '@prisma/client'
 import { generatePPSS } from '@/lib/ppss-generator'
 
 // GET /api/chantiers - Liste tous les chantiers
 export async function GET(request: Request) {
   try {
+    // Essayer d'abord l'authentification normale
     const session = await getServerSession(authOptions)
+    let isPortalAuth = false
+    
+    // Si pas de session normale, essayer l'authentification portail
     if (!session) {
-      return NextResponse.json([], { status: 401 })
+      const cookieHeader = request.headers.get('cookie')
+      console.log('🍪 Cookie header reçu:', cookieHeader)
+      
+      const portalSession = readPortalSessionFromCookie(cookieHeader)
+      console.log('🔍 Session portail extraite:', portalSession)
+      
+      if (portalSession && (portalSession.t === 'OUVRIER_INTERNE' || portalSession.t === 'SOUSTRAITANT')) {
+        isPortalAuth = true
+        console.log('🔐 Authentification portail détectée pour chantiers:', portalSession)
+      } else {
+        console.log('❌ Authentification portail échouée')
+        return NextResponse.json([], { status: 401 })
+      }
     }
 
     try {
@@ -18,26 +35,34 @@ export async function GET(request: Request) {
       const page = Math.max(1, Number(searchParams.get('page') || '1'))
       const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('pageSize') || '25')))
 
+      // Filtrer pour ne récupérer que les chantiers actifs (en préparation et en cours)
+      const whereClause = {
+        statut: {
+          in: ['EN_PREPARATION', 'EN_COURS']
+        }
+      }
+
       const [total, chantiers] = await Promise.all([
-        prisma.chantier.count(),
+        prisma.chantier.count({ where: whereClause }),
         prisma.chantier.findMany({
-        include: {
-          client: {
-            select: {
-              nom: true,
-              email: true,
-              adresse: true
+          where: whereClause,
+          include: {
+            client: {
+              select: {
+                nom: true,
+                email: true,
+                adresse: true
+              }
+            },
+            commandes: {
+              select: {
+                total: true,
+                statut: true
+              }
             }
           },
-          commandes: {
-            select: {
-              total: true,
-              statut: true
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
+          orderBy: {
+            createdAt: 'desc'
           },
           skip: (page - 1) * pageSize,
           take: pageSize
@@ -84,15 +109,24 @@ export async function GET(request: Request) {
         }
       })
 
-      return NextResponse.json({
-        data: formattedChantiers,
+      const response = {
+        chantiers: formattedChantiers,
         meta: {
           page,
           pageSize,
           total,
           totalPages: Math.ceil(total / pageSize)
         }
+      }
+      
+      console.log('📊 Chantiers retournés:', {
+        count: formattedChantiers.length,
+        total,
+        page,
+        pageSize
       })
+      
+      return NextResponse.json(response)
     } catch {
       // Erreur DB capturée
       // Retourner un tableau vide en cas d'erreur de base de données

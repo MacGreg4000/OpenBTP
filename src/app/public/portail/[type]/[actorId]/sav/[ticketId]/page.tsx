@@ -30,15 +30,17 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
       <div className="max-w-md mx-auto space-y-4">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow text-white">
           <div className="p-4 flex items-center gap-2">
-            <button onClick={()=> router.back()} className="inline-flex items-center text-white/90 hover:text-white"><ArrowLeftIcon className="h-5 w-5 mr-1"/>{t('back')}</button>
+            <button onClick={()=> router.push(`/public/portail/${type}/${actorId}/sav`)} className="inline-flex items-center text-white/90 hover:text-white"><ArrowLeftIcon className="h-5 w-5 mr-1"/>Retour</button>
             <div className="ml-auto font-medium">Ticket {ticket.numTicket}</div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4 border border-gray-100">
-          <div className="text-xs text-gray-500">{ticket.chantier?.nomChantier || ticket.chantier?.chantierId || '—'}</div>
-          <div className="text-lg font-semibold text-gray-900">{ticket.titre}</div>
-          <div className="mt-1 flex items-center gap-2 text-xs">
+          <div className="text-lg font-semibold text-gray-900 mb-2">{ticket.titre}</div>
+          {ticket.description && (
+            <div className="text-sm text-gray-600 mb-3">{ticket.description}</div>
+          )}
+          <div className="flex items-center gap-2 text-xs">
             <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{ticket.priorite}</span>
             <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{ticket.statut}</span>
           </div>

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon, PlusIcon, CheckIcon, XMarkIcon, PencilIcon, TrashIcon, CalendarDaysIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, PlusIcon, CheckIcon, XMarkIcon, PencilIcon, TrashIcon, CalendarDaysIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { PortalI18nProvider, usePortalI18n } from '../../../i18n'
 
 type JournalEntry = {
@@ -25,6 +25,137 @@ type JournalEntry = {
 type Chantier = {
   chantierId: string
   nomChantier: string
+}
+
+// Composant pour grouper les entrées par mois
+function MonthGroup({ 
+  monthLabel, 
+  entries, 
+  canModify, 
+  handleValider, 
+  handleDevalider, 
+  setEditingEntry, 
+  handleDelete,
+  isCurrentMonth = false
+}: {
+  monthLabel: string
+  entries: JournalEntry[]
+  canModify: (entry: JournalEntry) => boolean
+  handleValider: (id: string) => void
+  handleDevalider: (id: string) => void
+  setEditingEntry: (entry: JournalEntry) => void
+  handleDelete: (id: string) => void
+  isCurrentMonth?: boolean
+}) {
+  const [isExpanded, setIsExpanded] = useState(isCurrentMonth)
+  
+  return (
+    <div className="bg-white rounded-xl shadow border border-gray-100">
+      {/* En-tête du mois */}
+      <div 
+        className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {isExpanded ? (
+              <ChevronDownIcon className="h-5 w-5 text-gray-500"/>
+            ) : (
+              <ChevronRightIcon className="h-5 w-5 text-gray-500"/>
+            )}
+            <h3 className="text-lg font-semibold text-gray-900">{monthLabel}</h3>
+            <span className="text-sm text-gray-500">({entries.length} activité{entries.length > 1 ? 's' : ''})</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Entrées du mois */}
+      {isExpanded && (
+        <div className="border-t border-gray-100">
+          <div className="space-y-3 p-4">
+            {entries.map((entry) => (
+              <div key={entry.id} className="bg-gray-50 rounded-lg p-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    {/* En-tête avec date et heures */}
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                      <span>{new Date(entry.date).toLocaleDateString('fr-FR')}</span>
+                      <span>•</span>
+                      <span>{entry.heureDebut} - {entry.heureFin}</span>
+                      {entry.estValide && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                          ✅ Validé
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Chantier ou lieu libre */}
+                    <div className="mb-2">
+                      {entry.chantier ? (
+                        <div className="flex items-center gap-1 text-sm text-gray-700 bg-white px-2 py-1 rounded-md">
+                          <span className="font-medium">{entry.chantier.nomChantier}</span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-500">{entry.chantier.chantierId}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
+                          <span className="font-medium">{entry.lieuLibre}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-gray-900 text-sm mb-2">{entry.description}</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 ml-4">
+                    {canModify(entry) && (
+                      <>
+                        {!entry.estValide ? (
+                          <button
+                            onClick={() => handleValider(entry.id)}
+                            className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Valider cette entrée"
+                          >
+                            <CheckIcon className="h-4 w-4"/>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleDevalider(entry.id)}
+                            className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
+                            title="Dévalider cette entrée"
+                          >
+                            <XMarkIcon className="h-4 w-4"/>
+                          </button>
+                        )}
+                        
+                        <button
+                          onClick={() => setEditingEntry(entry)}
+                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Modifier cette entrée"
+                        >
+                          <PencilIcon className="h-4 w-4"/>
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDelete(entry.id)}
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Supprimer cette entrée"
+                        >
+                          <TrashIcon className="h-4 w-4"/>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
@@ -197,92 +328,46 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
             Aucune entrée dans le journal
           </div>
         ) : (
-          <div className="space-y-3">
-            {journalEntries.map((entry) => (
-              <div key={entry.id} className="bg-white rounded-xl p-4 shadow border border-gray-100">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    {/* En-tête avec date et heures */}
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                      <span>{new Date(entry.date).toLocaleDateString('fr-FR')}</span>
-                      <span>•</span>
-                      <span>{entry.heureDebut} - {entry.heureFin}</span>
-                      {entry.estValide && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                          ✅ Validé
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Chantier ou lieu libre */}
-                    <div className="mb-2">
-                      {entry.chantier ? (
-                        <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-2 py-1 rounded-md">
-                          <span className="font-medium">{entry.chantier.nomChantier}</span>
-                          <span className="text-gray-400">•</span>
-                          <span className="text-gray-500">{entry.chantier.chantierId}</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
-                          <span className="font-medium">{entry.lieuLibre}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-gray-900 text-sm mb-2">{entry.description}</p>
-
-                    {/* Photos */}
-                    {entry.photos && entry.photos.length > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <span>📷 {entry.photos.length} photo{entry.photos.length > 1 ? 's' : ''}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 ml-4">
-                    {canModify(entry) && (
-                      <>
-                        {!entry.estValide ? (
-                          <button
-                            onClick={() => handleValider(entry.id)}
-                            className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Valider cette entrée"
-                          >
-                            <CheckIcon className="h-4 w-4"/>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleDevalider(entry.id)}
-                            className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
-                            title="Dévalider cette entrée"
-                          >
-                            <XMarkIcon className="h-4 w-4"/>
-                          </button>
-                        )}
-                        
-                        <button
-                          onClick={() => setEditingEntry(entry)}
-                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Modifier cette entrée"
-                        >
-                          <PencilIcon className="h-4 w-4"/>
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDelete(entry.id)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Supprimer cette entrée"
-                        >
-                          <TrashIcon className="h-4 w-4"/>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="space-y-4">
+            {(() => {
+              // Grouper les entrées par mois (6 derniers mois)
+              const now = new Date()
+              const currentMonthKey = now.toISOString().slice(0, 7) // YYYY-MM du mois actuel
+              const months = []
+              
+              for (let i = 0; i < 6; i++) {
+                const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+                const monthKey = monthDate.toISOString().slice(0, 7) // YYYY-MM
+                const monthLabel = monthDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+                
+                const monthEntries = journalEntries.filter(entry => 
+                  entry.date.startsWith(monthKey)
+                ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                
+                if (monthEntries.length > 0) {
+                  months.push({ 
+                    monthKey, 
+                    monthLabel, 
+                    entries: monthEntries,
+                    isCurrentMonth: monthKey === currentMonthKey
+                  })
+                }
+              }
+              
+              return months.map(({ monthKey, monthLabel, entries, isCurrentMonth }) => (
+                <MonthGroup 
+                  key={monthKey}
+                  monthLabel={monthLabel}
+                  entries={entries}
+                  canModify={canModify}
+                  handleValider={handleValider}
+                  handleDevalider={handleDevalider}
+                  setEditingEntry={setEditingEntry}
+                  handleDelete={handleDelete}
+                  isCurrentMonth={isCurrentMonth}
+                />
+              ))
+            })()}
           </div>
         )}
 
@@ -324,16 +409,29 @@ function JournalForm({
 }) {
   const [formData, setFormData] = useState({
     date: entry?.date || new Date().toISOString().split('T')[0],
-    heureDebut: entry?.heureDebut || '',
-    heureFin: entry?.heureFin || '',
+    heureDebut: entry?.heureDebut || '08:00',
+    heureFin: entry?.heureFin || '17:00',
     chantierId: entry?.chantierId || '',
     lieuLibre: entry?.lieuLibre || '',
     description: entry?.description || ''
   })
+  const [journeeEntiere, setJourneeEntiere] = useState(true)
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validation côté client
+    if (!formData.chantierId && !formData.lieuLibre?.trim()) {
+      alert('⚠️ Veuillez sélectionner un chantier ou indiquer un lieu libre')
+      return
+    }
+    
+    if (!formData.description?.trim()) {
+      alert('⚠️ Veuillez décrire votre activité')
+      return
+    }
+    
     setSaving(true)
 
     try {
@@ -343,20 +441,53 @@ function JournalForm({
       
       const method = entry ? 'PUT' : 'POST'
       
+      const payload = {
+        ouvrierId: actorId, // Utilise l'ID de l'acteur depuis l'URL
+        ...formData
+      }
+      
+      console.log('🚀 Tentative de sauvegarde journal:', {
+        url,
+        method,
+        actorId,
+        formData,
+        payload
+      })
+      
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ouvrierId: actorId, // Utilise l'ID de l'acteur depuis l'URL
-          ...formData
-        })
+        body: JSON.stringify(payload)
+      })
+
+      console.log('📡 Réponse API journal:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       })
 
       if (response.ok) {
+        console.log('✅ Sauvegarde réussie')
         onSave()
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Erreur API journal:', errorData)
+        
+        // Messages d'erreur plus sympas
+        let errorMessage = 'Erreur lors de la sauvegarde'
+        if (errorData.error === 'Chantier ou lieu libre requis') {
+          errorMessage = '⚠️ Veuillez sélectionner un chantier ou indiquer un lieu libre'
+        } else if (errorData.error === 'Données manquantes') {
+          errorMessage = '⚠️ Veuillez remplir tous les champs obligatoires'
+        } else {
+          errorMessage = `❌ ${errorData.error || 'Erreur inconnue'}`
+        }
+        
+        alert(errorMessage)
       }
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error)
+      console.error('❌ Erreur lors de la sauvegarde:', error)
+      alert(`❌ Erreur de connexion: ${error}`)
     } finally {
       setSaving(false)
     }
@@ -381,28 +512,48 @@ function JournalForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Heure début</label>
-              <input
-                type="time"
-                value={formData.heureDebut}
-                onChange={(e) => setFormData({ ...formData, heureDebut: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Heure fin</label>
-              <input
-                type="time"
-                value={formData.heureFin}
-                onChange={(e) => setFormData({ ...formData, heureFin: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="checkbox"
+              id="journeeEntiere"
+              checked={journeeEntiere}
+              onChange={(e) => {
+                setJourneeEntiere(e.target.checked)
+                if (e.target.checked) {
+                  setFormData({ ...formData, heureDebut: '08:00', heureFin: '17:00' })
+                }
+              }}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="journeeEntiere" className="text-sm font-medium text-gray-700">
+              ☀️ Journée entière (8h-17h)
+            </label>
           </div>
+
+          {!journeeEntiere && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Heure début</label>
+                <input
+                  type="time"
+                  value={formData.heureDebut}
+                  onChange={(e) => setFormData({ ...formData, heureDebut: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Heure fin</label>
+                <input
+                  type="time"
+                  value={formData.heureFin}
+                  onChange={(e) => setFormData({ ...formData, heureFin: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Lieu de travail</label>

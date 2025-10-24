@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeftIcon, WrenchScrewdriverIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import { PortalI18nProvider, usePortalI18n } from '../../../i18n'
 
-type Ticket = { id: string; numTicket: string; titre: string; priorite: string; statut: string; dateDemande: string; chantier?: { chantierId: string; nomChantier?: string } }
+type Ticket = { id: string; numTicket: string; titre: string; description?: string; priorite: string; statut: string; dateDemande: string }
 
 function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
   const { type, actorId } = props.params
@@ -58,26 +58,14 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
                     {/* Titre du problème */}
                     <div className="font-semibold text-gray-900 mb-2 text-sm leading-tight">{tk.titre}</div>
                     
-                    {/* Informations du chantier - Plus visible */}
-                    <div className="mb-2">
-                      {tk.chantier?.nomChantier && tk.chantier.nomChantier.trim() !== '' ? (
-                        <div className="flex items-center gap-1 text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded-md">
-                          <svg className="h-3 w-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                          <span className="font-medium">{tk.chantier.nomChantier}</span>
-                          <span className="text-gray-400">•</span>
-                          <span className="text-gray-500">{tk.chantier.chantierId}</span>
+                    {/* Description du ticket */}
+                    {tk.description && (
+                      <div className="mb-2">
+                        <div className="text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+                          {tk.description}
                         </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                          <svg className="h-3 w-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                          </svg>
-                          <span className="font-medium">Chantier non disponible</span>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     
                     {/* Badges de statut et priorité */}
                     <div className="flex items-center gap-2 text-xs">
