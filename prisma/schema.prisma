@@ -1370,6 +1370,56 @@ model JournalOuvrier {
   @@map("journal_ouvrier")
 }
 
+// Modèles pour la planification des chargements
+model Pays {
+  id        String   @id @default(uuid())
+  nom       String   @unique
+  code      String   @unique // FR, ES, IT, etc.
+  icone     String?  // 🇫🇷, 🇪🇸, 🇮🇹, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  usines Usine[]
+  
+  @@map("pays")
+}
+
+model Usine {
+  id        String   @id @default(uuid())
+  nom       String
+  paysId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  pays        Pays           @relation(fields: [paysId], references: [id], onDelete: Cascade)
+  chargements Chargement[]
+  
+  @@unique([nom, paysId])
+  @@map("usine")
+}
+
+model Chargement {
+  id              String    @id @default(uuid())
+  usineId         String
+  contenu         String    // Poids, référence commande, ou les deux
+  semaine         Int       // 1, 2, 3, 4...
+  estCharge       Boolean   @default(false)
+  dateCreation    DateTime  @default(now())
+  dateChargement  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  usine Usine @relation(fields: [usineId], references: [id], onDelete: Cascade)
+  
+  @@index([usineId])
+  @@index([semaine])
+  @@index([estCharge])
+  @@map("chargement")
+}
+
 enum User_role {
   ADMIN
   MANAGER

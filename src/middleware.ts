@@ -90,7 +90,6 @@ export const config = {
     '/outillage/:path*',
     '/administratif/:path*',
     '/bons-regie/:path*',
-    '/parametres/:path*',
     '/utilisateurs/:path*',
     '/planning/:path*',
     '/configuration/:path*'

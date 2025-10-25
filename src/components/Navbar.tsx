@@ -20,7 +20,8 @@ import {
   ClipboardDocumentListIcon,
   DocumentDuplicateIcon,
   SwatchIcon,
-  CalendarDaysIcon
+  CalendarDaysIcon,
+  TruckIcon
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
@@ -59,6 +60,10 @@ export function Navbar() {
       items: [
         { name: 'Outillage', href: '/outillage', icon: WrenchScrewdriverIcon },
         { name: 'Inventaire', href: '/inventory', icon: CubeIcon },
+        ...(session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER' 
+          ? [{ name: 'Planification chargements', href: '/planification-chargements', icon: TruckIcon }]
+          : []
+        ),
       ]
     }
   ]
@@ -155,17 +160,6 @@ export function Navbar() {
             <div className="flex items-center space-x-3">
               {session ? (
                 <>
-                  {/* Configuration */}
-                  <Link
-                    href="/configuration"
-                    className={`p-2 rounded-lg transition-all duration-300 ${
-                      isActive('/configuration')
-                        ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/50 dark:hover:bg-gray-800/50'
-                    }`}
-                  >
-                    <Cog6ToothIcon className="h-5 w-5" />
-                  </Link>
 
                   {/* Gestion utilisateurs (ADMIN/MANAGER uniquement) */}
                   {session?.user?.role && ['ADMIN', 'MANAGER'].includes(session.user.role as string) && (
@@ -218,26 +212,13 @@ export function Navbar() {
                           <Menu.Item>
                             {({ active }) => (
                               <Link
-                                href="/parametres"
-                                className={`${
-                                  active ? 'bg-gray-50/50 dark:bg-gray-700/50' : ''
-                                } group flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-200`}
-                              >
-                                <UserCircleIcon className="h-5 w-5 mr-3" />
-                                Mon profil
-                              </Link>
-                            )}
-                          </Menu.Item>
-                          <Menu.Item>
-                            {({ active }) => (
-                              <Link
-                                href="/parametres"
+                                href="/configuration"
                                 className={`${
                                   active ? 'bg-gray-50/50 dark:bg-gray-700/50' : ''
                                 } group flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-200`}
                               >
                                 <Cog6ToothIcon className="h-5 w-5 mr-3" />
-                                Paramètres
+                                Configuration
                               </Link>
                             )}
                           </Menu.Item>

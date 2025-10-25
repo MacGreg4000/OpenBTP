@@ -31,7 +31,6 @@ const navigation = [
   { name: 'Bons de régie', href: '/bons-regie', icon: ClipboardDocumentListIcon },
   { name: 'Choix client', href: '/choix-clients', icon: SwatchIcon },
   { name: 'Outillage', href: '/outillage', icon: WrenchScrewdriverIcon },
-  { name: 'Paramètres', href: '/parametres', icon: CogIcon },
 ]
 
 interface SidebarProps {

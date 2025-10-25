@@ -48,7 +48,7 @@ export default function RAGAdminPage() {
   // Vérifier les permissions au montage
   useEffect(() => {
     if (session && !isAdmin && !isRAGAdmin) {
-      router.push('/parametres');
+      router.push('/configuration');
     }
   }, [session, isAdmin, isRAGAdmin, router]);
 
