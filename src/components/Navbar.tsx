@@ -25,11 +25,13 @@ import {
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
+import Image from 'next/image'
 
 export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [logoError, setLogoError] = useState(false)
 
   // Ne pas afficher la navbar sur la page de login
   if (pathname === '/auth/login') return null
@@ -91,17 +93,31 @@ export function Navbar() {
             
             {/* Logo */}
             <div className="flex items-center space-x-4">
-              {/* Logo avec gradient */}
+              {/* Logo image configurée directement, fallback gradient si erreur */}
               <Link 
                 href="/dashboard" 
                 className="flex items-center space-x-3 group"
               >
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                  <div className="relative bg-gradient-to-r from-blue-600 to-cyan-500 p-2 rounded-lg">
-                    <HomeIcon className="h-6 w-6 text-white" />
+                {!logoError ? (
+                  <div className="relative h-9 w-9 rounded-lg overflow-hidden bg-white dark:bg-gray-800 ring-1 ring-gray-200/50 dark:ring-gray-700/50">
+                    <Image
+                      src="/images/logo.png"
+                      alt="Logo"
+                      fill
+                      sizes="36px"
+                      className="object-contain p-1"
+                      priority
+                      onError={() => setLogoError(true)}
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="relative bg-gradient-to-r from-blue-600 to-cyan-500 p-2 rounded-lg">
+                      <HomeIcon className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                )}
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
                   OpenBTP
                 </span>

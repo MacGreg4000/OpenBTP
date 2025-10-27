@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head></head>
-      <body>
+      <body suppressHydrationWarning>
         <RootClientProviders>
           {children}
         </RootClientProviders>
