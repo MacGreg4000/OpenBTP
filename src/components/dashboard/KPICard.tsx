@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode } from 'react'
+import Link from 'next/link'
 
 interface KPICardProps {
   title: string;
@@ -14,6 +15,7 @@ interface KPICardProps {
   className?: string;
   loading?: boolean;
   accentColor?: 'blue' | 'green' | 'yellow' | 'red' | 'indigo' | 'purple' | 'pink' | 'gray';
+  href?: string; // Lien optionnel
 }
 
 // Helper pour obtenir les classes de couleur
@@ -38,12 +40,13 @@ export default function KPICard({
   icon,
   className = '',
   loading = false,
-  accentColor = 'indigo' // Couleur par défaut
+  accentColor = 'indigo', // Couleur par défaut
+  href
 }: KPICardProps) {
   const colors = getColorClasses(accentColor);
 
-  return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl flex ${colors.border} border-l-4 overflow-hidden ${className}`}>
+  const content = (
+    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl flex ${colors.border} border-l-4 overflow-hidden ${className} ${href ? 'cursor-pointer hover:shadow-2xl transition-shadow duration-200' : ''}`}>
       {loading ? (
         <div className="w-full p-5 space-y-3">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
@@ -75,4 +78,10 @@ export default function KPICard({
       )}
     </div>
   )
+
+  return href ? (
+    <Link href={href} className="block">
+      {content}
+    </Link>
+  ) : content
 } 

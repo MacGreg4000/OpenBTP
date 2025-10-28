@@ -217,6 +217,7 @@ export default function DashboardPage() {
                   value={kpis.totalChantiers} 
                   icon={<BuildingOfficeIcon className="w-full h-full" />} 
                   accentColor="blue"
+                  href="/chantiers"
                 />
                 <KPICard 
                   title="En cours" 

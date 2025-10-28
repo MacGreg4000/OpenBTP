@@ -1,8 +1,9 @@
 'use client'
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
+import Image from 'next/image'
 import { 
   HomeIcon, 
   UserCircleIcon,
@@ -30,6 +31,32 @@ export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
+  const [logoLoadStatus, setLogoLoadStatus] = useState<'loading' | 'loaded' | 'error' | 'none'>('loading')
+
+  // Charger le logo depuis les settings
+  useEffect(() => {
+    const loadLogo = async () => {
+      try {
+        const response = await fetch('/api/company')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.logo) {
+            setCompanyLogo(data.logo)
+            setLogoLoadStatus('loaded')
+          } else {
+            setLogoLoadStatus('none') // Pas de logo configuré
+          }
+        } else {
+          setLogoLoadStatus('none')
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement du logo:', error)
+        setLogoLoadStatus('none') // En cas d'erreur, utiliser le logo par défaut
+      }
+    }
+    loadLogo()
+  }, [])
 
   // Ne pas afficher la navbar sur la page de login
   if (pathname === '/auth/login') return null
@@ -91,17 +118,39 @@ export function Navbar() {
             
             {/* Logo */}
             <div className="flex items-center space-x-4">
-              {/* Logo avec gradient */}
+              {/* Logo avec gradient ou logo personnalisé */}
               <Link 
                 href="/dashboard" 
                 className="flex items-center space-x-3 group"
               >
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                  <div className="relative bg-gradient-to-r from-blue-600 to-cyan-500 p-2 rounded-lg">
-                    <HomeIcon className="h-6 w-6 text-white" />
+                {companyLogo && logoLoadStatus === 'loaded' ? (
+                  <div className="relative w-10 h-10 flex-shrink-0">
+                    <Image
+                      src={companyLogo.startsWith('data:') ? companyLogo : companyLogo}
+                      alt="Logo entreprise"
+                      width={40}
+                      height={40}
+                      className="object-contain rounded-lg"
+                      priority
+                      onLoad={() => setLogoLoadStatus('loaded')}
+                      onError={() => setLogoLoadStatus('none')}
+                    />
                   </div>
-                </div>
+                ) : logoLoadStatus === 'loading' ? (
+                  <div className="relative w-10 h-10 flex-shrink-0">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="relative bg-gradient-to-r from-blue-600 to-cyan-500 p-2 rounded-lg">
+                      <HomeIcon className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="relative bg-gradient-to-r from-blue-600 to-cyan-500 p-2 rounded-lg">
+                      <HomeIcon className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                )}
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
                   OpenBTP
                 </span>
