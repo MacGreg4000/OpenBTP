@@ -972,7 +972,7 @@ export default function CommandePage(props: CommandePageProps) {
                   className="inline-flex items-center px-6 py-3 bg-blue-600/90 hover:bg-blue-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm border border-blue-400/50 hover:border-blue-300 hover:scale-105 font-semibold"
                 >
                   <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                  📄 PDF Moderne
+                  📄 Générer PDF
                 </button>
               )}
               
