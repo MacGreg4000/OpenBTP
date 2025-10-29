@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeftIcon, PencilIcon, PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PencilIcon, PlusCircleIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import ContactForm from '@/components/clients/ContactForm';
 
 // Types (à définir plus précisément)
@@ -272,6 +272,70 @@ export default function ClientDetailPage() {
               </table>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Section Chantiers du client */}
+      {client.Chantier && client.Chantier.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg mb-8">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg font-semibold leading-6 text-gray-900 dark:text-white">
+              Chantiers de ce client
+            </h3>
+          </div>
+          <div className="border-t border-gray-200 dark:border-gray-700">
+            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+              {client.Chantier.map((chantier) => (
+                <li key={chantier.chantierId}>
+                  <Link 
+                    href={`/chantiers/${chantier.chantierId}`}
+                    className="block px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {chantier.nomChantier}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {chantier.adresseChantier || 'Aucune adresse'}
+                        </p>
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          chantier.statut === 'EN_COURS' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
+                          chantier.statut === 'EN_PREPARATION' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
+                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                        }`}>
+                          {chantier.statut || 'Non défini'}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Bouton pour créer un nouveau chantier */}
+      <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg mb-8">
+        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-semibold leading-6 text-gray-900 dark:text-white">
+              Nouveau chantier
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Créer un nouveau chantier pour ce client
+            </p>
+          </div>
+          <Link
+            href={`/chantiers/nouveau?clientId=${client.id}&clientNom=${encodeURIComponent(client.nom)}`}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+          >
+            <BuildingOfficeIcon className="h-5 w-5 mr-2" />
+            Créer un chantier
+          </Link>
         </div>
       </div>
       

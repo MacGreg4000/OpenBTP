@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ArrowLeftIcon, BuildingOfficeIcon, MapPinIcon, CalendarIcon, ClockIcon, PlusIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import SelectField from '@/components/ui/SelectField'
@@ -37,12 +37,16 @@ interface FormData {
 
 export default function NouveauChantierPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [clients, setClients] = useState<Client[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingContacts, setLoadingContacts] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedClientId, setSelectedClientId] = useState<string>('')
+  
+  // Lire les paramètres d'URL pour pré-sélectionner le client
+  const clientIdFromUrl = searchParams.get('clientId') || ''
+  const [selectedClientId, setSelectedClientId] = useState<string>(clientIdFromUrl)
   const [selectedContactId, setSelectedContactId] = useState<string>('')
   const [formData, setFormData] = useState<FormData>({
     nomChantier: '',
@@ -52,7 +56,7 @@ export default function NouveauChantierPage() {
     adresseChantier: '',
     dureeEnJours: '',
     typeDuree: 'CALENDRIER',
-    clientId: '',
+    clientId: clientIdFromUrl,
     contactId: ''
   })
   const [saving, setSaving] = useState(false)
@@ -64,6 +68,19 @@ export default function NouveauChantierPage() {
         if (response.ok) {
           const data = await response.json()
           setClients(data)
+          
+          // Si un clientId est passé en paramètre, charger les contacts pour ce client
+          if (clientIdFromUrl) {
+            setSelectedClientId(clientIdFromUrl)
+            setFormData(prev => ({ ...prev, clientId: clientIdFromUrl }))
+            
+            // Charger les contacts pour le client pré-sélectionné
+            const contactsResponse = await fetch(`/api/clients/${clientIdFromUrl}/contacts`)
+            if (contactsResponse.ok) {
+              const contactsData = await contactsResponse.json()
+              setContacts(contactsData)
+            }
+          }
         }
       } catch (error) {
         console.error('Erreur lors du chargement des clients:', error)
@@ -73,7 +90,7 @@ export default function NouveauChantierPage() {
     }
 
     fetchClients()
-  }, [])
+  }, [clientIdFromUrl])
 
   useEffect(() => {
     const fetchContacts = async () => {
