@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { EtatAvancement, SoustraitantEtat, EtatAvancementSummary, AvenantEtatAvancement, AvenantSoustraitantEtat } from '@/types/etat-avancement'
 import { TrashIcon, PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
@@ -59,6 +59,7 @@ export default function EtatAvancementUnifie({
   
   const [avenantValues, setAvenantValues] = useState<Record<number, AvenantValues>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
 
   // Construire l'URL de base selon le type
   const getBaseApiUrl = () => {
@@ -355,19 +356,25 @@ export default function EtatAvancementUnifie({
     }
   }
 
-  const handleAvenantChange = async (avenantId: number, field: string, value: string | number) => {
-
+  const handleAvenantChange = useCallback(async (avenantId: number, field: string, value: string | number) => {
+    const timerKey = `${avenantId}-${field}`
+    
+    // Annuler le timer précédent s'il existe
+    if (debounceTimers[timerKey]) {
+      clearTimeout(debounceTimers[timerKey])
+    }
+    
+    // Mettre à jour l'état local immédiatement pour la réactivité de l'UI
+    setAvenantValues(prev => ({
+      ...prev,
+      [avenantId]: {
+        ...(prev[avenantId] || {} as AvenantValues),
+        [field]: value
+      } as AvenantValues
+    }))
     
     // Pour les nouveaux états ou avenants temporaires (ID négatifs), modifier localement sans appel API
     if (isNewEtat || avenantId < 0) {
-
-      setAvenantValues(prev => ({
-        ...prev,
-        [avenantId]: {
-          ...(prev[avenantId] || {} as AvenantValues),
-          [field]: value
-        } as AvenantValues
-      }))
       
       // Recalculer les totaux localement
       if (field === 'quantiteActuelle' || field === 'prixUnitaire') {
@@ -411,20 +418,13 @@ export default function EtatAvancementUnifie({
       return
     }
     
-    try {
-      setIsLoading(true);
-      
-      // Mettre à jour l'état local immédiatement
-      setAvenantValues(prev => ({
-        ...prev,
-        [avenantId]: {
-          ...(prev[avenantId] || {} as AvenantValues),
-          [field]: value
-        } as AvenantValues
-      }))
-
-      // Chercher l'avenant dans l'état local au lieu de etat.avenants
-      const avenant = avenants.find(a => a.id === avenantId)
+    // Créer un nouveau timer avec debounce de 500ms pour les appels API
+    const newTimer = setTimeout(async () => {
+      try {
+        setIsLoading(true);
+        
+        // Chercher l'avenant dans l'état local au lieu de etat.avenants
+        const avenant = avenants.find(a => a.id === avenantId)
       if (!avenant) {
         throw new Error('Avenant non trouvé')
       }
@@ -495,17 +495,24 @@ export default function EtatAvancementUnifie({
         return a;
       }));
 
-      // Attendre un court instant avant de rafraîchir
-      setTimeout(() => {
-        router.refresh();
-      }, 100);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour de l\'avenant:', error)
-      toast.error('Erreur lors de la mise à jour de l\'avenant')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+        // Attendre un court instant avant de rafraîchir
+        setTimeout(() => {
+          router.refresh();
+        }, 100);
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'avenant:', error)
+        toast.error('Erreur lors de la mise à jour de l\'avenant')
+      } finally {
+        setIsLoading(false)
+      }
+    }, 500) // Debounce de 500ms
+    
+    // Enregistrer le nouveau timer
+    setDebounceTimers(prev => ({
+      ...prev,
+      [timerKey]: newTimer
+    }))
+  }, [debounceTimers, isNewEtat, effectiveEtatId, getBaseApiUrl, avenants, avenantValues, onAvenantsChange, router])
 
   const handleSaveComments = async () => {
     // Pour les nouveaux états, seulement notifier le parent (pas d'appel API)
