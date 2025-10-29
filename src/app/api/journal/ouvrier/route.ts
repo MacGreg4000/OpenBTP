@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
-    const whereClause: any = { ouvrierId }
+    const whereClause: Record<string, unknown> = { ouvrierId }
 
     if (date) {
       // Journal pour une date spécifique

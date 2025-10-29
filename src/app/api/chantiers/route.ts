@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   try {
     // Essayer d'abord l'authentification normale
     const session = await getServerSession(authOptions)
-    let isPortalAuth = false
     
     // Si pas de session normale, essayer l'authentification portail
     if (!session) {
@@ -22,7 +21,6 @@ export async function GET(request: Request) {
       console.log('🔍 Session portail extraite:', portalSession)
       
       if (portalSession && (portalSession.t === 'OUVRIER_INTERNE' || portalSession.t === 'SOUSTRAITANT')) {
-        isPortalAuth = true
         console.log('🔐 Authentification portail détectée pour chantiers:', portalSession)
       } else {
         console.log('❌ Authentification portail échouée')

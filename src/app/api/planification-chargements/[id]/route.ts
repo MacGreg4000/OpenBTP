@@ -42,7 +42,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       const currentYear = now.getFullYear()
       const startOfYear = new Date(currentYear, 0, 1)
       const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-      const currentWeek = Math.ceil((days + startOfYear.getDay() + 1) / 7)
+      const _currentWeek = Math.ceil((days + startOfYear.getDay() + 1) / 7)
       
       const nextWeek = chargementActuel.semaine + 1
 

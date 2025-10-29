@@ -12,7 +12,6 @@ import {
   DocumentDuplicateIcon,
   ClipboardDocumentListIcon,
   CalendarIcon,
-  CogIcon,
   UserGroupIcon,
   WrenchScrewdriverIcon,
   SwatchIcon,

@@ -3,6 +3,17 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 
+interface GroupedEntry {
+  ouvrier: {
+    id: string
+    nom: string
+    prenom: string
+  }
+  date: Date
+  estValide: boolean
+  entries: unknown[]
+}
+
 // GET - Récupérer le journal pour les managers
 export async function GET(request: Request) {
   try {
@@ -22,7 +33,7 @@ export async function GET(request: Request) {
 
     console.log('🔍 Filtres reçus:', { ouvrierId, mois })
 
-    const whereClause: any = {}
+    const whereClause: Record<string, unknown> = {}
 
     if (ouvrierId) {
       whereClause.ouvrierId = ouvrierId
@@ -65,7 +76,7 @@ export async function GET(request: Request) {
     })
 
     // Grouper par ouvrier et par date pour faciliter l'affichage
-    const groupedEntries = journalEntries.reduce((acc: any, entry) => {
+    const groupedEntries = journalEntries.reduce((acc: Record<string, GroupedEntry>, entry) => {
       const key = `${entry.ouvrierId}-${entry.date.toISOString().split('T')[0]}`
       if (!acc[key]) {
         acc[key] = {

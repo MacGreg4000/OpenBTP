@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const ouvrierId = searchParams.get('ouvrierId')
     const mois = searchParams.get('mois') // Format YYYY-MM
 
-    const whereClause: any = {}
+    const whereClause: Record<string, unknown> = {}
 
     if (ouvrierId) {
       whereClause.ouvrierId = ouvrierId
