@@ -10,7 +10,9 @@ import {
   CurrencyEuroIcon,
   ClipboardDocumentListIcon,
   PencilIcon,
-  CalendarIcon
+  CalendarIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -111,6 +113,22 @@ export default function DashboardPage() {
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [planningLoading, setPlanningLoading] = useState(true)
   // removed unused recentEtats state
+
+  // Affichage replié/déplié du tableau blanc (préférence persistée)
+  const [isNotepadOpen, setIsNotepadOpen] = useState<boolean>(true)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('dashboard:notepadOpen')
+      if (stored !== null) setIsNotepadOpen(stored === '1')
+    } catch {}
+  }, [])
+  const toggleNotepad = () => {
+    const next = !isNotepadOpen
+    setIsNotepadOpen(next)
+    try {
+      localStorage.setItem('dashboard:notepadOpen', next ? '1' : '0')
+    } catch {}
+  }
 
   // Gestion de l'authentification côté client
   useEffect(() => {
@@ -242,15 +260,38 @@ export default function DashboardPage() {
 
             {/* Section: Mon Espace de Travail */}
             <section aria-labelledby="notepad-title">
-              <h2 id="notepad-title" className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-                <PencilIcon className="h-7 w-7 mr-3 text-blue-600"/>
-                Mon Espace de Travail
-              </h2>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 id="notepad-title" className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center">
+                  <PencilIcon className="h-7 w-7 mr-3 text-blue-600"/>
+                  Mon Espace de Travail
+                </h2>
+                <button
+                  type="button"
+                  onClick={toggleNotepad}
+                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  aria-expanded={isNotepadOpen}
+                  aria-controls="dashboard-notepad"
+                >
+                  {isNotepadOpen ? (
+                    <>
+                      <ChevronUpIcon className="h-4 w-4 mr-2" />
+                      Masquer
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDownIcon className="h-4 w-4 mr-2" />
+                      Afficher
+                    </>
+                  )}
+                </button>
+              </div>
               
               {/* Tableau blanc avec notes et tâches */}
-              <div className="mb-6">
-                <UserNotepad userId={session?.user?.id || 'anonymous'} />
-              </div>
+              {isNotepadOpen && (
+                <div id="dashboard-notepad" className="mb-6">
+                  <UserNotepad userId={session?.user?.id || 'anonymous'} />
+                </div>
+              )}
               
               {/* Actions rapides horizontales */}
               <div className="bg-gray-50 dark:bg-gray-700/20 rounded-lg p-6">
