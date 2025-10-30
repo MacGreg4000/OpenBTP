@@ -60,6 +60,8 @@ const globalForPrisma = globalThis as unknown as {
 // Typage permissif et stable pour build: conserve les délégués Prisma et les méthodes brutes
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PrismaUntyped = { [key: string]: any } & {
+  $connect?: () => Promise<void>
+  $disconnect?: () => Promise<void>
   $queryRaw: <T = unknown>(...args: unknown[]) => Promise<T>
   $queryRawUnsafe: <T = unknown>(...args: unknown[]) => Promise<T>
   $executeRaw: (...args: unknown[]) => Promise<unknown>
