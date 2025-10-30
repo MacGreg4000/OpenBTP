@@ -35,7 +35,6 @@ export async function GET() {
         email: true,
         telephone: true,
         adresse: true,
-        numeroTva: true,
         Chantier: {
           select: {
             chantierId: true,
@@ -109,7 +108,6 @@ export async function POST(request: Request) {
         email: body.email || null,
         telephone: body.telephone || null,
         adresse: body.adresse || null,
-        numeroTva: body.numeroTva || null,
         updatedAt: new Date() // Ajouter la date de mise à jour
       }
     })
