@@ -32,13 +32,27 @@ export async function GET(request: Request) {
       const { searchParams } = new URL(request.url)
       const page = Math.max(1, Number(searchParams.get('page') || '1'))
       const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('pageSize') || '25')))
+      const filtreEtat = searchParams.get('etat')
 
-      // Filtrer pour ne récupérer que les chantiers actifs (en préparation et en cours)
-      const whereClause = {
+      // Construire le filtre de statut selon le paramètre fourni
+      // Par défaut et "Tous les états" = actifs seulement (en préparation et en cours)
+      const whereClause: { statut?: { in: string[] } } = {
         statut: {
           in: ['EN_PREPARATION', 'EN_COURS']
         }
       }
+      
+      if (filtreEtat && filtreEtat !== '' && filtreEtat !== 'Tous les états') {
+        // Convertir le libellé d'affichage vers le statut de la DB
+        let statutDB = 'EN_PREPARATION' // valeur par défaut
+        if (filtreEtat === 'En cours') statutDB = 'EN_COURS'
+        else if (filtreEtat === 'Terminé') statutDB = 'TERMINE'
+        else if (filtreEtat === 'À venir') statutDB = 'A_VENIR'
+        else if (filtreEtat === 'En préparation') statutDB = 'EN_PREPARATION'
+        
+        whereClause.statut = { in: [statutDB] }
+      }
+      // Si filtreEtat est vide ou "Tous les états", le comportement par défaut (actifs seulement) est déjà défini
 
       const [total, chantiers] = await Promise.all([
         prisma.chantier.count({ where: whereClause }),

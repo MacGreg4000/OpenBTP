@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { type Chantier } from '@/types/chantier'
 import { 
   CalendarIcon,
-  PencilSquareIcon,
+  EyeIcon,
   ChartBarIcon,
   DocumentTextIcon,
   ClipboardDocumentCheckIcon,
@@ -81,11 +81,11 @@ function ChantierCard({ chantier }: { chantier: Chantier }) {
 
         <div className="flex flex-wrap gap-2">
           <Link
-            href={`/chantiers/${chantier.chantierId}/edit`}
-            className="p-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 dark:bg-yellow-900 dark:text-yellow-300 dark:hover:bg-yellow-800 transition-colors"
-            title="Modifier"
+            href={`/chantiers/${chantier.chantierId}`}
+            className="p-2 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-800 transition-colors"
+            title="Consulter"
           >
-            <PencilSquareIcon className="h-4 w-4" />
+            <EyeIcon className="h-4 w-4" />
           </Link>
           <Link
             href={`/chantiers/${chantier.chantierId}/commande`}
@@ -161,9 +161,14 @@ export default function ChantiersPage() {
     const fetchChantiers = async () => {
       try {
         const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+        // Ajouter le filtre d'état si sélectionné
+        if (filtreEtat && filtreEtat !== '') {
+          params.append('etat', filtreEtat)
+        }
         const res = await fetch(`/api/chantiers?${params.toString()}`)
         const json = await res.json()
-        const data = Array.isArray(json) ? json : json.data
+        // L'API retourne { chantiers: [...], meta: {...} }
+        const data = Array.isArray(json) ? json : (json.chantiers || json.data || [])
         setChantiers(Array.isArray(data) ? data : [])
         if (!Array.isArray(json) && json.meta?.totalPages) setTotalPages(json.meta.totalPages)
         
@@ -184,13 +189,13 @@ export default function ChantiersPage() {
     }
     
     fetchChantiers()
-  }, [clientIdFromUrl, page])
+  }, [clientIdFromUrl, page, filtreEtat])
 
+  // Le filtre d'état est maintenant géré par l'API, on ne filtre côté client que par nom et client
   const chantiersFiltrés = chantiers.filter(chantier => {
     const matchNom = chantier.nomChantier.toLowerCase().includes(filtreNom.toLowerCase())
-    const matchEtat = filtreEtat === '' || chantier.etatChantier === filtreEtat
     const matchClient = !filtreClientId || chantier.clientId === filtreClientId
-    return matchNom && matchEtat && matchClient
+    return matchNom && matchClient
   })
   
   // Fonction pour supprimer le filtre client
@@ -493,8 +498,8 @@ export default function ChantiersPage() {
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div className="flex space-x-1 justify-end">
-                              <Link href={`/chantiers/${chantier.chantierId}/edit`} className="p-2 text-yellow-600 hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-yellow-900 rounded transition-colors" title="Modifier">
-                                <PencilSquareIcon className="h-4 w-4" />
+                              <Link href={`/chantiers/${chantier.chantierId}`} className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors" title="Consulter">
+                                <EyeIcon className="h-4 w-4" />
                               </Link>
                               <Link href={`/chantiers/${chantier.chantierId}/commande`} className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors" title="Commande">
                                 <CurrencyEuroIcon className="h-4 w-4" />

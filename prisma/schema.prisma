@@ -533,6 +533,7 @@ model Client {
   email     String?
   adresse   String?
   telephone String?
+  numeroTva String?
   createdAt DateTime   @default(now())
   updatedAt DateTime
   Chantier  Chantier[]

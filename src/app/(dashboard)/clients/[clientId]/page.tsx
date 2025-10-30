@@ -22,6 +22,7 @@ interface ClientDetails {
   email?: string;
   telephone?: string;
   adresse?: string;
+  numeroTva?: string;
   Chantier?: ChantierSimplifie[]; // Modifié pour correspondre à l'API
   // ... autres champs du client
 }
@@ -186,10 +187,13 @@ export default function ClientDetailPage() {
           <h2 className="text-xl font-semibold leading-6 text-gray-900 dark:text-white">
             {client.nom}
           </h2>
-          {/* TODO: Lien vers la page/modale de modification du client */}
-          <button className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+          <Link
+            href={`/clients/${client.id}/edit`}
+            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+            title="Éditer le client"
+          >
             <PencilIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          </button>
+          </Link>
         </div>
         <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-0">
           <dl className="sm:divide-y sm:divide-gray-200 dark:sm:divide-gray-700">
@@ -205,13 +209,41 @@ export default function ClientDetailPage() {
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Adresse</dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">{client.adresse || 'N/A'}</dd>
             </div>
-            {/* TODO: Ajouter d'autres champs du client ici si nécessaire */}
+            <div className="py-3 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Numéro de TVA</dt>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span>{client.numeroTva || 'N/A'}</span>
+                  {client.numeroTva && (
+                    <div className="flex gap-2">
+                      {client.numeroTva.toUpperCase().startsWith('BE') && (() => {
+                        // Extraire le numéro d'entreprise belge (sans BE, espaces, points, tirets)
+                        const numeroEntreprise = client.numeroTva
+                          .replace(/^BE/i, '')
+                          .replace(/[\s.\-]/g, '');
+                        return (
+                          <a
+                            href={`https://www.companyweb.be/fr/${numeroEntreprise}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                            title="Voir sur Companyweb"
+                          >
+                            Voir sur Companyweb
+                          </a>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </dd>
+            </div>
           </dl>
         </div>
       </div>
 
       {/* Section Contacts */}
-      <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
+      <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg mb-8">
         <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
           <h3 className="text-lg font-semibold leading-6 text-gray-900 dark:text-white">
             Contacts Associés

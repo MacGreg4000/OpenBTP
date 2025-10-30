@@ -6,7 +6,7 @@ import {
   DocumentDuplicateIcon,
   ClipboardDocumentListIcon,
   ChartBarIcon,
-  PencilSquareIcon,
+  EyeIcon,
   CurrencyEuroIcon,
   ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline'
@@ -36,8 +36,8 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
     
     // Couleurs spécifiques pour chaque type d'action
     switch (path) {
-      case '/edit':
-        return "text-yellow-500 group-hover:text-yellow-600 dark:text-yellow-400 dark:group-hover:text-yellow-300";
+      case '/':
+        return "text-indigo-500 group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300";
       case '/commande':
         return "text-blue-500 group-hover:text-blue-600 dark:text-blue-400 dark:group-hover:text-blue-300";
       case '/etats':
@@ -74,16 +74,16 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
           
           {/* Navigation - section séparée pour un meilleur alignement */}
           <nav className="flex flex-wrap gap-2 md:gap-3 justify-start md:justify-end">
-            {/* Éditer */}
+            {/* Consulter */}
             <Link
-              href={`/chantiers/${chantierId}/edit`}
+              href={`/chantiers/${chantierId}`}
               className={`group inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 
-                ${isActive('/edit') 
+                ${pathname === `/chantiers/${chantierId}` 
                   ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border-b-2 border-blue-500 shadow-sm' 
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'}`}
             >
-              <PencilSquareIcon className={`h-5 w-5 mr-2 transition-colors duration-300 ${getIconColor('/edit')}`} />
-              Éditer
+              <EyeIcon className={`h-5 w-5 mr-2 transition-colors duration-300 ${getIconColor('/')}`} />
+              Consulter
             </Link>
             
             {/* Commande */}

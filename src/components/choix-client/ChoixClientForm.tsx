@@ -6,6 +6,7 @@ import {
   DocumentArrowUpIcon
 } from '@heroicons/react/24/outline'
 import DetailChoixCard from './DetailChoixCard'
+import Select from 'react-select'
 
 interface Chantier {
   chantierId: string
@@ -282,18 +283,28 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Chantier associé
             </label>
-            <select
-              value={chantierId}
-              onChange={(e) => setChantierId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Aucun (client en réflexion)</option>
-              {chantiers.map((chantier) => (
-                <option key={chantier.chantierId} value={chantier.chantierId}>
-                  {chantier.nomChantier}
-                </option>
-              ))}
-            </select>
+            <Select
+              classNamePrefix="rs"
+              isClearable
+              isSearchable
+              placeholder="Rechercher un chantier..."
+              options={[
+                { value: '', label: 'Aucun (client en réflexion)' },
+                ...chantiers.map((c) => ({ value: c.chantierId, label: c.nomChantier }))
+              ]}
+              value={(() => {
+                if (!chantierId) return { value: '', label: 'Aucun (client en réflexion)' }
+                const match = chantiers.find((c) => c.chantierId === chantierId)
+                return match ? { value: match.chantierId, label: match.nomChantier } : null
+              })()}
+              onChange={(opt) => setChantierId((opt?.value as string) || '')}
+              styles={{
+                control: (base) => ({ ...base, backgroundColor: 'var(--input-bg)', borderColor: 'var(--input-border)' }),
+                singleValue: (base) => ({ ...base, color: 'var(--input-text)' }),
+                input: (base) => ({ ...base, color: 'var(--input-text)' }),
+                menu: (base) => ({ ...base, zIndex: 50 })
+              }}
+            />
           </div>
 
           <div>

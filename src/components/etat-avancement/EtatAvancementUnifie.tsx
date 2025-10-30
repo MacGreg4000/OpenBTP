@@ -358,20 +358,20 @@ export default function EtatAvancementUnifie({
 
   const handleAvenantChange = useCallback(async (avenantId: number, field: string, value: string | number) => {
     const timerKey = `${avenantId}-${field}`
-    
+
     // Annuler le timer précédent s'il existe
     if (debounceTimers[timerKey]) {
       clearTimeout(debounceTimers[timerKey])
     }
     
     // Mettre à jour l'état local immédiatement pour la réactivité de l'UI
-    setAvenantValues(prev => ({
-      ...prev,
-      [avenantId]: {
-        ...(prev[avenantId] || {} as AvenantValues),
-        [field]: value
-      } as AvenantValues
-    }))
+      setAvenantValues(prev => ({
+        ...prev,
+        [avenantId]: {
+          ...(prev[avenantId] || {} as AvenantValues),
+          [field]: value
+        } as AvenantValues
+      }))
     
     // Pour les nouveaux états ou avenants temporaires (ID négatifs), modifier localement sans appel API
     if (isNewEtat || avenantId < 0) {
@@ -420,11 +420,11 @@ export default function EtatAvancementUnifie({
     
     // Créer un nouveau timer avec debounce de 500ms pour les appels API
     const newTimer = setTimeout(async () => {
-      try {
-        setIsLoading(true);
-        
-        // Chercher l'avenant dans l'état local au lieu de etat.avenants
-        const avenant = avenants.find(a => a.id === avenantId)
+    try {
+      setIsLoading(true);
+
+      // Chercher l'avenant dans l'état local au lieu de etat.avenants
+      const avenant = avenants.find(a => a.id === avenantId)
       if (!avenant) {
         throw new Error('Avenant non trouvé')
       }
@@ -495,16 +495,16 @@ export default function EtatAvancementUnifie({
         return a;
       }));
 
-        // Attendre un court instant avant de rafraîchir
-        setTimeout(() => {
-          router.refresh();
-        }, 100);
-      } catch (error) {
-        console.error('Erreur lors de la mise à jour de l\'avenant:', error)
-        toast.error('Erreur lors de la mise à jour de l\'avenant')
-      } finally {
-        setIsLoading(false)
-      }
+      // Attendre un court instant avant de rafraîchir
+      setTimeout(() => {
+        router.refresh();
+      }, 100);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'avenant:', error)
+      toast.error('Erreur lors de la mise à jour de l\'avenant')
+    } finally {
+      setIsLoading(false)
+    }
     }, 500) // Debounce de 500ms
     
     // Enregistrer le nouveau timer

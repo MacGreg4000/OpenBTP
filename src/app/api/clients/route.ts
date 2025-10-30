@@ -14,22 +14,18 @@ export async function GET() {
       )
     }
 
-    // Test de connexion à la base de données
+    // S'assurer que Prisma est connecté - attendre que la connexion soit établie
     try {
-      await prisma.$connect()
-      console.log('Connexion à la base de données réussie')
-    } catch (dbError) {
-      console.error('Erreur de connexion à la base de données:', dbError)
-      throw new Error('Erreur de connexion à la base de données')
-    }
-
-    // Test de la table Client
-    try {
-      const count = await prisma.client.count()
-      console.log('Nombre de clients dans la base:', count)
-    } catch (tableError) {
-      console.error('Erreur avec la table Client:', tableError)
-      throw new Error('Erreur avec la table Client')
+      if (prisma && typeof (prisma as { $connect?: () => Promise<void> }).$connect === 'function') {
+        await (prisma as { $connect: () => Promise<void> }).$connect()
+      }
+    } catch (connectError: unknown) {
+      // Ignorer si déjà connecté
+      const errorMsg = String(connectError)
+      if (!errorMsg.includes('already connected') && !errorMsg.includes('already initialized')) {
+        // Continuer quand même - Prisma peut se connecter automatiquement
+        console.warn('Avertissement de connexion Prisma (continuation normale):', errorMsg)
+      }
     }
 
     const clients = await prisma.client.findMany({
@@ -39,6 +35,7 @@ export async function GET() {
         email: true,
         telephone: true,
         adresse: true,
+        numeroTva: true,
         Chantier: {
           select: {
             chantierId: true,
@@ -64,27 +61,17 @@ export async function GET() {
       }
     })
 
-    console.log('Clients récupérés:', clients)
-
     return NextResponse.json(clients)
   } catch (error: unknown) {
-    console.error('Erreur détaillée:', {
-      name: (error as Error | undefined)?.name,
-      message: (error as Error | undefined)?.message,
-      stack: (error as Error | undefined)?.stack,
-      cause: (error as Error | undefined as { cause?: unknown })?.cause
-    })
+    console.error('Erreur lors de la récupération des clients:', error)
 
     return NextResponse.json(
       { 
         error: 'Erreur lors de la récupération des clients',
-        details: (error as Error | undefined)?.message || 'Erreur inconnue',
-        type: (error as Error | undefined)?.name || 'Unknown'
+        details: (error as Error | undefined)?.message || 'Erreur inconnue'
       },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
@@ -122,6 +109,7 @@ export async function POST(request: Request) {
         email: body.email || null,
         telephone: body.telephone || null,
         adresse: body.adresse || null,
+        numeroTva: body.numeroTva || null,
         updatedAt: new Date() // Ajouter la date de mise à jour
       }
     })

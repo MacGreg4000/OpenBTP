@@ -18,12 +18,7 @@ const prismaClientSingleton = () => {
     // Ne jamais forcer une URL de base de données en dur ici
     
     const client = new PrismaClient({
-      log: ['error', 'warn'],
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL
-        }
-      }
+      log: ['error', 'warn']
     })
     
     // Ajouter des méthodes personnalisées si nécessaire
@@ -74,6 +69,7 @@ type PrismaUntyped = { [key: string]: any } & {
 export const prisma = (globalForPrisma.prisma ?? prismaClientSingleton()) as unknown as PrismaUntyped
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma as unknown as PrismaClientSingleton
+
 
 // Types personnalisés pour les commandes sous-traitant
 export interface CommandeSousTraitantWithRelations {

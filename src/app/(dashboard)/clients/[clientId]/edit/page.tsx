@@ -12,6 +12,7 @@ interface Client {
   email: string | null
   adresse: string | null
   telephone: string | null
+  numeroTva: string | null
   Chantier: Array<{
     chantierId: string
     nomChantier: string
@@ -62,6 +63,7 @@ export default function EditClientPage(props: { params: Promise<{ clientId: stri
         email: client?.email || clientData.email,
         adresse: client?.adresse || clientData.adresse,
         telephone: client?.telephone || clientData.telephone,
+        numeroTva: client?.numeroTva || clientData.numeroTva,
       };
       
       console.log("Données client envoyées pour mise à jour:", updatedClientData);
@@ -144,6 +146,16 @@ export default function EditClientPage(props: { params: Promise<{ clientId: stri
                 value={client.adresse || ''}
                 onChange={handleChange}
                 rows={3}
+              />
+
+              <FormInput
+                id="numeroTva"
+                name="numeroTva"
+                type="text"
+                label="Numéro de TVA"
+                value={client.numeroTva || ''}
+                onChange={handleChange}
+                placeholder="BE 1234.567.890"
               />
             </div>
 

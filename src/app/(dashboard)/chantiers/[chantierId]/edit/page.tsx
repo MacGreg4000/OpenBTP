@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, use, useCallback } from 'react';
+import { useState, useEffect, use, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { ArrowLeftIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
@@ -65,8 +65,9 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
     contactId: ''
   })
   const [saving, setSaving] = useState(false)
+  const isInitialLoad = useRef(true)
 
-  const fetchContactsForClient = useCallback(async (clientId: string) => {
+  const fetchContactsForClient = useCallback(async (clientId: string, preserveContactId?: string) => {
     if (!clientId) {
       setContactsDuClient([]);
       return;
@@ -78,6 +79,11 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
       if (response.ok) {
         const contacts = await response.json();
         setContactsDuClient(contacts);
+        
+        // Si on préserve un contactId et qu'il existe dans la liste, s'assurer qu'il est sélectionné
+        if (preserveContactId && contacts.some((c: Contact) => c.id === preserveContactId)) {
+          setSelectedContactId(preserveContactId);
+        }
       } else {
         console.error('Erreur lors du chargement des contacts');
         setContactsDuClient([]);
@@ -131,8 +137,12 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
         })
 
         if (chantierData.clientId) {
-          fetchContactsForClient(chantierData.clientId);
+          // Préserver le contactId lors du chargement initial
+          fetchContactsForClient(chantierData.clientId, chantierData.contactId || undefined);
         }
+
+        // Marquer que le chargement initial est terminé
+        isInitialLoad.current = false;
 
       } catch (error) {
         console.error('Erreur:', error)
@@ -147,8 +157,14 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
   }, [params.chantierId, fetchContactsForClient])
 
   useEffect(() => {
+    // Ne pas réinitialiser le contact lors du chargement initial
+    if (isInitialLoad.current) {
+      return;
+    }
+
     if (selectedClientId && chantier) {
       const currentChantierClient = chantier?.clientId;
+      // Réinitialiser le contact seulement si l'utilisateur change vraiment le client
       if (selectedClientId !== currentChantierClient) {
         setSelectedContactId('');
         setFormData(prev => ({ ...prev, contactId: '' }));

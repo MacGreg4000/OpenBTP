@@ -5,7 +5,7 @@ import {
   ClipboardDocumentListIcon,
   FolderIcon,
   ChartBarIcon,
-  PencilSquareIcon,
+  EyeIcon,
   CurrencyEuroIcon,
   ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline'
@@ -19,11 +19,11 @@ export default function ChantierActions({ chantierId, className = '' }: Chantier
   return (
     <div className={`flex justify-center space-x-3 ${className}`}>
       <Link
-        href={`/chantiers/${chantierId}/edit`}
+        href={`/chantiers/${chantierId}`}
         className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
-        title="Éditer"
+        title="Consulter"
       >
-        <PencilSquareIcon className="h-5 w-5" />
+        <EyeIcon className="h-5 w-5" />
       </Link>
       <Link
         href={`/chantiers/${chantierId}/commande`}

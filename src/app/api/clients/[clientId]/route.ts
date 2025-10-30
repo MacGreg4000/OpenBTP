@@ -71,7 +71,8 @@ export async function PUT(request: Request, props: { params: Promise<{ clientId:
         nom: body.nom,
         email: body.email || null,
         telephone: body.telephone || null,
-        adresse: body.adresse || null
+        adresse: body.adresse || null,
+        numeroTva: body.numeroTva || null
       },
       include: {
         Chantier: {

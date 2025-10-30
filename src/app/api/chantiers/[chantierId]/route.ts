@@ -22,6 +22,25 @@ export async function GET(
     const chantier = await prisma.chantier.findUnique({
       where: {
         chantierId: chantierId,
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            nom: true,
+            email: true,
+            adresse: true
+          }
+        },
+        contact: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+            telephone: true
+          }
+        }
       }
     })
 
