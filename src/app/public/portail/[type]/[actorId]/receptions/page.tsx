@@ -44,7 +44,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
         {loading ? (
           <div className="bg-white rounded-xl p-4 shadow text-center">{t('loading')}</div>
         ) : items.length === 0 ? (
-          <div className="bg-white rounded-xl p-6 shadow text-center text-gray-500">—</div>
+          <div className="bg-white rounded-xl p-6 shadow text-center text-gray-500">{t('none')}</div>
         ) : (
           <div className="space-y-3">
             {items.map(rc => (
@@ -52,8 +52,8 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
                 <div className="text-xs text-gray-500">{new Date(rc.dateCreation).toLocaleDateString()} {rc.dateLimite ? `→ ${new Date(rc.dateLimite).toLocaleDateString()}` : ''}</div>
                 <div className="font-semibold text-gray-900 mt-0.5">{rc.chantier?.nomChantier || rc.chantierId}</div>
                 <div className="mt-1 text-xs flex items-center gap-2">
-                  <span className="text-gray-600">{rc._count?.remarques || 0} remarques</span>
-                  <span className={`px-2 py-0.5 rounded-full ${rc.estFinalise ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>{rc.estFinalise ? 'Finalisée' : 'En cours'}</span>
+                  <span className="text-gray-600">{(rc._count?.remarques || 0)} {t('remarks')}</span>
+                  <span className={`px-2 py-0.5 rounded-full ${rc.estFinalise ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>{rc.estFinalise ? t('finalized') : t('in_progress')}</span>
                 </div>
               </div>
             ))}

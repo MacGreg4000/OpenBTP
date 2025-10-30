@@ -93,7 +93,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
                   <a 
                     href={`/public/portail/${type}/${actorId}/sav/${tk.id}`} 
                     className="ml-3 h-9 w-9 inline-flex items-center justify-center rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                    title="Voir les détails"
+                    title={t('details')}
                   >
                     <ArrowTopRightOnSquareIcon className="h-5 w-5"/>
                   </a>

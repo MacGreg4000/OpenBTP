@@ -61,14 +61,18 @@ export default function EtatAvancementUnifie({
   const [isLoading, setIsLoading] = useState(false)
   const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
 
-  // Construire l'URL de base selon le type
-  const getBaseApiUrl = () => {
+  // ID sous-traitant résolu et stable
+  const resolvedSoustraitantId = useMemo(() => (
+    soustraitantId ?? (etat as SoustraitantEtat).soustraitantId
+  ), [soustraitantId, etat])
+
+  // Construire l'URL de base selon le type (stabilisé pour hooks)
+  const getBaseApiUrl = useCallback(() => {
     if (type === 'soustraitant') {
-      const sid = soustraitantId ?? (etat as SoustraitantEtat).soustraitantId
-      return `/api/chantiers/${chantierId}/soustraitants/${sid}/etats-avancement`
+      return `/api/chantiers/${chantierId}/soustraitants/${resolvedSoustraitantId}/etats-avancement`
     }
     return `/api/chantiers/${chantierId}/etats-avancement`
-  }
+  }, [type, resolvedSoustraitantId, chantierId])
 
   // Choisir l'etatId effectif (soustraitant utilise l'ID numérique réel)
   const effectiveEtatId = type === 'soustraitant' ? String(etat.id) : etatId

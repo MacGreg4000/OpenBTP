@@ -25,7 +25,7 @@ interface UploadResponse {
 function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
   const { type, actorId } = props.params
   const router = useRouter()
-  const _i18n = usePortalI18n()
+  const { t } = usePortalI18n()
   const [error, setError] = useState<string | null>(null)
   const [_loading, _setLoading] = useState(false)
   
@@ -208,7 +208,7 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('loading')}</p>
         </div>
       </div>
     )
@@ -224,8 +224,8 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
               <CameraIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Upload de Photos</h1>
-              <p className="text-gray-600 dark:text-gray-400">Connecté en tant que {sessionData?.subjectName}</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('photos_title')}</h1>
+              <p className="text-gray-600 dark:text-gray-400">{t('connect')} {sessionData?.subjectName}</p>
             </div>
           </div>
           <button
@@ -233,7 +233,7 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
             className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-4 py-2 flex items-center text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Retour au portail
+            {t('back_to_portal')}
           </button>
         </div>
 
@@ -245,8 +245,8 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
               <DocumentPlusIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ajouter des photos</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Sélectionnez un chantier et vos photos</p>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('photos_form_title')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('photos_form_subtitle')}</p>
             </div>
           </div>
           
@@ -254,7 +254,7 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
             {/* Sélection du chantier */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                Chantier *
+                {t('chantier_required')}
               </label>
               <select
                 value={selectedChantierId}
@@ -262,7 +262,7 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
                 className="w-full rounded-lg px-3 py-3 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 required
               >
-                <option value="">Sélectionnez un chantier</option>
+                <option value="">{t('chantier_select_placeholder')}</option>
                 {chantiers.map((chantier) => (
                   <option key={chantier.id} value={chantier.id}>
                     {chantier.nomChantier} ({chantier.statutLibelle})
@@ -275,7 +275,7 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
             {/* Sélection des photos */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                Photos * (max 20)
+                {t('photos_label')}
               </label>
               <div className="border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-lg p-6 text-center hover:border-purple-500 dark:hover:border-purple-400 transition-colors bg-purple-50 dark:bg-purple-900/20">
                 <input
@@ -288,13 +288,13 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
                 />
                 <label htmlFor="photos" className="cursor-pointer">
                   <DocumentPlusIcon className="h-12 w-12 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
-                  <p className="text-gray-700 dark:text-gray-300">Cliquez pour sélectionner des photos</p>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">ou glissez-déposez vos photos ici</p>
+                  <p className="text-gray-700 dark:text-gray-300">{t('click_to_select_photos')}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('or_drag_drop')}</p>
                 </label>
               </div>
               {selectedFiles.length > 0 && (
                 <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
-                  {selectedFiles.length} photo(s) sélectionnée(s)
+                  {selectedFiles.length} {t('selected_photos_count')}
                 </p>
               )}
             </div>
@@ -303,14 +303,14 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
             {previewUrls.length > 0 && (
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                  Aperçu ({previewUrls.length} photo(s))
+                  {t('preview_label')} ({previewUrls.length} {t('selected_photos_count')})
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {previewUrls.map((url, index) => (
                     <div key={index} className="relative">
                       <Image
                         src={url}
-                        alt={`Aperçu ${index + 1}`}
+                        alt={`preview-${index + 1}`}
                         width={200}
                         height={96}
                         className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
@@ -324,14 +324,14 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
             {/* Description optionnelle */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                Description (optionnel)
+                {t('description_optional')}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full rounded-lg px-3 py-3 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 rows={3}
-                placeholder="Ajoutez une description ou des commentaires..."
+                placeholder={t('description_placeholder')}
               />
             </div>
 
@@ -344,12 +344,12 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
               {uploading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Upload en cours...
+                  {t('uploading')}
                 </>
               ) : (
                 <>
                   <CameraIcon className="h-5 w-5 mr-2" />
-                  Envoyer les photos
+                  {t('send_photos')}
                 </>
               )}
             </button>
@@ -378,14 +378,14 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
             <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mr-3">
               <CheckCircleIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Instructions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('instructions')}</h3>
           </div>
           <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-            <li>• Sélectionnez le chantier concerné dans la liste</li>
-            <li>• Ajoutez jusqu'à 20 photos maximum par envoi</li>
-            <li>• Les photos sont automatiquement compressées</li>
-            <li>• Une notification sera envoyée à l'équipe</li>
-            <li>• Les photos sont immédiatement visibles dans l'application</li>
+            <li>{t('instruction_select_site')}</li>
+            <li>{t('instruction_up_to_20')}</li>
+            <li>{t('instruction_compressed')}</li>
+            <li>{t('instruction_notification')}</li>
+            <li>{t('instruction_visible')}</li>
           </ul>
         </div>
       </div>

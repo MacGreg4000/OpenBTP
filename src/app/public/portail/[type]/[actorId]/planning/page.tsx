@@ -58,14 +58,15 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
   }, [tasks])
 
   const today = new Date()
-  const weekdayOf = (d: Date) => d.toLocaleDateString('fr-FR', { weekday: 'long' })
-  const monthYearOf = (d: Date) => d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  const locale = lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-PT' : 'ro-RO'
+  const weekdayOf = (d: Date) => d.toLocaleDateString(locale, { weekday: 'long' })
+  const monthYearOf = (d: Date) => d.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
 
   const formatHourRange = (s: string, e: string) => {
     const ds = new Date(s)
     const de = new Date(e)
-    const hs = ds.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    const he = de.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const hs = ds.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+    const he = de.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
     return `${hs} → ${he}`
   }
 

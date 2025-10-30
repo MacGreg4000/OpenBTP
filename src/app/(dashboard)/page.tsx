@@ -26,6 +26,7 @@ import DocumentsExpiresWidget from '@/components/dashboard/DocumentsExpiresWidge
 import ReceptionsEnCoursWidget from '@/components/dashboard/ReceptionsEnCoursWidget'
 import QuickActionsWidget from '@/components/dashboard/QuickActionsWidget'
 import RecentEtatsList from '@/components/dashboard/RecentEtatsList'
+import MetresEnAttenteWidget from '@/components/dashboard/MetresEnAttenteWidget'
 
 // Types
 // (Types inutilisés supprimés)
@@ -513,6 +514,9 @@ export default function DashboardPage() {
                 </div>
                 <div className="h-80 overflow-hidden">
                   <DocumentsExpiresWidget />
+                </div>
+                <div className="h-80 overflow-hidden md:col-span-2 lg:col-span-1">
+                  <MetresEnAttenteWidget />
                 </div>
               </div>
             </section>

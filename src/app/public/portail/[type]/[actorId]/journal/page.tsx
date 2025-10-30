@@ -282,7 +282,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
             </button>
             <div className="flex items-center ml-auto gap-2">
               <CalendarDaysIcon className="h-5 w-5 text-white/90"/>
-              <span className="font-medium">Mon Journal</span>
+              <span className="font-medium">{t('my_journal')}</span>
               <select 
                 value={lang} 
                 onChange={(e) => setLang(e.target.value as 'fr'|'en'|'pt'|'ro')} 
@@ -301,11 +301,11 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
         <div className="bg-white rounded-xl p-4 shadow">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-gray-900">Aujourd'hui - {new Date().toLocaleDateString('fr-FR')}</h3>
+              <h3 className="font-semibold text-gray-900">{t('today')} - {new Date().toLocaleDateString(lang==='fr'?'fr-FR':lang==='en'?'en-GB':lang==='pt'?'pt-PT':'ro-RO')}</h3>
               <p className="text-sm text-gray-600">
-                {getTodayStatus() === 'empty' && 'Aucune activité enregistrée'}
-                {getTodayStatus() === 'pending' && 'Journée en cours'}
-                {getTodayStatus() === 'validated' && 'Journée validée ✅'}
+                {getTodayStatus() === 'empty' && t('no_activity_today')}
+                {getTodayStatus() === 'pending' && t('day_in_progress')}
+                {getTodayStatus() === 'validated' && t('day_validated')}
               </p>
             </div>
             <button
@@ -313,7 +313,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <PlusIcon className="h-5 w-5 mr-2"/>
-              Nouvelle activité
+              {t('new_activity')}
             </button>
           </div>
         </div>
@@ -321,11 +321,11 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
         {/* Liste des entrées */}
         {loading ? (
           <div className="bg-white rounded-xl p-4 shadow text-center">
-            Chargement...
+            {t('loading')}
           </div>
         ) : journalEntries.length === 0 ? (
           <div className="bg-white rounded-xl p-6 shadow text-center text-gray-500">
-            Aucune entrée dans le journal
+            {t('no_activity_today')}
           </div>
         ) : (
           <div className="space-y-4">
@@ -407,6 +407,7 @@ function JournalForm({
   onClose: () => void
   onSave: () => void
 }) {
+  const { t } = usePortalI18n()
   const [formData, setFormData] = useState({
     date: entry?.date || new Date().toISOString().split('T')[0],
     heureDebut: entry?.heureDebut || '08:00',
@@ -502,7 +503,7 @@ function JournalForm({
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
             <input
               type="date"
               value={formData.date}
@@ -533,7 +534,7 @@ function JournalForm({
           {!journeeEntiere && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Heure début</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('start_time')}</label>
                 <input
                   type="time"
                   value={formData.heureDebut}
@@ -543,7 +544,7 @@ function JournalForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Heure fin</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('end_time')}</label>
                 <input
                   type="time"
                   value={formData.heureFin}
@@ -556,7 +557,7 @@ function JournalForm({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lieu de travail</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('work_place')}</label>
             <select
               value={formData.chantierId || 'libre'}
               onChange={(e) => {
@@ -568,8 +569,8 @@ function JournalForm({
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Sélectionner un chantier</option>
-              <option value="libre">🏢 Chantier libre / Déplacement</option>
+              <option value="">{t('select_site')}</option>
+              <option value="libre">🏢 {t('free_site')}</option>
               {Array.isArray(chantiers) && chantiers.map((chantier) => (
                 <option key={chantier.chantierId} value={chantier.chantierId}>
                   🏗️ {chantier.nomChantier} ({chantier.chantierId})
@@ -580,25 +581,25 @@ function JournalForm({
 
           {(!formData.chantierId || formData.chantierId === '') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Lieu libre</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('free_place')}</label>
               <input
                 type="text"
                 value={formData.lieuLibre}
                 onChange={(e) => setFormData({ ...formData, lieuLibre: e.target.value })}
-                placeholder="Déplacement, formation, bureau, etc."
+                placeholder={t('free_place_placeholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Décrivez ce que vous avez fait..."
+              placeholder={t('description_placeholder_journal')}
               required
             />
           </div>
@@ -609,14 +610,14 @@ function JournalForm({
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
-              Annuler
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Sauvegarde...' : 'Enregistrer'}
+              {saving ? t('saving') : t('save')}
             </button>
           </div>
         </form>

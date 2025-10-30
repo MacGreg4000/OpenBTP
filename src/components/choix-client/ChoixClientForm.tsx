@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { 
   PlusIcon,
   DocumentArrowUpIcon
@@ -221,6 +221,18 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
     await onSubmit(formData)
   }
 
+  const chantierOptions = useMemo(() => {
+    const base = [{ value: '', label: 'Aucun (client en réflexion)' }]
+    const others = chantiers.map((c) => ({ value: c.chantierId, label: c.nomChantier }))
+    return [...base, ...others]
+  }, [chantiers])
+
+  const selectedChantierOption = useMemo(() => {
+    // Trouver l'objet option exact pour que react-select affiche correctement la valeur contrôlée
+    const match = chantierOptions.find((opt) => opt.value === (chantierId || ''))
+    return match || chantierOptions[0]
+  }, [chantierOptions, chantierId])
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Informations client */}
@@ -288,15 +300,8 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
               isClearable
               isSearchable
               placeholder="Rechercher un chantier..."
-              options={[
-                { value: '', label: 'Aucun (client en réflexion)' },
-                ...chantiers.map((c) => ({ value: c.chantierId, label: c.nomChantier }))
-              ]}
-              value={(() => {
-                if (!chantierId) return { value: '', label: 'Aucun (client en réflexion)' }
-                const match = chantiers.find((c) => c.chantierId === chantierId)
-                return match ? { value: match.chantierId, label: match.nomChantier } : null
-              })()}
+              options={chantierOptions}
+              value={selectedChantierOption}
               onChange={(opt) => setChantierId((opt?.value as string) || '')}
               styles={{
                 control: (base) => ({ ...base, backgroundColor: 'var(--input-bg)', borderColor: 'var(--input-border)' }),

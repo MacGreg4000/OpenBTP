@@ -78,6 +78,7 @@ model soustraitant {
   tva                          String?
   actif                        Boolean                        @default(true)
   commandes                    CommandeSousTraitant[]
+  metresSoustraitant           MetreSoustraitant[]
   contrats                     contrat[]
   soustraitant_etat_avancement soustraitant_etat_avancement[]
   soustraitantPINs             SousTraitantPIN[]
@@ -266,6 +267,7 @@ model CommandeSousTraitant {
   soustraitant                 soustraitant                   @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
   lignes                       LigneCommandeSousTraitant[]
   soustraitant_etat_avancement soustraitant_etat_avancement[]
+  metresSoustraitant           MetreSoustraitant[]
 
   @@index([chantierId])
   @@index([soustraitantId])
@@ -506,6 +508,7 @@ model Chantier {
   bonsRegie            BonRegie[]
   commandes            Commande[]             @relation("CommandeToChantier")
   commandeSousTraitant CommandeSousTraitant[]
+  metresSoustraitant   MetreSoustraitant[]
   etatsAvancement      EtatAvancement[]
   receptionsChantier   ReceptionChantier[]
   // Planning ressources
@@ -939,6 +942,62 @@ model SousTraitantPIN {
   @@index([receptionId])
   @@index([soustraitantId])
   @@map("soustraitant_pin")
+}
+
+// ==============================
+// MÉTRÉS SOUS-TRAITANTS (PUBLIC)
+// ==============================
+
+enum MetreStatut {
+  BROUILLON
+  SOUMIS
+  VALIDE
+  PARTIELLEMENT_VALIDE
+  REJETE
+}
+
+model MetreSoustraitant {
+  id               String         @id @default(uuid())
+  chantierId       String
+  soustraitantId   String
+  commandeId       Int?
+  statut           MetreStatut    @default(BROUILLON)
+  commentaire      String?        @db.Text
+  piecesJointes    Json?          // URLs de fichiers
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  chantier         Chantier       @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  soustraitant     soustraitant   @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
+  commande         CommandeSousTraitant? @relation(fields: [commandeId], references: [id])
+  lignes           MetreLigne[]
+
+  @@index([chantierId])
+  @@index([soustraitantId])
+  @@index([commandeId])
+  @@map("metre_soustraitant")
+}
+
+model MetreLigne {
+  id               String   @id @default(uuid())
+  metreId          String
+  // Lignes issues de la commande de base ou suppléments libres
+  ligneCommandeId  Int?
+  article          String
+  description      String   @db.Text
+  type             String   @default("QP")
+  unite            String
+  prixUnitaire     Float
+  quantite         Float    @default(0)
+  estSupplement    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  metre            MetreSoustraitant @relation(fields: [metreId], references: [id], onDelete: Cascade)
+
+  @@index([metreId])
+  @@map("metre_ligne")
 }
 
 model Tag {

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeftIcon, LockClosedIcon, CalendarIcon, ClipboardDocumentListIcon, WrenchScrewdriverIcon, DocumentPlusIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { PortalI18nProvider, usePortalI18n } from '../../i18n'
+import Link from 'next/link'
 
 function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
   const { type, actorId } = props.params
@@ -148,7 +149,7 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
               }} 
               className="inline-flex items-center text-white/90 hover:text-white transition-colors"
             >
-              <ArrowLeftIcon className="h-5 w-5 mr-1"/>Déconnexion
+              <ArrowLeftIcon className="h-5 w-5 mr-1"/>{t('logout')}
             </button>
             <div className="flex items-center gap-2">
               <div className="text-sm text-white/80">{type}</div>
@@ -166,6 +167,18 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
 
         {/* Cartes rapides */}
         <div className="grid grid-cols-2 gap-3">
+          {/* Bouton Soumettre un métré (tout en haut, visible pour sous-traitant uniquement) */}
+          {type === 'soustraitant' && (
+            <button onClick={() => router.push(`/public/portail/${type}/${actorId}/metres/nouveau`)} className="bg-white rounded-xl p-4 shadow flex items-center justify-between border border-gray-100 hover:shadow-md active:scale-[0.99] transition">
+              <div className="flex items-center">
+                <div className="h-10 w-10 rounded-full bg-yellow-50 text-yellow-700 flex items-center justify-center mr-3">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                </div>
+                <div className="font-semibold text-gray-800">{t('submit_metre')}</div>
+              </div>
+              <ArrowRightIcon className="h-4 w-4 text-gray-400"/>
+            </button>
+          )}
           {/* En haut à gauche: Mon planning */}
           <button onClick={() => router.push(`/public/portail/${type}/${actorId}/planning`)} className="bg-white rounded-xl p-4 shadow flex flex-col items-center justify-center border border-gray-100 hover:shadow-md active:scale-[0.99] transition">
             <div className="h-10 w-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
@@ -198,7 +211,6 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
             <div className="mt-2 text-sm font-semibold text-gray-800">{t('sav_tickets')}</div>
             <ArrowRightIcon className="h-4 w-4 text-gray-400 mt-1"/>
           </button>
-          
           {/* Journal - Seulement pour les ouvriers internes */}
           {type === 'ouvrier' && (
             <button onClick={() => router.push(`/public/portail/${type}/${actorId}/journal`)} className="bg-white rounded-xl p-4 shadow flex flex-col items-center justify-center border border-gray-100 hover:shadow-md active:scale-[0.99] transition">
@@ -224,13 +236,18 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
                 </svg>
               </div>
               <div>
-                <div className="font-semibold text-gray-800">Envoyer des photos</div>
-                <div className="text-sm text-gray-500">Upload de photos de chantier</div>
+                <div className="font-semibold text-gray-800">{t('photos_send')}</div>
+                <div className="text-sm text-gray-500">{t('photos_subtitle')}</div>
               </div>
             </div>
             <ArrowRightIcon className="h-4 w-4 text-gray-400"/>
           </button>
         </div>
+
+        {/* Encart: Mes métrés soumis */}
+        {type === 'soustraitant' && (
+          <MesMetres actorId={actorId} />
+        )}
       </div>
     </div>
   )
@@ -252,7 +269,7 @@ function ActorHeader({ type, actorId }: { type: 'ouvrier'|'soustraitant'; actorI
   useEffect(() => {
     (async ()=>{
       try {
-        const res = await fetch(`/api/public/portail/${type}/${actorId}/me`)
+        const res = await fetch(`/api/public/portail/${type}/${actorId}/me`, { credentials: 'include' })
         const data = await res.json()
         if (res.ok) {
           setName(data.name || '')
@@ -275,6 +292,49 @@ function ActorHeader({ type, actorId }: { type: 'ouvrier'|'soustraitant'; actorI
         <div className="font-semibold text-gray-900 truncate">{name}</div>
         <div className="text-gray-500 text-xs">{role}</div>
       </div>
+    </div>
+  )
+}
+
+function MesMetres({ actorId }: { actorId: string }) {
+  const { t } = usePortalI18n()
+  const [items, setItems] = useState<{ id: string; statut: string; createdAt: string; chantier: { chantierId: string; nomChantier: string } }[]>([])
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/metres', { cache: 'no-store' })
+        const json = await res.json()
+        if (res.ok && Array.isArray(json?.data)) {
+          setItems(json.data.filter((m: { soustraitant?: { id?: string } }) => m?.soustraitant?.id === actorId))
+        }
+      } catch {
+        setItems([])
+      }
+    })()
+  }, [actorId])
+  return (
+    <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+      <div className="flex items-center justify-between mb-2">
+        <div className="font-semibold text-gray-800">{t('my_submitted_metres')}</div>
+        <Link href="#" onClick={(e)=>{e.preventDefault();}} className="text-sm text-gray-500">&nbsp;</Link>
+      </div>
+      {items.length === 0 ? (
+        <div className="text-sm text-gray-500">{t('none')}</div>
+      ) : (
+        <ul className="divide-y divide-gray-200">
+          {items.map((m) => (
+            <li key={m.id} className="py-2 flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-800">{m.chantier.nomChantier}</div>
+                <div className="text-xs text-gray-500">{new Date(m.createdAt).toLocaleDateString('fr-FR')}</div>
+              </div>
+              <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 border">
+                {m.statut}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
