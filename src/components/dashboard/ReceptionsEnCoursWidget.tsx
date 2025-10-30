@@ -7,10 +7,10 @@ import { CalendarIcon } from '@heroicons/react/24/outline'
 
 interface ReceptionEnCours {
   id: string
+  chantierId: string
   nomChantier: string
   client: string
   dateReceptionPrevue: string
-  // Potentiellement d'autres champs comme 'statut' ou 'responsable'
 }
 
 export default function ReceptionsEnCoursWidget() {
@@ -103,8 +103,8 @@ export default function ReceptionsEnCoursWidget() {
               key={reception.id} 
               className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
             >
-              {/* Lien à ajuster vers la page de détail de la réception */}
-              <Link href={`/receptions/${reception.id}`} className="block">
+              {/* Lien vers la réception du chantier */}
+              <Link href={`/chantiers/${reception.chantierId}/reception/${reception.id}`} className="block">
                 <h3 className="font-medium text-gray-900 dark:text-white">
                   Chantier: {reception.nomChantier}
                 </h3>

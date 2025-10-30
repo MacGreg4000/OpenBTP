@@ -37,41 +37,38 @@ export async function GET() {
 
     // Transformer les données pour correspondre au format attendu par le dashboard
     const chantiersFormates = chantiers.map(chantier => {
-      // Mapping des statuts
-      let etatLibelle = chantier.statut;
+      // Mapping des statuts vers libellés utilisés par le dashboard
+      let etatLibelle = chantier.statut
       switch (chantier.statut) {
         case 'EN_PREPARATION':
-          etatLibelle = 'En préparation';
-          break;
+          etatLibelle = 'En préparation'
+          break
         case 'EN_COURS':
-          etatLibelle = 'En cours';
-          break;
+          etatLibelle = 'En cours'
+          break
         case 'TERMINE':
-          etatLibelle = 'Terminé';
-          break;
+          etatLibelle = 'Terminé'
+          break
         case 'A_VENIR':
-          etatLibelle = 'À venir';
-          break;
+          etatLibelle = 'À venir'
+          break
         default:
-          etatLibelle = chantier.statut;
+          etatLibelle = chantier.statut
       }
 
-      // Dates avec fallbacks
-      const dateDebut = chantier.dateDebut || new Date();
-      const _dateFin = chantier.dateFinReelle || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 jours si pas de date de fin
+      const start = (chantier.dateDebut ?? new Date()).toISOString()
+      const end = chantier.dateFinReelle ? chantier.dateFinReelle.toISOString() : null
 
+      // Forme attendue par Dashboard (/src/app/(dashboard)/page.tsx)
       return {
-        chantierId: chantier.chantierId,
-        nomChantier: chantier.nomChantier,
-        statut: etatLibelle,
+        id: chantier.chantierId,
+        title: chantier.nomChantier,
         client: chantier.client?.nom || 'Client non spécifié',
-        dateDebut: dateDebut.toISOString(),
-        dateFin: chantier.dateFinReelle ? chantier.dateFinReelle.toISOString() : null,
-        dureeEnJours: chantier.dateDebut && chantier.dateFinReelle ? 
-          Math.ceil((chantier.dateFinReelle.getTime() - chantier.dateDebut.getTime()) / (1000 * 60 * 60 * 24)) : 
-          30 // Durée par défaut de 30 jours
-      };
-    });
+        etat: etatLibelle,
+        start,
+        end
+      }
+    })
 
     return NextResponse.json(chantiersFormates);
 

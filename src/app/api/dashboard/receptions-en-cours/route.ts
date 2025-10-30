@@ -8,17 +8,18 @@ export async function GET() {
         estFinalise: false, // On ne prend que les réceptions non finalisées
       },
       include: {
-        chantier: { // Inclure les informations du chantier lié
+        chantier: {
           select: {
+            chantierId: true,
             nomChantier: true,
-            clientNom: true, // Garder clientNom pour le fallback
-            client: {         // Inclure l'objet Client lié
+            clientNom: true,
+            client: {
               select: {
-                nom: true     // Sélectionner le nom depuis le modèle Client
+                nom: true
               }
             }
-          },
-        },
+          }
+        }
       },
       orderBy: {
         dateLimite: 'asc', // Optionnel: trier par date limite la plus proche
@@ -29,9 +30,10 @@ export async function GET() {
     // Adapter les données au format attendu par le widget
     const formattedReceptions = receptionsEnCours.map(reception => ({
       id: reception.id,
+      chantierId: reception.chantier.chantierId,
       nomChantier: reception.chantier.nomChantier,
       client: reception.chantier.client?.nom || reception.chantier.clientNom || 'N/A',
-      dateReceptionPrevue: reception.dateLimite.toISOString(), // Utiliser dateLimite comme dateReceptionPrevue
+      dateReceptionPrevue: reception.dateLimite.toISOString(),
     }))
 
     return NextResponse.json(formattedReceptions)
