@@ -15,6 +15,7 @@ interface FormData {
   email: string
   telephone: string
   adresse: string
+  numeroTva: string
 }
 
 export default function NouveauClientPage() {
@@ -23,7 +24,8 @@ export default function NouveauClientPage() {
     nom: '',
     email: '',
     telephone: '',
-    adresse: ''
+    adresse: '',
+    numeroTva: ''
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -180,6 +182,18 @@ export default function NouveauClientPage() {
                   onChange={handleChange}
                   rows={3}
                   placeholder="123 rue de la République, 75001 Paris"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-6">
+                <FormInput
+                  id="numeroTva"
+                  name="numeroTva"
+                  type="text"
+                  label="Numéro de TVA"
+                  value={formData.numeroTva}
+                  onChange={handleChange}
+                  placeholder="BE 1234.567.890"
                 />
               </div>
 
