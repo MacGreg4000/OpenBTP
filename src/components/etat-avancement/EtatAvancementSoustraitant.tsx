@@ -565,13 +565,16 @@ export default function EtatAvancementSoustraitant({
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {memoizedCalculatedAvenants.map((avenant, index) => (
+                {memoizedCalculatedAvenants.map((avenant, index) => {
+                  // Un avenant provient d'un état précédent si quantitePrecedente > 0
+                  const isFromPreviousState = avenant.quantitePrecedente > 0
+                  return (
                   <tr
                     key={`avenant-${avenant.id}-${index}`}
                     className="hover:bg-green-50 dark:hover:bg-green-900/10"
                   >
                     <td className="px-2 py-4 text-sm text-gray-700 dark:text-gray-300">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <input
                           type="text"
                           value={avenantValues[avenant.id]?.article || avenant.article}
@@ -585,7 +588,7 @@ export default function EtatAvancementSoustraitant({
                       )}
                     </td>
                     <td className="px-2 py-4 text-sm text-gray-700 dark:text-gray-300">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <textarea
                           value={avenantValues[avenant.id]?.description || avenant.description}
                           onChange={(e) => {
@@ -605,7 +608,7 @@ export default function EtatAvancementSoustraitant({
                       )}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-center">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <select
                           value={avenantValues[avenant.id]?.type || avenant.type}
                           onChange={(e) => handleAvenantChange(avenant.id, 'type', e.target.value)}
@@ -622,7 +625,7 @@ export default function EtatAvancementSoustraitant({
                       )}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-center">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <select
                           value={avenantValues[avenant.id]?.unite || avenant.unite || 'Pièces'}
                           onChange={(e) => handleAvenantChange(avenant.id, 'unite', e.target.value)}
@@ -639,7 +642,7 @@ export default function EtatAvancementSoustraitant({
                       )}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <NumericInput
                           value={avenantValues[avenant.id]?.prixUnitaire ?? avenant.prixUnitaire}
                           onChangeNumber={(val) => handleAvenantChange(avenant.id, 'prixUnitaire', val)}
@@ -653,7 +656,7 @@ export default function EtatAvancementSoustraitant({
                       )}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <NumericInput
                           value={avenantValues[avenant.id]?.quantite ?? avenant.quantite}
                           onChangeNumber={(val) => handleAvenantChange(avenant.id, 'quantite', val)}
@@ -696,7 +699,7 @@ export default function EtatAvancementSoustraitant({
                       {avenant.montantTotal.toLocaleString('fr-FR')} €
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-center">
-                      {!etatAvancement.estFinalise && (
+                      {!etatAvancement.estFinalise && !isFromPreviousState && (
                         <button
                           onClick={() => handleDeleteAvenant(avenant.id)}
                           className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
@@ -706,7 +709,8 @@ export default function EtatAvancementSoustraitant({
                       )}
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

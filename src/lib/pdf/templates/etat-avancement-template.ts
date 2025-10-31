@@ -543,7 +543,7 @@ export function generateEtatAvancementHTML(
                 <thead>
                     <tr>
                         <th style="width: 6%">Article</th>
-                        <th style="width: 18%">Description</th>
+                        <th style="width: 26%">Description</th>
                         <th style="width: 5%" class="text-center">Type</th>
                         <th style="width: 5%" class="text-center">Unité</th>
                         <th style="width: 9%" class="text-right">P.U. (€)</th>
@@ -553,7 +553,7 @@ export function generateEtatAvancementHTML(
                         <th style="width: 5%" class="text-right">Total qté</th>
                         <th style="width: 9%" class="text-right">Mt précéd. (€)</th>
                         <th style="width: 10%" class="text-right">Mt actuel (€)</th>
-                        <th style="width: 18%" class="text-right">Mt total (€)</th>
+                        <th style="width: 10%" class="text-right">Mt total (€)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -586,7 +586,7 @@ export function generateEtatAvancementHTML(
                 <thead>
                     <tr>
                         <th style="width: 6%">Article</th>
-                        <th style="width: 18%">Description</th>
+                        <th style="width: 26%">Description</th>
                         <th style="width: 5%" class="text-center">Type</th>
                         <th style="width: 5%" class="text-center">Unité</th>
                         <th style="width: 9%" class="text-right">P.U. (€)</th>
@@ -596,7 +596,7 @@ export function generateEtatAvancementHTML(
                         <th style="width: 5%" class="text-right">Total qté</th>
                         <th style="width: 9%" class="text-right">Mt précéd. (€)</th>
                         <th style="width: 10%" class="text-right">Mt actuel (€)</th>
-                        <th style="width: 18%" class="text-right">Mt total (€)</th>
+                        <th style="width: 10%" class="text-right">Mt total (€)</th>
                     </tr>
                 </thead>
                 <tbody>

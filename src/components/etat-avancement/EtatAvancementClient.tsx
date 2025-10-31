@@ -608,10 +608,13 @@ export default function EtatAvancementClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                {memoizedCalculatedAvenants.map((avenant) => (
+                {memoizedCalculatedAvenants.map((avenant) => {
+                  // Un avenant provient d'un état précédent si quantitePrecedente > 0
+                  const isFromPreviousState = avenant.quantitePrecedente > 0
+                  return (
                   <tr key={avenant.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/10">
                     <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <input
                           type="text"
                           value={avenantValues[avenant.id]?.article ?? avenant.article ?? ''}
@@ -623,7 +626,7 @@ export default function EtatAvancementClient({
                       )}
                     </td>
                     <td className="w-96 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <input
                           type="text"
                           value={avenantValues[avenant.id]?.description ?? avenant.description ?? ''}
@@ -635,7 +638,7 @@ export default function EtatAvancementClient({
                       )}
                     </td>
                     <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <select
                           value={avenantValues[avenant.id]?.type ?? avenant.type ?? 'QP'}
                           onChange={(e) => handleAvenantChange(avenant.id, 'type', e.target.value)}
@@ -650,7 +653,7 @@ export default function EtatAvancementClient({
                       )}
                     </td>
                     <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <select
                           value={avenantValues[avenant.id]?.unite ?? avenant.unite ?? 'Pièces'}
                           onChange={(e) => handleAvenantChange(avenant.id, 'unite', e.target.value)}
@@ -667,7 +670,7 @@ export default function EtatAvancementClient({
                       )}
                     </td>
                     <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <div className="flex items-center justify-end space-x-1">
                           <NumericInput
                             value={avenantValues[avenant.id]?.prixUnitaire ?? avenant.prixUnitaire}
@@ -683,7 +686,7 @@ export default function EtatAvancementClient({
                       )}
                     </td>
                     <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {!etatAvancement.estFinalise ? (
+                      {!etatAvancement.estFinalise && !isFromPreviousState ? (
                         <NumericInput
                           value={avenantValues[avenant.id]?.quantite ?? avenant.quantite}
                           onChangeNumber={(val)=> handleAvenantChange(avenant.id, 'quantite', val)}
@@ -728,7 +731,7 @@ export default function EtatAvancementClient({
                       {memoizedCalculatedAvenants.find(a => a.id === avenant.id)?.montantTotal.toLocaleString('fr-FR')} €
                     </td>
                     <td className="w-10 px-2 py-3">
-                      {!etatAvancement.estFinalise && (
+                      {!etatAvancement.estFinalise && !isFromPreviousState && (
                         <button
                           onClick={() => handleDeleteAvenant(avenant.id)}
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
@@ -738,7 +741,8 @@ export default function EtatAvancementClient({
                       )}
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

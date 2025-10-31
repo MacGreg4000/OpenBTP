@@ -837,10 +837,13 @@ export default function EtatAvancementUnifie({
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {memoizedCalculatedAvenants.map((avenant, index) => (
+              {memoizedCalculatedAvenants.map((avenant, index) => {
+                // Un avenant provient d'un état précédent si quantitePrecedente > 0
+                const isFromPreviousState = avenant.quantitePrecedente > 0
+                return (
                 <tr key={`avenant-${avenant.id}-${index}`} className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group`}>
                   <td className="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
-                    {!etat.estFinalise ? (
+                    {!etat.estFinalise && !isFromPreviousState ? (
                       <input
                         type="text"
                         value={avenantValues[avenant.id]?.article || avenant.article}
@@ -854,7 +857,7 @@ export default function EtatAvancementUnifie({
                     )}
                   </td>
                   <td className="px-2 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    {!etat.estFinalise ? (
+                    {!etat.estFinalise && !isFromPreviousState ? (
                       <textarea
                         value={avenantValues[avenant.id]?.description || avenant.description}
                         onChange={(e) => {
@@ -874,7 +877,7 @@ export default function EtatAvancementUnifie({
                     )}
                   </td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-center">
-                    {!etat.estFinalise ? (
+                    {!etat.estFinalise && !isFromPreviousState ? (
                       <select
                         value={avenantValues[avenant.id]?.type || avenant.type}
                         onChange={(e) => handleAvenantChange(avenant.id, 'type', e.target.value)}
@@ -889,7 +892,7 @@ export default function EtatAvancementUnifie({
                     )}
                   </td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-center">
-                    {!etat.estFinalise ? (
+                    {!etat.estFinalise && !isFromPreviousState ? (
                       <select
                         value={avenantValues[avenant.id]?.unite || avenant.unite || 'Pièces'}
                         onChange={(e) => handleAvenantChange(avenant.id, 'unite', e.target.value)}
@@ -906,7 +909,7 @@ export default function EtatAvancementUnifie({
                     )}
                   </td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
-                    {!etat.estFinalise ? (
+                    {!etat.estFinalise && !isFromPreviousState ? (
                       <NumericInput
                         value={avenantValues[avenant.id]?.prixUnitaire ?? avenant.prixUnitaire}
                         onChangeNumber={(val) => handleAvenantChange(avenant.id, 'prixUnitaire', val)}
@@ -920,7 +923,7 @@ export default function EtatAvancementUnifie({
                     )}
                   </td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
-                    {!etat.estFinalise ? (
+                    {!etat.estFinalise && !isFromPreviousState ? (
                       <NumericInput
                         value={avenantValues[avenant.id]?.quantite ?? avenant.quantite}
                         onChangeNumber={(val) => handleAvenantChange(avenant.id, 'quantite', val)}
@@ -959,7 +962,7 @@ export default function EtatAvancementUnifie({
                     {avenant.montantTotal.toLocaleString('fr-FR')} €
                     
                     {/* Bouton de suppression flottant */}
-                  {!etat.estFinalise && (
+                  {!etat.estFinalise && !isFromPreviousState && (
                       <button
                         onClick={() => handleDeleteAvenant(avenant.id)}
                         className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg z-10 hover:scale-110"
@@ -970,7 +973,8 @@ export default function EtatAvancementUnifie({
                   )}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
