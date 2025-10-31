@@ -99,7 +99,7 @@ export default function EtatAvancementUnifie({
         article: avenant.article || '',
         description: avenant.description || '',
         type: avenant.type || 'QP',
-        unite: avenant.unite || 'U',
+        unite: avenant.unite || 'Pièces',
         prixUnitaire: avenant.prixUnitaire || 0,
         quantite: avenant.quantite || 0,
         quantiteActuelle: avenant.quantiteActuelle || 0,
@@ -256,7 +256,7 @@ export default function EtatAvancementUnifie({
         article: '',
         description: '',
         type: 'QP',
-        unite: 'U',
+        unite: 'Pièces',
         prixUnitaire: 0,
         quantite: 0,
         quantiteActuelle: 0,
@@ -314,7 +314,7 @@ export default function EtatAvancementUnifie({
           article: '',
           description: '',
           type: 'QP',
-          unite: 'U',
+          unite: 'Pièces',
           prixUnitaire: 0,
           quantite: 0,
           quantitePrecedente: 0,
@@ -444,7 +444,7 @@ export default function EtatAvancementUnifie({
         article: updatedValues.article || avenant.article || '',
         description: updatedValues.description || avenant.description || '',
         type: updatedValues.type || avenant.type || 'QP',
-        unite: updatedValues.unite || avenant.unite || 'U',
+        unite: updatedValues.unite || avenant.unite || 'Pièces',
         prixUnitaire: updatedValues.prixUnitaire !== undefined ? updatedValues.prixUnitaire : (avenant.prixUnitaire || 0),
         quantite: updatedValues.quantite !== undefined ? updatedValues.quantite : (avenant.quantite || 0),
         quantiteActuelle: updatedValues.quantiteActuelle !== undefined ? updatedValues.quantiteActuelle : (avenant.quantiteActuelle || 0),
@@ -708,9 +708,13 @@ export default function EtatAvancementUnifie({
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {memoizedCalculatedLignes.map((ligne, index) => (
                 <tr key={`ligne-${ligne.id}-${index}`} className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200`}>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium">{ligne.article}</td>
-                                      <td className="px-2 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    <div className="max-w-xs truncate" title={ligne.description}>
+                  <td className="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                    <div className="truncate max-w-[80px]" title={ligne.article}>
+                      {ligne.article}
+                    </div>
+                  </td>
+                  <td className="px-2 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div className="break-words whitespace-normal" title={ligne.description}>
                       {ligne.description}
                     </div>
                   </td>
@@ -835,7 +839,7 @@ export default function EtatAvancementUnifie({
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {memoizedCalculatedAvenants.map((avenant, index) => (
                 <tr key={`avenant-${avenant.id}-${index}`} className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group`}>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  <td className="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
                     {!etat.estFinalise ? (
                       <input
                         type="text"
@@ -844,19 +848,27 @@ export default function EtatAvancementUnifie({
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 font-medium shadow-sm"
                       />
                     ) : (
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{avenant.article}</span>
+                      <div className="truncate max-w-[80px]" title={avenant.article}>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{avenant.article}</span>
+                      </div>
                     )}
                   </td>
                   <td className="px-2 py-4 text-sm text-gray-700 dark:text-gray-300">
                     {!etat.estFinalise ? (
-                      <input
-                        type="text"
+                      <textarea
                         value={avenantValues[avenant.id]?.description || avenant.description}
-                        onChange={(e) => handleAvenantChange(avenant.id, 'description', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        onChange={(e) => {
+                          handleAvenantChange(avenant.id, 'description', e.target.value)
+                          // auto-resize uniquement si nécessaire
+                          e.currentTarget.style.height = 'auto'
+                          e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 shadow-sm resize-none"
+                        rows={1}
+                        style={{ height: 'auto' }}
                       />
                     ) : (
-                      <div className="max-w-xs truncate" title={avenant.description}>
+                      <div className="break-words whitespace-normal" title={avenant.description}>
                         {avenant.description}
                       </div>
                     )}
@@ -878,12 +890,17 @@ export default function EtatAvancementUnifie({
                   </td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-center">
                     {!etat.estFinalise ? (
-                      <input
-                        type="text"
-                        value={avenantValues[avenant.id]?.unite || avenant.unite}
+                      <select
+                        value={avenantValues[avenant.id]?.unite || avenant.unite || 'Pièces'}
                         onChange={(e) => handleAvenantChange(avenant.id, 'unite', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 shadow-sm"
-                      />
+                      >
+                        <option value="Mct">Mct</option>
+                        <option value="M2">M²</option>
+                        <option value="M3">M³</option>
+                        <option value="Heures">Heures</option>
+                        <option value="Pièces">Pièces</option>
+                      </select>
                     ) : (
                       <span className="text-gray-700 dark:text-gray-300">{avenant.unite}</span>
                     )}

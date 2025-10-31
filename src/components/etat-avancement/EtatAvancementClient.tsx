@@ -70,7 +70,7 @@ export default function EtatAvancementClient({
         article: avenant.article || '',
         description: avenant.description || '',
         type: avenant.type || 'QP',
-        unite: avenant.unite || 'U',
+        unite: avenant.unite || 'Pièces',
         prixUnitaire: avenant.prixUnitaire || 0,
         quantite: avenant.quantite || 0,
         quantiteActuelle: avenant.quantiteActuelle || 0,
@@ -248,7 +248,7 @@ export default function EtatAvancementClient({
           article: '',
           description: '',
           type: 'QP',
-          unite: 'U',
+          unite: 'Pièces',
           prixUnitaire: 0,
           quantite: 0,
           quantitePrecedente: 0,
@@ -318,7 +318,7 @@ export default function EtatAvancementClient({
         article: updatedValues.article || avenant.article || '',
         description: updatedValues.description || avenant.description || '',
         type: updatedValues.type || avenant.type || 'QP',
-        unite: updatedValues.unite || avenant.unite || 'U',
+        unite: updatedValues.unite || avenant.unite || 'Pièces',
         prixUnitaire: updatedValues.prixUnitaire !== undefined ? updatedValues.prixUnitaire : (avenant.prixUnitaire || 0),
         quantite: updatedValues.quantite !== undefined ? updatedValues.quantite : (avenant.quantite || 0),
         quantiteActuelle: updatedValues.quantiteActuelle !== undefined ? updatedValues.quantiteActuelle : (avenant.quantiteActuelle || 0),
@@ -651,12 +651,17 @@ export default function EtatAvancementClient({
                     </td>
                     <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">
                       {!etatAvancement.estFinalise ? (
-                        <input
-                          type="text"
-                          value={avenantValues[avenant.id]?.unite ?? avenant.unite ?? 'U'}
+                        <select
+                          value={avenantValues[avenant.id]?.unite ?? avenant.unite ?? 'Pièces'}
                           onChange={(e) => handleAvenantChange(avenant.id, 'unite', e.target.value)}
-                          className="w-16 border rounded px-1 py-0.5 text-xs dark:bg-gray-800 dark:border-gray-600"
-                        />
+                          className="w-16 border rounded px-1 py-0.5 text-xs dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                        >
+                          <option value="Mct">Mct</option>
+                          <option value="M2">M²</option>
+                          <option value="M3">M³</option>
+                          <option value="Heures">Heures</option>
+                          <option value="Pièces">Pièces</option>
+                        </select>
                       ) : (
                         avenant.unite
                       )}
