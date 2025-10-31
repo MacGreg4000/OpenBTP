@@ -681,7 +681,7 @@ export default function ReceptionDetailPage() {
   if (!reception) return <div className="p-4 text-gray-600">Aucune donnée de réception.</div>;
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-6">
+    <div className="max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-6">
       {toast && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
       
       {showPinModal && <PinModal />}

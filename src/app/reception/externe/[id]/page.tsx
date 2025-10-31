@@ -277,7 +277,7 @@ export default function ExternalReceptionPage({
   return (
     <div className="bg-gray-100 min-h-screen">
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center">
             <ClipboardDocumentCheckIcon className="h-8 w-8 text-red-500 mr-3" />
             <div>
@@ -292,7 +292,7 @@ export default function ExternalReceptionPage({
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <main className="max-w-[1600px] mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Informations de la réception</h2>
           

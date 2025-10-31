@@ -517,7 +517,7 @@ export default function ChantierEtatsPage(props: PageProps) {
       <DocumentExpirationAlert />
       {/* <Toaster position="top-right" /> */} {/* Déplacé vers RootClientProviders */}
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Intégration de la modale d'envoi d'e-mail */}
         {emailModalOpen && selectedEtatForEmail && chantier && (
           <EmailEtatAvancementModal

@@ -20,7 +20,7 @@ export default function SavListPage() {
   const meta = !Array.isArray(data) && data?.meta ? data.meta : { page, totalPages: 1 }
 
   if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="animate-pulse space-y-4">
         <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
         <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -29,7 +29,7 @@ export default function SavListPage() {
     </div>
   )
   if (error) return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-300">Erreur de chargement</div>
     </div>
   )
@@ -45,7 +45,7 @@ export default function SavListPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Tickets SAV</h1>
             <p className="text-blue-100 text-sm mt-1">Suivi et gestion des demandes de service</p>
@@ -57,7 +57,7 @@ export default function SavListPage() {
       </div>
 
       {/* Filtres */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
             <div className="col-span-2 flex items-center gap-2">
@@ -94,7 +94,7 @@ export default function SavListPage() {
       </div>
 
       {/* Liste */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-700">

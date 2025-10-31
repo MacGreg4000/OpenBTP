@@ -158,7 +158,7 @@ export default function EditChoixClientPage({ params }: { params: Promise<{ id: 
       
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push('/choix-clients')}
@@ -182,7 +182,7 @@ export default function EditChoixClientPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Contenu */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <ChoixClientForm 
           initialData={choixClient}
           onSubmit={handleSubmit}

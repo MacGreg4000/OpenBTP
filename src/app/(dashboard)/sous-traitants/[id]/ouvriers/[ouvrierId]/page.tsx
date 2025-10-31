@@ -58,7 +58,7 @@ export default function OuvrierPage(
   if (!ouvrier) return <div className="p-8">Ouvrier non trouvé</div>
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Breadcrumb
         items={[
           { label: 'Sous-traitants', href: '/sous-traitants' },

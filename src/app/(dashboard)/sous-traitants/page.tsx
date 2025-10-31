@@ -238,7 +238,7 @@ export default function SousTraitantsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* En-tête avec gradient */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="md:flex md:items-center md:justify-between">
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl font-bold text-white">
@@ -337,7 +337,7 @@ export default function SousTraitantsPage() {
       </div>
 
       {/* Contenu principal */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Barre de recherche */}
         <div className="mb-8">
         <SearchInput

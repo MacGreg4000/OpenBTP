@@ -337,7 +337,7 @@ export default function InventoryPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex">
               <ExclamationCircleIcon className="h-5 w-5 text-red-400" />
@@ -372,7 +372,7 @@ export default function InventoryPage() {
       
       {/* En-tête avec gradient */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-700 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">          
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">          
           <div className="md:flex md:items-center md:justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center">
@@ -483,7 +483,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Contenu principal */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Contenu principal */}
           <div className="lg:col-span-2 space-y-6">

@@ -297,7 +297,7 @@ export default function PlanificationChargementsPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
             <div className="space-y-4">
@@ -322,7 +322,7 @@ export default function PlanificationChargementsPage() {
   if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Accès non autorisé</h1>
             <p className="text-gray-600">Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
@@ -334,7 +334,7 @@ export default function PlanificationChargementsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         {/* En-tête */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">

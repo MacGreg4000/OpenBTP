@@ -439,7 +439,7 @@ export default function DocumentsAdministratifsPage() {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-[1600px] mx-auto">
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
