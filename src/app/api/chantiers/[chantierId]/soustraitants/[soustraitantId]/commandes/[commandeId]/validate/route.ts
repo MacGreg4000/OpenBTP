@@ -55,13 +55,14 @@ export async function POST(
       )
     }
 
-    // Vérifier que la commande a des lignes
-    const lignes = await prisma.$queryRaw<Array<{ count: number }>>`
-      SELECT COUNT(*)::int as count FROM ligne_commande_soustraitant
-      WHERE commandeSousTraitantId = ${parseInt(commandeId)}
-    `
+    // Vérifier que la commande a des lignes - utiliser le modèle Prisma directement (MySQL)
+    const countLignes = await prisma.ligneCommandeSousTraitant.count({
+      where: {
+        commandeSousTraitantId: parseInt(commandeId)
+      }
+    })
 
-    if (!lignes || lignes.length === 0 || lignes[0].count === 0) {
+    if (countLignes === 0) {
       return NextResponse.json(
         { error: 'La commande ne contient aucune ligne' },
         { status: 400 }

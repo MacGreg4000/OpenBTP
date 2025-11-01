@@ -71,7 +71,35 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(commande)
+    // Transformer la réponse pour correspondre au format attendu par le frontend
+    const commandeFormatee = {
+      id: commande.id,
+      reference: commande.reference,
+      dateCommande: commande.dateCommande instanceof Date 
+        ? commande.dateCommande.toISOString() 
+        : commande.dateCommande,
+      sousTotal: Number(commande.sousTotal),
+      tauxTVA: Number(commande.tauxTVA),
+      tva: Number(commande.tva),
+      total: Number(commande.total),
+      statut: commande.statut,
+      estVerrouillee: Boolean(commande.estVerrouillee),
+      soustraitantNom: commande.soustraitant?.nom || '',
+      soustraitantEmail: commande.soustraitant?.email || '',
+      lignes: commande.lignes.map(ligne => ({
+        id: ligne.id,
+        ordre: ligne.ordre,
+        article: ligne.article,
+        description: ligne.description,
+        type: ligne.type,
+        unite: ligne.unite,
+        prixUnitaire: Number(ligne.prixUnitaire),
+        quantite: Number(ligne.quantite),
+        total: Number(ligne.total)
+      }))
+    }
+
+    return NextResponse.json(commandeFormatee)
   } catch (error) {
     console.error('Erreur:', error)
     return NextResponse.json(

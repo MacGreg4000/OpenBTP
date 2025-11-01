@@ -17,11 +17,21 @@ export async function POST(
       )
     }
 
+    // Récupérer l'ID interne du chantier à partir de son ID lisible
+    const chantier = await prisma.chantier.findUnique({
+      where: { chantierId: params.chantierId },
+      select: { id: true }
+    })
+
+    if (!chantier) {
+      return NextResponse.json({ error: 'Chantier introuvable' }, { status: 404 })
+    }
+
     // Vérifier que la commande existe
     const commande = await prisma.$queryRaw<Array<{ estVerrouillee: number | boolean }>>`
       SELECT * FROM commande_soustraitant
       WHERE id = ${parseInt(params.commandeId)}
-      AND chantierId = ${params.chantierId}
+      AND chantierId = ${chantier.id}
       AND soustraitantId = ${params.soustraitantId}
     `
 
@@ -51,23 +61,14 @@ export async function POST(
     `
 
     // Récupérer la commande mise à jour
-    const commandeMiseAJour = await prisma.$queryRaw<Array<{
-      id: number;
-      chantierId: string;
-      soustraitantId: string;
-      estVerrouillee: number | boolean;
-      statut: string;
-      nomChantier: string;
-      soustraitantNom: string;
-      soustraitantEmail: string;
-    }>>`
+    const commandeMiseAJour = await prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT 
         c.*,
         ch.nomChantier,
         s.nom as soustraitantNom,
         s.email as soustraitantEmail
       FROM commande_soustraitant c
-      JOIN chantier ch ON c.chantierId = ch.chantierId
+      JOIN chantier ch ON c.chantierId = ch.id
       JOIN soustraitant s ON c.soustraitantId = s.id
       WHERE c.id = ${parseInt(params.commandeId)}
     `

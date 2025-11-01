@@ -232,17 +232,17 @@ export default function CommandeSousTraitantPage(
     try {
       setSubmitting(true);
       const nouvelEtatVerrouillage = !commande.estVerrouillee;
-      const nouveauStatut = nouvelEtatVerrouillage ? 'VALIDEE' : 'BROUILLON';
 
-      const response = await fetch(`/api/chantiers/${params.chantierId}/soustraitants/${params.soustraitantId}/commandes/${params.commandeId}`, {
-        method: 'PUT',
+      // Utiliser les routes dédiées selon l'action
+      const endpoint = nouvelEtatVerrouillage 
+        ? `validate`  // Route POST /validate pour valider
+        : `unlock`;   // Route POST /unlock pour déverrouiller
+
+      const response = await fetch(`/api/chantiers/${params.chantierId}/soustraitants/${params.soustraitantId}/commandes/${params.commandeId}/${endpoint}`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          estVerrouillee: nouvelEtatVerrouillage,
-          statut: nouveauStatut,
-        }),
       });
 
       if (!response.ok) {
@@ -256,10 +256,10 @@ export default function CommandeSousTraitantPage(
         throw new Error(errorMessage);
       }
 
-      const updatedCommande = await response.json();
-      setCommande(updatedCommande);
+      // Recharger les données complètes pour avoir toutes les informations à jour (y compris les lignes)
+      await fetchCommande();
 
-      toast.success(`Commande ${updatedCommande.estVerrouillee ? 'verrouillée' : 'déverrouillée'} avec succès`);
+      toast.success(`Commande ${nouvelEtatVerrouillage ? 'verrouillée' : 'déverrouillée'} avec succès`);
 
     } catch (error: unknown) {
       console.error('Erreur dans handleVerrouillage:', error);
