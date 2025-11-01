@@ -234,7 +234,9 @@ export default function NouveauMetrePage() {
             </tbody>
           </table>
           <div className="mt-3 flex gap-2">
-            <button onClick={addSupplement} className="px-3 py-1.5 text-sm rounded border">{t('add_supplement')}</button>
+            <button onClick={addSupplement} className="px-3 py-1.5 text-sm rounded border">
+              {freeMode ? t('add_line') : t('add_supplement')}
+            </button>
           </div>
         </div>
 
