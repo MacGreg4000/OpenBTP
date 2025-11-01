@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
-  CalendarIcon, 
+  CalendarIcon,
+  BuildingOffice2Icon,
+  PlayIcon,
+  ClockIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import GanttChart from '@/components/dashboard/GanttChart'
 
@@ -78,89 +82,68 @@ export default function Planning() {
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           
-          {/* En-tête avec design moderne inspiré de la page commande */}
-          <div className="relative bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-8 overflow-hidden">
-            {/* Motif de fond sophistiqué */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-700/20"></div>
-            <div className="absolute top-0 left-0 w-full h-full">
-              <div className="absolute top-4 left-4 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-              <div className="absolute bottom-4 right-4 w-24 h-24 bg-indigo-300/20 rounded-full blur-lg"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-indigo-400/10 rounded-full blur-2xl"></div>
-            </div>
-            
-            <div className="relative z-10">
-              <div className="flex items-center mb-4">
-                <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                  <CalendarIcon className="w-6 h-6 mr-3 text-white" />
-                  <span className="font-bold text-xl">
-                    Planning des Chantiers
-                  </span>
+          {/* En-tête avec design uniforme */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center min-w-0">
+                  <CalendarIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+                  <div>
+                    <h1 className="text-xl font-bold text-white">
+                      Planning des Chantiers
+                    </h1>
+                    <p className="mt-0.5 text-xs text-blue-100 hidden sm:block">
+                      Vue chronologique et suivi de l&apos;avancement de vos projets de construction
+                    </p>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Statistiques redesignées */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-white/60 shadow-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
+
+                {/* Statistiques compactes */}
+                <div className="flex items-center gap-2 flex-1 justify-center">
+                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                    <div className="flex items-center gap-1.5">
+                      <BuildingOffice2Icon className="h-4 w-4 text-white flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-medium text-blue-100 truncate">Total</div>
+                        <div className="text-sm font-semibold text-white truncate">{stats.total}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.total}</div>
-                      <div className="text-xs text-white uppercase tracking-wide">Total</div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                    <div className="flex items-center gap-1.5">
+                      <PlayIcon className="h-4 w-4 text-white flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-medium text-blue-100 truncate">En cours</div>
+                        <div className="text-sm font-semibold text-white truncate">{stats.enCours}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                    <div className="flex items-center gap-1.5">
+                      <ClockIcon className="h-4 w-4 text-white flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-medium text-blue-100 truncate">Préparation</div>
+                        <div className="text-sm font-semibold text-white truncate">{stats.enPreparation}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-medium text-blue-100 truncate">Terminés</div>
+                        <div className="text-sm font-semibold text-white truncate">{stats.termines}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="bg-emerald-500/50 backdrop-blur-sm rounded-lg p-3 border border-emerald-300/70 shadow-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-emerald-500/60 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.enCours}</div>
-                      <div className="text-xs text-white uppercase tracking-wide">En cours</div>
-                    </div>
-                  </div>
+
+                <div className="flex-shrink-0">
+                  {/* Espace pour d'éventuels boutons d'action */}
                 </div>
-                
-                <div className="bg-yellow-500/50 backdrop-blur-sm rounded-lg p-3 border border-yellow-300/70 shadow-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-yellow-500/60 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.enPreparation}</div>
-                      <div className="text-xs text-white uppercase tracking-wide">En préparation</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-green-500/50 backdrop-blur-sm rounded-lg p-3 border border-green-300/70 shadow-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-green-500/60 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.termines}</div>
-                      <div className="text-xs text-white uppercase tracking-wide">Terminés</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <p className="text-white/80 text-sm max-w-2xl">
-                  Vue chronologique et suivi de l&apos;avancement de vos projets de construction
-                </p>
               </div>
             </div>
           </div>

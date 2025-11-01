@@ -318,81 +318,73 @@ export default function PlanningRessourcesPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          {/* Header */}
-          <div className="relative bg-gradient-to-r from-orange-600 to-rose-700 text-white px-6 py-8 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 to-rose-700/20"></div>
-            <div className="absolute top-0 left-0 w-full h-full">
-              <div className="absolute top-4 left-4 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-              <div className="absolute bottom-4 right-4 w-24 h-24 bg-rose-300/20 rounded-full blur-lg"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-rose-400/10 rounded-full blur-2xl"></div>
-            </div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 mb-4">
-                    <CalendarIcon className="w-6 h-6 mr-3 text-white" />
-                    <span className="font-bold text-xl">Planning des Ressources</span>
+          {/* En-tête avec design uniforme */}
+          <div className="bg-gradient-to-r from-orange-600 to-rose-700 shadow-lg">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center min-w-0">
+                  <CalendarIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+                  <div>
+                    <h1 className="text-xl font-bold text-white">
+                      Planning des Ressources
+                    </h1>
+                    <p className="mt-0.5 text-xs text-orange-100 hidden sm:block">
+                      Planification et affectation des ressources humaines avec drag & drop
+                    </p>
                   </div>
-                  <p className="text-white/80 text-sm max-w-2xl">Planification et affectation des ressources humaines avec drag & drop</p>
                 </div>
-                
-                <div className="flex items-center gap-3">
+
+                {/* Statistiques compactes */}
+                <div className="flex items-center gap-2 flex-1 justify-center">
+                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                    <div className="flex items-center gap-1.5">
+                      <UserIcon className="h-4 w-4 text-white flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-medium text-orange-100 truncate">Ouvriers</div>
+                        <div className="text-sm font-semibold text-white truncate">{ouvriersInternes.length}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                    <div className="flex items-center gap-1.5">
+                      <BuildingOfficeIcon className="h-4 w-4 text-white flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-medium text-orange-100 truncate">Sous-traitants</div>
+                        <div className="text-sm font-semibold text-white truncate">{soustraitants.length}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarIcon className="h-4 w-4 text-white flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-medium text-orange-100 truncate">Chantiers</div>
+                        <div className="text-sm font-semibold text-white truncate">{chantiers.length}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0 flex items-center gap-2">
                   <button
                     onClick={handleExportPDF}
-                    className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 hover:bg-white/30 transition-colors"
+                    className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-orange-700 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
                   >
-                    <DocumentArrowDownIcon className="w-5 h-5 mr-2 text-white" />
-                    <span className="text-white font-medium">Export PDF</span>
+                    <DocumentArrowDownIcon className="h-3.5 w-3.5 mr-1.5" />
+                    <span className="hidden sm:inline">Export PDF</span>
+                    <span className="sm:hidden">PDF</span>
                   </button>
                   
                   <button
                     onClick={handleCreateTask}
-                    className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 hover:bg-white/30 transition-colors"
+                    className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-orange-700 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
                   >
-                    <PlusIcon className="w-5 h-5 mr-2 text-white" />
-                    <span className="text-white font-medium">Nouvelle tâche</span>
+                    <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
+                    <span className="hidden sm:inline">Nouvelle tâche</span>
+                    <span className="sm:hidden">Nouveau</span>
                   </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Statistiques */}
-          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3">
-                <UserIcon className="h-8 w-8 text-blue-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {ouvriersInternes.length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Ouvriers internes
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <BuildingOfficeIcon className="h-8 w-8 text-green-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {soustraitants.length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Sous-traitants
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <CalendarIcon className="h-8 w-8 text-orange-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {chantiers.length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Chantiers actifs
-                  </div>
                 </div>
               </div>
             </div>

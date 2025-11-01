@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { BuildingOfficeIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, BuildingOfficeIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import DocumentManager from '@/components/documents/DocumentManager'
 import AdminTaskTypesManager from '@/components/configuration/AdminTaskTypesManager'
 import { usePermission } from '@/hooks/usePermission'
@@ -190,25 +190,69 @@ export default function ConfigurationPage() {
   }
 
   if (status === 'loading' || (!session && status !== 'unauthenticated')) {
-    return <div className="p-8">Chargement...</div>
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 w-64 mb-6 rounded"></div>
+            <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 p-4"></div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (session && session.user && session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER') {
-    return <div className="p-8">Accès non autorisé.</div>
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 dark:bg-red-900/10 p-6 rounded-lg border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+            <h2 className="text-lg font-semibold mb-2">Accès non autorisé</h2>
+            <p>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (loading && (!session || (session.user.role === 'ADMIN' || session.user.role === 'MANAGER'))) {
-    return <div className="p-8">Chargement de la configuration...</div>
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 w-64 mb-6 rounded"></div>
+            <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 p-4"></div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-8 flex items-center gap-2 dark:text-white">
-        <BuildingOfficeIcon className="h-8 w-8" />
-        Configuration de l'entreprise
-      </h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* En-tête avec gradient */}
+      <div className="bg-gradient-to-r from-slate-600 to-gray-700 shadow-lg">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <Cog6ToothIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Configuration
+                </h1>
+                <p className="mt-0.5 text-xs text-slate-100 hidden sm:block">
+                  Configuration de l'entreprise et paramètres système
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -351,7 +395,7 @@ export default function ConfigurationPage() {
         Configuration des emails
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -543,7 +587,7 @@ export default function ConfigurationPage() {
             Administration RAG
           </h2>
           
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Outils d'administration pour le système RAG et l'assistant IA
             </p>
@@ -579,7 +623,7 @@ export default function ConfigurationPage() {
             Templates de Contrats
           </h2>
           
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Gérer les modèles de contrats de sous-traitance
             </p>
@@ -606,6 +650,7 @@ export default function ConfigurationPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   )
 } 

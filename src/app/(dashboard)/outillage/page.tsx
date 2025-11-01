@@ -163,135 +163,103 @@ export default function OutillagePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* En-tête avec gradient */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center">
-                <WrenchScrewdriverIcon className="h-8 w-8 text-white mr-3" />
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    Outillage
-                  </h1>
-                  <p className="mt-2 text-blue-100">
-                    Gestion des machines et outils
-                  </p>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <WrenchScrewdriverIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Outillage
+                </h1>
+                <p className="mt-0.5 text-xs text-blue-100 hidden sm:block">
+                  Gestion des machines et outils
+                </p>
+              </div>
+            </div>
+
+            {/* Statistiques compactes */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <WrenchScrewdriverIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-blue-100 truncate">Total</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalMachines}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-blue-100 truncate">Disponibles</div>
+                    <div className="text-sm font-semibold text-white truncate">{machinesDisponibles}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <ExclamationCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-blue-100 truncate">En panne</div>
+                    <div className="text-sm font-semibold text-white truncate">{machinesEnPanne}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <ClockIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-blue-100 truncate">Prêtées</div>
+                    <div className="text-sm font-semibold text-white truncate">{machinesPretees}</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="mt-4 md:mt-0 flex space-x-3">
+
+            <div className="flex-shrink-0 flex items-center gap-2">
               {/* Boutons de vue */}
               <div className="flex rounded-md shadow-sm">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`inline-flex items-center px-3 py-2 rounded-l-md border text-sm font-medium ${
+                  className={`inline-flex items-center px-3 py-1.5 rounded-l-md border text-xs font-medium ${
                     viewMode === 'grid'
                       ? 'bg-white text-blue-700 border-white'
                       : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
                   } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200`}
                 >
-                  <Squares2X2Icon className="h-4 w-4" />
+                  <Squares2X2Icon className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`inline-flex items-center px-3 py-2 rounded-r-md border-t border-r border-b text-sm font-medium ${
+                  className={`inline-flex items-center px-3 py-1.5 rounded-r-md border-t border-r border-b text-xs font-medium ${
                     viewMode === 'list'
                       ? 'bg-white text-blue-700 border-white'
                       : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
                   } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200`}
                 >
-                  <ListBulletIcon className="h-4 w-4" />
+                  <ListBulletIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
               
               <Link
                 href="/outillage/scanner"
-                className="inline-flex items-center px-4 py-2 border border-white/20 rounded-md shadow-sm text-sm font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                className="inline-flex items-center px-3 py-1.5 border border-white/20 rounded-md shadow-sm text-xs font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
               >
-                <QrCodeIcon className="h-4 w-4 mr-2" />
-                Scanner
+                <QrCodeIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Scanner</span>
               </Link>
               <Link
                 href="/outillage/nouveau"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
               >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Nouvelle machine
+                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Nouvelle machine</span>
+                <span className="sm:hidden">Nouveau</span>
               </Link>
-            </div>
-          </div>
-
-          {/* Statistiques */}
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <WrenchScrewdriverIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-blue-100 truncate">
-                      Total machines
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {totalMachines}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-blue-100 truncate">
-                      Disponibles
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {machinesDisponibles}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ClockIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-blue-100 truncate">
-                      Prêtées
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {machinesPretees}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ExclamationCircleIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-blue-100 truncate">
-                      En panne
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {machinesEnPanne}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -155,45 +155,95 @@ export default function JournalPage() {
     )
   }
 
+  // Calculer les statistiques pour les KPIs
+  const totalEntries = groupedEntries.reduce((sum, group) => sum + group.entries.length, 0)
+  const uniqueOuvriers = new Set(groupedEntries.map(group => group.ouvrier.id)).size
+  const entriesValidees = groupedEntries.reduce((sum, group) => 
+    sum + group.entries.filter(e => e.estValide).length, 0
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1600px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <CalendarDaysIcon className="h-8 w-8 mr-3 text-blue-600"/>
-                Journal des Ouvriers
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Consultation et suivi des activités quotidiennes des ouvriers
-              </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* En-tête avec gradient */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-700 shadow-lg">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <CalendarDaysIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Journal des Ouvriers
+                </h1>
+                <p className="mt-0.5 text-xs text-green-100 hidden sm:block">
+                  Consultation et suivi des activités quotidiennes des ouvriers
+                </p>
+              </div>
             </div>
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <DocumentArrowDownIcon className="h-5 w-5 mr-2"/>
-              Export Excel
-            </button>
+
+            {/* Statistiques compactes */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CalendarDaysIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-green-100 truncate">Entrées</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalEntries}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <UserIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-green-100 truncate">Ouvriers</div>
+                    <div className="text-sm font-semibold text-white truncate">{uniqueOuvriers}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <DocumentArrowDownIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-green-100 truncate">Validées</div>
+                    <div className="text-sm font-semibold text-white truncate">{entriesValidees}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <button
+                onClick={handleExport}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-green-700 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+              >
+                <DocumentArrowDownIcon className="h-3.5 w-3.5 mr-1.5"/>
+                <span className="hidden sm:inline">Export Excel</span>
+                <span className="sm:hidden">Export</span>
+              </button>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Filtres */}
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="flex items-center gap-4 mb-4">
-            <FunnelIcon className="h-5 w-5 text-gray-500"/>
-            <h3 className="text-lg font-semibold text-gray-900">Filtres</h3>
+            <FunnelIcon className="h-5 w-5 text-gray-500 dark:text-gray-400"/>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filtres</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ouvrier</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ouvrier</label>
               <select
                 value={filters.ouvrierId}
                 onChange={(e) => setFilters({ ...filters, ouvrierId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Tous les ouvriers</option>
                 {ouvriers.map((ouvrier) => (
@@ -206,7 +256,7 @@ export default function JournalPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mois</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mois</label>
                 <select
                   value={filters.mois ? filters.mois.split('-')[1] : ''}
                   onChange={(e) => {
@@ -214,7 +264,7 @@ export default function JournalPage() {
                     const annee = filters.mois ? filters.mois.split('-')[0] : new Date().getFullYear().toString()
                     setFilters({ ...filters, mois: mois ? `${annee}-${mois.padStart(2, '0')}` : '' })
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Tous les mois</option>
                   <option value="01">Janvier</option>
@@ -233,7 +283,7 @@ export default function JournalPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Année</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Année</label>
                 <select
                   value={filters.mois ? filters.mois.split('-')[0] : ''}
                   onChange={(e) => {
@@ -241,7 +291,7 @@ export default function JournalPage() {
                     const mois = filters.mois ? filters.mois.split('-')[1] : ''
                     setFilters({ ...filters, mois: annee && mois ? `${annee}-${mois}` : '' })
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Toutes les années</option>
                   {availableYears.map(year => (
@@ -258,20 +308,20 @@ export default function JournalPage() {
 
         {/* Contenu */}
         {loading ? (
-          <div className="bg-white rounded-xl shadow p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Chargement du journal...</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement du journal...</p>
           </div>
         ) : groupedEntries.length === 0 ? (
-          <div className="bg-white rounded-xl shadow p-8 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-8 text-center">
             <CalendarDaysIcon className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucune entrée trouvée</h3>
-            <p className="text-gray-600">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Aucune entrée trouvée</h3>
+            <p className="text-gray-600 dark:text-gray-400">
               Aucune activité n'a été enregistrée pour les critères sélectionnés.
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">

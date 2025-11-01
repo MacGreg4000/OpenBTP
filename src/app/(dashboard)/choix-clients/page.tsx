@@ -8,7 +8,8 @@ import {
   EyeIcon, 
   PencilIcon, 
   TrashIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -104,30 +105,94 @@ export default function ChoixClientsPage() {
     choix.chantier?.nomChantier.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Calculer les statistiques pour les KPIs
+  const totalChoix = filteredChoixClients.length
+  const choixBrouillons = filteredChoixClients.filter(c => c.statut === 'BROUILLON').length
+  const choixPreChoix = filteredChoixClients.filter(c => c.statut === 'PRE_CHOIX').length
+  const choixDefinitifs = filteredChoixClients.filter(c => c.statut === 'CHOIX_DEFINITIF').length
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Toaster position="top-right" />
       
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Choix Clients
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Gestion des choix de carrelage en showroom
-              </p>
+      {/* En-tête avec gradient */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-700 shadow-lg">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <DocumentTextIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Choix Clients
+                </h1>
+                <p className="mt-0.5 text-xs text-purple-100 hidden sm:block">
+                  Gestion des choix de carrelage en showroom
+                </p>
+              </div>
             </div>
-            <Link
-              href="/choix-clients/nouveau"
-              className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Nouveau choix
-            </Link>
+
+            {/* Statistiques compactes */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <DocumentTextIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-purple-100 truncate">Total</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalChoix}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <PencilIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-purple-100 truncate">Brouillons</div>
+                    <div className="text-sm font-semibold text-white truncate">{choixBrouillons}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <EyeIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-purple-100 truncate">Pré-choix</div>
+                    <div className="text-sm font-semibold text-white truncate">{choixPreChoix}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-purple-100 truncate">Définitifs</div>
+                    <div className="text-sm font-semibold text-white truncate">{choixDefinitifs}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <Link
+                href="/choix-clients/nouveau"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-purple-700 bg-white hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+              >
+                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Nouveau choix</span>
+                <span className="sm:hidden">Nouveau</span>
+              </Link>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Filtres */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-6 mb-6">
 
           {/* Filtres et recherche */}
           <div className="flex flex-col sm:flex-row gap-4">
@@ -165,7 +230,7 @@ export default function ChoixClientsPage() {
           <span className="ml-2 text-gray-600 dark:text-gray-400">Chargement...</span>
         </div>
       ) : filteredChoixClients.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
           <DocumentTextIcon className="h-12 w-12 mx-auto text-gray-400 mb-3" />
           <p className="text-gray-600 dark:text-gray-400">
             {searchTerm ? 'Aucun résultat trouvé' : 'Aucun choix client enregistré'}
@@ -181,7 +246,7 @@ export default function ChoixClientsPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">

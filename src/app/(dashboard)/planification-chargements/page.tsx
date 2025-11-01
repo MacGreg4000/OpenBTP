@@ -296,7 +296,7 @@ export default function PlanificationChargementsPage() {
   // Afficher un message de chargement ou de redirection
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-[1600px] mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
@@ -321,41 +321,108 @@ export default function PlanificationChargementsPage() {
   // Vérifier les permissions avant d'afficher le contenu
   if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-[1600px] mx-auto">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Accès non autorisé</h1>
-            <p className="text-gray-600">Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Accès non autorisé</h1>
+            <p className="text-gray-600 dark:text-gray-300">Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
           </div>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-[1600px] mx-auto">
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <TruckIcon className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Planification des Chargements</h1>
-          </div>
-          <p className="text-gray-600">
-            Gérez vos chargements par pays et usine avec report automatique
-          </p>
-        </div>
+  // Calculer les statistiques pour les KPIs
+  const totalPays = pays.length
+  const totalUsines = pays.reduce((total, p) => total + p.usines.length, 0)
+  const totalChargements = pays.reduce((total, p) => 
+    total + p.usines.reduce((sum, u) => 
+      sum + Object.values(u.chargementsParSemaine || {}).flat().length, 0
+    ), 0
+  )
+  const chargementsCharges = pays.reduce((total, p) => 
+    total + p.usines.reduce((sum, u) => 
+      sum + Object.values(u.chargementsParSemaine || {}).flat().filter(c => c.estCharge).length, 0
+    ), 0
+  )
 
-        {/* Bouton ajouter pays */}
-        <div className="mb-6">
-          <button
-            onClick={() => setShowAddPays(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Ajouter un pays
-          </button>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* En-tête avec gradient */}
+      <div className="bg-gradient-to-r from-amber-600 to-orange-700 shadow-lg">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <TruckIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Planification des Chargements
+                </h1>
+                <p className="mt-0.5 text-xs text-amber-100 hidden sm:block">
+                  Gérez vos chargements par pays et usine avec report automatique
+                </p>
+              </div>
+            </div>
+
+            {/* Statistiques compactes */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <TruckIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-amber-100 truncate">Pays</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalPays}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CheckIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-amber-100 truncate">Usines</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalUsines}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <ArrowRightIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-amber-100 truncate">Total</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalChargements}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CheckIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-amber-100 truncate">Chargés</div>
+                    <div className="text-sm font-semibold text-white truncate">{chargementsCharges}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <button
+                onClick={() => setShowAddPays(true)}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-amber-700 bg-white hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors duration-200"
+              >
+                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Ajouter un pays</span>
+                <span className="sm:hidden">Ajouter</span>
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Modal ajouter pays */}
         {showAddPays && (

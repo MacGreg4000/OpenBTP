@@ -217,40 +217,89 @@ export default function BonsRegiePage() {
     )
   }
   
+  // Calculer les statistiques pour les KPIs
+  const totalBons = bonsRegie.length
+  const bonsAssocies = bonsRegie.filter(b => b.chantierId).length
+  const bonsNonAssocies = bonsRegie.filter(b => !b.chantierId).length
+
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="mr-4 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Bons de régie
-          </h1>
-        </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={handleShareLink}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <ShareIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {copied ? 'Lien copié!' : 'Partager le lien public'}
-          </button>
-          <Link
-            href="/public/bon-regie"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
-          >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            Nouveau bon de régie
-          </Link>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* En-tête avec gradient */}
+      <div className="bg-gradient-to-r from-teal-600 to-cyan-700 shadow-lg">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <DocumentTextIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Bons de régie
+                </h1>
+                <p className="mt-0.5 text-xs text-teal-100 hidden sm:block">
+                  Gestion des bons de régie et association aux chantiers
+                </p>
+              </div>
+            </div>
+
+            {/* Statistiques compactes */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <DocumentTextIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-teal-100 truncate">Total</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalBons}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CheckIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-teal-100 truncate">Associés</div>
+                    <div className="text-sm font-semibold text-white truncate">{bonsAssocies}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <LinkIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-teal-100 truncate">Non associés</div>
+                    <div className="text-sm font-semibold text-white truncate">{bonsNonAssocies}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <button
+                onClick={handleShareLink}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-teal-700 bg-white hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-200"
+              >
+                <ShareIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">{copied ? 'Lien copié!' : 'Partager le lien'}</span>
+                <span className="sm:hidden">{copied ? 'Copié!' : 'Partager'}</span>
+              </button>
+              <Link
+                href="/public/bon-regie"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-teal-700 bg-white hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-200"
+              >
+                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Nouveau bon de régie</span>
+                <span className="sm:hidden">Nouveau</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
       {bonsRegie.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700 p-12 text-center">
           <DocumentTextIcon className="h-16 w-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
             Aucun bon de régie enregistré
@@ -268,7 +317,7 @@ export default function BonsRegiePage() {
           {bonsRegie.map((bon) => (
             <div
               key={bon.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700 p-6"
             >
               <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                 <div className="space-y-2 flex-1">
@@ -413,6 +462,7 @@ export default function BonsRegiePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 } 

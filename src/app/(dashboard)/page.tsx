@@ -131,6 +131,22 @@ export default function DashboardPage() {
     } catch {}
   }
 
+  // Affichage replié/déplié du planning (préférence persistée)
+  const [isPlanningOpen, setIsPlanningOpen] = useState<boolean>(true)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('dashboard:planningOpen')
+      if (stored !== null) setIsPlanningOpen(stored === '1')
+    } catch {}
+  }, [])
+  const togglePlanning = () => {
+    const next = !isPlanningOpen
+    setIsPlanningOpen(next)
+    try {
+      localStorage.setItem('dashboard:planningOpen', next ? '1' : '0')
+    } catch {}
+  }
+
   // Gestion de l'authentification côté client
   useEffect(() => {
     if (status === 'loading') return // Attendre le chargement de la session
@@ -195,13 +211,13 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* En-tête avec dégradé */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">
+              <h1 className="text-xl font-bold text-white">
                 Tableau de bord
               </h1>
-              <p className="mt-2 text-blue-100">
+              <p className="mt-1 text-sm text-blue-100">
                 Bienvenue {session?.user?.name}, voici un aperçu de votre activité
               </p>
             </div>
@@ -221,16 +237,16 @@ export default function DashboardPage() {
 
       {/* Container principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-          <div className="p-8 space-y-12 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border-2 border-gray-200 dark:border-gray-700">
+          <div className="p-8 space-y-8 overflow-hidden">
             
             {/* Section: KPI */}
             <section aria-labelledby="kpi-title">
-              <h2 id="kpi-title" className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-                <ChartBarIcon className="h-7 w-7 mr-3 text-blue-600"/>
+              <h2 id="kpi-title" className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <ChartBarIcon className="h-6 w-6 mr-2 text-blue-600"/>
                 Indicateurs Clés
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard 
                   title="Total Chantiers" 
                   value={kpis.totalChantiers} 
@@ -260,16 +276,16 @@ export default function DashboardPage() {
             </section>
 
             {/* Section: Mon Espace de Travail */}
-            <section aria-labelledby="notepad-title">
+            <section aria-labelledby="notepad-title" className="border-t-2 border-gray-200 dark:border-gray-700 pt-8">
               <div className="mb-6 flex items-center justify-between">
-                <h2 id="notepad-title" className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center">
-                  <PencilIcon className="h-7 w-7 mr-3 text-blue-600"/>
+                <h2 id="notepad-title" className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+                  <PencilIcon className="h-6 w-6 mr-2 text-blue-600"/>
                   Mon Espace de Travail
                 </h2>
                 <button
                   type="button"
                   onClick={toggleNotepad}
-                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border-2 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 font-medium shadow-sm hover:shadow"
                   aria-expanded={isNotepadOpen}
                   aria-controls="dashboard-notepad"
                 >
@@ -295,7 +311,7 @@ export default function DashboardPage() {
               )}
               
               {/* Actions rapides horizontales */}
-              <div className="bg-gray-50 dark:bg-gray-700/20 rounded-lg p-6">
+              <div className="bg-gray-50 dark:bg-gray-700/40 rounded-lg border-2 border-gray-200 dark:border-gray-600 p-6">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                   Actions rapides
                 </h3>
@@ -304,16 +320,38 @@ export default function DashboardPage() {
             </section>
 
             {/* Section: Aperçu et planning - version simplifiée */}
-            <section aria-labelledby="overview-title">
-              <h2 id="overview-title" className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-                <CalendarIcon className="h-7 w-7 mr-3 text-blue-600"/>
-                Aperçu & Planning
-              </h2>
+            <section aria-labelledby="overview-title" className="border-t-2 border-gray-200 dark:border-gray-700 pt-8">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 id="overview-title" className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                  <CalendarIcon className="h-6 w-6 mr-2 text-blue-600"/>
+                  Aperçu & Planning
+                </h2>
+                <button
+                  type="button"
+                  onClick={togglePlanning}
+                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border-2 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 font-medium shadow-sm hover:shadow"
+                  aria-expanded={isPlanningOpen}
+                  aria-controls="dashboard-planning"
+                >
+                  {isPlanningOpen ? (
+                    <>
+                      <ChevronUpIcon className="h-4 w-4 mr-2" />
+                      Masquer
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDownIcon className="h-4 w-4 mr-2" />
+                      Afficher
+                    </>
+                  )}
+                </button>
+              </div>
               
               {/* Planning plein largeur */}
-              <div className="grid grid-cols-1 gap-6">
+              {isPlanningOpen && (
+              <div className="grid grid-cols-1 gap-6" id="dashboard-planning">
                 <div className="col-span-1">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 h-[48rem] flex flex-col">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700 h-[48rem] flex flex-col">
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
@@ -484,12 +522,13 @@ export default function DashboardPage() {
                 </div>
                 
               </div>
+              )}
             </section>
 
             {/* Graphiques: Répartition + États récents */}
-            <section aria-labelledby="charts-title">
+            <section aria-labelledby="charts-title" className="border-t-2 border-gray-200 dark:border-gray-700 pt-8">
               <h2 id="charts-title" className="sr-only">Graphiques</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="h-[28rem]">
                   <ChantiersStatsChart data={chantiersByCategory} loading={loading} />
                 </div>
@@ -501,11 +540,11 @@ export default function DashboardPage() {
 
             {/* Section: Suivis Importants */}
             <section aria-labelledby="suivis-importants-title" className="mt-12">
-              <h2 id="suivis-importants-title" className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-                <BellAlertIcon className="h-7 w-7 mr-3 text-blue-600"/>
+              <h2 id="suivis-importants-title" className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <BellAlertIcon className="h-6 w-6 mr-2 text-blue-600"/>
                 Suivis Importants
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 <div className="h-80 overflow-hidden">
                   <BonsRegieWidget />
                 </div>

@@ -372,111 +372,80 @@ export default function InventoryPage() {
       
       {/* En-tête avec gradient */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">          
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center">
-                <CubeIcon className="h-8 w-8 text-white mr-3" />
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    Gestion d'Inventaire
-                  </h1>
-                  <p className="mt-2 text-emerald-100">
-                    Gérez vos racks et matériaux en temps réel
-                  </p>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <CubeIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Gestion d'Inventaire
+                </h1>
+                <p className="mt-0.5 text-xs text-emerald-100 hidden sm:block">
+                  Gérez vos racks et matériaux en temps réel
+                </p>
+              </div>
+            </div>
+
+            {/* Statistiques compactes */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <BuildingStorefrontIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-emerald-100 truncate">Total racks</div>
+                    <div className="text-sm font-semibold text-white truncate">{stats.totalRacks}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <ArchiveBoxIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-emerald-100 truncate">Emplacements</div>
+                    <div className="text-sm font-semibold text-white truncate">{stats.totalEmplacements}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <ChartBarIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-emerald-100 truncate">Occupés</div>
+                    <div className="text-sm font-semibold text-white truncate">{stats.emplacementsOccupes}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CubeIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-emerald-100 truncate">Matériaux</div>
+                    <div className="text-sm font-semibold text-white truncate">{stats.totalMateriaux}</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="mt-4 md:mt-0 flex space-x-3">
+
+            <div className="flex-shrink-0 flex items-center gap-2">
               <Link
                 href="/admin/inventory"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-emerald-700 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-emerald-700 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
               >
-                <Cog6ToothIcon className="h-4 w-4 mr-2" />
-                Gérer les racks
+                <Cog6ToothIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Gérer les racks</span>
+                <span className="sm:hidden">Gérer</span>
               </Link>
               <Link
                 href="/inventory/scanner"
-                className="inline-flex items-center px-4 py-2 border border-white/20 rounded-md shadow-sm text-sm font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
+                className="inline-flex items-center px-3 py-1.5 border border-white/20 rounded-md shadow-sm text-xs font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
               >
-                <QrCodeIcon className="h-4 w-4 mr-2" />
-                Scanner QR
+                <QrCodeIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Scanner QR</span>
+                <span className="sm:hidden">Scanner</span>
               </Link>
-            </div>
-          </div>
-
-          {/* Statistiques */}
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <BuildingStorefrontIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-emerald-100 truncate">
-                      Total racks
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {stats.totalRacks}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ArchiveBoxIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-emerald-100 truncate">
-                      Emplacements
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {stats.totalEmplacements}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ChartBarIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-emerald-100 truncate">
-                      Occupés
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {stats.emplacementsOccupes} / {stats.totalEmplacements}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CubeIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-emerald-100 truncate">
-                      Matériaux
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {stats.totalMateriaux}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
             </div>
           </div>
         </div>

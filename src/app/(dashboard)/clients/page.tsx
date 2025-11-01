@@ -143,104 +143,74 @@ export default function ClientsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* En-tête avec gradient */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center">
-                <BuildingStorefrontIcon className="h-8 w-8 text-white mr-3" />
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    Annuaire des Clients
-                  </h1>
-                  <p className="mt-2 text-indigo-100">
-                    Gérez vos relations clients et leurs projets
-                  </p>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center min-w-0">
+              <BuildingStorefrontIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Annuaire des Clients
+                </h1>
+                <p className="mt-0.5 text-xs text-indigo-100 hidden sm:block">
+                  Gérez vos relations clients et leurs projets
+                </p>
+              </div>
+            </div>
+
+            {/* Statistiques compactes */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <UsersIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-indigo-100 truncate">Clients</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalClients}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <BuildingOfficeIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-indigo-100 truncate">Chantiers</div>
+                    <div className="text-sm font-semibold text-white truncate">{totalChantiers}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <ChartBarIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-indigo-100 truncate">Actifs</div>
+                    <div className="text-sm font-semibold text-white truncate">{chantiersActifs}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
+                <div className="flex items-center gap-1.5">
+                  <CurrencyEuroIcon className="h-4 w-4 text-white flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-indigo-100 truncate">CA</div>
+                    <div className="text-sm font-semibold text-white truncate">
+                      {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, notation: 'compact' }).format(chiffreAffaires)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="mt-4 md:mt-0">
+
+            <div className="flex-shrink-0">
               <Link
                 href="/clients/nouveau"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
               >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Nouveau client
+                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Nouveau client</span>
+                <span className="sm:hidden">Nouveau</span>
               </Link>
-            </div>
-          </div>
-
-          {/* Statistiques */}
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <UsersIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-indigo-100 truncate">
-                      Total clients
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {totalClients}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <BuildingOfficeIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-indigo-100 truncate">
-                      Total chantiers
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {totalChantiers}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ChartBarIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                                         <dt className="text-sm font-medium text-indigo-100 truncate">
-                       En cours/préparation
-                     </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {chantiersActifs}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CurrencyEuroIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                                         <dt className="text-sm font-medium text-indigo-100 truncate">
-                       CA actuel
-                     </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(chiffreAffaires)}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
             </div>
           </div>
         </div>
