@@ -65,24 +65,51 @@ export default function EmailEtatAvancementModal({
 
   useEffect(() => {
     if (etatAvancement && chantier) {
-      const defaultSubject = `État d\'avancement N° ${etatAvancement.numero} - Chantier: ${chantier.nomChantier}`;
-      setSubject(defaultSubject);
+      const loadBodyWithGestionnaires = async () => {
+        const defaultSubject = `État d\'avancement N° ${etatAvancement.numero} - Chantier: ${chantier.nomChantier}`;
+        setSubject(defaultSubject);
 
-      const selectedContact = contacts.find(c => c.id === selectedContactId);
-      const contactFullName = selectedContact ? `${selectedContact.prenom} ${selectedContact.nom}` : '';
+        const selectedContact = contacts.find(c => c.id === selectedContactId);
+        const contactFullName = selectedContact ? `${selectedContact.prenom} ${selectedContact.nom}` : '';
+        
+        const userName = session?.user?.name || '[Votre Nom]';
+        
+        // Récupérer les gestionnaires du chantier
+        let replyMessage = '';
+        try {
+          const gestionnairesResponse = await fetch(`/api/chantiers/${chantier.chantierId}/gestionnaires`);
+          if (gestionnairesResponse.ok) {
+            const gestionnaires = await gestionnairesResponse.json();
+            if (gestionnaires.length > 0) {
+              const gestionnairesEmails = gestionnaires
+                .map((g: any) => `${g.user.name || g.user.email} <${g.user.email}>`)
+                .join(', ');
+              replyMessage = `\nCeci est une adresse d'envoi, merci de répondre ${gestionnaires.length > 1 ? 'aux gestionnaires' : 'au gestionnaire'} du chantier : ${gestionnairesEmails}\n`;
+            } else {
+              replyMessage = `\nCeci est une adresse d'envoi, merci de répondre au gestionnaire du chantier.\n`;
+            }
+          } else {
+            replyMessage = `\nCeci est une adresse d'envoi, merci de répondre au gestionnaire du chantier.\n`;
+          }
+        } catch (error) {
+          console.error('Erreur lors de la récupération des gestionnaires:', error);
+          replyMessage = `\nCeci est une adresse d'envoi, merci de répondre au gestionnaire du chantier.\n`;
+        }
+
+        const signature = `Cordialement,\n${userName}\n${companyName}`;
+
+        const defaultBody = selectedContact 
+          ? `Bonjour ${contactFullName},\n\nVeuillez trouver ci-joint l\'état d\'avancement N° ${etatAvancement.numero} concernant le chantier ${chantier.nomChantier} situé à ${chantier.adresseChantier}.${replyMessage}\n${signature}`
+          : `Bonjour,\n\nVeuillez trouver ci-joint l\'état d\'avancement N° ${etatAvancement.numero} concernant le chantier ${chantier.nomChantier} situé à ${chantier.adresseChantier}.${replyMessage}\n${signature}`;
+        setBody(defaultBody);
+
+        // Construire le nom du fichier PDF pour l'affichage
+        // Utiliser chantier.chantierId (ID lisible) comme dans l'API de génération de nom de fichier PDF
+        const fileName = `Etat_Avancement_${chantier.chantierId}_N${etatAvancement.numero}.pdf`;
+        setPdfFileName(fileName);
+      };
       
-      const userName = session?.user?.name || '[Votre Nom]';
-      const signature = `Cordialement,\n${userName}\n${companyName}`;
-
-      const defaultBody = selectedContact 
-        ? `Bonjour ${contactFullName},\n\nVeuillez trouver ci-joint l\'état d\'avancement N° ${etatAvancement.numero} concernant le chantier ${chantier.nomChantier} situé à ${chantier.adresseChantier}.\n\n${signature}`
-        : `Bonjour,\n\nVeuillez trouver ci-joint l\'état d\'avancement N° ${etatAvancement.numero} concernant le chantier ${chantier.nomChantier} situé à ${chantier.adresseChantier}.\n\n${signature}`;
-      setBody(defaultBody);
-
-      // Construire le nom du fichier PDF pour l'affichage
-      // Utiliser chantier.chantierId (ID lisible) comme dans l'API de génération de nom de fichier PDF
-      const fileName = `Etat_Avancement_${chantier.chantierId}_N${etatAvancement.numero}.pdf`;
-      setPdfFileName(fileName);
+      loadBodyWithGestionnaires();
     }
   }, [etatAvancement, chantier, selectedContactId, contacts, session, companyName]);
 

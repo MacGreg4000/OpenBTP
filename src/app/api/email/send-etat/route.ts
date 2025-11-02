@@ -34,23 +34,7 @@ export async function POST(request: Request) {
     const etatAvancement = await prisma.etatAvancement.findUnique({
       where: { id: etatAvancementId },
       include: { 
-        Chantier: { 
-          include: { 
-            client: true,
-            gestionnaires: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    role: true,
-                  },
-                },
-              },
-            },
-          } 
-        },
+        Chantier: { include: { client: true } },
         lignes: { orderBy: { id: 'asc' } },
         avenants: { orderBy: { id: 'asc' } }
       },
@@ -256,51 +240,12 @@ export async function POST(request: Request) {
       }
     });
 
-    // 6. Préparer le corps de l'email avec les informations No-reply et gestionnaires
-    const gestionnaires = etatAvancement.Chantier.gestionnaires || []
-    let emailBodyWithReplyInfo = emailBody.replace(/\n/g, '<br />')
-    
-    // Ajouter l'avertissement No-reply et les contacts des gestionnaires
-    if (gestionnaires.length > 0) {
-      const gestionnairesEmails = gestionnaires
-        .map(g => `${g.user.name || g.user.email} (${g.user.email})`)
-        .join(', ')
-      
-      emailBodyWithReplyInfo += `
-        <br /><br />
-        <div style="border-top: 2px solid #e5e7eb; margin-top: 20px; padding-top: 20px; font-size: 14px; color: #6b7280;">
-          <p style="margin: 0 0 10px 0; font-weight: bold; color: #ef4444;">
-            ⚠️ Ce message provient d'une adresse No-Reply
-          </p>
-          <p style="margin: 0 0 10px 0;">
-            <strong>Ne répondez pas à cet email.</strong> Pour toute question ou remarque concernant cet état d'avancement, merci de contacter directement :
-          </p>
-          <p style="margin: 0; font-weight: 500; color: #1f2937;">
-            📧 ${gestionnairesEmails}
-          </p>
-        </div>
-      `
-    } else {
-      // Si pas de gestionnaires, juste l'avertissement No-reply
-      emailBodyWithReplyInfo += `
-        <br /><br />
-        <div style="border-top: 2px solid #e5e7eb; margin-top: 20px; padding-top: 20px; font-size: 14px; color: #6b7280;">
-          <p style="margin: 0 0 10px 0; font-weight: bold; color: #ef4444;">
-            ⚠️ Ce message provient d'une adresse No-Reply
-          </p>
-          <p style="margin: 0;">
-            <strong>Ne répondez pas à cet email.</strong> Pour toute question ou remarque concernant cet état d'avancement, merci de contacter votre interlocuteur habituel.
-          </p>
-        </div>
-      `
-    }
-    
-    // 7. Envoyer l'e-mail
+    // 6. Envoyer l'e-mail
     const mailOptions = {
       from: `"${companySettingsRaw.name || 'Votre Entreprise'}" <${companySettingsRaw.emailFrom || companySettingsRaw.emailUser}>`,
       to: recipientEmail,
       subject: subject,
-      html: emailBodyWithReplyInfo,
+      html: emailBody.replace(/\n/g, '<br />'),
       attachments: [
         {
           filename: pdfFileName,
