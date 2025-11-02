@@ -76,8 +76,8 @@ export default function ChantierLayout(
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900" suppressHydrationWarning>
-      {/* ChantierHeader avec position fixe */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-md">
+      {/* ChantierHeader avec position fixe - sans container blanc pour effet flottant */}
+      <div className="sticky top-0 z-10">
         <ChantierHeader 
           chantierId={chantierId || ""}
           chantier={{
