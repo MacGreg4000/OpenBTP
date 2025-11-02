@@ -1,91 +1,48 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma/client'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import bcrypt from 'bcrypt'
+import { prisma } from '@/lib/prisma/client'
 
-// GET /api/users - Liste tous les utilisateurs
-export async function GET(request: Request) {
+// GET /api/users - Liste des utilisateurs (ADMIN uniquement)
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const skip = (page - 1) * limit
+    const session = await getServerSession(authOptions)
+    
+    // Vérification de l'authentification
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true
-        },
-        orderBy: {
-          createdAt: 'desc'
+    // Seuls les admins peuvent voir tous les utilisateurs
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    }
+
+    // Récupérer tous les utilisateurs (sauf les BOTs)
+    const users = await prisma.user.findMany({
+      where: {
+        role: {
+          not: 'BOT'
         }
-      }),
-      prisma.user.count()
-    ])
-
-    return NextResponse.json({
-      users,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit)
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      },
+      orderBy: [
+        { role: 'asc' },
+        { name: 'asc' },
+      ],
     })
+
+    return NextResponse.json(users)
   } catch (error) {
-    console.error('Erreur:', error)
+    console.error('Erreur lors de la récupération des utilisateurs:', error)
     return NextResponse.json(
       { error: 'Erreur lors de la récupération des utilisateurs' },
       { status: 500 }
     )
   }
 }
-
-// POST /api/users - Crée un nouvel utilisateur
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Non autorisé' },
-        { status: 401 }
-      )
-    }
-
-    const body = await request.json()
-    const hashedPassword = await bcrypt.hash(body.password, 10)
-    
-    // Générer un ID unique pour l'utilisateur
-    const userId = `USER-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-
-    const user = await prisma.user.create({
-      data: {
-        id: userId,
-        name: body.name,
-        email: body.email,
-        password: hashedPassword,
-        role: body.role,
-        updatedAt: new Date()
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true
-      }
-    })
-
-    return NextResponse.json(user)
-  } catch (error) {
-    console.error('Erreur:', error)
-    return NextResponse.json(
-      { error: "Erreur lors de la création de l'utilisateur" },
-      { status: 500 }
-    )
-  }
-} 

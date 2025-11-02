@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Cog6ToothIcon, BuildingOfficeIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, BuildingOfficeIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, DocumentTextIcon, BellIcon } from '@heroicons/react/24/outline'
 import DocumentManager from '@/components/documents/DocumentManager'
 import AdminTaskTypesManager from '@/components/configuration/AdminTaskTypesManager'
 import { usePermission } from '@/hooks/usePermission'
@@ -187,6 +187,10 @@ export default function ConfigurationPage() {
 
   const handleTemplatesContratsClick = () => {
     router.push('/admin/templates-contrats')
+  }
+
+  const handleNotificationsClick = () => {
+    router.push('/configuration/notifications')
   }
 
   if (status === 'loading' || (!session && status !== 'unauthenticated')) {
@@ -650,6 +654,38 @@ export default function ConfigurationPage() {
           </div>
         </>
       )}
+
+      {/* Section Notifications */}
+      <h2 className="text-xl font-bold mt-12 mb-6 flex items-center gap-2 dark:text-white">
+        <BellIcon className="h-5 w-5 text-purple-500" />
+        Gestion des Notifications
+      </h2>
+      
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Configurer vos préférences de notifications (email et in-app)
+        </p>
+        
+        <button
+          onClick={handleNotificationsClick}
+          className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700 rounded-lg hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 group w-full"
+        >
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 dark:bg-purple-800 rounded-lg mr-3">
+              <BellIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-medium text-gray-900 dark:text-white">
+                Configurer les notifications
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Gérer les types de notifications et les préférences utilisateurs
+              </p>
+            </div>
+          </div>
+          <ArrowTopRightOnSquareIcon className="h-5 w-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" />
+        </button>
+      </div>
       </div>
     </div>
   )

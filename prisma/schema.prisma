@@ -784,6 +784,10 @@ model User {
   
   // Choix clients
   choixClients              ChoixClient[]
+  
+  // Notifications
+  notificationConfigs       NotificationUserConfig[] @relation("UserNotificationConfigs")
+  notifications             Notification[]           @relation("UserNotifications")
 }
 
 model BonRegie {
@@ -1698,4 +1702,105 @@ enum TypeJoint {
   CIMENT
   SILICONE
   POLYURETHANE
+}
+
+// ===================================
+// SYSTÈME DE NOTIFICATIONS
+// ===================================
+
+enum NotificationCategorie {
+  CHANTIER
+  SOUS_TRAITANT
+  DOCUMENT
+  SAV
+  PLANNING
+  RECEPTION
+  METRE
+  COMMANDE
+  ADMINISTRATIF
+  SYSTEME
+}
+
+// Types de notifications configurables
+model NotificationType {
+  id                String   @id @default(uuid())
+  code              String   @unique // Ex: "METRE_SOUMIS", "REMARQUE_CREEE"
+  libelle           String   // "Métré soumis par sous-traitant"
+  description       String?  @db.Text
+  categorie         NotificationCategorie
+  actif             Boolean  @default(true)
+  
+  // Templates
+  emailSubject      String?  // Sujet de l'email
+  emailTemplate     String?  @db.Text // Template HTML pour email
+  inAppTemplate     String?  @db.Text // Template texte court pour notification in-app
+  
+  // Rôles par défaut qui doivent recevoir cette notification
+  rolesParDefaut    Json?    // ["ADMIN", "MANAGER"]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  configurations    NotificationUserConfig[]
+  notifications     Notification[]
+  
+  @@index([code])
+  @@index([categorie])
+  @@map("notification_types")
+}
+
+// Configuration utilisateur pour chaque type de notification
+model NotificationUserConfig {
+  id                 String   @id @default(uuid())
+  userId             String
+  notificationTypeId String
+  
+  // Canaux activés
+  activeMail         Boolean  @default(true)
+  activeInApp        Boolean  @default(true)
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relations
+  user               User     @relation("UserNotificationConfigs", fields: [userId], references: [id], onDelete: Cascade)
+  notificationType   NotificationType @relation(fields: [notificationTypeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, notificationTypeId])
+  @@index([userId])
+  @@index([notificationTypeId])
+  @@map("notification_user_configs")
+}
+
+// Notifications in-app stockées
+model Notification {
+  id                 String   @id @default(uuid())
+  userId             String
+  notificationTypeId String
+  
+  // Contenu
+  titre              String
+  message            String   @db.Text
+  lien               String?  // URL interne (ex: /chantiers/CH-001)
+  
+  // Métadonnées
+  metadata           Json?    // Données supplémentaires (chantierId, metreId, etc.)
+  
+  // État
+  estLue             Boolean  @default(false)
+  dateLue            DateTime?
+  
+  createdAt          DateTime @default(now())
+  expiresAt          DateTime // Auto-suppression après 30 jours (rétention)
+  
+  // Relations
+  user               User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  notificationType   NotificationType @relation(fields: [notificationTypeId], references: [id])
+  
+  @@index([userId, estLue])
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([notificationTypeId])
+  @@map("notifications")
 }

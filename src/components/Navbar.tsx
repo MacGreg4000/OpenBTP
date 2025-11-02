@@ -26,6 +26,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
+import { NotificationBell } from './NotificationBell'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -223,6 +224,9 @@ export function Navbar() {
                       <UserCircleIcon className="h-5 w-5" />
                     </Link>
                   )}
+
+                  {/* Notifications */}
+                  <NotificationBell />
 
                   {/* Toggle thème */}
                   <ThemeToggle />

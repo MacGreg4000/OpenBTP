@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { notifier } from '@/lib/services/notificationService'
 
 interface MetreLineInput {
   ligneCommandeId?: number
@@ -88,8 +89,27 @@ export async function POST(request: Request, props: { params: Promise<{ type: 'o
           }))
         }
       },
-      include: { lignes: true }
+      include: { 
+        lignes: true,
+        chantier: { select: { chantierId: true, nomChantier: true } },
+        soustraitant: { select: { id: true, nom: true } }
+      }
     })
+
+    // 🔔 NOTIFICATION : Métré soumis (si statut = SOUMIS)
+    if (metre.statut === 'SOUMIS') {
+      await notifier({
+        code: 'METRE_SOUMIS',
+        rolesDestinataires: ['ADMIN', 'MANAGER'],
+        metadata: {
+          chantierId: metre.chantierId,
+          chantierNom: metre.chantier.nomChantier,
+          soustraitantId: metre.soustraitantId,
+          soustraitantNom: metre.soustraitant.nom,
+          metreId: metre.id,
+        },
+      })
+    }
 
     return NextResponse.json(metre, { status: 201 })
   } catch {
