@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { PlusIcon, DocumentTextIcon, TrashIcon, ArrowLeftIcon, PencilIcon, EyeIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, DocumentTextIcon, TrashIcon, PencilIcon, EyeIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { SendRapportEmailModal } from '@/components/modals/SendRapportEmailModal'
 import toast from 'react-hot-toast'
@@ -115,17 +115,6 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
       <DocumentExpirationAlert />
       
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.push(`/chantiers`)}
-            className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            Retour aux chantiers
-          </button>
-        </div>
-
         {/* En-tête moderne */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 rounded-2xl p-6 mb-8 shadow-xl border border-blue-200 dark:border-blue-700">
           <div className="flex flex-col md:flex-row md:items-center justify-between">

@@ -8,7 +8,8 @@ import {
   ChartBarIcon,
   EyeIcon,
   CurrencyEuroIcon,
-  ClipboardDocumentCheckIcon
+  ClipboardDocumentCheckIcon,
+  ArrowUturnLeftIcon
 } from '@heroicons/react/24/outline'
 
 interface ChantierHeaderProps {
@@ -125,6 +126,14 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
                   ID: {chantier.numeroIdentification}
                 </p>
               )}
+              {/* Bouton Retour aux chantiers */}
+              <Link 
+                href="/chantiers"
+                className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-all duration-200 hover:shadow-md border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600"
+              >
+                <ArrowUturnLeftIcon className="h-3.5 w-3.5" />
+                <span>Retour aux chantiers</span>
+              </Link>
             </div>
             
             {/* Navigation moderne avec cards flottantes - centrée */}
