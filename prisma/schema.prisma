@@ -525,6 +525,9 @@ model Chantier {
   
   // Choix clients
   choixClients             ChoixClient[]
+  
+  // Gestionnaires du chantier
+  gestionnaires            ChantierGestionnaire[]
 
   @@index([clientId])
   @@index([contactId])
@@ -788,6 +791,9 @@ model User {
   // Notifications
   notificationConfigs       NotificationUserConfig[] @relation("UserNotificationConfigs")
   notifications             Notification[]           @relation("UserNotifications")
+  
+  // Gestion de chantiers
+  chantiersGeres            ChantierGestionnaire[]
 }
 
 model BonRegie {
@@ -1803,4 +1809,21 @@ model Notification {
   @@index([expiresAt])
   @@index([notificationTypeId])
   @@map("notifications")
+}
+
+// Table de liaison pour les gestionnaires de chantier
+model ChantierGestionnaire {
+  id          String   @id @default(uuid())
+  chantierId  String
+  userId      String
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  chantier    Chantier @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([chantierId, userId])
+  @@index([chantierId])
+  @@index([userId])
+  @@map("chantier_gestionnaires")
 }

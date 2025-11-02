@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { ArrowLeftIcon, PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
 import ChantierActions from '@/components/chantier/ChantierActions'
+import ChantierGestionnaires from '@/components/chantier/ChantierGestionnaires'
 
 interface ChantierData {
   id?: string;
@@ -228,6 +229,9 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
                 )}
               </div>
             </div>
+
+            {/* Gestionnaires du chantier */}
+            <ChantierGestionnaires chantierId={params.chantierId} />
           </div>
 
           {/* Colonne latérale */}
