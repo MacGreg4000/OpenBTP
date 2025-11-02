@@ -31,9 +31,9 @@ const quickActions: QuickAction[] = [
     description: 'Créer un nouveau projet',
     icon: BuildingOffice2Icon,
     href: '/chantiers/nouveau',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    hoverColor: 'hover:bg-blue-100',
+    color: 'from-blue-500 to-indigo-600',
+    bgColor: 'from-blue-50 to-indigo-50',
+    hoverColor: 'shadow-blue-500/30',
     shortcut: 'N'
   },
   {
@@ -42,9 +42,9 @@ const quickActions: QuickAction[] = [
     description: 'Créer un nouveau bon',
     icon: DocumentTextIcon,
     href: '/public/bon-regie',
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    hoverColor: 'hover:bg-green-100',
+    color: 'from-emerald-500 to-teal-600',
+    bgColor: 'from-emerald-50 to-teal-50',
+    hoverColor: 'shadow-emerald-500/30',
     shortcut: 'B'
   },
   {
@@ -53,9 +53,9 @@ const quickActions: QuickAction[] = [
     description: 'Voir le planning général',
     icon: CalendarIcon,
     href: '/planning',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    hoverColor: 'hover:bg-purple-100',
+    color: 'from-purple-500 to-pink-600',
+    bgColor: 'from-purple-50 to-pink-50',
+    hoverColor: 'shadow-purple-500/30',
     shortcut: 'P'
   },
   {
@@ -64,9 +64,9 @@ const quickActions: QuickAction[] = [
     description: 'Gérer les sous-traitants',
     icon: UserGroupIcon,
     href: '/sous-traitants',
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    hoverColor: 'hover:bg-orange-100',
+    color: 'from-orange-500 to-red-600',
+    bgColor: 'from-orange-50 to-red-50',
+    hoverColor: 'shadow-orange-500/30',
     shortcut: 'S'
   },
   {
@@ -75,9 +75,9 @@ const quickActions: QuickAction[] = [
     description: 'Consulter les statistiques',
     icon: ChartBarIcon,
     href: '/rapports',
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    hoverColor: 'hover:bg-indigo-100',
+    color: 'from-indigo-500 to-purple-600',
+    bgColor: 'from-indigo-50 to-purple-50',
+    hoverColor: 'shadow-indigo-500/30',
     shortcut: 'R'
   },
   {
@@ -86,9 +86,9 @@ const quickActions: QuickAction[] = [
     description: 'Gérer l\'inventaire',
     icon: CogIcon,
     href: '/outillage',
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    hoverColor: 'hover:bg-gray-100',
+    color: 'from-gray-500 to-slate-600',
+    bgColor: 'from-gray-50 to-slate-50',
+    hoverColor: 'shadow-gray-500/30',
     shortcut: 'O'
   }
 ]
@@ -121,7 +121,7 @@ export default function QuickActionsWidget() {
 
   return (
     <div className="space-y-4">
-      {/* Actions principales - layout horizontal */}
+      {/* Actions principales - layout horizontal moderne */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {quickActions.map((action) => (
           <Link
@@ -130,94 +130,119 @@ export default function QuickActionsWidget() {
             onMouseEnter={() => setSelectedAction(action.id)}
             onMouseLeave={() => setSelectedAction(null)}
             className={`
-              group relative p-4 rounded-lg border transition-all duration-200 
-              ${action.bgColor} ${action.hoverColor} 
+              group relative overflow-hidden rounded-2xl border-2 transition-all duration-300
+              bg-gradient-to-br ${action.bgColor} dark:from-gray-700 dark:to-gray-800
               border-gray-200 dark:border-gray-600
-              hover:shadow-md hover:scale-105
-              ${selectedAction === action.id ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
+              hover:shadow-2xl hover:scale-105 hover:-translate-y-1 ${action.hoverColor}
+              ${selectedAction === action.id ? 'ring-4 ring-blue-500/30 scale-105' : ''}
             `}
           >
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`p-2 rounded-lg ${action.color} group-hover:scale-110 transition-transform`}>
-                <action.icon className="h-6 w-6" />
+            <div className="relative z-10 p-5 flex flex-col items-center text-center space-y-3">
+              {/* Icône avec gradient */}
+              <div className={`relative p-3 rounded-xl bg-gradient-to-br ${action.color} shadow-lg ${action.hoverColor} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                <action.icon className="h-7 w-7 text-white" />
+                <div className="absolute inset-0 bg-white/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
               
               <div>
-                <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {action.title}
                 </h4>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">
                   {action.description}
                 </p>
               </div>
 
+              {/* Badge raccourci moderne */}
               {action.shortcut && (
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-xs bg-gray-800 text-white px-2 py-1 rounded">
-                    Ctrl+{action.shortcut}
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110">
+                  <span className="flex items-center gap-1 text-xs bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 px-2.5 py-1 rounded-lg font-mono font-bold shadow-lg backdrop-blur-sm">
+                    <kbd className="text-xs">⌘</kbd>
+                    {action.shortcut}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Effet de survol */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+            {/* Effet de brillance animé */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/30 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform group-hover:translate-x-full" style={{ transform: 'translateX(-100%) skewX(-15deg)' }} />
+            
+            {/* Bordure lumineuse au hover */}
+            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
           </Link>
         ))}
       </div>
 
-      {/* Actions fréquentes en ligne */}
-      <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      {/* Actions fréquentes en ligne - modernisées */}
+      <div className="flex flex-wrap items-center gap-3 pt-4 border-t-2 border-gray-200 dark:border-gray-700">
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
           Accès rapide :
         </span>
         
         <Link
           href="/chantiers"
-          className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          className="group flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600 dark:hover:to-gray-600 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-105"
         >
-          <ClipboardDocumentListIcon className="h-4 w-4" />
-          <span>Tous les chantiers</span>
+          <ClipboardDocumentListIcon className="h-4 w-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+          <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Tous les chantiers</span>
         </Link>
         
         <Link
           href="/clients"
-          className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          className="group flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 dark:hover:from-gray-600 dark:hover:to-gray-600 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-105"
         >
-          <UserGroupIcon className="h-4 w-4" />
-          <span>Clients</span>
+          <UserGroupIcon className="h-4 w-4 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
+          <span className="group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Clients</span>
         </Link>
         
 
-        {/* Bouton aide raccourcis */}
+        {/* Bouton aide raccourcis moderne */}
         <button
           onClick={() => setShowShortcuts(!showShortcuts)}
-          className="ml-auto flex items-center space-x-2 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+          className={`ml-auto flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl shadow-lg transition-all duration-200 hover:scale-105 ${
+            showShortcuts
+              ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white'
+              : 'bg-white dark:bg-gray-700 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-gradient-to-r hover:from-amber-50 hover:to-yellow-50 dark:hover:from-gray-600 dark:hover:to-gray-600'
+          }`}
         >
           <LightBulbIcon className="h-4 w-4" />
           <span>Raccourcis</span>
         </button>
       </div>
 
-      {/* Guide des raccourcis */}
+      {/* Guide des raccourcis moderne */}
       {showShortcuts && (
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-          <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-3">
-            Raccourcis clavier disponibles :
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-blue-700 dark:text-blue-300">
+        <div className="p-6 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-800/50 shadow-xl animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg">
+              <LightBulbIcon className="h-5 w-5 text-white" />
+            </div>
+            <h4 className="text-base font-bold text-amber-900 dark:text-amber-200">
+              Raccourcis clavier disponibles
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {quickActions.filter(a => a.shortcut).map(action => (
-              <div key={action.id} className="flex justify-between">
-                <span className="font-mono bg-blue-100 dark:bg-blue-800/50 px-2 py-1 rounded">
-                  Ctrl+{action.shortcut}
+              <div key={action.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-xl border border-amber-200 dark:border-amber-700 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-105">
+                <span className="flex items-center gap-2 font-mono text-sm bg-gradient-to-r from-gray-900 to-gray-800 dark:from-white dark:to-gray-200 text-white dark:text-gray-900 px-3 py-1.5 rounded-lg font-bold shadow-lg">
+                  <kbd className="text-xs">⌘</kbd>
+                  {action.shortcut}
                 </span>
-                <span className="truncate ml-2">{action.title}</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate ml-3">{action.title}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
-            💡 Appuyez sur <kbd className="bg-blue-100 dark:bg-blue-800/50 px-1 rounded">?</kbd> pour afficher/masquer cette aide
-          </p>
+          <div className="mt-4 p-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl border border-amber-200 dark:border-amber-700">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+              <span className="text-lg">💡</span>
+              Appuyez sur 
+              <kbd className="px-2 py-1 bg-amber-100 dark:bg-amber-800/50 border border-amber-300 dark:border-amber-600 rounded-lg font-mono text-amber-900 dark:text-amber-200">?</kbd>
+              pour afficher/masquer cette aide
+            </p>
+          </div>
         </div>
       )}
     </div>

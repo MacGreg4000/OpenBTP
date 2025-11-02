@@ -130,38 +130,51 @@ export default function UserNotepad({ userId }: { userId: string }) {
 
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      {/* En-tête */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="bg-gradient-to-br from-white via-purple-50/30 to-white dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+      {/* En-tête moderne */}
+      <div className="px-6 py-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-900/20 dark:to-pink-900/20 border-b-2 border-purple-200/50 dark:border-purple-700/50">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-            <PencilIcon className="h-5 w-5 mr-2 text-blue-600" />
-            Mon Espace de Travail
-          </h3>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
+              <PencilIcon className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">
+              Mon Espace de Travail
+            </h3>
+          </div>
+          <div className="flex items-center gap-3">
             {lastSaved && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Sauvegardé: {lastSaved}
+              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                💾 {lastSaved}
               </span>
             )}
             <button
               onClick={isEditing ? () => saveNotes() : () => setIsEditing(true)}
               disabled={isSaving}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className={`px-4 py-2 text-sm font-bold rounded-xl shadow-lg transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
+                isEditing 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
+                  : 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700'
+              }`}
             >
-              {isSaving ? 'Sauvegarde...' : isEditing ? 'Sauvegarder' : 'Modifier'}
+              {isSaving ? '💾 Sauvegarde...' : isEditing ? '✓ Sauvegarder' : '✏️ Modifier'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Contenu principal - 2 colonnes */}
+      {/* Contenu principal moderne - 2 colonnes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-        {/* Colonne gauche - Notes */}
+        {/* Colonne gauche - Notes moderne */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-md font-medium text-gray-900 dark:text-white">
-              Notes
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <h4 className="text-md font-black text-gray-900 dark:text-white">
+              📝 Notes
             </h4>
           </div>
           
@@ -170,18 +183,24 @@ export default function UserNotepad({ userId }: { userId: string }) {
               <textarea
                 value={notepadData.content}
                 onChange={(e) => setNotepadData(prev => ({ ...prev, content: e.target.value }))}
-                className="w-full h-64 p-4 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="Écrivez vos notes ici..."
+                className="w-full h-64 p-4 border-2 border-blue-300 dark:border-blue-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white shadow-lg transition-all duration-200"
+                placeholder="✍️ Écrivez vos notes ici..."
               />
             ) : (
-              <div className="w-full h-64 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 overflow-y-auto">
+              <div className="w-full h-64 p-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 overflow-y-auto shadow-lg">
                 {notepadData.content ? (
-                  <div className="whitespace-pre-wrap text-gray-900 dark:text-white">
+                  <div className="whitespace-pre-wrap text-gray-900 dark:text-white font-medium">
                     {notepadData.content}
                   </div>
                 ) : (
-                  <div className="text-gray-500 dark:text-gray-400 italic">
-                    Aucune note pour le moment. Cliquez sur "Modifier" pour commencer.
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <svg className="h-10 w-10 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 font-semibold">Aucune note</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Cliquez sur "Modifier" pour commencer</p>
                   </div>
                 )}
               </div>
@@ -189,21 +208,28 @@ export default function UserNotepad({ userId }: { userId: string }) {
           </div>
         </div>
 
-        {/* Colonne droite - Liste des tâches */}
+        {/* Colonne droite - Liste des tâches moderne */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-md font-medium text-gray-900 dark:text-white">
-              Liste des tâches
-            </h4>
-            {/* Graphique de progression */}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <CheckIcon className="w-3.5 h-3.5 text-white" />
+              </div>
+              <h4 className="text-md font-black text-gray-900 dark:text-white">
+                ✓ Tâches
+              </h4>
+            </div>
+            {/* Graphique de progression moderne */}
             {notepadData.todos.length > 0 && (
-              <div className="flex items-center space-x-2">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {notepadData.todos.filter(todo => todo.completed).length} / {notepadData.todos.length}
+              <div className="flex items-center gap-2">
+                <div className="px-2 py-1 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg">
+                  <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                    {notepadData.todos.filter(todo => todo.completed).length} / {notepadData.todos.length}
+                  </span>
                 </div>
-                <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="w-20 h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
                   <div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-300 rounded-full"
                     style={{ 
                       width: `${(notepadData.todos.filter(todo => todo.completed).length / notepadData.todos.length) * 100}%` 
                     }}
@@ -213,56 +239,59 @@ export default function UserNotepad({ userId }: { userId: string }) {
             )}
           </div>
           
-          {/* Ajout de nouvelle tâche */}
-          <div className="flex space-x-2">
+          {/* Ajout de nouvelle tâche moderne */}
+          <div className="flex gap-2">
             <input
               type="text"
               value={newTodoText}
               onChange={(e) => setNewTodoText(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addTodo()}
-              placeholder="Nouvelle tâche..."
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              placeholder="➕ Nouvelle tâche..."
+              className="flex-1 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white font-medium shadow-lg transition-all duration-200"
             />
             <button
               onClick={addTodo}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+              className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 hover:scale-105 transition-all duration-200 shadow-lg flex items-center font-bold"
             >
-              <PlusIcon className="h-4 w-4" />
+              <PlusIcon className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Liste des tâches */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          {/* Liste des tâches moderne */}
+          <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
             {notepadData.todos.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <CheckIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Aucune tâche pour le moment</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <CheckIcon className="h-10 w-10 text-green-500 dark:text-green-400" />
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold">Aucune tâche</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Ajoutez une tâche pour commencer</p>
               </div>
             ) : (
               notepadData.todos.map((todo) => (
                 <div
                   key={todo.id}
-                  className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
+                  className={`group flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 hover:shadow-lg ${
                     todo.important
-                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                      ? 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-red-300 dark:border-red-700 hover:border-red-400 dark:hover:border-red-600'
                       : todo.completed 
-                        ? 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600' 
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+                        ? 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-800/50 border-gray-300 dark:border-gray-600' 
+                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-600'
                   }`}
                 >
                   <button
                     onClick={() => toggleTodo(todo.id)}
-                    className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 hover:scale-110 ${
                       todo.completed
-                        ? 'bg-green-600 border-green-600 text-white'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-green-500'
+                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 border-green-600 text-white shadow-lg'
+                        : 'border-gray-400 dark:border-gray-500 hover:border-green-500 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30'
                     }`}
                   >
-                    {todo.completed && <CheckIcon className="h-3 w-3" />}
+                    {todo.completed && <CheckIcon className="h-4 w-4" />}
                   </button>
                   
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm ${
+                    <p className={`text-sm font-medium ${
                       todo.completed 
                         ? 'line-through text-gray-500 dark:text-gray-400' 
                         : 'text-gray-900 dark:text-white'
@@ -271,21 +300,25 @@ export default function UserNotepad({ userId }: { userId: string }) {
                     </p>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <label className="flex items-center space-x-1 text-xs text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <label className={`flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 ${
+                      todo.important 
+                        ? 'bg-red-100 dark:bg-red-900/30' 
+                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20'
+                    }`}>
                       <input
                         type="checkbox"
                         checked={todo.important}
                         onChange={() => toggleTodoImportant(todo.id)}
-                        className="w-3 h-3 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 dark:focus:ring-red-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        className="hidden"
                       />
-                      <span className="text-lg" title="Marquer comme important">
-                        ⚠️
+                      <span className="text-base" title="Marquer comme important">
+                        {todo.important ? '⚠️' : '⚪'}
                       </span>
                     </label>
                     <button
                       onClick={() => deleteTodo(todo.id)}
-                      className="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors"
+                      className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 flex items-center justify-center hover:scale-110 opacity-0 group-hover:opacity-100"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>

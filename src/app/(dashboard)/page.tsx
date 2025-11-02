@@ -208,44 +208,66 @@ export default function DashboardPage() {
   // removed unused planningStats
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* En-tête avec dégradé */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      {/* En-tête moderne avec gradients élégants */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 shadow-2xl relative overflow-hidden">
+        {/* Effet de brillance en arrière-plan */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+        
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white">
-                Tableau de bord
-              </h1>
-              <p className="mt-1 text-sm text-blue-100">
-                Bienvenue {session?.user?.name}, voici un aperçu de votre activité
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Badge icône */}
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl border border-white/30">
+                <ChartBarIcon className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black text-white flex items-center gap-2">
+                  Tableau de bord
+                  <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-xl text-sm font-semibold border border-white/30">
+                    Dashboard
+                  </span>
+                </h1>
+                <p className="mt-1 text-sm text-blue-100 font-medium">
+                  👋 Bienvenue {session?.user?.name}, voici un aperçu de votre activité
+                </p>
+              </div>
             </div>
             <div className="text-right">
-              <div className="text-blue-100 text-sm">
-                {new Date().toLocaleDateString('fr-FR', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
+              <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 shadow-lg">
+                <div className="text-xs font-semibold text-blue-100 uppercase tracking-wide mb-1">Aujourd'hui</div>
+                <div className="text-sm font-bold text-white">
+                  {new Date().toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Container principal */}
+      {/* Container principal moderne */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border-2 border-gray-200 dark:border-gray-700">
-          <div className="p-8 space-y-8 overflow-hidden">
+        <div className="bg-gradient-to-br from-white via-gray-50/50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          <div className="p-8 space-y-10">
             
-            {/* Section: KPI */}
+            {/* Section: KPI moderne */}
             <section aria-labelledby="kpi-title">
-              <h2 id="kpi-title" className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                <ChartBarIcon className="h-6 w-6 mr-2 text-blue-600"/>
-                Indicateurs Clés
-              </h2>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <ChartBarIcon className="h-5 w-5 text-white"/>
+                </div>
+                <div>
+                  <h2 id="kpi-title" className="text-xl font-black text-gray-900 dark:text-white">
+                    Indicateurs Clés
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Vue d'ensemble de vos activités</p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard 
                   title="Total Chantiers" 
@@ -275,28 +297,39 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* Section: Mon Espace de Travail */}
-            <section aria-labelledby="notepad-title" className="border-t-2 border-gray-200 dark:border-gray-700 pt-8">
+            {/* Section: Mon Espace de Travail moderne */}
+            <section aria-labelledby="notepad-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
               <div className="mb-6 flex items-center justify-between">
-                <h2 id="notepad-title" className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                  <PencilIcon className="h-6 w-6 mr-2 text-blue-600"/>
-                  Mon Espace de Travail
-                </h2>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <PencilIcon className="h-5 w-5 text-white"/>
+                  </div>
+                  <div>
+                    <h2 id="notepad-title" className="text-xl font-black text-gray-900 dark:text-white">
+                      Mon Espace de Travail
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Notes et mémos personnels</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={toggleNotepad}
-                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border-2 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 font-medium shadow-sm hover:shadow"
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold shadow-lg transition-all duration-200 hover:scale-105 ${
+                    isNotepadOpen
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white'
+                      : 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-200 dark:border-purple-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-gray-600 dark:hover:to-gray-600'
+                  }`}
                   aria-expanded={isNotepadOpen}
                   aria-controls="dashboard-notepad"
                 >
                   {isNotepadOpen ? (
                     <>
-                      <ChevronUpIcon className="h-4 w-4 mr-2" />
+                      <ChevronUpIcon className="h-4 w-4" />
                       Masquer
                     </>
                   ) : (
                     <>
-                      <ChevronDownIcon className="h-4 w-4 mr-2" />
+                      <ChevronDownIcon className="h-4 w-4" />
                       Afficher
                     </>
                   )}
@@ -310,99 +343,136 @@ export default function DashboardPage() {
                 </div>
               )}
               
-              {/* Actions rapides horizontales */}
-              <div className="bg-gray-50 dark:bg-gray-700/40 rounded-lg border-2 border-gray-200 dark:border-gray-600 p-6">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Actions rapides
-                </h3>
+              {/* Actions rapides horizontales moderne */}
+              <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-700/40 dark:via-gray-700/40 dark:to-gray-700/40 rounded-2xl border-2 border-blue-200/50 dark:border-gray-600/50 p-8 shadow-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 dark:text-white">
+                      Actions rapides
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Accès direct aux fonctionnalités principales</p>
+                  </div>
+                </div>
                 <QuickActionsWidget />
               </div>
             </section>
 
-            {/* Section: Aperçu et planning - version simplifiée */}
-            <section aria-labelledby="overview-title" className="border-t-2 border-gray-200 dark:border-gray-700 pt-8">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 id="overview-title" className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                  <CalendarIcon className="h-6 w-6 mr-2 text-blue-600"/>
-                  Aperçu & Planning
-                </h2>
+            {/* Section: Aperçu et planning moderne */}
+            <section aria-labelledby="overview-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <CalendarIcon className="h-5 w-5 text-white"/>
+                  </div>
+                  <div>
+                    <h2 id="overview-title" className="text-xl font-black text-gray-900 dark:text-white">
+                      Aperçu & Planning
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Visualisation des chantiers actifs</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={togglePlanning}
-                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border-2 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 font-medium shadow-sm hover:shadow"
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold shadow-lg transition-all duration-200 hover:scale-105 ${
+                    isPlanningOpen
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border-2 border-blue-200 dark:border-blue-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600 dark:hover:to-gray-600'
+                  }`}
                   aria-expanded={isPlanningOpen}
                   aria-controls="dashboard-planning"
                 >
                   {isPlanningOpen ? (
                     <>
-                      <ChevronUpIcon className="h-4 w-4 mr-2" />
+                      <ChevronUpIcon className="h-4 w-4" />
                       Masquer
                     </>
                   ) : (
                     <>
-                      <ChevronDownIcon className="h-4 w-4 mr-2" />
+                      <ChevronDownIcon className="h-4 w-4" />
                       Afficher
                     </>
                   )}
                 </button>
               </div>
               
-              {/* Planning plein largeur */}
+              {/* Planning plein largeur moderne */}
               {isPlanningOpen && (
               <div className="grid grid-cols-1 gap-6" id="dashboard-planning">
                 <div className="col-span-1">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700 h-[48rem] flex flex-col">
-                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                  <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 h-[48rem] flex flex-col overflow-hidden">
+                    <div className="px-6 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                          <CalendarIcon className="h-5 w-5 mr-2 text-blue-600" />
-                          Aperçu des Chantiers
-                        </h3>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <CalendarIcon className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                              Aperçu des Chantiers
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Chantiers actifs et à venir</p>
+                          </div>
+                        </div>
                         <Link 
                           href="/planning" 
-                          className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-semibold text-sm transition-all duration-200"
                         >
-                          Planning complet →
+                          Planning complet
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
                         </Link>
                       </div>
                     </div>
                     
-                    <div className="p-6 flex-1 overflow-y-auto">
+                    <div className="p-6 flex-1 overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
                       {planningLoading ? (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                          <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Chargement...</span>
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl mb-4 animate-pulse">
+                            <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Chargement du planning...</span>
                         </div>
                       ) : chantiers.length === 0 ? (
-                        <div className="text-center py-8">
-                          <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                          <p className="text-gray-600 dark:text-gray-400">Aucun chantier planifié</p>
-                          <p className="text-xs text-gray-500 mt-2">Debug: {chantiers.length} chantiers chargés</p>
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center shadow-xl mb-4">
+                            <CalendarIcon className="h-10 w-10 text-gray-400" />
+                          </div>
+                          <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Aucun chantier planifié</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Commencez par créer votre premier chantier</p>
                           <Link
                             href="/chantiers/nouveau"
-                            className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-semibold transition-all duration-200"
                           >
-                            <BuildingOfficeIcon className="w-4 h-4 mr-2" />
+                            <BuildingOfficeIcon className="w-5 h-5" />
                             Créer un chantier
                           </Link>
                         </div>
                       ) : (
                         <div className="h-full flex flex-col">
-                          {/* Légende compacte */}
-                          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-yellow-500 rounded mr-1"></div>
-                              <span>En préparation</span>
+                          {/* Légende moderne avec badges */}
+                          <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
+                              <div className="w-3 h-3 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full shadow-lg"></div>
+                              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">En préparation</span>
                             </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-blue-500 rounded mr-1"></div>
-                              <span>En cours</span>
+                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border border-blue-200 dark:border-blue-800/50">
+                              <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg"></div>
+                              <span className="text-xs font-bold text-blue-800 dark:text-blue-300">En cours</span>
                             </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-green-500 rounded mr-1"></div>
-                              <span>Terminé</span>
+                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
+                              <div className="w-3 h-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg"></div>
+                              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Terminé</span>
                             </div>
-                            <span className="ml-auto">{chantiers.length} chantier{chantiers.length > 1 ? 's' : ''}</span>
+                            <div className="ml-auto px-4 py-2 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600">
+                              <span className="text-sm font-bold text-gray-900 dark:text-white">{chantiers.length} chantier{chantiers.length > 1 ? 's' : ''}</span>
+                            </div>
                           </div>
                           
                           {/* Mini-Gantt basé sur les dates réelles, centré sur aujourd'hui */}
@@ -415,10 +485,14 @@ export default function DashboardPage() {
                               
                               if (chantiersActifs.length === 0) {
                                 return (
-                                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                    <p>Aucun chantier en cours ou en préparation</p>
-                                    <p className="text-xs mt-2">Debug: {chantiers.length} chantiers total, {chantiersActifs.length} actifs</p>
-                                    <p className="text-xs">Statuts disponibles: {chantiers.map(c => c.etat).join(', ')}</p>
+                                  <div className="flex flex-col items-center justify-center py-12">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center shadow-xl mb-4">
+                                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    </div>
+                                    <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">Aucun chantier actif</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Tous les chantiers sont terminés</p>
                                   </div>
                                 )
                               }
@@ -444,14 +518,23 @@ export default function DashboardPage() {
 
                               const getBarColor = (etat: string) => {
                                 switch (etat) {
-                                  case 'En cours': return 'bg-blue-500'
-                                  case 'En préparation': return 'bg-yellow-500'
-                                  case 'Terminé': return 'bg-green-500'
-                                  default: return 'bg-gray-400'
+                                  case 'En cours': return 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-600 shadow-lg shadow-blue-500/30'
+                                  case 'En préparation': return 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 shadow-lg shadow-amber-500/30'
+                                  case 'Terminé': return 'bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-600 shadow-lg shadow-emerald-500/30'
+                                  default: return 'bg-gradient-to-r from-gray-400 to-gray-500 shadow-lg'
+                                }
+                              }
+                              
+                              const getStatusIcon = (etat: string) => {
+                                switch (etat) {
+                                  case 'En cours': return '🚧'
+                                  case 'En préparation': return '⏳'
+                                  case 'Terminé': return '✅'
+                                  default: return '❓'
                                 }
                               }
 
-                              return parsed.map((chantier) => {
+                              return parsed.map((chantier, idx) => {
                                 const leftAbs = toPercent(chantier._start)
                                 const rightAbs = toPercent(chantier._end)
                                 const left = mapToViewport(leftAbs)
@@ -459,44 +542,77 @@ export default function DashboardPage() {
                                 const width = Math.max(1, right - left)
 
                                 return (
-                                  <div key={chantier.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/20 p-2 rounded transition-colors">
-                                    <div className="flex items-center gap-3">
-                                      {/* Info chantier */}
-                                      <div className="w-48 flex-shrink-0">
-                                        <Link 
-                                          href={`/chantiers/${chantier.id}`}
-                                          className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 truncate block"
-                                          title={chantier.title}
-                                        >
-                                          {chantier.title}
-                                        </Link>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                          {chantier.client}
-                                        </p>
+                                  <div 
+                                    key={chantier.id} 
+                                    className={`group p-3 rounded-xl transition-all duration-200 hover:shadow-lg ${
+                                      idx % 2 === 0 ? 'bg-white/50 dark:bg-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-850/50'
+                                    } hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-transparent dark:hover:from-blue-900/10`}
+                                  >
+                                    <div className="flex items-center gap-4">
+                                      {/* Badge de statut + Info chantier */}
+                                      <div className="w-56 flex-shrink-0 flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-lg ${getBarColor(chantier.etat)} group-hover:scale-110 transition-transform duration-200`}>
+                                          {getStatusIcon(chantier.etat)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <Link 
+                                            href={`/chantiers/${chantier.id}`}
+                                            className="text-sm font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate block transition-colors"
+                                            title={chantier.title}
+                                          >
+                                            {chantier.title}
+                                          </Link>
+                                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate font-medium">
+                                            {chantier.client}
+                                          </p>
+                                        </div>
                                       </div>
 
-                                      {/* Barre Gantt basée dates avec infobulle */}
-                                      <div className="flex-1 relative h-8 bg-gray-100 dark:bg-gray-600 rounded">
-                                        {/* Ligne date actuelle positionnée au centre */}
-                                        <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style={{ left: '50%' }}></div>
+                                      {/* Barre Gantt moderne */}
+                                      <div className="flex-1 relative h-10 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-xl shadow-inner overflow-hidden">
+                                        {/* Ligne date actuelle positionnée au centre avec style moderne */}
+                                        <div className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-red-400 via-red-600 to-red-400 z-10 shadow-lg" style={{ left: '50%', transform: 'translateX(-50%)' }}>
+                                          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse"></div>
+                                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse"></div>
+                                        </div>
 
-                                        {/* Barre chantier + tooltip */}
-                                        <div className="group">
+                                        {/* Barre chantier moderne + tooltip */}
+                                        <div className="group/bar relative h-full">
                                           <div
-                                            className={`absolute top-1 bottom-1 rounded ${getBarColor(chantier.etat)} opacity-90 hover:opacity-100 cursor-pointer transition-all`}
+                                            className={`absolute top-1 bottom-1 rounded-xl ${getBarColor(chantier.etat)} hover:scale-105 cursor-pointer transition-all duration-300 z-20 overflow-hidden`}
                                             style={{ left: `${left}%`, width: `${width}%` }}
-                                          ></div>
-                                          {/* Tooltip */}
-                                          <div className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow">
-                                            {chantier.title} • {chantier.client} • {chantier._start.toLocaleDateString('fr-FR')} → {chantier._end.toLocaleDateString('fr-FR')}
+                                          >
+                                            {/* Effet brillant */}
+                                            <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"></div>
+                                            {/* Bordure animée */}
+                                            <div className="absolute inset-0 rounded-xl border-2 border-white/0 group-hover/bar:border-white/50 transition-all duration-300"></div>
+                                          </div>
+                                          {/* Tooltip moderne */}
+                                          <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 hidden group-hover/bar:block z-30 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                            <div className="bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-xl text-white text-xs rounded-xl px-4 py-3 whitespace-nowrap shadow-2xl border border-gray-700">
+                                              <div className="font-bold mb-1">{chantier.title}</div>
+                                              <div className="text-gray-300">{chantier.client}</div>
+                                              <div className="text-gray-400 mt-1 text-xs">
+                                                {chantier._start.toLocaleDateString('fr-FR')} → {chantier._end.toLocaleDateString('fr-FR')}
+                                              </div>
+                                              {/* Flèche */}
+                                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900/95 dark:bg-gray-800/95 rotate-45"></div>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
 
-                                      {/* Dates */}
-                                      <div className="w-28 text-xs text-gray-500 dark:text-gray-400 text-right flex-shrink-0">
-                                        <div>{chantier._start.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</div>
-                                        <div>→ {chantier._end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</div>
+                                      {/* Dates avec style moderne */}
+                                      <div className="w-32 flex-shrink-0 text-right">
+                                        <div className="inline-flex flex-col gap-1 bg-white dark:bg-gray-700 rounded-xl px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-600">
+                                          <div className="text-xs font-bold text-gray-900 dark:text-white">
+                                            {chantier._start.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                                          </div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400">→</div>
+                                          <div className="text-xs font-bold text-gray-900 dark:text-white">
+                                            {chantier._end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -505,11 +621,15 @@ export default function DashboardPage() {
                             })()}
                             
                             {chantiers.length > 10 && (
-                              <div className="text-center pt-3 border-t border-gray-200 dark:border-gray-700">
+                              <div className="text-center pt-4 mt-4 border-t-2 border-gray-200 dark:border-gray-700">
                                 <Link 
                                   href="/planning" 
-                                  className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-bold text-sm transition-all duration-200"
                                 >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
                                   Voir les {chantiers.length - 10} autres chantiers
                                 </Link>
                               </div>
@@ -525,10 +645,20 @@ export default function DashboardPage() {
               )}
             </section>
 
-            {/* Graphiques: Répartition + États récents */}
-            <section aria-labelledby="charts-title" className="border-t-2 border-gray-200 dark:border-gray-700 pt-8">
-              <h2 id="charts-title" className="sr-only">Graphiques</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Graphiques: Répartition + États récents moderne */}
+            <section aria-labelledby="charts-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <ChartBarIcon className="h-5 w-5 text-white"/>
+                </div>
+                <div>
+                  <h2 id="charts-title" className="text-xl font-black text-gray-900 dark:text-white">
+                    Graphiques & Statistiques
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Analyse visuelle de vos activités</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="h-[28rem]">
                   <ChantiersStatsChart data={chantiersByCategory} loading={loading} />
                 </div>
@@ -538,12 +668,19 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* Section: Suivis Importants */}
-            <section aria-labelledby="suivis-importants-title" className="mt-12">
-              <h2 id="suivis-importants-title" className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                <BellAlertIcon className="h-6 w-6 mr-2 text-blue-600"/>
-                Suivis Importants
-              </h2>
+            {/* Section: Suivis Importants moderne */}
+            <section aria-labelledby="suivis-importants-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <BellAlertIcon className="h-5 w-5 text-white"/>
+                </div>
+                <div>
+                  <h2 id="suivis-importants-title" className="text-xl font-black text-gray-900 dark:text-white">
+                    Suivis Importants
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Alertes et éléments nécessitant votre attention</p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 <div className="h-80 overflow-hidden">
                   <BonsRegieWidget />

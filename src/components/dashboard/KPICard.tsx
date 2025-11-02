@@ -18,17 +18,65 @@ interface KPICardProps {
   href?: string; // Lien optionnel
 }
 
-// Helper pour obtenir les classes de couleur
+// Helper pour obtenir les classes de couleur modernes avec gradients
 const getColorClasses = (color: KPICardProps['accentColor']) => {
   switch (color) {
-    case 'blue': return { border: 'border-blue-500', bgIcon: 'bg-blue-500', textIcon: 'text-white', ring: 'ring-blue-500' };
-    case 'green': return { border: 'border-green-500', bgIcon: 'bg-green-500', textIcon: 'text-white', ring: 'ring-green-500' };
-    case 'yellow': return { border: 'border-yellow-500', bgIcon: 'bg-yellow-500', textIcon: 'text-white', ring: 'ring-yellow-500' };
-    case 'red': return { border: 'border-red-500', bgIcon: 'bg-red-500', textIcon: 'text-white', ring: 'ring-red-500' };
-    case 'indigo': return { border: 'border-indigo-500', bgIcon: 'bg-indigo-500', textIcon: 'text-white', ring: 'ring-indigo-500' };
-    case 'purple': return { border: 'border-purple-500', bgIcon: 'bg-purple-500', textIcon: 'text-white', ring: 'ring-purple-500' };
-    case 'pink': return { border: 'border-pink-500', bgIcon: 'bg-pink-500', textIcon: 'text-white', ring: 'ring-pink-500' };
-    default: return { border: 'border-gray-500', bgIcon: 'bg-gray-500', textIcon: 'text-white', ring: 'ring-gray-500' };
+    case 'blue': return { 
+      border: 'border-blue-200 dark:border-blue-700/50', 
+      bgIcon: 'bg-gradient-to-br from-blue-500 to-indigo-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-blue-50/50 to-indigo-50/30 dark:from-blue-950/20 dark:to-indigo-950/20',
+      glow: 'hover:shadow-blue-500/20'
+    };
+    case 'green': return { 
+      border: 'border-green-200 dark:border-green-700/50', 
+      bgIcon: 'bg-gradient-to-br from-green-500 to-emerald-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-green-50/50 to-emerald-50/30 dark:from-green-950/20 dark:to-emerald-950/20',
+      glow: 'hover:shadow-green-500/20'
+    };
+    case 'yellow': return { 
+      border: 'border-yellow-200 dark:border-yellow-700/50', 
+      bgIcon: 'bg-gradient-to-br from-yellow-500 to-orange-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-yellow-50/50 to-orange-50/30 dark:from-yellow-950/20 dark:to-orange-950/20',
+      glow: 'hover:shadow-yellow-500/20'
+    };
+    case 'red': return { 
+      border: 'border-red-200 dark:border-red-700/50', 
+      bgIcon: 'bg-gradient-to-br from-red-500 to-pink-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-red-50/50 to-pink-50/30 dark:from-red-950/20 dark:to-pink-950/20',
+      glow: 'hover:shadow-red-500/20'
+    };
+    case 'indigo': return { 
+      border: 'border-indigo-200 dark:border-indigo-700/50', 
+      bgIcon: 'bg-gradient-to-br from-indigo-500 to-purple-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-indigo-50/50 to-purple-50/30 dark:from-indigo-950/20 dark:to-purple-950/20',
+      glow: 'hover:shadow-indigo-500/20'
+    };
+    case 'purple': return { 
+      border: 'border-purple-200 dark:border-purple-700/50', 
+      bgIcon: 'bg-gradient-to-br from-purple-500 to-fuchsia-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-purple-50/50 to-fuchsia-50/30 dark:from-purple-950/20 dark:to-fuchsia-950/20',
+      glow: 'hover:shadow-purple-500/20'
+    };
+    case 'pink': return { 
+      border: 'border-pink-200 dark:border-pink-700/50', 
+      bgIcon: 'bg-gradient-to-br from-pink-500 to-rose-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-pink-50/50 to-rose-50/30 dark:from-pink-950/20 dark:to-rose-950/20',
+      glow: 'hover:shadow-pink-500/20'
+    };
+    default: return { 
+      border: 'border-gray-200 dark:border-gray-700/50', 
+      bgIcon: 'bg-gradient-to-br from-gray-500 to-gray-600', 
+      textIcon: 'text-white', 
+      bgCard: 'from-gray-50/50 to-gray-100/30 dark:from-gray-800/20 dark:to-gray-900/20',
+      glow: 'hover:shadow-gray-500/20'
+    };
   }
 };
 
@@ -46,37 +94,42 @@ export default function KPICard({
   const colors = getColorClasses(accentColor);
 
   const content = (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 p-4 ${href ? 'cursor-pointer' : ''} ${className}`}>
-      {loading ? (
-        <div className="w-full space-y-3">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-4">
-          {/* Bulle ronde avec icône */}
-          {icon && (
-            <div className={`flex-shrink-0 w-14 h-14 rounded-full ${colors.bgIcon} ${colors.textIcon} flex items-center justify-center shadow-md ring-2 ${colors.ring} ring-offset-2 ring-offset-white dark:ring-offset-gray-800`}>
-              <div className="w-7 h-7"> 
-                {icon} 
-              </div>
-            </div>
-          )}
-          {/* Contenu compact */}
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">{title}</h3>
-            <div className="flex items-baseline gap-2 mt-1">
-              <p className="text-xl font-bold text-gray-900 dark:text-white truncate">{value}</p>
-              {trend && (
-                <p className={`text-xs font-medium flex-shrink-0 ${trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
-                </p>
-              )}
-            </div>
-            {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{subtitle}</p>}
+    <div className={`bg-gradient-to-br ${colors.bgCard} bg-white dark:bg-gray-800 rounded-2xl shadow-lg ${colors.glow} hover:shadow-2xl border-2 ${colors.border} hover:scale-105 transition-all duration-300 p-5 group relative overflow-hidden ${href ? 'cursor-pointer' : ''} ${className}`}>
+      {/* Effet de brillance au survol */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      
+      <div className="relative z-10">
+        {loading ? (
+          <div className="w-full space-y-3">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-3/4"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-1/2"></div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-4">
+            {/* Icône avec gradient moderne */}
+            {icon && (
+              <div className={`flex-shrink-0 w-14 h-14 rounded-xl ${colors.bgIcon} ${colors.textIcon} flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300`}>
+                <div className="w-7 h-7"> 
+                  {icon} 
+                </div>
+              </div>
+            )}
+            {/* Contenu moderne */}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">{title}</h3>
+              <div className="flex items-baseline gap-2 mt-2">
+                <p className="text-2xl font-black text-gray-900 dark:text-white truncate">{value}</p>
+                {trend && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold ${trend.isPositive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+                    {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+                  </span>
+                )}
+              </div>
+              {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 truncate font-medium">{subtitle}</p>}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 

@@ -43,18 +43,23 @@ export default function BonsRegieWidget() {
   }, [])
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md h-full flex flex-col">
-      {/* En-tête du widget */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Derniers bons de régie
-        </h2>
+    <div className="bg-gradient-to-br from-white via-blue-50/30 to-white dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 h-full flex flex-col overflow-hidden">
+      {/* En-tête moderne du widget */}
+      <div className="px-6 py-4 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-900/20 dark:to-indigo-900/20 border-b-2 border-blue-200/50 dark:border-blue-700/50 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+            <DocumentTextIcon className="h-4 w-4 text-white"/>
+          </div>
+          <h2 className="text-lg font-black text-gray-900 dark:text-white">
+            Derniers bons de régie
+          </h2>
+        </div>
         <Link 
           href="/bons-regie" 
-          className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 flex items-center whitespace-nowrap"
+          className="text-xs font-bold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all duration-200 whitespace-nowrap"
         >
           Voir tous
-          <ArrowTopRightOnSquareIcon className="h-4 w-4 ml-1" />
+          <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
         </Link>
       </div>
       
@@ -72,17 +77,21 @@ export default function BonsRegieWidget() {
             <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto mt-4"></div>
           </div>
         ) : error ? (
-          <div className="text-center text-red-500 dark:text-red-400 py-10">
-            <ExclamationCircleIcon className="h-10 w-10 mx-auto mb-2 text-red-400" />
-            <p>{error}</p>
+          <div className="text-center py-10">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <ExclamationCircleIcon className="h-10 w-10 text-red-500 dark:text-red-400" />
+            </div>
+            <p className="text-red-600 dark:text-red-400 font-semibold">{error}</p>
           </div>
         ) : bonsRegie.length === 0 ? (
           <div className="text-center py-10 flex flex-col items-center justify-center h-full">
-            <DocumentTextIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 mb-3">Aucun bon de régie enregistré</p>
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <DocumentTextIcon className="h-10 w-10 text-blue-500 dark:text-blue-400" />
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 font-medium">Aucun bon de régie enregistré</p>
             <Link 
               href="/public/bon-regie" 
-              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl shadow-lg text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:scale-105 transition-all duration-200"
             >
               Créer un bon de régie
             </Link>
@@ -92,31 +101,33 @@ export default function BonsRegieWidget() {
             {bonsRegie.map((bon) => (
               <div 
                 key={bon.id} 
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                className="border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200 group"
               >
                 <Link href={`/bons-regie/${bon.id}`} className="block">
-                  <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                  <h3 className="font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {bon.description}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
-                    <span className="font-medium">{bon.nomChantier}</span> - {bon.client}
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 truncate">
+                    <span className="font-bold">{bon.nomChantier}</span> • {bon.client}
                   </p>
-                  <div className="mt-2 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                    <span>Dates: {bon.dates}</span>
-                    <span>
+                  <div className="mt-3 flex justify-between items-center text-xs">
+                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 font-medium">
+                      {bon.dates}
+                    </span>
+                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-700 dark:text-green-400 font-bold">
                       Signé le {format(new Date(bon.dateSignature), 'dd/MM/yyyy', { locale: fr })}
                     </span>
                   </div>
                 </Link>
               </div>
             ))}
-            {/* Bouton "Nouveau bon de régie" en bas peut être utile même si la liste n'est pas vide */}
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+            {/* Bouton "Nouveau bon de régie" moderne */}
+            <div className="mt-6 pt-4 border-t-2 border-gray-200/50 dark:border-gray-700/50 text-center">
               <Link
                 href="/public/bon-regie" 
-                className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl shadow-lg text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:scale-105 transition-all duration-200"
               >
-                Nouveau bon de régie
+                + Nouveau bon de régie
               </Link>
             </div>
           </div>

@@ -43,83 +43,96 @@ export default function ReceptionsEnCoursWidget() {
   
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 animate-pulse">
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4 w-2/3"></div>
-        {[...Array(2)].map((_, i) => ( // Simule 2 éléments en chargement
-          <div key={i} className="mb-4 space-y-2">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-          </div>
-        ))}
+      <div className="bg-gradient-to-br from-white via-green-50/30 to-white dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 h-full flex flex-col overflow-hidden">
+        <div className="px-6 py-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 dark:from-green-900/20 dark:to-emerald-900/20 border-b-2 border-green-200/50 dark:border-green-700/50">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg w-2/3 animate-pulse"></div>
+        </div>
+        <div className="p-6 animate-pulse space-y-3">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4"></div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
   
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Réceptions en cours
-        </h2>
-        <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-lg border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
-          {error}
+      <div className="bg-gradient-to-br from-white via-red-50/30 to-white dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-2xl shadow-xl border border-red-200/50 dark:border-red-700/50 h-full flex flex-col overflow-hidden">
+        <div className="px-6 py-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 dark:from-green-900/20 dark:to-emerald-900/20 border-b-2 border-green-200/50 dark:border-green-700/50 flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
+            <CalendarIcon className="h-4 w-4 text-white"/>
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-gray-900 dark:text-white">
+              Réceptions en cours
+            </h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Planification des livraisons</p>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-xl border-2 border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 font-semibold">
+            {error}
+          </div>
         </div>
       </div>
     )
   }
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Réceptions en cours
-        </h2>
-        {/* <Link 
-          href="/receptions" // Lien à ajuster si vous avez une page dédiée
-          className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
-        >
-          Voir toutes
-          <ArrowTopRightOnSquareIcon className="h-4 w-4 ml-1" />
-        </Link> */}
+    <div className="bg-gradient-to-br from-white via-green-50/30 to-white dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 h-full flex flex-col overflow-hidden">
+      {/* En-tête moderne du widget */}
+      <div className="px-6 py-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 dark:from-green-900/20 dark:to-emerald-900/20 border-b-2 border-green-200/50 dark:border-green-700/50 flex items-center gap-2 flex-shrink-0">
+        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
+          <CalendarIcon className="h-4 w-4 text-white"/>
+        </div>
+        <div>
+          <h2 className="text-lg font-black text-gray-900 dark:text-white">
+            Réceptions en cours
+          </h2>
+          <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Planification des livraisons</p>
+        </div>
       </div>
       
+      {/* Contenu principal scrollable */}
+      <div className="overflow-y-auto flex-grow p-6">
       {receptions.length === 0 ? (
-        <div className="text-center py-6">
-          <CalendarIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-2" />
-          <p className="text-gray-500 dark:text-gray-400">Aucune réception en cours</p>
-          {/* Optionnel: Lien pour créer une réception
-          <Link 
-            href="/receptions/creer" // Lien à ajuster
-            className="mt-2 inline-block text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Planifier une réception
-          </Link>
-          */}
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <CalendarIcon className="h-10 w-10 text-green-500 dark:text-green-400" />
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 font-semibold">Aucune réception en cours</p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Aucune réception planifiée pour le moment</p>
         </div>
       ) : (
         <div className="space-y-3">
           {receptions.map((reception) => (
             <div 
               key={reception.id} 
-              className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+              className="border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 hover:border-green-300 dark:hover:border-green-600 hover:shadow-lg transition-all duration-200 group"
             >
-              {/* Lien vers la réception du chantier */}
               <Link href={`/chantiers/${reception.chantierId}/reception/${reception.id}`} className="block">
-                <h3 className="font-medium text-gray-900 dark:text-white">
-                  Chantier: {reception.nomChantier}
+                <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                  {reception.nomChantier}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Client: {reception.client}
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-medium">
+                  Client: <span className="font-bold">{reception.client}</span>
                 </p>
-                <div className="mt-2 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                  <span>Date prévue: {format(new Date(reception.dateReceptionPrevue), 'dd/MM/yyyy', { locale: fr })}</span>
-                  {/* Vous pourriez ajouter d'autres infos ici, comme le statut si pertinent */}
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-700 dark:text-green-400 text-xs font-bold">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {format(new Date(reception.dateReceptionPrevue), 'dd/MM/yyyy', { locale: fr })}
+                  </span>
                 </div>
               </Link>
             </div>
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 } 

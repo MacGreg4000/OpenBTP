@@ -5,7 +5,14 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 import isToday from 'dayjs/plugin/isToday'
 import 'dayjs/locale/fr'
-import { ChevronLeftIcon, ChevronRightIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+import { 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  DocumentArrowDownIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  AdjustmentsHorizontalIcon
+} from '@heroicons/react/24/outline'
 
 // Initialiser dayjs
 dayjs.extend(weekOfYear)
@@ -62,6 +69,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
   
   // État pour afficher tous les chantiers ou seulement ceux dans la période
   const [showAllChantiers, setShowAllChantiers] = useState(false)
+  
+  // État pour la recherche
+  const [searchTerm, setSearchTerm] = useState('')
+  
+  // État pour le panneau de filtres
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false)
   
   // Gérer le changement d'échelle
   useEffect(() => {
@@ -196,10 +209,14 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
     }
   }
   
-  // Filtrer les chantiers selon l'état
-  const filteredChantiers = chantiers.filter(
-    chantier => filters[chantier.etat as keyof typeof filters]
-  )
+  // Filtrer les chantiers selon l'état et la recherche
+  const filteredChantiers = chantiers.filter(chantier => {
+    const matchesFilter = filters[chantier.etat as keyof typeof filters]
+    const matchesSearch = searchTerm === '' || 
+      chantier.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      chantier.client.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesFilter && matchesSearch
+  })
   
   // Exporter en PDF
   const handleExportPDF = async () => {
@@ -294,130 +311,219 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
   const columnWidth = scale === 'Jours' ? 70 : scale === 'Semaines' ? 120 : 180
   
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      {/* Barre d'outils */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex flex-wrap justify-between items-center">
-          {/* Partie gauche: Navigation et période */}
-          <div className="flex items-center">
-            <button 
-              onClick={goToPrevious}
-              className="p-1 rounded hover:bg-gray-100" 
-              aria-label="Période précédente"
-            >
-              <ChevronLeftIcon className="h-5 w-5 text-gray-500" />
-            </button>
-            
-            <span className="mx-2 text-sm font-medium">
-              {periodDisplay}
-            </span>
-            
-            <button 
-              onClick={goToNext} 
-              className="p-1 rounded hover:bg-gray-100"
-              aria-label="Période suivante"
-            >
-              <ChevronRightIcon className="h-5 w-5 text-gray-500" />
-            </button>
+    <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+      {/* Barre d'outils moderne */}
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50">
+        <div className="p-6 space-y-4">
+          {/* Ligne 1: Navigation temporelle et recherche */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Navigation temporelle avec design moderne */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                <button 
+                  onClick={goToPrevious}
+                  className="p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600 dark:hover:to-gray-600 transition-all duration-200 group" 
+                  aria-label="Période précédente"
+                >
+                  <ChevronLeftIcon className="h-5 w-5 text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                </button>
+                
+                <div className="px-6 py-3 border-x border-gray-200 dark:border-gray-600 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-600 dark:to-gray-600">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Période</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                    {periodDisplay}
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={goToNext} 
+                  className="p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600 dark:hover:to-gray-600 transition-all duration-200 group"
+                  aria-label="Période suivante"
+                >
+                  <ChevronRightIcon className="h-5 w-5 text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                </button>
+              </div>
+              
+              {/* Badge du jour actuel */}
+              <div className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg">
+                <div className="text-xs font-semibold">Aujourd'hui</div>
+                <div className="text-sm font-bold">{dayjs().format('DD MMM YYYY')}</div>
+              </div>
+            </div>
+
+            {/* Barre de recherche moderne */}
+            <div className="flex-1 max-w-md">
+              <div className="relative group">
+                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Rechercher un chantier ou client..."
+                  className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm font-medium placeholder:text-gray-400"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFiltersPanel(!showFiltersPanel)}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg font-semibold text-sm transition-all duration-200 ${
+                  showFiltersPanel
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-500'
+                }`}
+              >
+                <FunnelIcon className="h-4 w-4" />
+                Filtres
+                <span className="px-2 py-0.5 bg-white/20 dark:bg-black/20 rounded-full text-xs">
+                  {Object.values(filters).filter(Boolean).length}
+                </span>
+              </button>
+              
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-semibold text-sm transition-all duration-200"
+                title="Exporter en PDF"
+              >
+                <DocumentArrowDownIcon className="h-4 w-4" />
+                Export PDF
+              </button>
+            </div>
           </div>
 
-          {/* Partie centrale: Sélecteur d'échelle */}
-          <div className="flex justify-center items-center space-x-3">
-            <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
-              {(['Jours', 'Semaines', 'Mois'] as const).map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setScale(option)}
-                  className={`px-4 py-2 text-sm ${
-                    scale === option
-                      ? 'bg-blue-50 text-blue-700 font-medium'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-            <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-md">
-              Échelle: <span className="font-medium text-blue-600">{scale}</span>
-            </div>
-          </div>
-          
-          {/* Partie droite: Filtres et exportation */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              {Object.entries(filters).map(([key, value]) => (
-                <button
-                  key={key}
-                  onClick={() => toggleFilter(key as keyof typeof filters)}
-                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                    value 
-                      ? key === 'En préparation'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : key === 'En cours'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {key}
-                </button>
-              ))}
+          {/* Ligne 2: Échelle et filtres (si panneau ouvert) */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Sélecteur d'échelle avec design pills moderne */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-xl">
+                <AdjustmentsHorizontalIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Échelle</span>
+              </div>
+              <div className="inline-flex bg-white dark:bg-gray-700 rounded-xl shadow-lg p-1 border border-gray-200 dark:border-gray-600">
+                {(['Jours', 'Semaines', 'Mois'] as const).map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setScale(option)}
+                    className={`relative px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${
+                      scale === option
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg scale-105'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
             </div>
             
-            {/* Toggle pour afficher tous les chantiers */}
-            <div className="flex items-center space-x-2">
-              <label className="text-sm text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={showAllChantiers}
-                  onChange={(e) => setShowAllChantiers(e.target.checked)}
-                  className="mr-2"
-                />
-                Tout afficher ({filteredChantiers.length})
-              </label>
-            </div>
-            
-            {/* Bouton d'export PDF */}
-            <button
-              onClick={handleExportPDF}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              title="Exporter en PDF"
-            >
-              <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-              Export PDF
-            </button>
-            
+            {/* Panneau de filtres élégant */}
+            {showFiltersPanel && (
+              <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">États:</span>
+                  {Object.entries(filters).map(([key, value]) => (
+                    <button
+                      key={key}
+                      onClick={() => toggleFilter(key as keyof typeof filters)}
+                      className={`group relative px-4 py-2 text-xs font-bold rounded-lg transition-all duration-300 overflow-hidden ${
+                        value 
+                          ? key === 'En préparation'
+                            ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-lg shadow-yellow-500/30 scale-105'
+                            : key === 'En cours'
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105'
+                              : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 scale-105'
+                          : 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-500'
+                      }`}
+                    >
+                      <span className="relative z-10 flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${value ? 'bg-white' : 'bg-gray-400'}`}></span>
+                        {key}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                
+                <label className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-600 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={showAllChantiers}
+                    onChange={(e) => setShowAllChantiers(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    Tout afficher ({filteredChantiers.length} / {chantiers.length})
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
         </div>
       </div>
       
-      {/* Contenu du planning */}
-      <div id="gantt-chart" className="overflow-x-auto max-h-[48rem] overflow-y-auto">
-        <div className="relative" style={{ minWidth: `${300 + (timeUnits.length * columnWidth)}px` }}>
-          {/* Entête avec les unités de temps */}
-          <div className="grid" style={{ 
-            gridTemplateColumns: `300px repeat(${timeUnits.length}, ${columnWidth}px)` 
+      {/* Contenu du planning moderne */}
+      <div id="gantt-chart" className="overflow-x-auto max-h-[48rem] overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
+        <div className="relative" style={{ minWidth: `${350 + (timeUnits.length * columnWidth)}px` }}>
+          {/* En-tête moderne avec les unités de temps */}
+          <div className="sticky top-0 z-20 grid shadow-lg" style={{ 
+            gridTemplateColumns: `350px repeat(${timeUnits.length}, ${columnWidth}px)` 
           }}>
-            <div className="p-3 font-medium text-sm border-b border-r border-gray-200 bg-gray-100 w-full">
-              Chantier
+            <div className="p-4 font-bold text-sm bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 border-b-2 border-r-2 border-gray-300 dark:border-gray-600 w-full backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <span className="text-gray-800 dark:text-white uppercase tracking-wide">Chantiers</span>
+              </div>
             </div>
             
-            {timeUnits.map((unit, index) => (
-              <div 
-                key={index}
-                className={`p-3 text-center border-b border-r border-gray-200 ${
-                  unit.isWeekend ? 'bg-gray-100' : 'bg-gray-50'
-                }`}
-              >
-                <div className="text-xs font-medium">{unit.label}</div>
-                <div className="text-xs text-gray-500">{unit.subLabel}</div>
-              </div>
-            ))}
+            {timeUnits.map((unit, index) => {
+              const isToday = dayjs().isSame(unit.start, scale === 'Jours' ? 'day' : scale === 'Semaines' ? 'week' : 'month')
+              return (
+                <div 
+                  key={index}
+                  className={`relative p-3 text-center border-b-2 border-r border-gray-300 dark:border-gray-600 backdrop-blur-sm transition-all duration-200 ${
+                    isToday 
+                      ? 'bg-gradient-to-b from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 shadow-inner' 
+                      : unit.isWeekend 
+                        ? 'bg-gradient-to-b from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-600' 
+                        : 'bg-gradient-to-b from-white to-gray-50 dark:from-gray-600 dark:to-gray-700'
+                  }`}
+                >
+                  {isToday && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                  )}
+                  <div className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {unit.label}
+                  </div>
+                  <div className={`text-xs mt-0.5 ${isToday ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {unit.subLabel}
+                  </div>
+                  {isToday && (
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50"></div>
+                  )}
+                </div>
+              )
+            })}
           </div>
           
-          {/* Corps du tableau avec chantiers */}
-          {filteredChantiers.map((chantier) => {
+          {/* Corps du tableau avec chantiers modernes */}
+          {filteredChantiers.map((chantier, chantierId) => {
             const start = dayjs(chantier.start)
             const end = chantier.end ? dayjs(chantier.end) : start.add(30, 'day')
             
@@ -509,64 +615,146 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
             }
             
             // Calculer la largeur et la position de la barre
-            const barStartX = 300 + (startPosition * columnWidth) + startOffset;
+            const barStartX = 350 + (startPosition * columnWidth) + startOffset;
             const barWidth = ((endPosition - startPosition) * columnWidth) + endOffset - startOffset;
             
+            // Obtenir le statut et les couleurs
+            const getStatusStyles = (etat: string) => {
+              switch (etat) {
+                case 'En préparation':
+                  return {
+                    gradient: 'from-amber-400 via-yellow-500 to-amber-500',
+                    glow: 'shadow-amber-500/30',
+                    icon: '⏳',
+                    text: 'text-amber-900'
+                  }
+                case 'En cours':
+                  return {
+                    gradient: 'from-blue-500 via-indigo-600 to-blue-600',
+                    glow: 'shadow-blue-500/30',
+                    icon: '🚧',
+                    text: 'text-blue-900'
+                  }
+                case 'Terminé':
+                  return {
+                    gradient: 'from-emerald-500 via-teal-600 to-emerald-600',
+                    glow: 'shadow-emerald-500/30',
+                    icon: '✅',
+                    text: 'text-emerald-900'
+                  }
+                default:
+                  return {
+                    gradient: 'from-gray-400 to-gray-500',
+                    glow: 'shadow-gray-500/30',
+                    icon: '❓',
+                    text: 'text-gray-900'
+                  }
+              }
+            }
+
+            const statusStyles = getStatusStyles(chantier.etat)
+
             return (
               <div 
                 key={chantier.id} 
-                className="grid items-center relative" 
+                className={`grid items-center relative group hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-transparent dark:hover:from-blue-900/10 transition-all duration-200 ${chantierId % 2 === 0 ? 'bg-white/50 dark:bg-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-850/50'}`}
                 style={{ 
-                  gridTemplateColumns: `300px repeat(${timeUnits.length}, ${columnWidth}px)`,
-                  height: '72px'
+                  gridTemplateColumns: `350px repeat(${timeUnits.length}, ${columnWidth}px)`,
+                  height: '88px'
                 }}
               >
-                {/* Info chantier */}
-                <div className="p-3 border-b border-r border-gray-200 w-full overflow-hidden">
-                  <div className="text-sm font-medium truncate" title={chantier.title}>
-                    {chantier.title}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate" title={chantier.client}>
-                    {chantier.client}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {dayjs(chantier.start).format('DD/MM/YY')} - {chantier.end ? dayjs(chantier.end).format('DD/MM/YY') : '?'}
+                {/* Info chantier moderne */}
+                <div className="relative p-4 border-b border-r border-gray-200/50 dark:border-gray-700/50 w-full overflow-hidden">
+                  <div className="flex items-start gap-3">
+                    {/* Badge de statut */}
+                    <div className={`flex-shrink-0 w-10 h-10 bg-gradient-to-br ${statusStyles.gradient} rounded-xl flex items-center justify-center text-lg shadow-lg ${statusStyles.glow} group-hover:scale-110 transition-transform duration-200`}>
+                      {statusStyles.icon}
+                    </div>
+                    
+                    {/* Infos */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={chantier.title}>
+                        {chantier.title}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span className="truncate font-medium" title={chantier.client}>{chantier.client}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-xs">
+                        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="font-semibold">{dayjs(chantier.start).format('DD/MM')}</span>
+                          <span>→</span>
+                          <span className="font-semibold">{chantier.end ? dayjs(chantier.end).format('DD/MM') : '?'}</span>
+                        </div>
+                        {chantier.dureeEnJours && (
+                          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold">
+                            {chantier.dureeEnJours}j
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
-                {/* Cellules unités de temps */}
-                {timeUnits.map((unit, index) => (
-                  <div 
-                    key={index} 
-                    className={`border-b border-r border-gray-200 h-full ${
-                      unit.isWeekend ? 'bg-gray-50' : ''
-                    }`} 
-                  />
-                ))}
+                {/* Cellules unités de temps avec marqueurs aujourd'hui */}
+                {timeUnits.map((unit, index) => {
+                  const isToday = dayjs().isSame(unit.start, scale === 'Jours' ? 'day' : scale === 'Semaines' ? 'week' : 'month')
+                  return (
+                    <div 
+                      key={index} 
+                      className={`relative border-b border-r border-gray-200/30 dark:border-gray-700/30 h-full transition-colors ${
+                        isToday ? 'bg-blue-50/30 dark:bg-blue-900/10' : unit.isWeekend ? 'bg-gray-100/30 dark:bg-gray-700/30' : ''
+                      }`}
+                    >
+                      {isToday && (
+                        <div className="absolute inset-y-0 left-0 w-0.5 bg-gradient-to-b from-blue-400 via-blue-600 to-blue-400 opacity-50"></div>
+                      )}
+                    </div>
+                  )
+                })}
                 
-                {/* Barre du chantier */}
+                {/* Barre du chantier moderne */}
                 <div
-                  className={`absolute h-8 rounded shadow-sm cursor-pointer hover:opacity-90 ${
-                    chantier.etat === 'En préparation'
-                      ? 'bg-yellow-500'
-                      : chantier.etat === 'En cours'
-                        ? 'bg-blue-500'
-                        : 'bg-green-500'
-                  }`}
+                  className={`absolute h-10 rounded-xl cursor-pointer transition-all duration-300 bg-gradient-to-r ${statusStyles.gradient} shadow-xl ${statusStyles.glow} hover:shadow-2xl hover:scale-105 hover:z-10 group/bar`}
                   style={{
                     left: `${barStartX}px`,
-                    width: `${Math.max(barWidth, 8)}px`, // Au moins 8px de large pour visibilité
+                    width: `${Math.max(barWidth, 12)}px`,
                     top: '50%',
                     transform: 'translateY(-50%)',
                   }}
                   onMouseEnter={(e) => showTooltip(e, chantier)}
                   onMouseLeave={hideTooltip}
                 >
-                  <div className="h-full flex items-center justify-start px-3">
-                    <span className="text-xs font-medium text-white truncate">
-                      {chantier.title.length > 25 ? chantier.title.substring(0, 25) + '...' : chantier.title}
-                    </span>
+                  {/* Effet brillant */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-xl"></div>
+                  
+                  {/* Contenu */}
+                  <div className="relative h-full flex items-center justify-between px-3 gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-xs font-bold text-white truncate drop-shadow-lg">
+                        {chantier.title.length > 20 ? chantier.title.substring(0, 20) + '...' : chantier.title}
+                      </span>
+                    </div>
+                    
+                    {/* Indicateur de progression si montant disponible */}
+                    {chantier.montant && (
+                      <div className="flex-shrink-0 w-6 h-6 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center group-hover/bar:bg-white/30 transition-colors">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Bordure animée au hover */}
+                  <div className="absolute inset-0 rounded-xl border-2 border-white/0 group-hover/bar:border-white/50 transition-all duration-300"></div>
                 </div>
               </div>
             )
@@ -574,111 +762,142 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
         </div>
       </div>
 
-      {/* Infobulle flottante moderne simplifiée */}
+      {/* Infobulle flottante ultra-moderne */}
       {tooltip.visible && tooltip.chantier && (
         <div 
-          className="fixed bg-white dark:bg-gray-800 shadow-2xl rounded-xl p-6 w-80 border border-gray-200 dark:border-gray-700 z-[1000]"
+          className="fixed z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300"
           style={{
             left: `${tooltip.position.x}px`,
-            top: `${tooltip.position.y + 8}px`,
+            top: `${tooltip.position.y + 12}px`,
             transform: 'translateX(-50%)',
           }}
         >
-          {/* En-tête simplifié */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-3 ${
-                tooltip.chantier.etat === 'En préparation'
-                  ? 'bg-yellow-500'
-                  : tooltip.chantier.etat === 'En cours'
-                    ? 'bg-blue-500'
-                    : 'bg-green-500'
-              }`}></div>
-              <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate">
-                {tooltip.chantier.title}
-              </h3>
-            </div>
-            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${
-              tooltip.chantier.etat === 'En préparation'
-                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                : tooltip.chantier.etat === 'En cours'
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-            }`}>
-              {tooltip.chantier.etat === 'En préparation' ? '⏳' : tooltip.chantier.etat === 'En cours' ? '⚡' : '✅'} {tooltip.chantier.etat}
-            </div>
-          </div>
-
-          {/* Client */}
-          <div className="flex items-center mb-4 text-gray-600 dark:text-gray-400">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span className="font-medium">👤 {tooltip.chantier.client}</span>
-          </div>
-
-          {/* Informations organisées */}
-          <div className="space-y-4">
-            {/* Période */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">Période</span>
-                </div>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                  {tooltip.chantier.dureeEnJours || (tooltip.chantier.end ? dayjs(tooltip.chantier.end).diff(dayjs(tooltip.chantier.start), 'day') : '?')} jours
-                </span>
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <div className="flex justify-between">
-                  <span>Début :</span>
-                  <span className="font-medium">{dayjs(tooltip.chantier.start).format('DD/MM/YYYY')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Fin :</span>
-                  <span className="font-medium">{tooltip.chantier.end ? dayjs(tooltip.chantier.end).format('DD/MM/YYYY') : 'Non définie'}</span>
-                </div>
-              </div>
+          <div className="relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl rounded-2xl p-6 w-96 border-2 border-gray-200/50 dark:border-gray-700/50">
+            {/* Flèche moderne */}
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <div className="w-6 h-6 bg-white dark:bg-gray-900 border-l-2 border-t-2 border-gray-200/50 dark:border-gray-700/50 rotate-45 backdrop-blur-xl"></div>
             </div>
 
-            {/* Montant */}
-            {tooltip.chantier.montant && (
-              <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-700">
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-300">Montant</span>
+            {/* En-tête avec gradient et icône */}
+            <div className="relative mb-5 pb-4 border-b-2 border-gray-100 dark:border-gray-800">
+              <div className="flex items-start gap-4">
+                {/* Badge de statut grand */}
+                <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${
+                  tooltip.chantier.etat === 'En préparation'
+                    ? 'from-amber-400 via-yellow-500 to-amber-500 shadow-amber-500/30'
+                    : tooltip.chantier.etat === 'En cours'
+                      ? 'from-blue-500 via-indigo-600 to-blue-600 shadow-blue-500/30'
+                      : 'from-emerald-500 via-teal-600 to-emerald-600 shadow-emerald-500/30'
+                } rounded-2xl flex items-center justify-center text-2xl shadow-xl animate-pulse`}>
+                  {tooltip.chantier.etat === 'En préparation' ? '⏳' : tooltip.chantier.etat === 'En cours' ? '🚧' : '✅'}
                 </div>
-                <span className="font-bold text-emerald-800 dark:text-emerald-200">
-                  {tooltip.chantier.montant.toLocaleString('fr-FR')} €
-                </span>
-              </div>
-            )}
-            
-            {/* Adresse */}
-            {tooltip.chantier.adresse && (
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <div className="flex items-start">
-                  <svg className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <div>
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Adresse</span>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{tooltip.chantier.adresse}</p>
+                
+                {/* Titre et badge */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2 leading-tight">
+                    {tooltip.chantier.title}
+                  </h3>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg ${
+                    tooltip.chantier.etat === 'En préparation'
+                      ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white'
+                      : tooltip.chantier.etat === 'En cours'
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
+                  }`}>
+                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                    {tooltip.chantier.etat}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Client */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Client</div>
+                  <div className="font-bold text-gray-900 dark:text-white truncate">{tooltip.chantier.client}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Informations en grille moderne */}
+            <div className="space-y-3">
+              {/* Période avec design moderne */}
+              <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-inner">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Durée</span>
+                  </div>
+                  <div className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg text-xs font-bold shadow-lg">
+                    {tooltip.chantier.dureeEnJours || (tooltip.chantier.end ? dayjs(tooltip.chantier.end).diff(dayjs(tooltip.chantier.start), 'day') : '?')} jours
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg p-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Début</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">{dayjs(tooltip.chantier.start).format('DD/MM/YYYY')}</div>
+                  </div>
+                  <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg p-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fin</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">{tooltip.chantier.end ? dayjs(tooltip.chantier.end).format('DD/MM/YYYY') : 'Non définie'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Montant avec design premium */}
+              {tooltip.chantier.montant && (
+                <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl border-2 border-emerald-200 dark:border-emerald-800/30 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Montant Total</div>
+                        <div className="text-xl font-black text-emerald-700 dark:text-emerald-300">
+                          {tooltip.chantier.montant.toLocaleString('fr-FR')} €
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Adresse avec icône de localisation */}
+              {tooltip.chantier.adresse && (
+                <div className="p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl border border-orange-100 dark:border-orange-800/30">
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-orange-700 dark:text-orange-300 uppercase tracking-wider mb-1">Localisation</div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{tooltip.chantier.adresse}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Effet de brillance */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div>
           </div>
-          
-          {/* Flèche du tooltip */}
-          <div className="absolute h-3 w-3 bg-white dark:bg-gray-800 transform rotate-45 border-t border-l border-gray-200 dark:border-gray-700"
-               style={{ top: '-6px', left: '50%', marginLeft: '-6px' }}></div>
         </div>
       )}
     </div>
