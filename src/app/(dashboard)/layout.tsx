@@ -56,11 +56,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 overflow-visible">
       <Navbar />
       
-      <main className="pt-6 pb-6">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="pt-6 pb-6 overflow-visible">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 overflow-visible">
           {children}
         </div>
       </main>
