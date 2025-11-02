@@ -147,6 +147,38 @@ export default function DashboardPage() {
     } catch {}
   }
 
+  // Affichage replié/déplié des suivis importants (préférence persistée)
+  const [isSuivisOpen, setIsSuivisOpen] = useState<boolean>(true)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('dashboard:suivisOpen')
+      if (stored !== null) setIsSuivisOpen(stored === '1')
+    } catch {}
+  }, [])
+  const toggleSuivis = () => {
+    const next = !isSuivisOpen
+    setIsSuivisOpen(next)
+    try {
+      localStorage.setItem('dashboard:suivisOpen', next ? '1' : '0')
+    } catch {}
+  }
+
+  // Affichage replié/déplié des graphiques (préférence persistée)
+  const [isGraphiquesOpen, setIsGraphiquesOpen] = useState<boolean>(true)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('dashboard:graphiquesOpen')
+      if (stored !== null) setIsGraphiquesOpen(stored === '1')
+    } catch {}
+  }, [])
+  const toggleGraphiques = () => {
+    const next = !isGraphiquesOpen
+    setIsGraphiquesOpen(next)
+    try {
+      localStorage.setItem('dashboard:graphiquesOpen', next ? '1' : '0')
+    } catch {}
+  }
+
   // Gestion de l'authentification côté client
   useEffect(() => {
     if (status === 'loading') return // Attendre le chargement de la session
@@ -297,6 +329,24 @@ export default function DashboardPage() {
               </div>
             </section>
 
+            {/* Section: Actions rapides - simplifiée */}
+            <section aria-labelledby="actions-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 id="actions-title" className="text-xl font-black text-gray-900 dark:text-white">
+                    Actions rapides
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Accès direct aux fonctionnalités</p>
+                </div>
+              </div>
+              <QuickActionsWidget />
+            </section>
+
             {/* Section: Mon Espace de Travail moderne */}
             <section aria-labelledby="notepad-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
               <div className="mb-6 flex items-center justify-between">
@@ -338,28 +388,10 @@ export default function DashboardPage() {
               
               {/* Tableau blanc avec notes et tâches */}
               {isNotepadOpen && (
-                <div id="dashboard-notepad" className="mb-6">
+                <div id="dashboard-notepad">
                   <UserNotepad userId={session?.user?.id || 'anonymous'} />
                 </div>
               )}
-              
-              {/* Actions rapides horizontales moderne */}
-              <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-700/40 dark:via-gray-700/40 dark:to-gray-700/40 rounded-2xl border-2 border-blue-200/50 dark:border-gray-600/50 p-8 shadow-xl">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 dark:text-white">
-                      Actions rapides
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Accès direct aux fonctionnalités principales</p>
-                  </div>
-                </div>
-                <QuickActionsWidget />
-              </div>
             </section>
 
             {/* Section: Aperçu et planning moderne */}
@@ -406,29 +438,16 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 gap-6" id="dashboard-planning">
                 <div className="col-span-1">
                   <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 h-[48rem] flex flex-col overflow-hidden">
-                    <div className="px-6 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <CalendarIcon className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                              Aperçu des Chantiers
-                            </h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Chantiers actifs et à venir</p>
-                          </div>
-                        </div>
-                        <Link 
-                          href="/planning" 
-                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-semibold text-sm transition-all duration-200"
-                        >
-                          Planning complet
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                        </Link>
-                      </div>
+                    <div className="px-6 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0 flex items-center justify-end">
+                      <Link 
+                        href="/planning" 
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-semibold text-sm transition-all duration-200"
+                      >
+                        Planning complet
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </Link>
                     </div>
                     
                     <div className="p-6 flex-1 overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
@@ -647,18 +666,45 @@ export default function DashboardPage() {
 
             {/* Graphiques: Répartition + États récents moderne */}
             <section aria-labelledby="charts-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <ChartBarIcon className="h-5 w-5 text-white"/>
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <ChartBarIcon className="h-5 w-5 text-white"/>
+                  </div>
+                  <div>
+                    <h2 id="charts-title" className="text-xl font-black text-gray-900 dark:text-white">
+                      Graphiques & Statistiques
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Analyse visuelle de vos activités</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 id="charts-title" className="text-xl font-black text-gray-900 dark:text-white">
-                    Graphiques & Statistiques
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Analyse visuelle de vos activités</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={toggleGraphiques}
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold shadow-lg transition-all duration-200 hover:scale-105 ${
+                    isGraphiquesOpen
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                      : 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-200 dark:border-indigo-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 dark:hover:from-gray-600 dark:hover:to-gray-600'
+                  }`}
+                  aria-expanded={isGraphiquesOpen}
+                  aria-controls="dashboard-graphiques"
+                >
+                  {isGraphiquesOpen ? (
+                    <>
+                      <ChevronUpIcon className="h-4 w-4" />
+                      Masquer
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDownIcon className="h-4 w-4" />
+                      Afficher
+                    </>
+                  )}
+                </button>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {isGraphiquesOpen && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="dashboard-graphiques">
                 <div className="h-[28rem]">
                   <ChantiersStatsChart data={chantiersByCategory} loading={loading} />
                 </div>
@@ -666,22 +712,50 @@ export default function DashboardPage() {
                   <RecentEtatsList />
                 </div>
               </div>
+              )}
             </section>
 
             {/* Section: Suivis Importants moderne */}
             <section aria-labelledby="suivis-importants-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <BellAlertIcon className="h-5 w-5 text-white"/>
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <BellAlertIcon className="h-5 w-5 text-white"/>
+                  </div>
+                  <div>
+                    <h2 id="suivis-importants-title" className="text-xl font-black text-gray-900 dark:text-white">
+                      Suivis Importants
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Alertes et éléments nécessitant votre attention</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 id="suivis-importants-title" className="text-xl font-black text-gray-900 dark:text-white">
-                    Suivis Importants
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Alertes et éléments nécessitant votre attention</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={toggleSuivis}
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold shadow-lg transition-all duration-200 hover:scale-105 ${
+                    isSuivisOpen
+                      ? 'bg-gradient-to-r from-red-500 to-orange-600 text-white'
+                      : 'bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-orange-50 dark:hover:from-gray-600 dark:hover:to-gray-600'
+                  }`}
+                  aria-expanded={isSuivisOpen}
+                  aria-controls="dashboard-suivis"
+                >
+                  {isSuivisOpen ? (
+                    <>
+                      <ChevronUpIcon className="h-4 w-4" />
+                      Masquer
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDownIcon className="h-4 w-4" />
+                      Afficher
+                    </>
+                  )}
+                </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              
+              {isSuivisOpen && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" id="dashboard-suivis">
                 <div className="h-80 overflow-hidden">
                   <BonsRegieWidget />
                 </div>
@@ -695,6 +769,7 @@ export default function DashboardPage() {
                   <MetresEnAttenteWidget />
                 </div>
               </div>
+              )}
             </section>
           </div>
         </div>

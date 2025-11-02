@@ -94,38 +94,38 @@ export default function KPICard({
   const colors = getColorClasses(accentColor);
 
   const content = (
-    <div className={`bg-gradient-to-br ${colors.bgCard} bg-white dark:bg-gray-800 rounded-2xl shadow-lg ${colors.glow} hover:shadow-2xl border-2 ${colors.border} hover:scale-105 transition-all duration-300 p-5 group relative overflow-hidden ${href ? 'cursor-pointer' : ''} ${className}`}>
+    <div className={`bg-gradient-to-br ${colors.bgCard} bg-white dark:bg-gray-800 rounded-xl shadow-lg ${colors.glow} hover:shadow-2xl border-2 ${colors.border} hover:scale-105 transition-all duration-300 p-3 group relative overflow-hidden ${href ? 'cursor-pointer' : ''} ${className}`}>
       {/* Effet de brillance au survol */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       
       <div className="relative z-10">
         {loading ? (
-          <div className="w-full space-y-3">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-3/4"></div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-1/2"></div>
+          <div className="w-full space-y-2">
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-3/4"></div>
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-1/2"></div>
           </div>
         ) : (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Icône avec gradient moderne */}
             {icon && (
-              <div className={`flex-shrink-0 w-14 h-14 rounded-xl ${colors.bgIcon} ${colors.textIcon} flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300`}>
-                <div className="w-7 h-7"> 
+              <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${colors.bgIcon} ${colors.textIcon} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                <div className="w-5 h-5"> 
                   {icon} 
                 </div>
               </div>
             )}
             {/* Contenu moderne */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">{title}</h3>
-              <div className="flex items-baseline gap-2 mt-2">
-                <p className="text-2xl font-black text-gray-900 dark:text-white truncate">{value}</p>
+              <h3 className="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">{title}</h3>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <p className="text-xl font-black text-gray-900 dark:text-white truncate">{value}</p>
                 {trend && (
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold ${trend.isPositive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${trend.isPositive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
                     {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
                   </span>
                 )}
               </div>
-              {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 truncate font-medium">{subtitle}</p>}
+              {subtitle && <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate font-medium">{subtitle}</p>}
             </div>
           </div>
         )}
