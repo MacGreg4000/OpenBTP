@@ -3,7 +3,6 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { ArrowLeftIcon, PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
-import ChantierActions from '@/components/chantier/ChantierActions'
 import ChantierGestionnaires from '@/components/chantier/ChantierGestionnaires'
 
 interface ChantierData {
@@ -147,11 +146,6 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
               <span>Éditer</span>
             </button>
           </div>
-        </div>
-
-        {/* Actions rapides */}
-        <div className="mb-8">
-          <ChantierActions chantierId={params.chantierId} />
         </div>
         
         {/* Contenu principal */}
