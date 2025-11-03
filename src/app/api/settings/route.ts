@@ -31,7 +31,9 @@ export async function GET() {
         emailUser: '',
         emailPassword: '',
         emailFrom: '',
-        emailFromName: ''
+        emailFromName: '',
+        emailCc: '',
+        emailBcc: ''
       })
     }
     
@@ -89,7 +91,9 @@ export async function PUT(request: Request) {
       emailUser: data.emailUser || '',
       emailPassword: data.emailPassword || '',
       emailFrom: data.emailFrom || '',
-      emailFromName: data.emailFromName || ''
+      emailFromName: data.emailFromName || '',
+      emailCc: data.emailCc || '',
+      emailBcc: data.emailBcc || ''
     }
     
     const settings = await prisma.companysettings.upsert({

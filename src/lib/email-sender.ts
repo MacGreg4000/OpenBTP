@@ -10,6 +10,8 @@ interface EmailSettings {
   emailPassword?: string;
   emailFrom?: string;
   emailFromName?: string;
+  emailCc?: string;
+  emailBcc?: string;
 }
 
 // Fonction pour créer un transporteur d'email avec les paramètres de la base de données
@@ -68,12 +70,25 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
     const fromEmail = settings?.emailFrom || process.env.EMAIL_FROM || 'noreply@example.com'
     const fromName = settings?.emailFromName || process.env.EMAIL_FROM_NAME || 'Secotech'
     
-    const info = await transporter.sendMail({
+    // Préparer les options d'envoi
+    const mailOptions: any = {
       from: `"${fromName}" <${fromEmail}>`,
       to,
       subject,
       html
-    })
+    };
+
+    // Ajouter Cc si configuré
+    if (settings?.emailCc && settings.emailCc.trim()) {
+      mailOptions.cc = settings.emailCc.trim();
+    }
+
+    // Ajouter Cci si configuré
+    if (settings?.emailBcc && settings.emailBcc.trim()) {
+      mailOptions.bcc = settings.emailBcc.trim();
+    }
+
+    const info = await transporter.sendMail(mailOptions)
 
     console.log('Email envoyé:', info.messageId)
     return true
@@ -104,13 +119,26 @@ export async function sendEmailWithAttachment(
     const fromEmail = settings?.emailFrom || process.env.EMAIL_FROM || 'noreply@example.com'
     const fromName = settings?.emailFromName || process.env.EMAIL_FROM_NAME || 'Secotech'
     
-    const info = await transporter.sendMail({
+    // Préparer les options d'envoi
+    const mailOptions: any = {
       from: `"${fromName}" <${fromEmail}>`,
       to: Array.isArray(to) ? to.join(', ') : to,
       subject,
       html,
       attachments
-    })
+    };
+
+    // Ajouter Cc si configuré
+    if (settings?.emailCc && settings.emailCc.trim()) {
+      mailOptions.cc = settings.emailCc.trim();
+    }
+
+    // Ajouter Cci si configuré
+    if (settings?.emailBcc && settings.emailBcc.trim()) {
+      mailOptions.bcc = settings.emailBcc.trim();
+    }
+
+    const info = await transporter.sendMail(mailOptions)
 
     console.log('Email avec pièce jointe envoyé:', info.messageId)
     return true

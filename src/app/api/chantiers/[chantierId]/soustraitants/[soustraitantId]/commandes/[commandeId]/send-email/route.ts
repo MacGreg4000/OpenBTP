@@ -168,12 +168,25 @@ export async function POST(
     const recipient = (commandeData as { soustraitantEmail?: unknown }).soustraitantEmail
     const toEmail = typeof recipient === 'string' && recipient ? recipient : companySettings.email
 
-    await transporter.sendMail({
+    // Préparer les options d'envoi
+    const mailOptions: any = {
       from: `"${companySettings.emailFromName || companySettings.name}" <${companySettings.emailFrom || companySettings.email}>`,
       to: toEmail,
       subject: `Commande ${commandeData.reference || `#${commandeData.id}`} - ${commandeData.nomChantier}`,
       html: emailContent
-    })
+    }
+
+    // Ajouter Cc si configuré
+    if (companySettings.emailCc && companySettings.emailCc.trim()) {
+      mailOptions.cc = companySettings.emailCc.trim()
+    }
+
+    // Ajouter Cci si configuré
+    if (companySettings.emailBcc && companySettings.emailBcc.trim()) {
+      mailOptions.bcc = companySettings.emailBcc.trim()
+    }
+
+    await transporter.sendMail(mailOptions)
 
     return NextResponse.json({ success: true })
   } catch (error) {

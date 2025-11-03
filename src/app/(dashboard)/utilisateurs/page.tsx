@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import UserModal from '@/components/UserModal'
 import { Pagination } from '@/components/Pagination'
+import { PageHeader } from '@/components/PageHeader'
 
 interface User {
   id: string
@@ -73,11 +74,17 @@ export default function UsersPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
+      setLoading(true)
       const response = await fetch(`/api/users?page=${currentPage}&limit=${itemsPerPage}`)
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des utilisateurs')
+      }
       const data = await response.json()
-      if (data.users) {
+      if (data.users && Array.isArray(data.users)) {
         setUsers(data.users)
         setTotalPages(Math.ceil(data.total / itemsPerPage))
+      } else {
+        setError('Format de données invalide')
       }
     } catch (error) {
       console.error('Erreur:', error)
@@ -85,7 +92,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [currentPage])
+  }, [currentPage, itemsPerPage])
 
   useEffect(() => {
     if (!session) return
@@ -162,28 +169,90 @@ export default function UsersPage() {
     return <div className="p-8 text-red-600">Accès non autorisé</div>
   }
 
+  // Calculer les statistiques
+  const stats = {
+    total: users.length,
+    admins: users.filter(u => u.role === 'ADMIN').length,
+    managers: users.filter(u => u.role === 'MANAGER').length,
+    users: users.filter(u => u.role === 'USER').length
+  }
+
+  // Stats cards pour le header
+  const statsCards = !loading && users.length > 0 ? (
+    <div className="flex items-center gap-2">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <UserGroupIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Total</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.total}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center">
+            <UserGroupIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Admins</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.admins}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
+            <UserGroupIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Managers</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.managers}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <UserGroupIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Utilisateurs</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.users}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : undefined
+
   if (loading) return <div className="p-8">Chargement...</div>
   if (error) return <div className="p-8 text-red-600">Erreur: {error}</div>
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Utilisateurs</h1>
-          <p className="mt-2 text-sm text-gray-700 dark:text-gray-400">
-            Liste des utilisateurs et leurs droits d'accès
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-indigo-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Utilisateurs"
+        subtitle="Liste des utilisateurs et leurs droits d'accès"
+        icon={UserGroupIcon}
+        badgeColor="from-blue-600 via-indigo-600 to-purple-700"
+        gradientColor="from-blue-600/10 via-indigo-600/10 to-purple-700/10"
+        stats={statsCards}
+        actions={
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-md shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
           >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Ajouter un utilisateur
+            <PlusIcon className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Ajouter un utilisateur</span>
+            <span className="sm:hidden">Ajouter</span>
           </button>
-        </div>
-      </div>
+        }
+      />
+
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Table des utilisateurs */}
       <div className="mt-8 flex flex-col">
@@ -295,6 +364,7 @@ export default function UsersPage() {
         onConfirm={handleDeleteUser}
         isDeleting={isDeleting}
       />
+      </div>
     </div>
   )
 } 

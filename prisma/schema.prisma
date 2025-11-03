@@ -246,6 +246,8 @@ model companysettings {
   emailPort     String?
   emailSecure   Boolean? @default(false)
   emailUser     String?
+  emailCc       String?
+  emailBcc      String?
   iban          String?
 }
 

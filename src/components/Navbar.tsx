@@ -64,7 +64,7 @@ export function Navbar() {
 
   const navigationGroups = [
     {
-      name: 'Principal',
+      name: 'Gestion',
       items: [
         { name: 'Clients', href: '/clients', icon: UserGroupIcon },
         { name: 'Sous-traitants et ouvriers', href: '/sous-traitants', icon: UserGroupIcon },
@@ -84,7 +84,7 @@ export function Navbar() {
       ]
     },
     {
-      name: 'Outils',
+      name: 'Organisation',
       items: [
         { name: 'Outillage', href: '/outillage', icon: WrenchScrewdriverIcon },
         { name: 'Inventaire', href: '/inventory', icon: CubeIcon },

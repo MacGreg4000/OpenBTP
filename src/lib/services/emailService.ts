@@ -45,13 +45,26 @@ export async function sendEmail(emailData: EmailData): Promise<boolean> {
       throw new Error('Configuration de l\'entreprise non trouvée');
     }
 
-    const info = await transporter.sendMail({
+    // Préparer les options d'envoi
+    const mailOptions: any = {
       from: `"${settings.emailFromName || settings.name}" <${settings.emailFrom || settings.email}>`,
       to: emailData.to,
       subject: emailData.subject,
       text: emailData.text,
       html: emailData.html
-    });
+    };
+
+    // Ajouter Cc si configuré
+    if (settings.emailCc && settings.emailCc.trim()) {
+      mailOptions.cc = settings.emailCc.trim();
+    }
+
+    // Ajouter Cci si configuré
+    if (settings.emailBcc && settings.emailBcc.trim()) {
+      mailOptions.bcc = settings.emailBcc.trim();
+    }
+
+    const info = await transporter.sendMail(mailOptions);
 
     console.log('Email envoyé:', info.messageId);
     return true;

@@ -6,6 +6,7 @@ import { Cog6ToothIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, Shie
 import DocumentManager from '@/components/documents/DocumentManager'
 import AdminTaskTypesManager from '@/components/configuration/AdminTaskTypesManager'
 import { usePermission } from '@/hooks/usePermission'
+import { PageHeader } from '@/components/PageHeader'
 
 interface CompanySettings {
   name: string
@@ -24,6 +25,8 @@ interface CompanySettings {
   emailPassword: string
   emailFrom: string
   emailFromName: string
+  emailCc: string
+  emailBcc: string
 }
 
 export default function ConfigurationPage() {
@@ -46,7 +49,9 @@ export default function ConfigurationPage() {
     emailUser: '',
     emailPassword: '',
     emailFrom: '',
-    emailFromName: ''
+    emailFromName: '',
+    emailCc: '',
+    emailBcc: ''
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -233,25 +238,14 @@ export default function ConfigurationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-slate-600 to-gray-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <Cog6ToothIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Configuration
-                </h1>
-                <p className="mt-0.5 text-xs text-slate-100 hidden sm:block">
-                  Configuration de l'entreprise et paramètres système
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50/20 to-gray-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Configuration"
+        subtitle="Configuration de l'entreprise et paramètres système"
+        icon={Cog6ToothIcon}
+        badgeColor="from-slate-600 via-gray-600 to-slate-700"
+        gradientColor="from-slate-600/10 via-gray-600/10 to-slate-700/10"
+      />
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -494,6 +488,38 @@ export default function ConfigurationPage() {
               placeholder="Secotech"
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email Cc (Copie)
+            </label>
+            <input
+              type="email"
+              value={settings.emailCc}
+              onChange={e => setSettings(prev => ({ ...prev, emailCc: e.target.value }))}
+              placeholder="copie@example.com"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Adresse(s) email en copie (séparées par des virgules). Tous les emails envoyés seront copiés à cette adresse.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email Cci (Copie cachée)
+            </label>
+            <input
+              type="email"
+              value={settings.emailBcc}
+              onChange={e => setSettings(prev => ({ ...prev, emailBcc: e.target.value }))}
+              placeholder="copie-cachee@example.com"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Adresse(s) email en copie cachée (séparées par des virgules). Tous les emails envoyés seront copiés à cette adresse sans que les destinataires le voient.
+            </p>
           </div>
 
           {/* Bouton de test SMTP */}

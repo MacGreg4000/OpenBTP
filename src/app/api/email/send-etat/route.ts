@@ -242,7 +242,7 @@ export async function POST(request: Request) {
     });
 
     // 6. Envoyer l'e-mail
-    const mailOptions = {
+    const mailOptions: any = {
       from: `"${companySettingsRaw.name || 'Votre Entreprise'}" <${companySettingsRaw.emailFrom || companySettingsRaw.emailUser}>`,
       to: recipientEmail,
       subject: subject,
@@ -255,6 +255,16 @@ export async function POST(request: Request) {
         },
       ],
     };
+
+    // Ajouter Cc si configuré
+    if (companySettingsRaw.emailCc && companySettingsRaw.emailCc.trim()) {
+      mailOptions.cc = companySettingsRaw.emailCc.trim();
+    }
+
+    // Ajouter Cci si configuré
+    if (companySettingsRaw.emailBcc && companySettingsRaw.emailBcc.trim()) {
+      mailOptions.bcc = companySettingsRaw.emailBcc.trim();
+    }
 
     await transporter.sendMail(mailOptions);
 
