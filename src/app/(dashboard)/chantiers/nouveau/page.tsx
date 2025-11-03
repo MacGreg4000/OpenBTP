@@ -3,9 +3,9 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ArrowLeftIcon, BuildingOfficeIcon, MapPinIcon, CalendarIcon, ClockIcon, PlusIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
-import SelectField from '@/components/ui/SelectField'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { toast } from 'react-hot-toast'
+import { SearchableSelect } from '@/components/SearchableSelect'
 
 interface Client {
   id: string
@@ -281,20 +281,23 @@ export default function NouveauChantierPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Client *
                   </label>
-                                     <SelectField
-                     label=""
-                     value={selectedClientId}
-                     onChange={(e) => setSelectedClientId(e.target.value)}
-                     required
-                     className="w-full"
-                   >
-                    <option value="">Sélectionner un client</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.nom}
-                      </option>
-                    ))}
-                  </SelectField>
+                  <SearchableSelect
+                    options={clients.map((client) => ({
+                      value: client.id,
+                      label: client.nom,
+                      subtitle: client.email || undefined
+                    }))}
+                    value={selectedClientId || null}
+                    onChange={(v) => {
+                      const clientId = v as string
+                      setSelectedClientId(clientId)
+                      setFormData(prev => ({ ...prev, clientId }))
+                    }}
+                    placeholder="Sélectionner un client"
+                    searchPlaceholder="Rechercher un client..."
+                    emptyMessage="Aucun client trouvé"
+                    showAllOption={false}
+                  />
                 </div>
 
                 {selectedClientId && (
@@ -302,24 +305,27 @@ export default function NouveauChantierPage() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Contact principal
                     </label>
-                                         <SelectField
-                       label=""
-                       value={selectedContactId}
-                       onChange={(e) => setSelectedContactId(e.target.value)}
-                       disabled={loadingContacts || contacts.length === 0}
-                       className="w-full"
-                     >
-                      <option value="">
-                        {loadingContacts ? "Chargement des contacts..." : 
-                         (contacts.length === 0 ? "Aucun contact pour ce client" : 
-                          "Sélectionner un contact (optionnel)")}
-                      </option>
-                      {contacts.map((contact) => (
-                        <option key={contact.id} value={contact.id}>
-                          {contact.prenom} {contact.nom}
-                        </option>
-                      ))}
-                    </SelectField>
+                    <SearchableSelect
+                      options={contacts.map((contact) => ({
+                        value: contact.id,
+                        label: `${contact.prenom} ${contact.nom}`,
+                        subtitle: contact.email || contact.telephone || undefined
+                      }))}
+                      value={selectedContactId || null}
+                      onChange={(v) => {
+                        setSelectedContactId(v as string)
+                        setFormData(prev => ({ ...prev, contactId: v as string }))
+                      }}
+                      disabled={loadingContacts || contacts.length === 0}
+                      placeholder={
+                        loadingContacts ? "Chargement des contacts..." : 
+                        (contacts.length === 0 ? "Aucun contact pour ce client" : 
+                         "Sélectionner un contact (optionnel)")
+                      }
+                      searchPlaceholder="Rechercher un contact..."
+                      emptyMessage="Aucun contact trouvé"
+                      showAllOption={false}
+                    />
                   </div>
                 )}
 

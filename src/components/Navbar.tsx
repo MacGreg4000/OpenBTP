@@ -139,20 +139,20 @@ export function Navbar() {
                   </div>
                 ) : logoLoadStatus === 'loading' ? (
                   <div className="relative w-10 h-10 flex-shrink-0">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                    <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-2 rounded-xl shadow-lg ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-xl shadow-lg ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-300">
                       <HomeIcon className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 ) : (
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                    <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-2 rounded-xl shadow-lg ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 group-hover:scale-105 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-xl shadow-lg ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 group-hover:scale-105 transition-all duration-300">
                       <HomeIcon className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 )}
-                <span className="text-xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-indigo-700 group-hover:to-purple-700 transition-all duration-300">
+                <span className="text-xl font-black bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-blue-800 transition-all duration-300">
                   OpenBTP
                 </span>
               </Link>
@@ -166,11 +166,11 @@ export function Navbar() {
                     <>
                       <Menu.Button className={`group inline-flex items-center px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 relative ${
                         getActiveGroup() === group.name
-                          ? 'bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 text-blue-700 dark:text-blue-400 shadow-md'
+                          ? 'bg-gradient-to-r from-blue-600/10 to-blue-700/10 text-blue-700 dark:text-blue-400 shadow-md'
                           : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                       }`}>
                         {getActiveGroup() === group.name && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-xl blur-sm"></div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-blue-700/10 rounded-xl blur-sm"></div>
                         )}
                         <span className="relative">{group.name}</span>
                         <ChevronDownIcon className={`ml-2 h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
@@ -187,7 +187,7 @@ export function Navbar() {
                       >
                         <Menu.Items className="absolute left-0 mt-3 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 divide-y divide-gray-100/30 dark:divide-gray-700/30 focus:outline-none z-[100] overflow-hidden">
                           {/* Effet de brillance en arrière-plan */}
-                          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 pointer-events-none"></div>
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-700/5 pointer-events-none"></div>
                           <div className="relative p-2">
                             {group.items.map((item) => (
                               <Menu.Item key={item.name}>
@@ -196,13 +196,13 @@ export function Navbar() {
                                     href={item.href}
                                     className={`${
                                       active || isActive(item.href)
-                                        ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                                        ? 'bg-gradient-to-r from-blue-500/20 to-blue-700/20 text-blue-700 dark:text-blue-400 shadow-md'
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
                                     } group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 relative`}
                                   >
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
                                       active || isActive(item.href)
-                                        ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                                        ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg'
                                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30'
                                     }`}>
                                       <item.icon className="h-4 w-4" />
@@ -232,12 +232,12 @@ export function Navbar() {
                       href="/utilisateurs"
                       className={`relative p-2.5 rounded-xl transition-all duration-300 group ${
                         isActive('/utilisateurs')
-                          ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                          ? 'bg-gradient-to-r from-blue-500/20 to-blue-700/20 text-blue-700 dark:text-blue-400 shadow-md'
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                       }`}
                     >
                       {isActive('/utilisateurs') && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-xl blur-sm"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-blue-700/10 rounded-xl blur-sm"></div>
                       )}
                       <UserCircleIcon className="h-5 w-5 relative z-10" />
                     </Link>
@@ -257,8 +257,8 @@ export function Navbar() {
                       <>
                         <Menu.Button className="flex items-center space-x-3 p-1.5 rounded-xl hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-all duration-300 group relative">
                           <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-full blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                            <div className="relative w-9 h-9 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg ring-2 ring-white/20 dark:ring-gray-800/20 group-hover:ring-blue-500/30 transition-all duration-300 group-hover:scale-105">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                            <div className="relative w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg ring-2 ring-white/20 dark:ring-gray-800/20 group-hover:ring-blue-500/30 transition-all duration-300 group-hover:scale-105">
                               {session.user?.email?.[0]?.toUpperCase() || 'U'}
                             </div>
                           </div>
@@ -284,14 +284,14 @@ export function Navbar() {
                         >
                           <Menu.Items className="absolute right-0 mt-3 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 divide-y divide-gray-100/30 dark:divide-gray-700/30 focus:outline-none z-[100] overflow-hidden">
                             {/* Effet de brillance en arrière-plan */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 pointer-events-none"></div>
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-700/5 pointer-events-none"></div>
                             
                             {/* Informations utilisateur */}
-                            <div className="p-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10">
+                            <div className="p-4 bg-gradient-to-r from-blue-500/10 to-blue-700/10">
                               <div className="flex items-center space-x-3">
                                 <div className="relative">
-                                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-full blur-md opacity-30"></div>
-                                  <div className="relative w-12 h-12 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg ring-2 ring-white/20 dark:ring-gray-800/20">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full blur-md opacity-30"></div>
+                                  <div className="relative w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg ring-2 ring-white/20 dark:ring-gray-800/20">
                                     {session.user?.email?.[0]?.toUpperCase() || 'U'}
                                   </div>
                                 </div>
@@ -318,12 +318,12 @@ export function Navbar() {
                                   <Link
                                     href="/configuration"
                                     className={`${
-                                      active ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                                      active ? 'bg-gradient-to-r from-blue-500/20 to-blue-700/20 text-blue-700 dark:text-blue-400 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
                                     } group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200`}
                                   >
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
                                       active
-                                        ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                                        ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg'
                                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30'
                                     }`}>
                                       <Cog6ToothIcon className="h-4 w-4" />
@@ -363,7 +363,7 @@ export function Navbar() {
               ) : (
                 <Link
                   href="/login"
-                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   Connexion
                 </Link>
@@ -381,7 +381,7 @@ export function Navbar() {
                 ) : (
                   <Bars3Icon className="h-6 w-6 relative z-10" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-blue-700/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             </div>
           </div>
@@ -404,17 +404,17 @@ export function Navbar() {
           <div className="relative ml-auto w-80 h-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl border-l border-gray-200/50 dark:border-gray-700/50">
             <div className="h-full overflow-y-auto p-6">
               {/* Effet de brillance en arrière-plan */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 pointer-events-none"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-700/5 pointer-events-none"></div>
               
               <div className="relative flex items-center justify-between mb-8 pb-4 border-b border-gray-200/30 dark:border-gray-700/30">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-xl blur-md opacity-30"></div>
-                    <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-2 rounded-xl shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl blur-md opacity-30"></div>
+                    <div className="relative bg-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-xl shadow-lg">
                       <HomeIcon className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                     Menu
                   </h2>
                 </div>
@@ -440,13 +440,13 @@ export function Navbar() {
                           onClick={() => setMobileMenuOpen(false)}
                           className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                             isActive(item.href)
-                              ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                              ? 'bg-gradient-to-r from-blue-500/20 to-blue-700/20 text-blue-700 dark:text-blue-400 shadow-md'
                               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                           }`}
                         >
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
                             isActive(item.href)
-                              ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                              ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                           }`}>
                             <item.icon className="h-4 w-4" />
@@ -466,13 +466,13 @@ export function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                         isActive('/configuration')
-                          ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                          ? 'bg-gradient-to-r from-blue-500/20 to-blue-700/20 text-blue-700 dark:text-blue-400 shadow-md'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
                         isActive('/configuration')
-                          ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                          ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                       }`}>
                         <Cog6ToothIcon className="h-4 w-4" />
@@ -486,13 +486,13 @@ export function Navbar() {
                         onClick={() => setMobileMenuOpen(false)}
                         className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                           isActive('/utilisateurs')
-                            ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                            ? 'bg-gradient-to-r from-blue-500/20 to-blue-700/20 text-blue-700 dark:text-blue-400 shadow-md'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
                           isActive('/utilisateurs')
-                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                         }`}>
                           <UserCircleIcon className="h-4 w-4" />

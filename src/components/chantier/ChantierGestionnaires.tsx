@@ -64,13 +64,21 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
 
   const loadUsers = async () => {
     try {
-      const response = await fetch('/api/users')
+      // Récupérer tous les utilisateurs avec une limite élevée pour avoir la liste complète
+      const response = await fetch('/api/users?page=1&limit=1000')
       if (response.ok) {
         const data = await response.json()
-        setUsers(data)
+        // L'API retourne un objet paginé { users: [], total, page, limit }
+        const usersArray = Array.isArray(data) ? data : (data.users || [])
+        setUsers(Array.isArray(usersArray) ? usersArray : [])
+      } else {
+        // Si l'API retourne une erreur (par exemple si l'utilisateur n'est pas ADMIN)
+        // on initialise avec un tableau vide
+        setUsers([])
       }
     } catch (error) {
       console.error('Erreur lors du chargement des utilisateurs:', error)
+      setUsers([])
     }
   }
 
@@ -133,9 +141,9 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
     }
   }
 
-  const availableUsers = users.filter(
-    (user) => !gestionnaires.some((g) => g.userId === user.id)
-  )
+  const availableUsers = Array.isArray(users) 
+    ? users.filter((user) => !gestionnaires.some((g) => g.userId === user.id))
+    : []
 
   if (loading) {
     return (

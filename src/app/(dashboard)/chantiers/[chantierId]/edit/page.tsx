@@ -3,6 +3,7 @@ import { useState, useEffect, use, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { PencilSquareIcon } from '@heroicons/react/24/outline'
+import { SearchableSelect } from '@/components/SearchableSelect'
 
 interface ChantierData {
   id?: string;
@@ -340,25 +341,26 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Client
                       </label>
-                      <select
-                        value={selectedClientId}
-                        onChange={(e) => {
-                          setSelectedClientId(e.target.value);
+                      <SearchableSelect
+                        options={clients.map((client) => ({
+                          value: client.id,
+                          label: client.nom,
+                          subtitle: client.email || undefined
+                        }))}
+                        value={selectedClientId || null}
+                        onChange={(v) => {
+                          const clientId = v as string
+                          setSelectedClientId(clientId);
                           setFormData(prev => ({
                             ...prev,
-                            clientId: e.target.value
+                            clientId: clientId
                           }));
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                        required
-                      >
-                        <option value="">Sélectionner un client</option>
-                        {clients.map((client) => (
-                          <option key={client.id} value={client.id}>
-                            {client.nom}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Sélectionner un client"
+                        searchPlaceholder="Rechercher un client..."
+                        emptyMessage="Aucun client trouvé"
+                        showAllOption={false}
+                      />
                     </div>
 
                     {selectedClientId && (
@@ -366,21 +368,21 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Contact principal <span className="text-xs text-gray-500">(Optionnel)</span>
                         </label>
-                        <select
-                          value={selectedContactId}
-                          onChange={(e) => {
-                            setSelectedContactId(e.target.value);
+                        <SearchableSelect
+                          options={contactsDuClient.map((contact) => ({
+                            value: contact.id,
+                            label: `${contact.prenom} ${contact.nom}`
+                          }))}
+                          value={selectedContactId || null}
+                          onChange={(v) => {
+                            setSelectedContactId(v as string);
                           }}
                           disabled={loadingContacts || contactsDuClient.length === 0}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
-                        >
-                          <option value="">{loadingContacts ? "Chargement..." : (contactsDuClient.length === 0 ? "Aucun contact" : "Sélectionner un contact")}</option>
-                          {contactsDuClient.map((contact) => (
-                            <option key={contact.id} value={contact.id}>
-                              {contact.prenom} {contact.nom}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder={loadingContacts ? "Chargement..." : (contactsDuClient.length === 0 ? "Aucun contact" : "Sélectionner un contact")}
+                          searchPlaceholder="Rechercher un contact..."
+                          emptyMessage="Aucun contact trouvé"
+                          showAllOption={false}
+                        />
                       </div>
                     )}
 

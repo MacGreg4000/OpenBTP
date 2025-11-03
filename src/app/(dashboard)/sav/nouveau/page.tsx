@@ -22,6 +22,7 @@ import {
   LABELS_PRIORITE_SAV
 } from '@/types/sav'
 import { Button } from '@/components/ui'
+import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
 
 interface Chantier {
   id: string
@@ -229,29 +230,31 @@ export default function NouveauTicketSAVPage() {
             {/* Chantier */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chantier *</label>
-              <select
-                required
-                value={isChantierLibre ? 'LIBRE' : (formData.chantierId || '')}
-                onChange={(e) => {
-                  const v = e.target.value
+              <SearchableSelect
+                options={[
+                  { value: 'LIBRE', label: '— Chantier libre —' },
+                  ...chantiers.map(chantier => ({
+                    value: chantier.chantierId,
+                    label: chantier.nomChantier,
+                    subtitle: chantier.clientNom
+                  }))
+                ]}
+                value={isChantierLibre ? 'LIBRE' : (formData.chantierId || null)}
+                onChange={(v) => {
                   if (v === 'LIBRE') {
                     setIsChantierLibre(true)
                     handleInputChange('chantierId', '')
                   } else {
                     setIsChantierLibre(false)
-                    handleInputChange('chantierId', v)
+                    handleInputChange('chantierId', v as string)
                   }
                 }}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Sélectionner un chantier</option>
-                <option value="LIBRE">— Chantier libre —</option>
-                {chantiers.map(chantier => (
-                  <option key={chantier.id} value={chantier.chantierId}>
-                    {chantier.nomChantier} {chantier.clientNom ? `- ${chantier.clientNom}` : ''}
-                  </option>
-                ))}
-              </select>
+                placeholder="Sélectionner un chantier"
+                searchPlaceholder="Rechercher un chantier..."
+                emptyMessage="Aucun chantier trouvé"
+                allOptionLabel="Tous les chantiers"
+                showAllOption={false}
+              />
               {isChantierLibre && (
                 <div className="mt-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom libre (chantier/ticket)</label>

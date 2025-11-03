@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 
-// GET /api/users - Liste des utilisateurs (ADMIN uniquement)
+// GET /api/users - Liste des utilisateurs (ADMIN et MANAGER)
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    // Seuls les admins peuvent voir tous les utilisateurs
-    if (session.user.role !== 'ADMIN') {
+    // Seuls les admins et managers peuvent voir tous les utilisateurs
+    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
