@@ -27,11 +27,22 @@ export async function GET(
       return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 404 })
     }
 
-    // Récupérer l'état d'avancement
+    // Récupérer l'état d'avancement et vérifier qu'il appartient à ce chantier
+    const etatAvancementPrincipal = await prisma.etatAvancement.findFirst({
+      where: {
+        chantierId: chantierData.id
+      }
+    })
+
+    if (!etatAvancementPrincipal) {
+      return NextResponse.json({ error: 'Aucun état d\'avancement principal trouvé pour ce chantier' }, { status: 404 })
+    }
+
     const etat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
         id: parseInt(etatId),
-        soustraitantId
+        soustraitantId,
+        etatAvancementId: etatAvancementPrincipal.id
       },
       include: {
         ligne_soustraitant_etat_avancement: true,
@@ -102,11 +113,26 @@ export async function PUT(
       return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 404 })
     }
 
-    // Vérifier que l'état existe et appartient au bon sous-traitant
+    // Récupérer l'état d'avancement principal pour ce chantier
+    const etatAvancementPrincipal = await prisma.etatAvancement.findFirst({
+      where: {
+        chantierId: chantierData.id
+      }
+    })
+
+    if (!etatAvancementPrincipal) {
+      return NextResponse.json(
+        { error: 'Aucun état d\'avancement principal trouvé pour ce chantier' },
+        { status: 404 }
+      )
+    }
+
+    // Vérifier que l'état existe et appartient au bon sous-traitant ET au bon chantier
     const etatExistant = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
         id: etatIdNum,
-        soustraitantId
+        soustraitantId,
+        etatAvancementId: etatAvancementPrincipal.id
       }
     })
 
@@ -212,10 +238,25 @@ export async function DELETE(
       )
     }
 
-    // Vérifier qu'il s'agit du dernier état (numéro le plus élevé) pour ce sous-traitant
+    // Récupérer l'état d'avancement principal pour ce chantier
+    const etatAvancementPrincipal = await prisma.etatAvancement.findFirst({
+      where: {
+        chantierId: chantierData.id
+      }
+    })
+
+    if (!etatAvancementPrincipal) {
+      return NextResponse.json(
+        { error: 'Aucun état d\'avancement principal trouvé pour ce chantier' },
+        { status: 404 }
+      )
+    }
+
+    // Vérifier qu'il s'agit du dernier état (numéro le plus élevé) pour ce sous-traitant ET ce chantier
     const dernierEtat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
-        soustraitantId
+        soustraitantId,
+        etatAvancementId: etatAvancementPrincipal.id
       },
       orderBy: {
         numero: 'desc'

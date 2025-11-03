@@ -69,7 +69,7 @@ export class NotificationService {
       if (userIds.length === 0 && notificationType.rolesParDefaut) {
         const defaultRoles = notificationType.rolesParDefaut as string[]
         const usersByDefaultRoles = await prisma.user.findMany({
-          where: { role: { in: defaultRoles as any } },
+          where: { role: { in: defaultRoles as string[] } },
           select: { id: true },
         })
         userIds.push(...usersByDefaultRoles.map(u => u.id))

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Cog6ToothIcon, BuildingOfficeIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, DocumentTextIcon, BellIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, DocumentTextIcon, BellIcon } from '@heroicons/react/24/outline'
 import DocumentManager from '@/components/documents/DocumentManager'
 import AdminTaskTypesManager from '@/components/configuration/AdminTaskTypesManager'
 import { usePermission } from '@/hooks/usePermission'

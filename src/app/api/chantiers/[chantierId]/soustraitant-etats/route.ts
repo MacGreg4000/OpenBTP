@@ -47,10 +47,21 @@ export async function GET(request: NextRequest, props: { params: Promise<{ chant
       )
     }
 
+    // Récupérer le CUID du chantier à partir de son ID lisible
+    const chantierData = await prisma.chantier.findUnique({
+      where: { chantierId: chantierId },
+      select: { id: true }
+    });
+
+    if (!chantierData) {
+      return NextResponse.json({ error: 'Chantier non trouvé pour cet ID lisible' }, { status: 404 });
+    }
+    const chantierIdInterne = chantierData.id;
+
     // Rechercher d'abord l'ID d'état d'avancement principal lié au chantier
     const etatAvancement = await prisma.etatAvancement.findFirst({
       where: {
-        chantierId: chantierId
+        chantierId: chantierIdInterne
       }
     })
 
@@ -126,10 +137,13 @@ export async function POST(request: NextRequest, props: { params: Promise<{ chan
       )
     }
 
-    // Vérifier que le chantier existe
+    // Vérifier que le chantier existe et récupérer son CUID
     const chantier = await prisma.chantier.findUnique({
       where: {
         chantierId: chantierId
+      },
+      select: {
+        id: true
       }
     })
 
@@ -140,10 +154,27 @@ export async function POST(request: NextRequest, props: { params: Promise<{ chan
       )
     }
 
-    // Trouver le dernier numéro d'état d'avancement pour ce sous-traitant
+    const chantierIdInterne = chantier.id
+
+    // Récupérer l'id du premier état d'avancement (EtatAvancement) pour le lier
+    const etatAvancement = await prisma.etatAvancement.findFirst({
+      where: {
+        chantierId: chantierIdInterne
+      }
+    })
+
+    if (!etatAvancement) {
+      return NextResponse.json(
+        { error: 'Aucun état d\'avancement principal trouvé pour ce chantier' },
+        { status: 404 }
+      )
+    }
+
+    // Trouver le dernier numéro d'état d'avancement pour ce sous-traitant ET ce chantier
     const lastEtat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
-        soustraitantId
+        soustraitantId,
+        etatAvancementId: etatAvancement.id
       },
       orderBy: {
         numero: 'desc'
@@ -155,7 +186,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ chan
     // Récupérer les lignes de commande du sous-traitant
     const commandeSousTraitant = await prisma.commandeSousTraitant.findFirst({
       where: {
-        chantierId: chantierId,
+        chantierId: chantierIdInterne,
         soustraitantId
       },
       include: {
@@ -166,20 +197,6 @@ export async function POST(request: NextRequest, props: { params: Promise<{ chan
     if (!commandeSousTraitant) {
       return NextResponse.json(
         { error: 'Commande sous-traitant non trouvée' },
-        { status: 404 }
-      )
-    }
-
-    // Récupérer l'id du premier état d'avancement (EtatAvancement) pour le lier
-    const etatAvancement = await prisma.etatAvancement.findFirst({
-      where: {
-        chantierId: chantierId
-      }
-    })
-
-    if (!etatAvancement) {
-      return NextResponse.json(
-        { error: 'Aucun état d\'avancement principal trouvé pour ce chantier' },
         { status: 404 }
       )
     }

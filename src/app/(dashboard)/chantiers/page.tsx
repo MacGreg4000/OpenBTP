@@ -22,7 +22,6 @@ import {
   ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
-import SelectField from '@/components/ui/SelectField'
 import { Pagination } from '@/components/Pagination'
 
 function getStatusStyle(status: string) {

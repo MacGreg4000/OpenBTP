@@ -58,10 +58,13 @@ export async function GET(
       )
     }
 
-    // Récupérer tous les états d'avancement du sous-traitant pour ce chantier
+    // Récupérer tous les états d'avancement du sous-traitant pour ce chantier uniquement
     const etatsAvancement = await prisma.soustraitant_etat_avancement.findMany({
       where: {
-        soustraitantId: soustraitantId
+        soustraitantId: soustraitantId,
+        etat_avancement: {
+          chantierId: chantierIdInterne
+        }
       },
       orderBy: {
         numero: 'asc'
@@ -251,19 +254,25 @@ export async function POST(
       )
     }
 
-    // Vérifier si c'est le premier état d'avancement
+    // Vérifier si c'est le premier état d'avancement pour ce chantier
     const existingEtats = await prisma.soustraitant_etat_avancement.count({
       where: {
-        soustraitantId: soustraitantId
+        soustraitantId: soustraitantId,
+        etat_avancement: {
+          chantierId: chantierIdInterne
+        }
       }
     })
 
-    console.log('Nombre d\'états existants:', existingEtats)
+    console.log('Nombre d\'états existants pour ce chantier:', existingEtats)
 
-    // Récupérer le dernier état d'avancement
+    // Récupérer le dernier état d'avancement pour ce chantier uniquement
     const lastEtat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
-        soustraitantId: soustraitantId
+        soustraitantId: soustraitantId,
+        etat_avancement: {
+          chantierId: chantierIdInterne
+        }
       },
       orderBy: {
         numero: 'desc'

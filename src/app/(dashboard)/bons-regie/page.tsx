@@ -1,14 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { 
   DocumentTextIcon, 
   PlusIcon, 
-  ArrowLeftIcon,
   ChevronDownIcon,
   LinkIcon,
   CheckIcon,
@@ -38,7 +36,6 @@ interface Chantier {
 }
 
 export default function BonsRegiePage() {
-  const router = useRouter()
   const { data: session } = useSession()
   const [bonsRegie, setBonsRegie] = useState<BonRegie[]>([])
   const [chantiers, setChantiers] = useState<Chantier[]>([])

@@ -82,7 +82,7 @@ export default function EmailEtatAvancementModal({
             const gestionnaires = await gestionnairesResponse.json();
             if (gestionnaires.length > 0) {
               const gestionnairesEmails = gestionnaires
-                .map((g: any) => `${g.user.name || g.user.email} <${g.user.email}>`)
+                .map((g: { user: { name: string | null; email: string } }) => `${g.user.name || g.user.email} <${g.user.email}>`)
                 .join(', ');
               replyMessage = `\nCeci est une adresse d'envoi, merci de répondre ${gestionnaires.length > 1 ? 'aux gestionnaires' : 'au gestionnaire'} du chantier : ${gestionnairesEmails}\n`;
             } else {

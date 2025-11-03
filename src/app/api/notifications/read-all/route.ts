@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { NotificationService } from '@/lib/services/notificationService'
 
 // POST /api/notifications/read-all - Marquer toutes les notifications comme lues
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {

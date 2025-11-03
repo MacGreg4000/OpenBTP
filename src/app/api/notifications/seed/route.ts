@@ -301,7 +301,7 @@ const notificationTypes = [
 ]
 
 // POST /api/notifications/seed - Seeder les types de notifications (ADMIN uniquement)
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id || session.user.role !== 'ADMIN') {

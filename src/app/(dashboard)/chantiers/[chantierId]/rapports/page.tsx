@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PlusIcon, DocumentTextIcon, TrashIcon, PencilIcon, EyeIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
@@ -21,7 +20,6 @@ interface RapportVisite {
 
 export default function RapportsVisitePage(props: { params: Promise<{ chantierId: string }> }) {
   const params = use(props.params);
-  const router = useRouter()
   const [rapports, setRapports] = useState<RapportVisite[]>([])
   const [chantier, setChantier] = useState<{ nomChantier?: string } | null>(null)
   const [loading, setLoading] = useState(true)
