@@ -269,7 +269,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4">
-      <div className="max-w-2xl mx-auto space-y-4">
+      <div className="max-w-md mx-auto space-y-4">
         {/* En-tête */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow text-white">
           <div className="p-4 flex items-center gap-2">
