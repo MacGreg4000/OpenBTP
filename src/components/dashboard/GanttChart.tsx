@@ -308,7 +308,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
     }))
   }
   
-  const columnWidth = scale === 'Jours' ? 70 : scale === 'Semaines' ? 120 : 180
+  // Largeurs de colonnes augmentées pour plus d'espace
+  const columnWidth = scale === 'Jours' ? 85 : scale === 'Semaines' ? 150 : 200
   
   return (
     <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
@@ -476,19 +477,19 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
       
       {/* Contenu du planning moderne */}
       <div id="gantt-chart" className="overflow-x-auto max-h-[48rem] overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
-        <div className="relative" style={{ minWidth: `${350 + (timeUnits.length * columnWidth)}px` }}>
+            <div className="relative" style={{ minWidth: `${380 + (timeUnits.length * columnWidth)}px` }}>
           {/* En-tête moderne avec les unités de temps */}
-          <div className="sticky top-0 z-20 grid shadow-lg" style={{ 
-            gridTemplateColumns: `350px repeat(${timeUnits.length}, ${columnWidth}px)` 
+          <div className="sticky top-0 z-20 grid shadow-md" style={{ 
+            gridTemplateColumns: `380px repeat(${timeUnits.length}, ${columnWidth}px)` 
           }}>
-            <div className="p-4 font-bold text-sm bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 border-b-2 border-r-2 border-gray-300 dark:border-gray-600 w-full backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="px-5 py-4 font-bold text-sm bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b-2 border-r-2 border-gray-200 dark:border-gray-600 w-full">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <span className="text-gray-800 dark:text-white uppercase tracking-wide">Chantiers</span>
+                <span className="text-gray-800 dark:text-white uppercase tracking-wide text-xs">Chantiers</span>
               </div>
             </div>
             
@@ -497,25 +498,25 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
               return (
                 <div 
                   key={index}
-                  className={`relative p-3 text-center border-b-2 border-r border-gray-300 dark:border-gray-600 backdrop-blur-sm transition-all duration-200 ${
+                  className={`relative px-4 py-3 text-center border-b border-r border-gray-200 dark:border-gray-600 transition-all duration-200 ${
                     isToday 
-                      ? 'bg-gradient-to-b from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 shadow-inner' 
+                      ? 'bg-blue-50 dark:bg-blue-900/20' 
                       : unit.isWeekend 
-                        ? 'bg-gradient-to-b from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-600' 
-                        : 'bg-gradient-to-b from-white to-gray-50 dark:from-gray-600 dark:to-gray-700'
+                        ? 'bg-gray-50 dark:bg-gray-800/50' 
+                        : 'bg-white dark:bg-gray-700'
                   }`}
                 >
                   {isToday && (
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500"></div>
                   )}
-                  <div className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                  <div className={`text-xs font-semibold uppercase tracking-wider ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
                     {unit.label}
                   </div>
-                  <div className={`text-xs mt-0.5 ${isToday ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                  <div className={`text-[10px] mt-1 ${isToday ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
                     {unit.subLabel}
                   </div>
                   {isToday && (
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50"></div>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                   )}
                 </div>
               )
@@ -615,7 +616,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
             }
             
             // Calculer la largeur et la position de la barre
-            const barStartX = 350 + (startPosition * columnWidth) + startOffset;
+            const barStartX = 380 + (startPosition * columnWidth) + startOffset;
             const barWidth = ((endPosition - startPosition) * columnWidth) + endOffset - startOffset;
             
             // Obtenir le statut et les couleurs
@@ -657,44 +658,42 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
             return (
               <div 
                 key={chantier.id} 
-                className={`grid items-center relative group hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-transparent dark:hover:from-blue-900/10 transition-all duration-200 ${chantierId % 2 === 0 ? 'bg-white/50 dark:bg-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-850/50'}`}
+                className={`grid items-center relative group hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors duration-150 ${chantierId % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/70 dark:bg-gray-800/70'}`}
                 style={{ 
-                  gridTemplateColumns: `350px repeat(${timeUnits.length}, ${columnWidth}px)`,
-                  height: '88px'
+                  gridTemplateColumns: `380px repeat(${timeUnits.length}, ${columnWidth}px)`,
+                  height: '110px'
                 }}
               >
                 {/* Info chantier moderne */}
-                <div className="relative p-4 border-b border-r border-gray-200/50 dark:border-gray-700/50 w-full overflow-hidden">
+                <div className="relative px-5 py-4 border-b border-r border-gray-200 dark:border-gray-700 w-full overflow-hidden">
                   <div className="flex items-start gap-3">
-                    {/* Badge de statut */}
-                    <div className={`flex-shrink-0 w-10 h-10 bg-gradient-to-br ${statusStyles.gradient} rounded-xl flex items-center justify-center text-lg shadow-lg ${statusStyles.glow} group-hover:scale-110 transition-transform duration-200`}>
+                    {/* Badge de statut - simplifié */}
+                    <div className={`flex-shrink-0 w-9 h-9 bg-gradient-to-br ${statusStyles.gradient} rounded-lg flex items-center justify-center text-base shadow-md group-hover:scale-105 transition-transform duration-200`}>
                       {statusStyles.icon}
                     </div>
                     
                     {/* Infos */}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={chantier.title}>
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={chantier.title}>
                         {chantier.title}
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          <span className="truncate font-medium" title={chantier.client}>{chantier.client}</span>
-                        </div>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="truncate font-medium" title={chantier.client}>{chantier.client}</span>
                       </div>
-                      <div className="flex items-center gap-2 mt-1 text-xs">
+                      <div className="flex items-center gap-2 text-xs">
                         <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <span className="font-semibold">{dayjs(chantier.start).format('DD/MM')}</span>
+                          <span className="font-medium">{dayjs(chantier.start).format('DD/MM')}</span>
                           <span>→</span>
-                          <span className="font-semibold">{chantier.end ? dayjs(chantier.end).format('DD/MM') : '?'}</span>
+                          <span className="font-medium">{chantier.end ? dayjs(chantier.end).format('DD/MM') : '?'}</span>
                         </div>
                         {chantier.dureeEnJours && (
-                          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold">
+                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-[10px] font-semibold">
                             {chantier.dureeEnJours}j
                           </span>
                         )}
@@ -709,52 +708,46 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
                   return (
                     <div 
                       key={index} 
-                      className={`relative border-b border-r border-gray-200/30 dark:border-gray-700/30 h-full transition-colors ${
-                        isToday ? 'bg-blue-50/30 dark:bg-blue-900/10' : unit.isWeekend ? 'bg-gray-100/30 dark:bg-gray-700/30' : ''
+                      className={`relative border-b border-r border-gray-200 dark:border-gray-700 h-full transition-colors ${
+                        isToday ? 'bg-blue-50/50 dark:bg-blue-900/15' : unit.isWeekend ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''
                       }`}
                     >
                       {isToday && (
-                        <div className="absolute inset-y-0 left-0 w-0.5 bg-gradient-to-b from-blue-400 via-blue-600 to-blue-400 opacity-50"></div>
+                        <div className="absolute inset-y-0 left-0 w-px bg-blue-500/60"></div>
                       )}
                     </div>
                   )
                 })}
                 
-                {/* Barre du chantier moderne */}
+                {/* Barre du chantier moderne - simplifiée */}
                 <div
-                  className={`absolute h-10 rounded-xl cursor-pointer transition-all duration-300 bg-gradient-to-r ${statusStyles.gradient} shadow-xl ${statusStyles.glow} hover:shadow-2xl hover:scale-105 hover:z-10 group/bar`}
+                  className={`absolute h-9 rounded-lg cursor-pointer transition-all duration-200 bg-gradient-to-r ${statusStyles.gradient} shadow-md hover:shadow-lg hover:z-10 group/bar border border-white/20`}
                   style={{
                     left: `${barStartX}px`,
-                    width: `${Math.max(barWidth, 12)}px`,
+                    width: `${Math.max(barWidth, 16)}px`,
                     top: '50%',
                     transform: 'translateY(-50%)',
                   }}
                   onMouseEnter={(e) => showTooltip(e, chantier)}
                   onMouseLeave={hideTooltip}
                 >
-                  {/* Effet brillant */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-xl"></div>
-                  
                   {/* Contenu */}
                   <div className="relative h-full flex items-center justify-between px-3 gap-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-xs font-bold text-white truncate drop-shadow-lg">
-                        {chantier.title.length > 20 ? chantier.title.substring(0, 20) + '...' : chantier.title}
+                      <span className="text-xs font-semibold text-white truncate">
+                        {barWidth > 100 ? (chantier.title.length > 25 ? chantier.title.substring(0, 25) + '...' : chantier.title) : ''}
                       </span>
                     </div>
                     
                     {/* Indicateur de progression si montant disponible */}
-                    {chantier.montant && (
-                      <div className="flex-shrink-0 w-6 h-6 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center group-hover/bar:bg-white/30 transition-colors">
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {chantier.montant && barWidth > 60 && (
+                      <div className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-md flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                         </svg>
                       </div>
                     )}
                   </div>
-                  
-                  {/* Bordure animée au hover */}
-                  <div className="absolute inset-0 rounded-xl border-2 border-white/0 group-hover/bar:border-white/50 transition-all duration-300"></div>
                 </div>
               </div>
             )
