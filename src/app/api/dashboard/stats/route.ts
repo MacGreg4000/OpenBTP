@@ -54,6 +54,49 @@ export async function GET() {
       return sum + (montantCommandes > 0 ? montantCommandes : (chantier.budget || 0))
     }, 0)
 
+    // Calculer le montant total des états d'avancement du mois précédent
+    const maintenant = new Date()
+    const premierJourMoisPrecedent = new Date(maintenant.getFullYear(), maintenant.getMonth() - 1, 1)
+    const dernierJourMoisPrecedent = new Date(maintenant.getFullYear(), maintenant.getMonth(), 0, 23, 59, 59, 999)
+
+    const etatsAvancementMoisPrecedent = await prisma.etatAvancement.findMany({
+      where: {
+        date: {
+          gte: premierJourMoisPrecedent,
+          lte: dernierJourMoisPrecedent
+        },
+        estFinalise: true
+      },
+      include: {
+        lignes: {
+          select: {
+            montantActuel: true
+          }
+        },
+        avenants: {
+          select: {
+            montantActuel: true
+          }
+        }
+      }
+    })
+
+    const montantEtatsAvancementMoisPrecedent = etatsAvancementMoisPrecedent.reduce((total, etat) => {
+      const totalLignes = etat.lignes.reduce((sum, ligne) => {
+        const montant = ligne.montantActuel != null && !isNaN(Number(ligne.montantActuel)) ? Number(ligne.montantActuel) : 0
+        return sum + montant
+      }, 0)
+      const totalAvenants = etat.avenants.reduce((sum, avenant) => {
+        const montant = avenant.montantActuel != null && !isNaN(Number(avenant.montantActuel)) ? Number(avenant.montantActuel) : 0
+        return sum + montant
+      }, 0)
+      const etatTotal = totalLignes + totalAvenants
+      return total + (isNaN(etatTotal) ? 0 : etatTotal)
+    }, 0)
+
+    // S'assurer que le résultat final n'est pas NaN
+    const montantFinal = isNaN(montantEtatsAvancementMoisPrecedent) ? 0 : montantEtatsAvancementMoisPrecedent
+
     // Répartition pour le graphique
     const chantiersByCategory = {
       enPreparation: chantiers.filter(c => c.statut === 'EN_PREPARATION').length,
@@ -83,7 +126,7 @@ export async function GET() {
       totalChantiers,
       chantiersEnCours,
       chiffreAffaires,
-      tachesEnAttente: 0 // À implémenter plus tard
+      montantEtatsAvancementMoisPrecedent: montantFinal
     }
 
     return NextResponse.json({

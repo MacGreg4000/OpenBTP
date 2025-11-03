@@ -8,7 +8,6 @@ import {
   BellAlertIcon,
   PlayIcon,
   CurrencyEuroIcon,
-  ClipboardDocumentListIcon,
   PencilIcon,
   CalendarIcon,
   ChevronUpIcon,
@@ -71,7 +70,7 @@ async function getDashboardData() {
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error)
     return {
-      kpis: { totalChantiers: 0, chantiersEnCours: 0, chiffreAffaires: 0, tachesEnAttente: 0 },
+      kpis: { totalChantiers: 0, chantiersEnCours: 0, chiffreAffaires: 0, montantEtatsAvancementMoisPrecedent: 0 },
       chantiersByCategory: { enPreparation: 0, enCours: 0, termines: 0 },
       chantiersMap: [],
       loading: false
@@ -102,6 +101,18 @@ async function fetchChantiersPlanning() {
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
+  const [isCompact, setIsCompact] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Active le mode compact après 100px de scroll
+      const scrollThreshold = 100;
+      setIsCompact(window.scrollY > scrollThreshold);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [])
   const router = useRouter()
   
   const [dashboardData, setDashboardData] = useState({
@@ -241,41 +252,51 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
-      {/* En-tête moderne avec gradients élégants */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 shadow-2xl relative overflow-hidden">
-        {/* Effet de brillance en arrière-plan */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-        
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Badge icône */}
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl border border-white/30">
-                <ChartBarIcon className="h-8 w-8 text-white" />
+      {/* En-tête flottant avec effet compact au scroll */}
+      <div className="sticky top-16 z-40 pb-4">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+            {/* Effet de brillance en arrière-plan */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-700/10 dark:from-blue-600/5 dark:via-indigo-600/5 dark:to-purple-700/5"></div>
+            
+            <div className={`relative z-10 transition-all duration-300 ${isCompact ? 'py-2 px-4' : 'py-6 px-4'} sm:px-6 lg:px-8`}>
+              <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-300`}>
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  {/* Badge icône */}
+                  <div className={`bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl border-2 border-white/30 transition-all duration-300 ${isCompact ? 'w-8 h-8' : 'w-14 h-14'}`}>
+                    <ChartBarIcon className={`text-white transition-all duration-300 ${isCompact ? 'h-4 w-4' : 'h-8 w-8'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className={`font-black text-blue-600 dark:text-blue-400 flex flex-col sm:flex-row sm:items-center gap-2 transition-all duration-300 ${isCompact ? 'text-sm sm:text-base' : 'text-xl sm:text-2xl'}`}>
+                      <span className="truncate">Tableau de bord</span>
+                      {!isCompact && (
+                        <span className="px-3 py-1 bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-purple-700/20 backdrop-blur-sm rounded-xl text-sm font-semibold border border-blue-600/30 dark:border-blue-400/30 text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                          Dashboard
+                        </span>
+                      )}
+                    </h1>
+                    {!isCompact && (
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 font-medium transition-opacity duration-300">
+                        👋 Bienvenue {session?.user?.name}, voici un aperçu de votre activité
+                      </p>
+                    )}
+                  </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-black text-white flex items-center gap-2">
-                  Tableau de bord
-                  <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-xl text-sm font-semibold border border-white/30">
-                    Dashboard
-                  </span>
-                </h1>
-                <p className="mt-1 text-sm text-blue-100 font-medium">
-                  👋 Bienvenue {session?.user?.name}, voici un aperçu de votre activité
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 shadow-lg">
-                <div className="text-xs font-semibold text-blue-100 uppercase tracking-wide mb-1">Aujourd'hui</div>
-                <div className="text-sm font-bold text-white">
-                  {new Date().toLocaleDateString('fr-FR', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+              {!isCompact && (
+                <div className="text-left sm:text-right">
+                  <div className="px-4 py-2 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-700/10 backdrop-blur-sm rounded-xl border border-blue-600/20 dark:border-blue-400/20 shadow-lg">
+                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Aujourd'hui</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">
+                      {new Date().toLocaleDateString('fr-FR', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+                  </div>
                 </div>
+                )}
               </div>
             </div>
           </div>
@@ -287,50 +308,8 @@ export default function DashboardPage() {
         <div className="bg-gradient-to-br from-white via-gray-50/50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
           <div className="p-8 space-y-10">
             
-            {/* Section: KPI moderne */}
-            <section aria-labelledby="kpi-title">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <ChartBarIcon className="h-5 w-5 text-white"/>
-                </div>
-                <div>
-                  <h2 id="kpi-title" className="text-xl font-black text-gray-900 dark:text-white">
-                    Indicateurs Clés
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Vue d'ensemble de vos activités</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPICard 
-                  title="Total Chantiers" 
-                  value={kpis.totalChantiers} 
-                  icon={<BuildingOfficeIcon className="w-full h-full" />} 
-                  accentColor="blue"
-                  href="/chantiers"
-                />
-                <KPICard 
-                  title="En cours" 
-                  value={kpis.chantiersEnCours} 
-                  icon={<PlayIcon className="w-full h-full" />} 
-                  accentColor="green"
-                />
-                <KPICard 
-                  title="CA Total" 
-                  value={formatEuros(kpis.chiffreAffaires)} 
-                  icon={<CurrencyEuroIcon className="w-full h-full" />} 
-                  accentColor="purple"
-                />
-                <KPICard 
-                  title="Tâches Admin" 
-                  value={kpis.tachesEnAttente} 
-                  icon={<ClipboardDocumentListIcon className="w-full h-full" />} 
-                  accentColor="yellow"
-                />
-              </div>
-            </section>
-
             {/* Section: Actions rapides - simplifiée */}
-            <section aria-labelledby="actions-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
+            <section aria-labelledby="actions-title">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -770,6 +749,48 @@ export default function DashboardPage() {
                 </div>
               </div>
               )}
+            </section>
+
+            {/* Section: Indicateurs Clés - en bas du dashboard */}
+            <section aria-labelledby="kpi-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <ChartBarIcon className="h-5 w-5 text-white"/>
+                </div>
+                <div>
+                  <h2 id="kpi-title" className="text-xl font-black text-gray-900 dark:text-white">
+                    Indicateurs Clés
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Vue d'ensemble de vos activités</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <KPICard 
+                  title="Total Chantiers" 
+                  value={kpis.totalChantiers} 
+                  icon={<BuildingOfficeIcon className="w-full h-full" />} 
+                  accentColor="blue"
+                  href="/chantiers"
+                />
+                <KPICard 
+                  title="En cours" 
+                  value={kpis.chantiersEnCours} 
+                  icon={<PlayIcon className="w-full h-full" />} 
+                  accentColor="green"
+                />
+                <KPICard 
+                  title="CA Total" 
+                  value={formatEuros(kpis.chiffreAffaires)} 
+                  icon={<CurrencyEuroIcon className="w-full h-full" />} 
+                  accentColor="purple"
+                />
+                <KPICard 
+                  title="États Avancement (mois préc.)" 
+                  value={formatEuros(kpis.montantEtatsAvancementMoisPrecedent)} 
+                  icon={<ChartBarIcon className="w-full h-full" />} 
+                  accentColor="indigo"
+                />
+              </div>
             </section>
           </div>
         </div>

@@ -60,9 +60,7 @@ export default function DashboardLayout({
       <Navbar />
       
       <main className="pt-6 pb-6 overflow-visible">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 overflow-visible">
-          {children}
-        </div>
+        {children}
       </main>
     </div>
   )
