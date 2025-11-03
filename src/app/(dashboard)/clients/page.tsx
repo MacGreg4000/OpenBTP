@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { SearchInput } from '@/components/ui'
+import { PageHeader } from '@/components/PageHeader'
 import { 
   PencilSquareIcon, 
   BuildingOfficeIcon, 
@@ -139,84 +140,69 @@ export default function ClientsPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Container pour limiter la largeur */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* En-tête avec gradient */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-700 shadow-lg rounded-t-xl">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <BuildingStorefrontIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Annuaire des Clients
-                </h1>
-                <p className="mt-0.5 text-xs text-indigo-100 hidden sm:block">
-                  Gérez vos relations clients et leurs projets
-                </p>
-              </div>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <UsersIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-indigo-100 truncate">Clients</div>
-                    <div className="text-sm font-semibold text-white truncate">{totalClients}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <BuildingOfficeIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-indigo-100 truncate">Chantiers</div>
-                    <div className="text-sm font-semibold text-white truncate">{totalChantiers}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ChartBarIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-indigo-100 truncate">Actifs</div>
-                    <div className="text-sm font-semibold text-white truncate">{chantiersActifs}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <CurrencyEuroIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-indigo-100 truncate">CA</div>
-                    <div className="text-sm font-semibold text-white truncate">
-                      {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, notation: 'compact' }).format(chiffreAffaires)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <Link
-                href="/clients/nouveau"
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-              >
-                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Nouveau client</span>
-                <span className="sm:hidden">Nouveau</span>
-              </Link>
+  const statsCards = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <UsersIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Clients</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{totalClients}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <BuildingOfficeIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Chantiers</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{totalChantiers}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <ChartBarIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Actifs</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{chantiersActifs}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <CurrencyEuroIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">CA</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">
+              {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, notation: 'compact' }).format(chiffreAffaires)}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Annuaire des Clients"
+        subtitle="Gérez vos relations clients et leurs projets"
+        icon={BuildingStorefrontIcon}
+        badgeColor="from-indigo-600 via-purple-600 to-pink-700"
+        gradientColor="from-indigo-600/10 via-purple-600/10 to-pink-700/10"
+        stats={statsCards}
+        actions={
+          <Link
+            href="/clients/nouveau"
+            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+          >
+            <PlusIcon className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Nouveau client</span>
+            <span className="sm:hidden">Nouveau</span>
+          </Link>
+        }
+      />
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -367,7 +353,6 @@ export default function ClientsPage() {
             ))}
           </div>
         )}
-      </div>
       </div>
     </div>
   )

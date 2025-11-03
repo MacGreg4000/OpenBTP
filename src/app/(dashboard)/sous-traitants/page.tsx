@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import { PageHeader } from '@/components/PageHeader'
 import { 
   PlusIcon, 
   PencilSquareIcon, 
@@ -234,82 +235,70 @@ export default function SousTraitantsPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Container pour limiter la largeur */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* En-tête avec gradient */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg rounded-t-xl">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <h1 className="text-xl font-bold text-white">
-                Sous-Traitants
-              </h1>
-              <p className="ml-3 mt-0.5 text-xs text-blue-100 hidden sm:block">
-                Gestion des sous-traitants et de leurs équipes
-              </p>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <UsersIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">Sous-traitants</div>
-                    <div className="text-sm font-semibold text-white truncate">{totalSousTraitants}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <UserGroupIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">Ouvriers</div>
-                    <div className="text-sm font-semibold text-white truncate">{totalOuvriers}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">Signés</div>
-                    <div className="text-sm font-semibold text-white truncate">{contratsSignes}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ClockIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">En attente</div>
-                    <div className="text-sm font-semibold text-white truncate">{sansContrat}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <Link
-                href="/sous-traitants/nouveau"
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-              >
-                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Nouveau sous-traitant</span>
-                <span className="sm:hidden">Nouveau</span>
-              </Link>
-            </div>
-          </div>
+  const statsCards = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <UsersIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Sous-traitants</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{totalSousTraitants}</div>
           </div>
         </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <UserGroupIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Ouvriers</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{totalOuvriers}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <CheckCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Signés</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{contratsSignes}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <ClockIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">En attente</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{sansContrat}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-indigo-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Sous-Traitants"
+        subtitle="Gestion des sous-traitants et de leurs équipes"
+        icon={UsersIcon}
+        badgeColor="from-blue-600 via-indigo-600 to-purple-700"
+        gradientColor="from-blue-600/10 via-indigo-600/10 to-purple-700/10"
+        stats={statsCards}
+        actions={
+          <Link
+            href="/sous-traitants/nouveau"
+            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+          >
+            <PlusIcon className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Nouveau sous-traitant</span>
+            <span className="sm:hidden">Nouveau</span>
+          </Link>
+        }
+      />
 
       {/* Contenu principal */}
-      <div className="py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Barre de recherche */}
         <div className="mb-8">
         <SearchInput
@@ -609,7 +598,6 @@ export default function SousTraitantsPage() {
         onConfirm={deleteModal.onConfirm}
         isDeleting={deleteModal.isDeleting}
       />
-      </div>
     </div>
   )
 } 

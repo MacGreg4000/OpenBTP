@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
+import { PageHeader } from '@/components/PageHeader'
 import { CalendarDaysIcon, UserIcon, DocumentArrowDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
 
 type JournalEntry = {
@@ -162,72 +163,58 @@ export default function JournalPage() {
     sum + group.entries.filter(e => e.estValide).length, 0
   )
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Container pour limiter la largeur */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* En-tête avec gradient */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-700 shadow-lg rounded-t-xl">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <CalendarDaysIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Journal des Ouvriers
-                </h1>
-                <p className="mt-0.5 text-xs text-green-100 hidden sm:block">
-                  Consultation et suivi des activités quotidiennes des ouvriers
-                </p>
-              </div>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <CalendarDaysIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-green-100 truncate">Entrées</div>
-                    <div className="text-sm font-semibold text-white truncate">{totalEntries}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <UserIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-green-100 truncate">Ouvriers</div>
-                    <div className="text-sm font-semibold text-white truncate">{uniqueOuvriers}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <DocumentArrowDownIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-green-100 truncate">Validées</div>
-                    <div className="text-sm font-semibold text-white truncate">{entriesValidees}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <button
-                onClick={handleExport}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-green-700 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-              >
-                <DocumentArrowDownIcon className="h-3.5 w-3.5 mr-1.5"/>
-                <span className="hidden sm:inline">Export Excel</span>
-                <span className="sm:hidden">Export</span>
-              </button>
-            </div>
+  const statsCards = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <CalendarDaysIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Entrées</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{totalEntries}</div>
           </div>
         </div>
       </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <UserIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Ouvriers</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{uniqueOuvriers}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <DocumentArrowDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Validées</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{entriesValidees}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/20 to-emerald-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Journal des Ouvriers"
+        subtitle="Consultation et suivi des activités quotidiennes des ouvriers"
+        icon={CalendarDaysIcon}
+        badgeColor="from-green-600 via-emerald-600 to-teal-700"
+        gradientColor="from-green-600/10 via-emerald-600/10 to-teal-700/10"
+        stats={statsCards}
+        actions={
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+          >
+            <DocumentArrowDownIcon className="h-4 w-4 mr-1.5"/>
+            <span className="hidden sm:inline">Export Excel</span>
+            <span className="sm:hidden">Export</span>
+          </button>
+        }
+      />
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -387,7 +374,6 @@ export default function JournalPage() {
             </div>
           </div>
         )}
-      </div>
       </div>
     </div>
   )

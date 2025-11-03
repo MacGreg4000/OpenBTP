@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { PageHeader } from '@/components/PageHeader'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon, 
@@ -111,82 +112,69 @@ export default function ChoixClientsPage() {
   const choixPreChoix = filteredChoixClients.filter(c => c.statut === 'PRE_CHOIX').length
   const choixDefinitifs = filteredChoixClients.filter(c => c.statut === 'CHOIX_DEFINITIF').length
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Toaster position="top-right" />
-      
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <DocumentTextIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Choix Clients
-                </h1>
-                <p className="mt-0.5 text-xs text-purple-100 hidden sm:block">
-                  Gestion des choix de carrelage en showroom
-                </p>
-              </div>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <DocumentTextIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-purple-100 truncate">Total</div>
-                    <div className="text-sm font-semibold text-white truncate">{totalChoix}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <PencilIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-purple-100 truncate">Brouillons</div>
-                    <div className="text-sm font-semibold text-white truncate">{choixBrouillons}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <EyeIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-purple-100 truncate">Pré-choix</div>
-                    <div className="text-sm font-semibold text-white truncate">{choixPreChoix}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-purple-100 truncate">Définitifs</div>
-                    <div className="text-sm font-semibold text-white truncate">{choixDefinitifs}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <Link
-                href="/choix-clients/nouveau"
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-purple-700 bg-white hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
-              >
-                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Nouveau choix</span>
-                <span className="sm:hidden">Nouveau</span>
-              </Link>
-            </div>
+  const statsCards = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <DocumentTextIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Total</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{totalChoix}</div>
           </div>
         </div>
       </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <PencilIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Brouillons</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{choixBrouillons}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <EyeIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Pré-choix</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{choixPreChoix}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <CheckCircleIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Définitifs</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{choixDefinitifs}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <Toaster position="top-right" />
+      
+      <PageHeader
+        title="Choix Clients"
+        subtitle="Gestion des choix de carrelage en showroom"
+        icon={DocumentTextIcon}
+        badgeColor="from-purple-600 via-pink-600 to-rose-700"
+        gradientColor="from-purple-600/10 via-pink-600/10 to-rose-700/10"
+        stats={statsCards}
+        actions={
+          <Link
+            href="/choix-clients/nouveau"
+            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+          >
+            <PlusIcon className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Nouveau choix</span>
+            <span className="sm:hidden">Nouveau</span>
+          </Link>
+        }
+      />
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">

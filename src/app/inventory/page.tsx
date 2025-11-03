@@ -19,6 +19,7 @@ import {
   Cog6ToothIcon,
   TrashIcon
 } from '@heroicons/react/24/outline'
+import { PageHeader } from '@/components/PageHeader'
 import EmplacementQRCodeModal from '@/components/inventory/EmplacementQRCodeModal'
 
 // Composant pour les paramètres de recherche qui utilise useSearchParams()
@@ -364,92 +365,90 @@ export default function InventoryPage() {
     totalMateriaux: materiaux.length
   }
 
+  // Stats cards pour le header
+  const statsCards = (
+    <div className="flex items-center gap-2">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+            <BuildingStorefrontIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Total racks</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.totalRacks}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
+            <ArchiveBoxIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Emplacements</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.totalEmplacements}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <ChartBarIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Occupés</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.emplacementsOccupes}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+            <CubeIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Matériaux</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.totalMateriaux}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-emerald-50/20 to-teal-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       <Suspense fallback={<div>Chargement...</div>}>
         <SearchParamsComponent onEmplacementFound={handleEmplacementFound} />
       </Suspense>
       
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <CubeIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Gestion d'Inventaire
-                </h1>
-                <p className="mt-0.5 text-xs text-emerald-100 hidden sm:block">
-                  Gérez vos racks et matériaux en temps réel
-                </p>
-              </div>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <BuildingStorefrontIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-emerald-100 truncate">Total racks</div>
-                    <div className="text-sm font-semibold text-white truncate">{stats.totalRacks}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ArchiveBoxIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-emerald-100 truncate">Emplacements</div>
-                    <div className="text-sm font-semibold text-white truncate">{stats.totalEmplacements}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ChartBarIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-emerald-100 truncate">Occupés</div>
-                    <div className="text-sm font-semibold text-white truncate">{stats.emplacementsOccupes}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <CubeIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-emerald-100 truncate">Matériaux</div>
-                    <div className="text-sm font-semibold text-white truncate">{stats.totalMateriaux}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0 flex items-center gap-2">
-              <Link
-                href="/admin/inventory"
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-emerald-700 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
-              >
-                <Cog6ToothIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Gérer les racks</span>
-                <span className="sm:hidden">Gérer</span>
-              </Link>
-              <Link
-                href="/inventory/scanner"
-                className="inline-flex items-center px-3 py-1.5 border border-white/20 rounded-md shadow-sm text-xs font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
-              >
-                <QrCodeIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Scanner QR</span>
-                <span className="sm:hidden">Scanner</span>
-              </Link>
-            </div>
+      <PageHeader
+        title="Gestion d'Inventaire"
+        subtitle="Gérez vos racks et matériaux en temps réel"
+        icon={CubeIcon}
+        badgeColor="from-emerald-600 via-teal-600 to-cyan-700"
+        gradientColor="from-emerald-600/10 via-teal-600/10 to-cyan-700/10"
+        stats={statsCards}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/inventory"
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
+            >
+              <Cog6ToothIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Gérer les racks</span>
+              <span className="sm:hidden">Gérer</span>
+            </Link>
+            <Link
+              href="/inventory/scanner"
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-md shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            >
+              <QrCodeIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Scanner QR</span>
+              <span className="sm:hidden">Scanner</span>
+            </Link>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { jsonFetcher } from '@/lib/client/fetcher'
 import Link from 'next/link'
+import { PageHeader } from '@/components/PageHeader'
 import { StatutSAV, PrioriteSAV, TypeTicketSAV } from '@/types/sav'
 import { FunnelIcon, MagnifyingGlassIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, TrashIcon, WrenchScrewdriverIcon, ExclamationTriangleIcon, PlusIcon } from '@heroicons/react/24/outline'
 
@@ -47,79 +48,66 @@ export default function SavListPage() {
   const ticketsNouveaux = tickets.filter(t => t.statut === StatutSAV.NOUVEAU).length
   const ticketsResolus = tickets.filter(t => t.statut === StatutSAV.RESOLU).length
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-red-600 to-rose-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <WrenchScrewdriverIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Tickets SAV
-                </h1>
-                <p className="mt-0.5 text-xs text-red-100 hidden sm:block">
-                  Suivi et gestion des demandes de service
-                </p>
-              </div>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <WrenchScrewdriverIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-red-100 truncate">Total</div>
-                    <div className="text-sm font-semibold text-white truncate">{ticketsTotal}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ExclamationTriangleIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-red-100 truncate">Nouveaux</div>
-                    <div className="text-sm font-semibold text-white truncate">{ticketsNouveaux}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ArrowTopRightOnSquareIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-red-100 truncate">En cours</div>
-                    <div className="text-sm font-semibold text-white truncate">{ticketsEnCours}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-red-100 truncate">Résolus</div>
-                    <div className="text-sm font-semibold text-white truncate">{ticketsResolus}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <Link href="/sav/nouveau">
-                <button className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
-                  <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
-                  <span className="hidden sm:inline">Nouveau ticket</span>
-                  <span className="sm:hidden">Nouveau</span>
-                </button>
-              </Link>
-            </div>
+  const statsCards = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <WrenchScrewdriverIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Total</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{ticketsTotal}</div>
           </div>
         </div>
       </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <ExclamationTriangleIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Nouveaux</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{ticketsNouveaux}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <ArrowTopRightOnSquareIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">En cours</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{ticketsEnCours}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <CheckCircleIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Résolus</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{ticketsResolus}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-red-50/20 to-rose-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Tickets SAV"
+        subtitle="Suivi et gestion des demandes de service"
+        icon={WrenchScrewdriverIcon}
+        badgeColor="from-red-600 via-rose-600 to-pink-700"
+        gradientColor="from-red-600/10 via-rose-600/10 to-pink-700/10"
+        stats={statsCards}
+        actions={
+          <Link href="/sav/nouveau">
+            <button className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold">
+              <PlusIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Nouveau ticket</span>
+              <span className="sm:hidden">Nouveau</span>
+            </button>
+          </Link>
+        }
+      />
 
       {/* Filtres */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -18,6 +18,7 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
+import { PageHeader } from '@/components/PageHeader'
 
 interface Machine {
   id: string
@@ -159,111 +160,109 @@ export default function OutillagePage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <WrenchScrewdriverIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Outillage
-                </h1>
-                <p className="mt-0.5 text-xs text-blue-100 hidden sm:block">
-                  Gestion des machines et outils
-                </p>
-              </div>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <WrenchScrewdriverIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">Total</div>
-                    <div className="text-sm font-semibold text-white truncate">{totalMachines}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">Disponibles</div>
-                    <div className="text-sm font-semibold text-white truncate">{machinesDisponibles}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ExclamationCircleIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">En panne</div>
-                    <div className="text-sm font-semibold text-white truncate">{machinesEnPanne}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ClockIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-blue-100 truncate">Prêtées</div>
-                    <div className="text-sm font-semibold text-white truncate">{machinesPretees}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0 flex items-center gap-2">
-              {/* Boutons de vue */}
-              <div className="flex rounded-md shadow-sm">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-l-md border text-xs font-medium ${
-                    viewMode === 'grid'
-                      ? 'bg-white text-blue-700 border-white'
-                      : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
-                  } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200`}
-                >
-                  <Squares2X2Icon className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-r-md border-t border-r border-b text-xs font-medium ${
-                    viewMode === 'list'
-                      ? 'bg-white text-blue-700 border-white'
-                      : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
-                  } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200`}
-                >
-                  <ListBulletIcon className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              
-              <Link
-                href="/outillage/scanner"
-                className="inline-flex items-center px-3 py-1.5 border border-white/20 rounded-md shadow-sm text-xs font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-              >
-                <QrCodeIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Scanner</span>
-              </Link>
-              <Link
-                href="/outillage/nouveau"
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-              >
-                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Nouvelle machine</span>
-                <span className="sm:hidden">Nouveau</span>
-              </Link>
-            </div>
+  // Stats cards pour le header
+  const statsCards = (
+    <div className="flex items-center gap-2">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <WrenchScrewdriverIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Total</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{totalMachines}</div>
           </div>
         </div>
       </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <CheckCircleIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Disponibles</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{machinesDisponibles}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center">
+            <ExclamationCircleIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">En panne</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{machinesEnPanne}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
+            <ClockIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Prêtées</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{machinesPretees}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-indigo-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Outillage"
+        subtitle="Gestion des machines et outils"
+        icon={WrenchScrewdriverIcon}
+        badgeColor="from-blue-600 via-indigo-600 to-purple-700"
+        gradientColor="from-blue-600/10 via-indigo-600/10 to-purple-700/10"
+        stats={statsCards}
+        actions={
+          <div className="flex items-center gap-2">
+            {/* Boutons de vue */}
+            <div className="flex rounded-md shadow-sm">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`inline-flex items-center px-3 py-2 rounded-l-md border text-sm font-medium transition-colors duration-200 ${
+                  viewMode === 'grid'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white border-blue-600'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+              >
+                <Squares2X2Icon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`inline-flex items-center px-3 py-2 rounded-r-md border-t border-r border-b text-sm font-medium transition-colors duration-200 ${
+                  viewMode === 'list'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white border-blue-600'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+              >
+                <ListBulletIcon className="h-4 w-4" />
+              </button>
+            </div>
+            
+            <Link
+              href="/outillage/scanner"
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            >
+              <QrCodeIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Scanner</span>
+            </Link>
+            <Link
+              href="/outillage/nouveau"
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-md shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            >
+              <PlusIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Nouvelle machine</span>
+              <span className="sm:hidden">Nouveau</span>
+            </Link>
+          </div>
+        }
+      />
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">

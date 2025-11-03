@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { PageHeader } from '@/components/PageHeader'
 import { CalendarIcon, PlusIcon, UserIcon, BuildingOfficeIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
 import ResourceScheduler from '@/components/planning/ResourceScheduler'
 import TaskModal from '@/components/planning/TaskModal'
@@ -297,14 +298,46 @@ export default function PlanningRessourcesPage() {
     }
   }
 
+  const statsCards = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <UserIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Ouvriers</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{ouvriersInternes.length}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <BuildingOfficeIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Sous-traitants</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{soustraitants.length}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Chantiers</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{chantiers.length}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/20 to-rose-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
             <div className="p-8">
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
                 <span className="ml-3 text-gray-600 dark:text-gray-400">Chargement du planning...</span>
               </div>
             </div>
@@ -315,82 +348,39 @@ export default function PlanningRessourcesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          {/* En-tête avec design uniforme */}
-          <div className="bg-gradient-to-r from-orange-600 to-rose-700 shadow-lg">
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center min-w-0">
-                  <CalendarIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-                  <div>
-                    <h1 className="text-xl font-bold text-white">
-                      Planning des Ressources
-                    </h1>
-                    <p className="mt-0.5 text-xs text-orange-100 hidden sm:block">
-                      Planification et affectation des ressources humaines avec drag & drop
-                    </p>
-                  </div>
-                </div>
-
-                {/* Statistiques compactes */}
-                <div className="flex items-center gap-2 flex-1 justify-center">
-                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                    <div className="flex items-center gap-1.5">
-                      <UserIcon className="h-4 w-4 text-white flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-medium text-orange-100 truncate">Ouvriers</div>
-                        <div className="text-sm font-semibold text-white truncate">{ouvriersInternes.length}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                    <div className="flex items-center gap-1.5">
-                      <BuildingOfficeIcon className="h-4 w-4 text-white flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-medium text-orange-100 truncate">Sous-traitants</div>
-                        <div className="text-sm font-semibold text-white truncate">{soustraitants.length}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                    <div className="flex items-center gap-1.5">
-                      <CalendarIcon className="h-4 w-4 text-white flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-medium text-orange-100 truncate">Chantiers</div>
-                        <div className="text-sm font-semibold text-white truncate">{chantiers.length}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 flex items-center gap-2">
-                  <button
-                    onClick={handleExportPDF}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-orange-700 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
-                  >
-                    <DocumentArrowDownIcon className="h-3.5 w-3.5 mr-1.5" />
-                    <span className="hidden sm:inline">Export PDF</span>
-                    <span className="sm:hidden">PDF</span>
-                  </button>
-                  
-                  <button
-                    onClick={handleCreateTask}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-orange-700 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
-                  >
-                    <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
-                    <span className="hidden sm:inline">Nouvelle tâche</span>
-                    <span className="sm:hidden">Nouveau</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/20 to-rose-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Planning des Ressources"
+        subtitle="Planification et affectation des ressources humaines avec drag & drop"
+        icon={CalendarIcon}
+        badgeColor="from-orange-600 via-rose-600 to-pink-700"
+        gradientColor="from-orange-600/10 via-rose-600/10 to-pink-700/10"
+        stats={statsCards}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportPDF}
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-orange-600 to-rose-700 hover:from-orange-700 hover:to-rose-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Export PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+            <button
+              onClick={handleCreateTask}
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-orange-600 to-rose-700 hover:from-orange-700 hover:to-rose-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            >
+              <PlusIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Nouvelle tâche</span>
+              <span className="sm:hidden">Nouveau</span>
+            </button>
           </div>
-          
-          {/* Planning interactif */}
+        }
+      />
+
+      {/* Container du planning */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           <div className="p-6">
             <ResourceScheduler
               onAddTask={handleAddTask}

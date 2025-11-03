@@ -23,6 +23,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { Pagination } from '@/components/Pagination'
+import { PageHeader } from '@/components/PageHeader'
 
 function getStatusStyle(status: string) {
   switch (status) {
@@ -366,85 +367,73 @@ export default function ChantiersPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Container pour limiter la largeur */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* En-tête avec gradient */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-700 shadow-lg rounded-t-xl">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
-          <DocumentExpirationAlert />
-          
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center min-w-0">
-              <BuildingOffice2Icon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Gestion des Chantiers
-                </h1>
-                <p className="mt-0.5 text-xs text-amber-100 hidden sm:block">
-                  Gérez et suivez tous vos projets de construction
-                </p>
-              </div>
-            </div>
-
-            {/* Statistiques compactes */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <BuildingOffice2Icon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-amber-100 truncate">Total</div>
-                    <div className="text-sm font-semibold text-white truncate">{stats.total}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ChartPieIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-amber-100 truncate">En cours</div>
-                    <div className="text-sm font-semibold text-white truncate">{stats.enCours}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <ClockIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-amber-100 truncate">Préparation</div>
-                    <div className="text-sm font-semibold text-white truncate">{stats.enPreparation}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded px-2.5 py-1.5 border border-white/20 flex-1 min-w-0 max-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <BanknotesIcon className="h-4 w-4 text-white flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-amber-100 truncate">CA</div>
-                    <div className="text-sm font-semibold text-white truncate">
-                      {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, notation: 'compact' }).format(stats.chiffreAffaires)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <Link
-                href="/chantiers/nouveau"
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-amber-700 bg-white hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors duration-200"
-              >
-                <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Nouveau chantier</span>
-                <span className="sm:hidden">Nouveau</span>
-              </Link>
+  const statsCards = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <BuildingOffice2Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Total</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{stats.total}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <ChartPieIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">En cours</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{stats.enCours}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <ClockIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Préparation</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{stats.enPreparation}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+        <div className="flex items-center gap-2">
+          <BanknotesIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <div>
+            <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">CA</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">
+              {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, notation: 'compact' }).format(stats.chiffreAffaires)}
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-amber-50/20 to-orange-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Gestion des Chantiers"
+        subtitle="Gérez et suivez tous vos projets de construction"
+        icon={BuildingOffice2Icon}
+        badgeColor="from-amber-600 via-orange-600 to-red-700"
+        gradientColor="from-amber-600/10 via-orange-600/10 to-red-700/10"
+        stats={statsCards}
+        actions={
+          <Link
+            href="/chantiers/nouveau"
+            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+          >
+            <PlusIcon className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Nouveau chantier</span>
+            <span className="sm:hidden">Nouveau</span>
+          </Link>
+        }
+      />
+
+      {/* Alert expiration documents */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <DocumentExpirationAlert />
       </div>
 
       {/* Contenu principal */}
@@ -801,7 +790,6 @@ export default function ChantiersPage() {
             )}
           </>
         )}
-      </div>
       </div>
     </div>
   )
