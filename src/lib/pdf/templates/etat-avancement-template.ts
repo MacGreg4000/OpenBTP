@@ -565,14 +565,14 @@ export function generateEtatAvancementHTML(
                             <td>${ligne.description}</td>
                             <td class="text-center">${ligne.type}</td>
                             <td class="text-center">${ligne.unite}</td>
-                            <td class="text-right">${ligne.prixUnitaire.toLocaleString('fr-FR')} €</td>
+                            <td class="text-right">${ligne.prixUnitaire.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                             <td class="text-right">${ligne.quantite.toLocaleString('fr-FR')}</td>
                             <td class="text-right">${ligne.quantitePrecedente.toLocaleString('fr-FR')}</td>
                             <td class="text-right quantite-actuelle">${ligne.quantiteActuelle.toLocaleString('fr-FR')}</td>
                             <td class="text-right font-bold">${ligne.quantiteTotale.toLocaleString('fr-FR')}</td>
-                            <td class="text-right">${ligne.montantPrecedent.toLocaleString('fr-FR')} €</td>
-                            <td class="text-right montant">${ligne.montantActuel.toLocaleString('fr-FR')} €</td>
-                            <td class="text-right font-bold montant">${ligne.montantTotal.toLocaleString('fr-FR')} €</td>
+                            <td class="text-right">${ligne.montantPrecedent.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                            <td class="text-right montant">${ligne.montantActuel.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                            <td class="text-right font-bold montant">${ligne.montantTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -608,14 +608,14 @@ export function generateEtatAvancementHTML(
                             <td>${avenant.description}</td>
                             <td class="text-center">${avenant.type}</td>
                             <td class="text-center">${avenant.unite}</td>
-                            <td class="text-right">${avenant.prixUnitaire.toLocaleString('fr-FR')} €</td>
+                            <td class="text-right">${avenant.prixUnitaire.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                             <td class="text-right">${avenant.quantite.toLocaleString('fr-FR')}</td>
                             <td class="text-right">${avenant.quantitePrecedente.toLocaleString('fr-FR')}</td>
                             <td class="text-right quantite-actuelle">${avenant.quantiteActuelle.toLocaleString('fr-FR')}</td>
                             <td class="text-right font-bold">${avenant.quantiteTotale.toLocaleString('fr-FR')}</td>
-                            <td class="text-right">${avenant.montantPrecedent.toLocaleString('fr-FR')} €</td>
-                            <td class="text-right montant">${avenant.montantActuel.toLocaleString('fr-FR')} €</td>
-                            <td class="text-right font-bold montant">${avenant.montantTotal.toLocaleString('fr-FR')} €</td>
+                            <td class="text-right">${avenant.montantPrecedent.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                            <td class="text-right montant">${avenant.montantActuel.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                            <td class="text-right font-bold montant">${avenant.montantTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -629,15 +629,15 @@ export function generateEtatAvancementHTML(
                 <h4>💰 Commande initiale</h4>
                 <div class="summary-row">
                     <span>Précédent:</span>
-                    <span class="montant">${data.totalCommandeInitiale.precedent.toLocaleString('fr-FR')} €</span>
+                    <span class="montant">${data.totalCommandeInitiale.precedent.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
                 <div class="summary-row">
                     <span>Actuel:</span>
-                    <span class="montant">${data.totalCommandeInitiale.actuel.toLocaleString('fr-FR')} €</span>
+                    <span class="montant">${data.totalCommandeInitiale.actuel.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
                 <div class="summary-row total">
                     <span>Total:</span>
-                    <span>${data.totalCommandeInitiale.total.toLocaleString('fr-FR')} €</span>
+                    <span>${data.totalCommandeInitiale.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
             </div>
             
@@ -645,15 +645,15 @@ export function generateEtatAvancementHTML(
                 <h4>📝 Avenants</h4>
                 <div class="summary-row">
                     <span>Précédent:</span>
-                    <span class="montant">${data.totalAvenants.precedent.toLocaleString('fr-FR')} €</span>
+                    <span class="montant">${data.totalAvenants.precedent.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
                 <div class="summary-row">
                     <span>Actuel:</span>
-                    <span class="montant">${data.totalAvenants.actuel.toLocaleString('fr-FR')} €</span>
+                    <span class="montant">${data.totalAvenants.actuel.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
                 <div class="summary-row total">
                     <span>Total:</span>
-                    <span>${data.totalAvenants.total.toLocaleString('fr-FR')} €</span>
+                    <span>${data.totalAvenants.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
             </div>
             
@@ -661,15 +661,15 @@ export function generateEtatAvancementHTML(
                 <h4>🎯 Total général</h4>
                 <div class="summary-row">
                     <span>Précédent:</span>
-                    <span class="montant">${data.totalGeneral.precedent.toLocaleString('fr-FR')} €</span>
+                    <span class="montant">${data.totalGeneral.precedent.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
                 <div class="summary-row">
                     <span>Actuel:</span>
-                    <span class="montant">${data.totalGeneral.actuel.toLocaleString('fr-FR')} €</span>
+                    <span class="montant">${data.totalGeneral.actuel.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
                 <div class="summary-row total">
                     <span>Total:</span>
-                    <span class="text-blue">${data.totalGeneral.total.toLocaleString('fr-FR')} €</span>
+                    <span class="text-blue">${data.totalGeneral.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
             </div>
         </div>

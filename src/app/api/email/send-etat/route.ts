@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma/client';
 import nodemailer from 'nodemailer';
 import { generateEtatAvancementHTML } from '@/lib/pdf/templates/etat-avancement-template';
+import { roundToTwoDecimals } from '@/utils/calculs';
 
 // Ancienne simulation PDF supprimée (non utilisée)
 
@@ -176,24 +177,24 @@ export async function POST(request: Request) {
       
       // Calculer les totaux
       totalCommandeInitiale: {
-        precedent: etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantPrecedent) || 0), 0),
-        actuel: etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantActuel) || 0), 0),
-        total: etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantTotal) || 0), 0)
+        precedent: roundToTwoDecimals(etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantPrecedent) || 0), 0)),
+        actuel: roundToTwoDecimals(etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantActuel) || 0), 0)),
+        total: roundToTwoDecimals(etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantTotal) || 0), 0))
       },
       
       totalAvenants: {
-        precedent: etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantPrecedent) || 0), 0),
-        actuel: etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantActuel) || 0), 0),
-        total: etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantTotal) || 0), 0)
+        precedent: roundToTwoDecimals(etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantPrecedent) || 0), 0)),
+        actuel: roundToTwoDecimals(etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantActuel) || 0), 0)),
+        total: roundToTwoDecimals(etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantTotal) || 0), 0))
       },
       
       totalGeneral: {
-        precedent: etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantPrecedent) || 0), 0) + 
-                   etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantPrecedent) || 0), 0),
-        actuel: etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantActuel) || 0), 0) + 
-                etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantActuel) || 0), 0),
-        total: etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantTotal) || 0), 0) + 
-               etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantTotal) || 0), 0)
+        precedent: roundToTwoDecimals(etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantPrecedent) || 0), 0) + 
+                   etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantPrecedent) || 0), 0)),
+        actuel: roundToTwoDecimals(etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantActuel) || 0), 0) + 
+                etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantActuel) || 0), 0)),
+        total: roundToTwoDecimals(etatAvancement.lignes.reduce((sum, ligne) => sum + (Number(ligne.montantTotal) || 0), 0) + 
+               etatAvancement.avenants.reduce((sum, avenant) => sum + (Number(avenant.montantTotal) || 0), 0))
       }
     };
     

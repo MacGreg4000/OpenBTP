@@ -5,6 +5,10 @@ import { TrashIcon, PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outli
 // import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import NumericInput from '@/components/ui/NumericInput'
+import { roundToTwoDecimals } from '@/utils/calculs'
+
+// Fonction helper pour formater les montants avec 2 décimales
+const formatMontant = (value: number) => value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 interface EtatAvancementSoustraitantProps {
   etatAvancement: SoustraitantEtat
@@ -85,8 +89,8 @@ export default function EtatAvancementSoustraitant({
     return etatAvancement.lignes.map(ligne => {
       const quantiteActuelle = quantites[ligne.id] ?? ligne.quantiteActuelle
       const quantiteTotale = quantiteActuelle + ligne.quantitePrecedente
-      const montantActuel = quantiteActuelle * ligne.prixUnitaire
-      const montantTotal = montantActuel + ligne.montantPrecedent
+      const montantActuel = roundToTwoDecimals(quantiteActuelle * ligne.prixUnitaire)
+      const montantTotal = roundToTwoDecimals(montantActuel + ligne.montantPrecedent)
   
       return {
         ...ligne,
@@ -104,8 +108,8 @@ export default function EtatAvancementSoustraitant({
       const values = avenantValues[avenant.id] ?? avenant
       const quantiteActuelle = values.quantiteActuelle
       const quantiteTotale = quantiteActuelle + avenant.quantitePrecedente
-      const montantActuel = quantiteActuelle * values.prixUnitaire
-      const montantTotalCalc = montantActuel + avenant.montantPrecedent
+      const montantActuel = roundToTwoDecimals(quantiteActuelle * values.prixUnitaire)
+      const montantTotalCalc = roundToTwoDecimals(montantActuel + avenant.montantPrecedent)
 
       return {
         ...avenant,
@@ -119,25 +123,37 @@ export default function EtatAvancementSoustraitant({
 
   // Calcul du résumé
   useEffect(() => {
-    const totalCommandeInitiale = memoizedCalculatedLignes.reduce((acc, ligne) => ({
+    const totalCommandeInitialeRaw = memoizedCalculatedLignes.reduce((acc, ligne) => ({
       precedent: acc.precedent + ligne.montantPrecedent,
       actuel: acc.actuel + ligne.montantActuel,
       total: acc.total + ligne.montantTotal
     }), { precedent: 0, actuel: 0, total: 0 })
 
-    const totalAvenants = memoizedCalculatedAvenants.reduce((acc, avenant) => ({
+    const totalCommandeInitiale = {
+      precedent: roundToTwoDecimals(totalCommandeInitialeRaw.precedent),
+      actuel: roundToTwoDecimals(totalCommandeInitialeRaw.actuel),
+      total: roundToTwoDecimals(totalCommandeInitialeRaw.total)
+    }
+
+    const totalAvenantsRaw = memoizedCalculatedAvenants.reduce((acc, avenant) => ({
       precedent: acc.precedent + avenant.montantPrecedent,
       actuel: acc.actuel + avenant.montantActuel,
       total: acc.total + avenant.montantTotal
     }), { precedent: 0, actuel: 0, total: 0 })
 
+    const totalAvenants = {
+      precedent: roundToTwoDecimals(totalAvenantsRaw.precedent),
+      actuel: roundToTwoDecimals(totalAvenantsRaw.actuel),
+      total: roundToTwoDecimals(totalAvenantsRaw.total)
+    }
+
     setSummary({
       totalCommandeInitiale,
       totalAvenants,
       totalGeneral: {
-        precedent: totalCommandeInitiale.precedent + totalAvenants.precedent,
-        actuel: totalCommandeInitiale.actuel + totalAvenants.actuel,
-        total: totalCommandeInitiale.total + totalAvenants.total
+        precedent: roundToTwoDecimals(totalCommandeInitiale.precedent + totalAvenants.precedent),
+        actuel: roundToTwoDecimals(totalCommandeInitiale.actuel + totalAvenants.actuel),
+        total: roundToTwoDecimals(totalCommandeInitiale.total + totalAvenants.total)
       }
     })
   }, [memoizedCalculatedLignes, memoizedCalculatedAvenants])
@@ -157,8 +173,8 @@ export default function EtatAvancementSoustraitant({
       }
 
       // Calculer les valeurs dérivées
-      const montantActuel = nouvelleQuantite * ligne.prixUnitaire
-      const montantTotal = montantActuel + ligne.montantPrecedent
+      const montantActuel = roundToTwoDecimals(nouvelleQuantite * ligne.prixUnitaire)
+      const montantTotal = roundToTwoDecimals(montantActuel + ligne.montantPrecedent)
       
       const quantiteExacte = nouvelleQuantite;
       
@@ -302,8 +318,8 @@ export default function EtatAvancementSoustraitant({
       const quantiteActuelle = exactValues.quantiteActuelle
       const prixUnitaire = exactValues.prixUnitaire
 
-      const montantActuel = quantiteActuelle * prixUnitaire
-      const montantTotal = montantActuel + avenant.montantPrecedent
+      const montantActuel = roundToTwoDecimals(quantiteActuelle * prixUnitaire)
+      const montantTotal = roundToTwoDecimals(montantActuel + avenant.montantPrecedent)
 
       const response = await fetch(`/api/chantiers/${chantierId}/soustraitants/${soustraitantId}/etats-avancement/${etatId}/avenants/${avenantId}`, {
         method: 'PUT',
@@ -428,19 +444,19 @@ export default function EtatAvancementSoustraitant({
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Commande initiale</h3>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              {summary.totalCommandeInitiale.total.toLocaleString('fr-FR')} €
+              {formatMontant(summary.totalCommandeInitiale.total)} €
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Avenants</h3>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              {summary.totalAvenants.total.toLocaleString('fr-FR')} €
+              {formatMontant(summary.totalAvenants.total)} €
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total général</h3>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {summary.totalGeneral.total.toLocaleString('fr-FR')} €
+              {formatMontant(summary.totalGeneral.total)} €
             </p>
           </div>
         </div>
@@ -490,7 +506,7 @@ export default function EtatAvancementSoustraitant({
                     </span>
                   </td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 text-center">{ligne.unite}</td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 text-right">{ligne.prixUnitaire.toLocaleString('fr-FR')} €</td>
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 text-right">{formatMontant(ligne.prixUnitaire)} €</td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 text-right">{ligne.quantite.toLocaleString('fr-FR')}</td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
                     {ligne.quantitePrecedente.toLocaleString('fr-FR')}
@@ -513,12 +529,12 @@ export default function EtatAvancementSoustraitant({
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right font-medium">
                     {ligne.quantiteTotale.toLocaleString('fr-FR')}
                   </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">{ligne.montantPrecedent.toLocaleString('fr-FR')} €</td>
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">{formatMontant(ligne.montantPrecedent)} €</td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right font-medium">
-                    {ligne.montantActuel.toLocaleString('fr-FR')} €
+                    {formatMontant(ligne.montantActuel)} €
                   </td>
                   <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-semibold">
-                    {ligne.montantTotal.toLocaleString('fr-FR')} €
+                    {formatMontant(ligne.montantTotal)} €
                   </td>
                 </tr>
               ))}
@@ -651,7 +667,7 @@ export default function EtatAvancementSoustraitant({
                         />
                       ) : (
                         <span className="font-medium text-right text-gray-700 dark:text-gray-300">
-                          {`${avenant.prixUnitaire.toLocaleString('fr-FR')} €`}
+                          {`${formatMontant(avenant.prixUnitaire)} €`}
                         </span>
                       )}
                     </td>
@@ -690,13 +706,13 @@ export default function EtatAvancementSoustraitant({
                       {avenant.quantiteTotale.toLocaleString('fr-FR')}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
-                      {avenant.montantPrecedent.toLocaleString('fr-FR')} €
+                      {formatMontant(avenant.montantPrecedent)} €
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right font-medium">
-                      {avenant.montantActuel.toLocaleString('fr-FR')} €
+                      {formatMontant(avenant.montantActuel)} €
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-semibold">
-                      {avenant.montantTotal.toLocaleString('fr-FR')} €
+                      {formatMontant(avenant.montantTotal)} €
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-center">
                       {!etatAvancement.estFinalise && !isFromPreviousState && (

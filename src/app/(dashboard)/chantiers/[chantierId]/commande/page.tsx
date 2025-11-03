@@ -302,19 +302,23 @@ export default function CommandePage(props: CommandePageProps) {
     // Exclure les titres et sous-titres des calculs (type TITRE et SOUS_TITRE)
     const lignesCalculables = lignes.filter(l => l.type !== 'TITRE' && l.type !== 'SOUS_TITRE');
     
-    const sousTotal = lignesCalculables
+    const sousTotalRaw = lignesCalculables
       .filter(l => !l.estOption)
       .reduce((sum, l) => sum + l.total, 0);
     
-    const totalOptions = lignesCalculables
+    const sousTotal = Math.round(sousTotalRaw * 100) / 100;
+    
+    const totalOptionsRaw = lignesCalculables
       .filter(l => l.estOption)
       .reduce((sum, l) => sum + l.total, 0);
+    
+    const totalOptions = Math.round(totalOptionsRaw * 100) / 100;
     
     const tauxTVA = commande.tauxTVA;
     console.log('Taux TVA utilisé pour le calcul:', tauxTVA);
     
-    const tva = (sousTotal * tauxTVA) / 100;
-    const total = sousTotal + tva;
+    const tva = Math.round(((sousTotal * tauxTVA) / 100) * 100) / 100;
+    const total = Math.round((sousTotal + tva) * 100) / 100;
     
     console.log('Recalcul des totaux:', {
       sousTotal,
@@ -384,7 +388,7 @@ export default function CommandePage(props: CommandePageProps) {
           const updatedLigne = { ...ligne, [field]: value }
           // Recalculer le total de la ligne
           if (field === 'prixUnitaire' || field === 'quantite') {
-            updatedLigne.total = updatedLigne.prixUnitaire * updatedLigne.quantite
+            updatedLigne.total = Math.round((updatedLigne.prixUnitaire * updatedLigne.quantite) * 100) / 100
           }
           return updatedLigne
         }

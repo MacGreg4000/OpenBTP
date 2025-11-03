@@ -1,5 +1,14 @@
 import { LigneEtatAvancement, AvenantEtatAvancement, LigneSoustraitantEtat, AvenantSoustraitantEtat } from '@/types/etat-avancement'
 
+/**
+ * Arrondit un nombre à 2 décimales
+ * @param value Valeur à arrondir
+ * @returns Nombre arrondi à 2 décimales
+ */
+export function roundToTwoDecimals(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 interface MontantsBase {
   quantiteTotale: number;
   montantActuel: number;
@@ -35,9 +44,9 @@ export interface Montants {
  * @returns Ligne avec montants calculés
  */
 export function calculerMontantsLigne<T extends Montants>(ligne: T): T {
-  const montantActuel = ligne.quantiteActuelle * ligne.prixUnitaire;
+  const montantActuel = roundToTwoDecimals(ligne.quantiteActuelle * ligne.prixUnitaire);
   const quantiteTotale = ligne.quantitePrecedente + ligne.quantiteActuelle;
-  const montantTotal = ligne.montantPrecedent + montantActuel;
+  const montantTotal = roundToTwoDecimals(ligne.montantPrecedent + montantActuel);
 
   return {
     ...ligne,
@@ -53,7 +62,7 @@ export function calculerMontantsLigne<T extends Montants>(ligne: T): T {
  * @returns Objet avec les totaux (précédent, actuel, total)
  */
 export function calculerTotalMontants(lignes: Montants[]) {
-  return lignes.reduce(
+  const result = lignes.reduce(
     (acc, ligne) => {
       return {
         precedent: acc.precedent + ligne.montantPrecedent,
@@ -63,6 +72,11 @@ export function calculerTotalMontants(lignes: Montants[]) {
     },
     { precedent: 0, actuel: 0, total: 0 }
   );
+  return {
+    precedent: roundToTwoDecimals(result.precedent),
+    actuel: roundToTwoDecimals(result.actuel),
+    total: roundToTwoDecimals(result.total)
+  };
 }
 
 /**
@@ -70,8 +84,8 @@ export function calculerTotalMontants(lignes: Montants[]) {
  */
 export function calculerMontantsAvenantClient(avenant: AvenantEtatAvancement): MontantsBase {
   const quantiteTotale = avenant.quantitePrecedente + avenant.quantiteActuelle
-  const montantActuel = avenant.quantiteActuelle * avenant.prixUnitaire
-  const montantTotal = avenant.montantPrecedent + montantActuel
+  const montantActuel = roundToTwoDecimals(avenant.quantiteActuelle * avenant.prixUnitaire)
+  const montantTotal = roundToTwoDecimals(avenant.montantPrecedent + montantActuel)
 
   return {
     quantiteTotale,
@@ -85,8 +99,8 @@ export function calculerMontantsAvenantClient(avenant: AvenantEtatAvancement): M
  */
 export function calculerMontantsLigneSoustraitant(ligne: LigneSoustraitantEtat): MontantsBase {
   const quantiteTotale = ligne.quantitePrecedente + ligne.quantiteActuelle
-  const montantActuel = ligne.quantiteActuelle * ligne.prixUnitaire
-  const montantTotal = ligne.montantPrecedent + montantActuel
+  const montantActuel = roundToTwoDecimals(ligne.quantiteActuelle * ligne.prixUnitaire)
+  const montantTotal = roundToTwoDecimals(ligne.montantPrecedent + montantActuel)
 
   return {
     quantiteTotale,
@@ -100,8 +114,8 @@ export function calculerMontantsLigneSoustraitant(ligne: LigneSoustraitantEtat):
  */
 export function calculerMontantsAvenantSoustraitant(avenant: AvenantSoustraitantEtat): MontantsBase {
   const quantiteTotale = avenant.quantitePrecedente + avenant.quantiteActuelle
-  const montantActuel = avenant.quantiteActuelle * avenant.prixUnitaire
-  const montantTotal = avenant.montantPrecedent + montantActuel
+  const montantActuel = roundToTwoDecimals(avenant.quantiteActuelle * avenant.prixUnitaire)
+  const montantTotal = roundToTwoDecimals(avenant.montantPrecedent + montantActuel)
 
   return {
     quantiteTotale,
@@ -115,24 +129,24 @@ export function calculerMontantsAvenantSoustraitant(avenant: AvenantSoustraitant
  */
 export function calculerTotauxEtatAvancement(lignes: LigneEtatAvancement[], avenants: AvenantEtatAvancement[]): TotauxEtatAvancement {
   const totalLignes: Totaux = {
-    precedent: lignes.reduce((sum, ligne) => sum + ligne.montantPrecedent, 0),
-    actuel: lignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0),
-    total: lignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0)
+    precedent: roundToTwoDecimals(lignes.reduce((sum, ligne) => sum + ligne.montantPrecedent, 0)),
+    actuel: roundToTwoDecimals(lignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0)),
+    total: roundToTwoDecimals(lignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0))
   }
 
   const totalAvenants: Totaux = {
-    precedent: avenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0),
-    actuel: avenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0),
-    total: avenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0)
+    precedent: roundToTwoDecimals(avenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0)),
+    actuel: roundToTwoDecimals(avenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0)),
+    total: roundToTwoDecimals(avenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0))
   }
 
   return {
     totalLignes,
     totalAvenants,
     totalGeneral: {
-      precedent: totalLignes.precedent + totalAvenants.precedent,
-      actuel: totalLignes.actuel + totalAvenants.actuel,
-      total: totalLignes.total + totalAvenants.total
+      precedent: roundToTwoDecimals(totalLignes.precedent + totalAvenants.precedent),
+      actuel: roundToTwoDecimals(totalLignes.actuel + totalAvenants.actuel),
+      total: roundToTwoDecimals(totalLignes.total + totalAvenants.total)
     }
   }
 }
@@ -142,24 +156,24 @@ export function calculerTotauxEtatAvancement(lignes: LigneEtatAvancement[], aven
  */
 export function calculerTotauxSoustraitantEtatAvancement(lignes: LigneSoustraitantEtat[], avenants: AvenantSoustraitantEtat[] = []): TotauxEtatAvancement {
   const totalLignes: Totaux = {
-    precedent: lignes.reduce((sum, ligne) => sum + ligne.montantPrecedent, 0),
-    actuel: lignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0),
-    total: lignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0)
+    precedent: roundToTwoDecimals(lignes.reduce((sum, ligne) => sum + ligne.montantPrecedent, 0)),
+    actuel: roundToTwoDecimals(lignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0)),
+    total: roundToTwoDecimals(lignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0))
   }
 
   const totalAvenants: Totaux = {
-    precedent: avenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0),
-    actuel: avenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0),
-    total: avenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0)
+    precedent: roundToTwoDecimals(avenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0)),
+    actuel: roundToTwoDecimals(avenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0)),
+    total: roundToTwoDecimals(avenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0))
   }
 
   return {
     totalLignes,
     totalAvenants,
     totalGeneral: {
-      precedent: totalLignes.precedent + totalAvenants.precedent,
-      actuel: totalLignes.actuel + totalAvenants.actuel,
-      total: totalLignes.total + totalAvenants.total
+      precedent: roundToTwoDecimals(totalLignes.precedent + totalAvenants.precedent),
+      actuel: roundToTwoDecimals(totalLignes.actuel + totalAvenants.actuel),
+      total: roundToTwoDecimals(totalLignes.total + totalAvenants.total)
     }
   }
 } 

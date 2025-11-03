@@ -14,6 +14,7 @@ import { toast } from 'react-hot-toast' // Toaster déplacé vers RootClientProv
 import Link from 'next/link'
 import EtatAvancementUnifie from '@/components/etat-avancement/EtatAvancementUnifie'
 import { SoustraitantEtat, AvenantSoustraitantEtat } from '@/types/etat-avancement'
+import { roundToTwoDecimals } from '@/utils/calculs'
 
 interface CommandeSousTraitant {
   id: number;
@@ -358,8 +359,8 @@ export default function NouvelEtatAvancementPage(
         ...ligne,
         quantiteActuelle: quantites[ligne.id] ?? ligne.quantiteActuelle,
         quantiteTotale: (quantites[ligne.id] ?? ligne.quantiteActuelle) + ligne.quantitePrecedente,
-        montantActuel: (quantites[ligne.id] ?? ligne.quantiteActuelle) * ligne.prixUnitaire,
-        montantTotal: ((quantites[ligne.id] ?? ligne.quantiteActuelle) * ligne.prixUnitaire) + ligne.montantPrecedent
+        montantActuel: roundToTwoDecimals((quantites[ligne.id] ?? ligne.quantiteActuelle) * ligne.prixUnitaire),
+        montantTotal: roundToTwoDecimals(((quantites[ligne.id] ?? ligne.quantiteActuelle) * ligne.prixUnitaire) + ligne.montantPrecedent)
       }))
       
       setEtatAvancement({

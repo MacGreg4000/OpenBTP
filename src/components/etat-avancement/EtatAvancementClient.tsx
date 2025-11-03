@@ -5,6 +5,10 @@ import { TrashIcon, PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outli
 // import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import NumericInput from '@/components/ui/NumericInput'
+import { roundToTwoDecimals } from '@/utils/calculs'
+
+// Fonction helper pour formater les montants avec 2 décimales
+const formatMontant = (value: number) => value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 interface EtatAvancementClientProps {
   etatAvancement: EtatAvancement
@@ -95,8 +99,8 @@ export default function EtatAvancementClient({
     return etatAvancement.lignes.map(ligne => {
       const quantiteActuelle = quantites[ligne.id] ?? ligne.quantiteActuelle
       const quantiteTotale = quantiteActuelle + ligne.quantitePrecedente
-      const montantActuel = quantiteActuelle * ligne.prixUnitaire
-      const montantTotal = montantActuel + ligne.montantPrecedent
+      const montantActuel = roundToTwoDecimals(quantiteActuelle * ligne.prixUnitaire)
+      const montantTotal = roundToTwoDecimals(montantActuel + ligne.montantPrecedent)
   
       return {
         ...ligne,
@@ -126,8 +130,8 @@ export default function EtatAvancementClient({
       } as AvenantValues
       const quantiteActuelle = values.quantiteActuelle
       const quantiteTotale = quantiteActuelle + avenant.quantitePrecedente
-      const montantActuel = quantiteActuelle * values.prixUnitaire
-      const montantTotal = montantActuel + avenant.montantPrecedent
+      const montantActuel = roundToTwoDecimals(quantiteActuelle * values.prixUnitaire)
+      const montantTotal = roundToTwoDecimals(montantActuel + avenant.montantPrecedent)
 
       const merged: AvenantValues = {
         article: values.article,
@@ -151,24 +155,24 @@ export default function EtatAvancementClient({
   useEffect(() => {
     // Calculer les totaux
     const totalCommandeInitiale = {
-      precedent: memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantPrecedent, 0),
-      actuel: memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0),
-      total: memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0)
+      precedent: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantPrecedent, 0)),
+      actuel: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0)),
+      total: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0))
     }
 
     const totalAvenants = {
-      precedent: memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0),
-      actuel: memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0),
-      total: memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0)
+      precedent: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0)),
+      actuel: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0)),
+      total: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0))
     }
 
     setSummary({
       totalCommandeInitiale,
       totalAvenants,
       totalGeneral: {
-        precedent: totalCommandeInitiale.precedent + totalAvenants.precedent,
-        actuel: totalCommandeInitiale.actuel + totalAvenants.actuel,
-        total: totalCommandeInitiale.total + totalAvenants.total
+        precedent: roundToTwoDecimals(totalCommandeInitiale.precedent + totalAvenants.precedent),
+        actuel: roundToTwoDecimals(totalCommandeInitiale.actuel + totalAvenants.actuel),
+        total: roundToTwoDecimals(totalCommandeInitiale.total + totalAvenants.total)
       }
     })
   }, [memoizedCalculatedLignes, memoizedCalculatedAvenants])
@@ -187,8 +191,8 @@ export default function EtatAvancementClient({
       }
 
       // Calculer les valeurs dérivées
-      const montantActuel = nouvelleQuantite * ligne.prixUnitaire
-      const montantTotal = montantActuel + ligne.montantPrecedent
+      const montantActuel = roundToTwoDecimals(nouvelleQuantite * ligne.prixUnitaire)
+      const montantTotal = roundToTwoDecimals(montantActuel + ligne.montantPrecedent)
       
       // Enregistrer temporairement la valeur exacte pour le dernier changement
       const quantiteExacte = nouvelleQuantite;
@@ -334,8 +338,8 @@ export default function EtatAvancementClient({
       
       const quantiteActuelle = completeValues.quantiteActuelle || 0
       const prixUnitaire = completeValues.prixUnitaire || 0
-      const montantActuel = quantiteActuelle * prixUnitaire
-      const montantTotal = montantActuel + avenant.montantPrecedent
+      const montantActuel = roundToTwoDecimals(quantiteActuelle * prixUnitaire)
+      const montantTotal = roundToTwoDecimals(montantActuel + avenant.montantPrecedent)
 
       console.log('Mise à jour de l\'avenant:', {
         avenantId,
@@ -362,8 +366,8 @@ export default function EtatAvancementClient({
           quantite: exactValues.quantite,
           quantiteActuelle: exactValues.quantiteActuelle,
           quantiteTotale: exactValues.quantiteActuelle + avenant.quantitePrecedente,
-          montantActuel: exactValues.quantiteActuelle * exactValues.prixUnitaire,
-          montantTotal: (exactValues.quantiteActuelle * exactValues.prixUnitaire) + avenant.montantPrecedent
+          montantActuel: roundToTwoDecimals(exactValues.quantiteActuelle * exactValues.prixUnitaire),
+          montantTotal: roundToTwoDecimals((exactValues.quantiteActuelle * exactValues.prixUnitaire) + avenant.montantPrecedent)
         }),
       })
 
@@ -525,10 +529,10 @@ export default function EtatAvancementClient({
                     <td className="w-96 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.description}</td>
                     <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.type}</td>
                     <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.unite}</td>
-                    <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">{ligne.prixUnitaire.toLocaleString('fr-FR')} €</td>
+                    <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">{formatMontant(ligne.prixUnitaire)} €</td>
                     <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">{ligne.quantite}</td>
                     <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {(ligne.prixUnitaire * ligne.quantite).toLocaleString('fr-FR')} €
+                      {formatMontant(ligne.prixUnitaire * ligne.quantite)} €
                     </td>
                     <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
                       {ligne.quantitePrecedente}
@@ -550,13 +554,13 @@ export default function EtatAvancementClient({
                       {ligne.quantiteTotale}
                     </td>
                     <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {ligne.montantPrecedent.toLocaleString('fr-FR')} €
+                      {formatMontant(ligne.montantPrecedent)} €
                     </td>
                     <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right bg-blue-50 dark:bg-blue-900/10">
-                      {ligne.montantActuel.toLocaleString('fr-FR')} €
+                      {formatMontant(ligne.montantActuel)} €
                     </td>
                     <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {ligne.montantTotal.toLocaleString('fr-FR')} €
+                      {formatMontant(ligne.montantTotal)} €
                     </td>
                     <td className="w-10 px-2 py-3"></td>
                   </tr>
@@ -682,7 +686,7 @@ export default function EtatAvancementClient({
                           <span>€</span>
                         </div>
                       ) : (
-                        <>{avenant.prixUnitaire.toLocaleString('fr-FR')} €</>
+                        <>{formatMontant(avenant.prixUnitaire)} €</>
                       )}
                     </td>
                     <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
@@ -699,8 +703,8 @@ export default function EtatAvancementClient({
                       )}
                     </td>
                     <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {((avenantValues[avenant.id]?.prixUnitaire ?? avenant.prixUnitaire) * 
-                        (avenantValues[avenant.id]?.quantite ?? avenant.quantite)).toLocaleString('fr-FR')} €
+                      {formatMontant((avenantValues[avenant.id]?.prixUnitaire ?? avenant.prixUnitaire) * 
+                        (avenantValues[avenant.id]?.quantite ?? avenant.quantite))} €
                     </td>
                     <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
                       {avenant.quantitePrecedente}
@@ -722,13 +726,13 @@ export default function EtatAvancementClient({
                       {memoizedCalculatedAvenants.find(a => a.id === avenant.id)?.quantiteTotale}
                     </td>
                     <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {avenant.montantPrecedent.toLocaleString('fr-FR')} €
+                      {formatMontant(avenant.montantPrecedent)} €
                     </td>
                     <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right bg-blue-50 dark:bg-blue-900/10">
-                      {memoizedCalculatedAvenants.find(a => a.id === avenant.id)?.montantActuel.toLocaleString('fr-FR')} €
+                      {formatMontant(memoizedCalculatedAvenants.find(a => a.id === avenant.id)?.montantActuel ?? 0)} €
                     </td>
                     <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {memoizedCalculatedAvenants.find(a => a.id === avenant.id)?.montantTotal.toLocaleString('fr-FR')} €
+                      {formatMontant(memoizedCalculatedAvenants.find(a => a.id === avenant.id)?.montantTotal ?? 0)} €
                     </td>
                     <td className="w-10 px-2 py-3">
                       {!etatAvancement.estFinalise && !isFromPreviousState && (
@@ -828,21 +832,21 @@ export default function EtatAvancementClient({
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 <tr>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">Total commande initiale</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{summary.totalCommandeInitiale.precedent.toLocaleString('fr-FR')} €</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{summary.totalCommandeInitiale.actuel.toLocaleString('fr-FR')} €</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{summary.totalCommandeInitiale.total.toLocaleString('fr-FR')} €</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalCommandeInitiale.precedent)} €</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalCommandeInitiale.actuel)} €</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalCommandeInitiale.total)} €</td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">Total avenants</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{summary.totalAvenants.precedent.toLocaleString('fr-FR')} €</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{summary.totalAvenants.actuel.toLocaleString('fr-FR')} €</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{summary.totalAvenants.total.toLocaleString('fr-FR')} €</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalAvenants.precedent)} €</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalAvenants.actuel)} €</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalAvenants.total)} €</td>
                 </tr>
                 <tr className="bg-green-50 dark:bg-green-900/20 font-bold">
                   <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-200">TOTAL GÉNÉRAL</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-200 text-right">{summary.totalGeneral.precedent.toLocaleString('fr-FR')} €</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-200 text-right bg-green-100 dark:bg-green-900/30 border-2 border-green-600 dark:border-green-400">{summary.totalGeneral.actuel.toLocaleString('fr-FR')} €</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-200 text-right">{summary.totalGeneral.total.toLocaleString('fr-FR')} €</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalGeneral.precedent)} €</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-200 text-right bg-green-100 dark:bg-green-900/30 border-2 border-green-600 dark:border-green-400">{formatMontant(summary.totalGeneral.actuel)} €</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-200 text-right">{formatMontant(summary.totalGeneral.total)} €</td>
                 </tr>
               </tbody>
             </table>

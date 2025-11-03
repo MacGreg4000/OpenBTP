@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { PDFGenerator } from '@/lib/pdf/pdf-generator'
 import { generateEtatAvancementHTML, EtatAvancementData } from '@/lib/pdf/templates/etat-avancement-template'
+import { roundToTwoDecimals } from '@/utils/calculs'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,22 +65,34 @@ export async function GET(
     console.log('✅ Paramètres entreprise récupérés')
 
     // Calculer les totaux
-    const totalCommandeInitiale = etatAvancement.ligne_soustraitant_etat_avancement.reduce((acc, ligne) => ({
+    const totalCommandeInitialeRaw = etatAvancement.ligne_soustraitant_etat_avancement.reduce((acc, ligne) => ({
       precedent: acc.precedent + ligne.montantPrecedent,
       actuel: acc.actuel + ligne.montantActuel,
       total: acc.total + ligne.montantTotal
     }), { precedent: 0, actuel: 0, total: 0 })
 
-    const totalAvenants = etatAvancement.avenant_soustraitant_etat_avancement.reduce((acc, avenant) => ({
+    const totalCommandeInitiale = {
+      precedent: roundToTwoDecimals(totalCommandeInitialeRaw.precedent),
+      actuel: roundToTwoDecimals(totalCommandeInitialeRaw.actuel),
+      total: roundToTwoDecimals(totalCommandeInitialeRaw.total)
+    }
+
+    const totalAvenantsRaw = etatAvancement.avenant_soustraitant_etat_avancement.reduce((acc, avenant) => ({
       precedent: acc.precedent + avenant.montantPrecedent,
       actuel: acc.actuel + avenant.montantActuel,
       total: acc.total + avenant.montantTotal
     }), { precedent: 0, actuel: 0, total: 0 })
 
+    const totalAvenants = {
+      precedent: roundToTwoDecimals(totalAvenantsRaw.precedent),
+      actuel: roundToTwoDecimals(totalAvenantsRaw.actuel),
+      total: roundToTwoDecimals(totalAvenantsRaw.total)
+    }
+
     const totalGeneral = {
-      precedent: totalCommandeInitiale.precedent + totalAvenants.precedent,
-      actuel: totalCommandeInitiale.actuel + totalAvenants.actuel,
-      total: totalCommandeInitiale.total + totalAvenants.total
+      precedent: roundToTwoDecimals(totalCommandeInitiale.precedent + totalAvenants.precedent),
+      actuel: roundToTwoDecimals(totalCommandeInitiale.actuel + totalAvenants.actuel),
+      total: roundToTwoDecimals(totalCommandeInitiale.total + totalAvenants.total)
     }
 
     // Préparer les données pour le template

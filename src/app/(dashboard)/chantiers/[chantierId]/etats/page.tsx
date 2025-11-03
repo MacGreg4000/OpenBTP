@@ -426,9 +426,9 @@ export default function ChantierEtatsPage(props: PageProps) {
                     {etat.mois && <span className="ml-2 italic">({etat.mois})</span>}
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {(etat.lignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0) + 
+                    {((etat.lignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0) + 
                       etat.avenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0)
-                    ).toLocaleString('fr-FR')} €
+                    )).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -676,7 +676,7 @@ export default function ChantierEtatsPage(props: PageProps) {
                           {new Date(st.commande.dateCommande).toLocaleDateString('fr-FR')}
                         </span>
                         <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-                          {st.commande.total.toLocaleString('fr-FR')} €
+                          {st.commande.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                         </span>
                       </div>
                       {/* Badge de statut de verrouillage */}
