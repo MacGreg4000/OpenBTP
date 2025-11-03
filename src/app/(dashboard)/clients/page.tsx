@@ -141,9 +141,11 @@ export default function ClientsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Container pour limiter la largeur */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* En-tête avec gradient */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-700 shadow-lg rounded-t-xl">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center min-w-0">
               <BuildingStorefrontIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
@@ -365,6 +367,7 @@ export default function ClientsPage() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   )

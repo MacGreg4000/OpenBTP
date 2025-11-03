@@ -236,9 +236,11 @@ export default function SousTraitantsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Container pour limiter la largeur */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* En-tête avec gradient */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg rounded-t-xl">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center min-w-0">
               <h1 className="text-xl font-bold text-white">
@@ -303,11 +305,11 @@ export default function SousTraitantsPage() {
               </Link>
             </div>
           </div>
+          </div>
         </div>
-      </div>
 
       {/* Contenu principal */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="py-8">
         {/* Barre de recherche */}
         <div className="mb-8">
         <SearchInput
@@ -607,6 +609,7 @@ export default function SousTraitantsPage() {
         onConfirm={deleteModal.onConfirm}
         isDeleting={deleteModal.isDeleting}
       />
+      </div>
     </div>
   )
 } 

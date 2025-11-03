@@ -84,7 +84,7 @@ export default function Planning() {
           
           {/* En-tête avec design uniforme */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="px-4 sm:px-6 lg:px-8 py-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center min-w-0">
                   <CalendarIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />

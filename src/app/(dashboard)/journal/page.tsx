@@ -164,9 +164,11 @@ export default function JournalPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Container pour limiter la largeur */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* En-tête avec gradient */}
+        <div className="bg-gradient-to-r from-green-600 to-emerald-700 shadow-lg rounded-t-xl">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center min-w-0">
               <CalendarDaysIcon className="h-5 w-5 text-white mr-2 flex-shrink-0" />
@@ -385,6 +387,7 @@ export default function JournalPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

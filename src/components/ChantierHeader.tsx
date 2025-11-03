@@ -119,11 +119,11 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
   ];
 
   return (
-    <div className="relative bg-gradient-to-br from-gray-50 via-blue-50/20 to-purple-50/10 dark:from-gray-900 dark:via-blue-900/5 dark:to-purple-900/5 overflow-visible">
+    <div className="relative w-full overflow-visible">
       {/* Effet de fond animé */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.08),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.03),rgba(0,0,0,0))]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-purple-50/10 dark:from-gray-900 dark:via-blue-900/5 dark:to-purple-900/5 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.08),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.03),rgba(0,0,0,0))]" />
       
-      <div className={`relative mx-auto px-4 sm:px-6 lg:px-8 overflow-visible transition-all duration-300 ${isCompact ? 'py-2' : 'py-6'}`}>
+      <div className={`relative w-full overflow-visible transition-all duration-300 ${isCompact ? 'py-2' : 'py-6'}`}>
         {/* Container flex pour titre + boutons sur la même ligne - effet flottant */}
         <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 ${isCompact ? 'p-2' : 'p-5 hover:-translate-y-1'}`}>
           

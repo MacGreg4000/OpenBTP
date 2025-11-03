@@ -76,20 +76,24 @@ export default function ChantierLayout(
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-visible" suppressHydrationWarning>
-      {/* ChantierHeader avec position sticky - toujours visible à 100% */}
-      <div className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900 overflow-visible shadow-sm">
-        <ChantierHeader 
-          chantierId={chantierId || ""}
-          chantier={{
-            nomChantier: chantier.nomChantier,
-            etatChantier: chantier.etatChantier
-          }} 
-        />
+      {/* ChantierHeader avec position sticky - toujours visible et limité à la largeur du container */}
+      <div className="sticky top-16 z-50 bg-gray-50 dark:bg-gray-900 overflow-visible shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <ChantierHeader 
+            chantierId={chantierId || ""}
+            chantier={{
+              nomChantier: chantier.nomChantier,
+              etatChantier: chantier.etatChantier
+            }} 
+          />
+        </div>
       </div>
       
       {/* Contenu de la page */}
       <div className="pt-4">
-        {children}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          {children}
+        </div>
       </div>
     </div>
   )
