@@ -95,9 +95,10 @@ export async function GET(
         chantierId: chantierEntity.chantierId
       },
       
+      // Ne pas inclure les informations client pour les PDF sous-traitants
       client: {
-        nom: chantierEntity.client.nom,
-        adresse: chantierEntity.client.adresse || undefined
+        nom: '',
+        adresse: undefined
       },
       
       soustraitant: {

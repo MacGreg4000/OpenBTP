@@ -519,8 +519,10 @@ export function generateEtatAvancementHTML(
                 <h3>🏗️ Informations du chantier</h3>
                 <p><span class="label">Nom:</span> ${data.chantier.nomChantier}</p>
                 <p><span class="label">Adresse:</span> ${data.chantier.adresseChantier}</p>
-                <p><span class="label">Client:</span> ${data.client.nom}</p>
-                ${data.client.adresse ? `<p><span class="label">Adresse client:</span> ${data.client.adresse}</p>` : ''}
+                ${type === 'client' ? `
+                    <p><span class="label">Client:</span> ${data.client.nom}</p>
+                    ${data.client.adresse ? `<p><span class="label">Adresse client:</span> ${data.client.adresse}</p>` : ''}
+                ` : ''}
             </div>
             
             <div class="info-section">
