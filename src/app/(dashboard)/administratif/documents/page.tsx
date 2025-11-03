@@ -9,10 +9,11 @@ import {
   XMarkIcon,
   EyeIcon,
   ArrowDownTrayIcon,
-  
   PlusCircleIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
+import { PageHeader } from '@/components/PageHeader'
 
 interface Document {
   id: string
@@ -224,13 +225,13 @@ export default function DocumentsAdministratifsPage() {
     const isText = ['txt', 'md', 'csv'].includes(fileType)
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          <div className="flex justify-between items-center p-4 border-b">
-            <h3 className="text-lg font-medium">{previewDocument.nom}</h3>
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b-2 border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-900/10 dark:to-indigo-900/10">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">{previewDocument.nom}</h3>
             <button
               onClick={closePreview}
-              className="text-gray-400 hover:text-gray-500"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -265,13 +266,14 @@ export default function DocumentsAdministratifsPage() {
             )}
           </div>
           
-          <div className="flex justify-end p-4 border-t">
+          <div className="flex justify-end p-4 border-t-2 border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-900/10 dark:to-indigo-900/10">
             <a
               href={previewDocument.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl text-white bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
             >
+              <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
               Télécharger
             </a>
           </div>
@@ -341,36 +343,38 @@ export default function DocumentsAdministratifsPage() {
     }
 
     return (
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg">
-          <h3 className="text-lg font-semibold mb-2 dark:text-white">{modalTitle}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Sélectionnez des tags existants ou ajoutez-en de nouveaux.</p>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-lg">
+          <div className="mb-4">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">{modalTitle}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Sélectionnez des tags existants ou ajoutez-en de nouveaux.</p>
+          </div>
 
           <div className="mb-4">
-            <h4 className="text-sm font-medium mb-2 dark:text-gray-300">Tags disponibles :</h4>
+            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Tags disponibles :</h4>
             {allTags.length > 0 ? (
-              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border dark:border-gray-600 rounded">
+              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700/30">
                 {allTags.map(tag => (
                   <button 
                     key={tag}
                     onClick={() => handleToggleTagForModal(tag)}
-                    className={`px-3 py-1 text-sm rounded-full border 
-                      ${currentTagsInModal.includes(tag) 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600'}
-                    `}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-full border-2 transition-all duration-200 ${
+                      currentTagsInModal.includes(tag) 
+                        ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-purple-500 shadow-md' 
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600'
+                    }`}
                   >
                     {tag}
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-gray-500 dark:text-gray-400">Aucun tag disponible.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 italic">Aucun tag disponible.</p>
             )}
           </div>
 
           <div className="mb-4">
-            <label htmlFor="new-tag-modal" className="block text-sm font-medium mb-1 dark:text-gray-300">Ajouter un nouveau tag :</label>
+            <label htmlFor="new-tag-modal" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ajouter un nouveau tag :</label>
             <div className="flex gap-2">
               <input 
                 type="text"
@@ -378,12 +382,12 @@ export default function DocumentsAdministratifsPage() {
                 value={newTagInput}
                 onChange={(e) => setNewTagInput(e.target.value)}
                 onKeyPress={(e) => { if (e.key === 'Enter') handleAddNewTagToModal(); }}
-                className="flex-grow mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200"
+                className="flex-grow block w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200 transition-all duration-200"
                 placeholder="Nom du tag"
               />
               <button 
                 onClick={handleAddNewTagToModal}
-                className="mt-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm inline-flex items-center"
+                className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 text-sm font-semibold inline-flex items-center shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <PlusCircleIcon className="h-5 w-5 mr-1" /> Ajouter
               </button>
@@ -391,35 +395,35 @@ export default function DocumentsAdministratifsPage() {
           </div>
 
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2 dark:text-gray-300">Tags pour ce document :</h4>
+            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Tags pour ce document :</h4>
             {currentTagsInModal.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-2 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border-2 border-purple-200/50 dark:border-purple-700/50">
                 {currentTagsInModal.map(tag => (
-                  <span key={tag} className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full flex items-center">
+                  <span key={tag} className="px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full flex items-center shadow-md">
                     {tag}
-                    <button onClick={() => handleToggleTagForModal(tag)} className="ml-1 text-blue-600 hover:text-blue-800">
-                      <XMarkIcon className="h-3 w-3"/>
+                    <button onClick={() => handleToggleTagForModal(tag)} className="ml-2 text-white hover:text-red-200 transition-colors">
+                      <XMarkIcon className="h-3.5 w-3.5"/>
                     </button>
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-gray-500 dark:text-gray-400">Aucun tag sélectionné.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 italic">Aucun tag sélectionné.</p>
             )}
           </div>
 
           <div className="flex justify-end gap-3">
             <button 
               onClick={handleCloseModal}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+              className="px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200"
             >
               Annuler
             </button>
             <button 
               onClick={handleSubmitModal}
               disabled={uploading}
-              className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                uploading ? 'opacity-50 cursor-not-allowed bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+              className={`px-4 py-2.5 text-sm font-semibold text-white rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 ${
+                uploading ? 'opacity-50 cursor-not-allowed bg-purple-400' : 'bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800'
               }`}
             >
               {uploading ? (isEditing ? 'Mise à jour...' : 'Upload en cours...') : (isEditing ? 'Mettre à jour les tags' : 'Confirmer et Uploader')}
@@ -430,159 +434,228 @@ export default function DocumentsAdministratifsPage() {
     );
   };
 
-  if (loading) {
+  // Calculer les statistiques
+  const totalDocuments = documents.length
+  const totalSize = documents.reduce((sum, doc) => sum + doc.taille, 0)
+  const uniqueTags = new Set(documents.flatMap(doc => doc.tags || [])).size
+
+  // Stats cards pour le header
+  const statsCards = !loading ? (
+    <div className="flex items-center gap-2">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <DocumentTextIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Documents</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{totalDocuments}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <FolderIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Tags</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{uniqueTags}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+            <ArrowUpTrayIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Taille</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{formatFileSize(totalSize)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : undefined
+
+  if (loading && documents.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-indigo-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+        <PageHeader
+          title="Documents Administratifs"
+          subtitle="Gérez les documents administratifs de l'entreprise"
+          icon={DocumentTextIcon}
+          badgeColor="from-purple-600 via-indigo-600 to-pink-700"
+          gradientColor="from-purple-600/10 via-indigo-600/10 to-pink-700/10"
+        />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-[1600px] mx-auto">
-      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-            <FolderIcon className="h-8 w-8 mr-2 text-blue-500" />
-            Documents administratifs
-          </h1>
-          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-            Gérez les documents administratifs de l'entreprise.
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-indigo-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Documents Administratifs"
+        subtitle="Gérez les documents administratifs de l'entreprise"
+        icon={DocumentTextIcon}
+        badgeColor="from-purple-600 via-indigo-600 to-pink-700"
+        gradientColor="from-purple-600/10 via-indigo-600/10 to-pink-700/10"
+        stats={statsCards}
+        actions={
+          <div className="relative">
+            <input
+              type="file"
+              id="file-upload-input"
+              className="hidden"
+              onChange={handleFileSelectedForUpload}
+              disabled={uploading}
+            />
+            <label
+              htmlFor="file-upload-input"
+              className={`inline-flex items-center px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold cursor-pointer ${
+                uploading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <ArrowUpTrayIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Ajouter un document</span>
+              <span className="sm:hidden">Ajouter</span>
+            </label>
+          </div>
+        }
+      />
 
-        <div className="relative">
-          <input
-            type="file"
-            id="file-upload-input"
-            className="hidden"
-            onChange={handleFileSelectedForUpload}
-            disabled={uploading}
-          />
-          <label
-            htmlFor="file-upload-input"
-            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer ${
-              uploading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-            Ajouter un document
-          </label>
-        </div>
-      </div>
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <label htmlFor="search-doc" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Rechercher par nom:
-          </label>
-          <input 
-            type="text"
-            id="search-doc"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200"
-            placeholder="Nom du document..."
-          />
-        </div>
-        <div className="flex-1">
-          <label htmlFor="tag-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Filtrer par tag:
-          </label>
-          <select 
-            id="tag-filter"
-            value={selectedTagFilter}
-            onChange={(e) => setSelectedTagFilter(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200"
-          >
-            <option value="">Tous les tags</option>
-            {allTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 bg-red-50 p-4 rounded-md">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">{error}</h3>
-            </div>
+        {/* Filtres de recherche */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label htmlFor="search-doc" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Rechercher par nom
+            </label>
+            <input 
+              type="text"
+              id="search-doc"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200 transition-all duration-200"
+              placeholder="Nom du document..."
+            />
+          </div>
+          <div className="flex-1">
+            <label htmlFor="tag-filter" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Filtrer par tag
+            </label>
+            <select 
+              id="tag-filter"
+              value={selectedTagFilter}
+              onChange={(e) => setSelectedTagFilter(e.target.value)}
+              className="block w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200 transition-all duration-200"
+            >
+              <option value="">Tous les tags</option>
+              {allTags.map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
           </div>
         </div>
-      )}
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {documents.length === 0 && !loading ? (
-            <li className="px-4 py-8 text-center text-gray-500">
-              Aucun document administratif disponible {selectedTagFilter && `avec le tag "${selectedTagFilter}"` } {searchTerm && `contenant "${searchTerm}"` }.
-            </li>
-          ) : (
-            documents.map((doc) => (
-              <li key={doc.id} className="px-4 py-4 hover:bg-gray-50 dark:hover:bg-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <DocumentIcon className="h-6 w-6 text-gray-400 dark:text-gray-500 mr-3" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{doc.nom}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatFileSize(doc.taille)} • {new Date(doc.dateUpload).toLocaleDateString('fr-FR')}
-                        {doc.uploadedBy && <span className="italic"> • Par: {doc.uploadedBy}</span>}
-                      </p>
-                      {doc.tags && doc.tags.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {doc.tags.map(tag => (
-                            <span key={tag} className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
-                              {tag}
-                            </span>
-                          ))}
+        {/* Message d'erreur */}
+        {error && (
+          <div className="mb-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4 shadow-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">{error}</h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Liste des documents */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          <ul className="divide-y divide-gray-200/50 dark:divide-gray-700/50">
+            {documents.length === 0 && !loading ? (
+              <li className="px-6 py-12 text-center">
+                <FolderIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 font-medium">
+                  Aucun document administratif disponible {selectedTagFilter && `avec le tag "${selectedTagFilter}"`} {searchTerm && `contenant "${searchTerm}"`}.
+                </p>
+              </li>
+            ) : (
+              documents.map((doc) => (
+                <li key={doc.id} className="px-6 py-4 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-indigo-50/50 dark:hover:from-purple-900/10 dark:hover:to-indigo-900/10 transition-all duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="flex-shrink-0 mr-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 dark:from-purple-500/30 dark:to-indigo-500/30 rounded-xl flex items-center justify-center">
+                          <DocumentIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                         </div>
-                      )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{doc.nom}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {formatFileSize(doc.taille)} • {new Date(doc.dateUpload).toLocaleDateString('fr-FR')}
+                          {doc.uploadedBy && <span className="italic"> • Par: {doc.uploadedBy}</span>}
+                        </p>
+                        {doc.tags && doc.tags.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {doc.tags.map(tag => (
+                              <span key={tag} className="px-2.5 py-0.5 text-xs font-semibold bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 text-purple-700 dark:text-purple-300 rounded-full border border-purple-200/50 dark:border-purple-700/50">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={() => openEditTagsModal(doc)}
+                        className="p-2 rounded-lg text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200"
+                        title="Modifier les tags"
+                      >
+                        <PencilSquareIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handlePreview(doc)}
+                        className="p-2 rounded-lg text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200"
+                        title="Prévisualiser"
+                      >
+                        <EyeIcon className="h-5 w-5" />
+                      </button>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
+                        title="Télécharger"
+                      >
+                        <ArrowDownTrayIcon className="h-5 w-5" />
+                      </a>
+                      <button
+                        onClick={() => handleDelete(doc.id)}
+                        className="p-2 rounded-lg text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                        title="Supprimer"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => openEditTagsModal(doc)}
-                      className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500"
-                      title="Modifier les tags"
-                    >
-                      <PencilSquareIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => handlePreview(doc)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Prévisualiser"
-                    >
-                      <EyeIcon className="h-5 w-5" />
-                    </button>
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Télécharger"
-                    >
-                      <ArrowDownTrayIcon className="h-5 w-5" />
-                    </a>
-                    <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
       </div>
 
       <TagManagementModal />

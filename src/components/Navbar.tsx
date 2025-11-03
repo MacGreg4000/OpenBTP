@@ -77,7 +77,7 @@ export function Navbar() {
     {
       name: 'Documents',
       items: [
-        { name: 'Administratifs', href: '/administratif', icon: DocumentTextIcon },
+        { name: 'Administratifs', href: '/administratif/documents', icon: DocumentTextIcon },
         { name: 'Bons de régie', href: '/bons-regie', icon: ClipboardDocumentListIcon },
         { name: 'Choix client', href: '/choix-clients', icon: SwatchIcon },
         { name: 'SAV', href: '/sav', icon: DocumentDuplicateIcon },
@@ -113,7 +113,7 @@ export function Navbar() {
   return (
     <>
       {/* Navbar principale */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200/20 dark:border-gray-700/20">
+      <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/30 dark:border-gray-700/30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             
@@ -122,16 +122,16 @@ export function Navbar() {
               {/* Logo avec gradient ou logo personnalisé */}
               <Link 
                 href="/dashboard" 
-                className="flex items-center space-x-3 group"
+                className="flex items-center space-x-3 group relative"
               >
                 {companyLogo && logoLoadStatus === 'loaded' ? (
-                  <div className="relative w-10 h-10 flex-shrink-0">
+                  <div className="relative w-10 h-10 flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-gray-200/50 dark:ring-gray-700/50 group-hover:ring-blue-500/30 transition-all duration-300">
                     <Image
                       src={companyLogo.startsWith('data:') ? companyLogo : companyLogo}
                       alt="Logo entreprise"
                       width={40}
                       height={40}
-                      className="object-contain rounded-lg"
+                      className="object-contain"
                       priority
                       onLoad={() => setLogoLoadStatus('loaded')}
                       onError={() => setLogoLoadStatus('none')}
@@ -139,75 +139,90 @@ export function Navbar() {
                   </div>
                 ) : logoLoadStatus === 'loading' ? (
                   <div className="relative w-10 h-10 flex-shrink-0">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                    <div className="relative bg-gradient-to-r from-blue-600 to-cyan-500 p-2 rounded-lg">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-2 rounded-xl shadow-lg ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-300">
                       <HomeIcon className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 ) : (
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                    <div className="relative bg-gradient-to-r from-blue-600 to-cyan-500 p-2 rounded-lg">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-2 rounded-xl shadow-lg ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 group-hover:scale-105 transition-all duration-300">
                       <HomeIcon className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 )}
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                <span className="text-xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-indigo-700 group-hover:to-purple-700 transition-all duration-300">
                   OpenBTP
                 </span>
               </Link>
             </div>
 
             {/* Navigation desktop avec dropdowns */}
-            <div className="hidden lg:flex items-center space-x-1">
+            <div className="hidden lg:flex items-center space-x-2">
               {navigationGroups.map((group) => (
                 <Menu as="div" key={group.name} className="relative z-[100]">
-                  <Menu.Button className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
-                    getActiveGroup() === group.name
-                      ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300 shadow-sm'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
-                  }`}>
-                    {group.name}
-                    <ChevronDownIcon className="ml-1 h-4 w-4" />
-                  </Menu.Button>
-                  
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-200"
-                    enterFrom="opacity-0 translate-y-1"
-                    enterTo="opacity-100 translate-y-0"
-                    leave="transition ease-in duration-150"
-                    leaveFrom="opacity-100 translate-y-0"
-                    leaveTo="opacity-0 translate-y-1"
-                  >
-                    <Menu.Items className="absolute left-0 mt-2 w-56 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl shadow-lg border border-gray-200/20 dark:border-gray-700/20 divide-y divide-gray-100/20 dark:divide-gray-700/20 focus:outline-none z-[100]">
-                      <div className="p-1">
-                        {group.items.map((item) => (
-                          <Menu.Item key={item.name}>
-                            {({ active }) => (
-                              <Link
-                                href={item.href}
-                                className={`${
-                                  active || isActive(item.href)
-                                    ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300'
-                                    : 'text-gray-700 dark:text-gray-300'
-                                } group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200`}
-                              >
-                                <item.icon className="h-5 w-5 mr-3" />
-                                {item.name}
-                              </Link>
-                            )}
-                          </Menu.Item>
-                        ))}
-                      </div>
-                    </Menu.Items>
-                  </Transition>
+                  {({ open }) => (
+                    <>
+                      <Menu.Button className={`group inline-flex items-center px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 relative ${
+                        getActiveGroup() === group.name
+                          ? 'bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 text-blue-700 dark:text-blue-400 shadow-md'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                      }`}>
+                        {getActiveGroup() === group.name && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-xl blur-sm"></div>
+                        )}
+                        <span className="relative">{group.name}</span>
+                        <ChevronDownIcon className={`ml-2 h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+                      </Menu.Button>
+                      
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-200"
+                        enterFrom="opacity-0 translate-y-2 scale-95"
+                        enterTo="opacity-100 translate-y-0 scale-100"
+                        leave="transition ease-in duration-150"
+                        leaveFrom="opacity-100 translate-y-0 scale-100"
+                        leaveTo="opacity-0 translate-y-2 scale-95"
+                      >
+                        <Menu.Items className="absolute left-0 mt-3 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 divide-y divide-gray-100/30 dark:divide-gray-700/30 focus:outline-none z-[100] overflow-hidden">
+                          {/* Effet de brillance en arrière-plan */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 pointer-events-none"></div>
+                          <div className="relative p-2">
+                            {group.items.map((item) => (
+                              <Menu.Item key={item.name}>
+                                {({ active }) => (
+                                  <Link
+                                    href={item.href}
+                                    className={`${
+                                      active || isActive(item.href)
+                                        ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                                    } group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 relative`}
+                                  >
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
+                                      active || isActive(item.href)
+                                        ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30'
+                                    }`}>
+                                      <item.icon className="h-4 w-4" />
+                                    </div>
+                                    <span className="relative">{item.name}</span>
+                                  </Link>
+                                )}
+                              </Menu.Item>
+                            ))}
+                          </div>
+                        </Menu.Items>
+                      </Transition>
+                    </>
+                  )}
                 </Menu>
               ))}
             </div>
 
             {/* Actions à droite */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               {session ? (
                 <>
 
@@ -215,90 +230,140 @@ export function Navbar() {
                   {session?.user?.role && ['ADMIN', 'MANAGER'].includes(session.user.role as string) && (
                     <Link
                       href="/utilisateurs"
-                      className={`p-2 rounded-lg transition-all duration-300 ${
+                      className={`relative p-2.5 rounded-xl transition-all duration-300 group ${
                         isActive('/utilisateurs')
-                          ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/50 dark:hover:bg-gray-800/50'
+                          ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                       }`}
                     >
-                      <UserCircleIcon className="h-5 w-5" />
+                      {isActive('/utilisateurs') && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-xl blur-sm"></div>
+                      )}
+                      <UserCircleIcon className="h-5 w-5 relative z-10" />
                     </Link>
                   )}
 
                   {/* Notifications */}
-                  <NotificationBell />
+                  <div className="relative">
+                    <NotificationBell />
+                  </div>
 
                   {/* Toggle thème */}
                   <ThemeToggle />
 
                   {/* Menu utilisateur */}
                   <Menu as="div" className="relative z-[100]">
-                    <Menu.Button className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-300 group">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                        <div className="relative w-8 h-8 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                          {session.user?.email?.[0]?.toUpperCase() || 'U'}
-                        </div>
-                      </div>
-                      <div className="hidden sm:block text-left">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {session.user?.name || 'Utilisateur'}
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {session.user?.email}
-                        </p>
-                      </div>
-                      <ChevronDownIcon className="hidden sm:block h-4 w-4 text-gray-400" />
-                    </Menu.Button>
-                    
-                    <Transition
-                      as={Fragment}
-                      enter="transition ease-out duration-200"
-                      enterFrom="opacity-0 translate-y-1"
-                      enterTo="opacity-100 translate-y-0"
-                      leave="transition ease-in duration-150"
-                      leaveFrom="opacity-100 translate-y-0"
-                      leaveTo="opacity-0 translate-y-1"
-                    >
-                      <Menu.Items className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl shadow-lg border border-gray-200/20 dark:border-gray-700/20 divide-y divide-gray-100/20 dark:divide-gray-700/20 focus:outline-none z-[100]">
-                        <div className="p-1">
-                          <Menu.Item>
-                            {({ active }) => (
-                              <Link
-                                href="/configuration"
-                                className={`${
-                                  active ? 'bg-gray-50/50 dark:bg-gray-700/50' : ''
-                                } group flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-200`}
-                              >
-                                <Cog6ToothIcon className="h-5 w-5 mr-3" />
-                                Configuration
-                              </Link>
-                            )}
-                          </Menu.Item>
-                        </div>
-                        <div className="p-1">
-                          <Menu.Item>
-                            {({ active }) => (
-                              <button
-                                onClick={() => signOut({ callbackUrl: '/' })}
-                                className={`${
-                                  active ? 'bg-red-50/50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-300'
-                                } group flex w-full items-center px-3 py-2 text-sm rounded-lg transition-all duration-200`}
-                              >
-                                <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
-                                Déconnexion
-                              </button>
-                            )}
-                          </Menu.Item>
-                        </div>
-                      </Menu.Items>
-                    </Transition>
+                    {({ open }) => (
+                      <>
+                        <Menu.Button className="flex items-center space-x-3 p-1.5 rounded-xl hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-all duration-300 group relative">
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-full blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                            <div className="relative w-9 h-9 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg ring-2 ring-white/20 dark:ring-gray-800/20 group-hover:ring-blue-500/30 transition-all duration-300 group-hover:scale-105">
+                              {session.user?.email?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                          </div>
+                          <div className="hidden sm:block text-left">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {session.user?.name || 'Utilisateur'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {session.user?.email}
+                            </p>
+                          </div>
+                          <ChevronDownIcon className={`hidden sm:block h-4 w-4 text-gray-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+                        </Menu.Button>
+                        
+                        <Transition
+                          as={Fragment}
+                          enter="transition ease-out duration-200"
+                          enterFrom="opacity-0 translate-y-2 scale-95"
+                          enterTo="opacity-100 translate-y-0 scale-100"
+                          leave="transition ease-in duration-150"
+                          leaveFrom="opacity-100 translate-y-0 scale-100"
+                          leaveTo="opacity-0 translate-y-2 scale-95"
+                        >
+                          <Menu.Items className="absolute right-0 mt-3 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 divide-y divide-gray-100/30 dark:divide-gray-700/30 focus:outline-none z-[100] overflow-hidden">
+                            {/* Effet de brillance en arrière-plan */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 pointer-events-none"></div>
+                            
+                            {/* Informations utilisateur */}
+                            <div className="p-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10">
+                              <div className="flex items-center space-x-3">
+                                <div className="relative">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-full blur-md opacity-30"></div>
+                                  <div className="relative w-12 h-12 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg ring-2 ring-white/20 dark:ring-gray-800/20">
+                                    {session.user?.email?.[0]?.toUpperCase() || 'U'}
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                    {session.user?.name || 'Utilisateur'}
+                                  </p>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                    {session.user?.email}
+                                  </p>
+                                  {session.user?.role && (
+                                    <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                      {session.user.role}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Actions */}
+                            <div className="p-2">
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <Link
+                                    href="/configuration"
+                                    className={`${
+                                      active ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                                    } group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200`}
+                                  >
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
+                                      active
+                                        ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30'
+                                    }`}>
+                                      <Cog6ToothIcon className="h-4 w-4" />
+                                    </div>
+                                    Configuration
+                                  </Link>
+                                )}
+                              </Menu.Item>
+                            </div>
+                            <div className="p-2">
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => signOut({ callbackUrl: '/' })}
+                                    className={`${
+                                      active ? 'bg-red-50/50 dark:bg-red-900/20 text-red-700 dark:text-red-300 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                                    } group flex w-full items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200`}
+                                  >
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
+                                      active
+                                        ? 'bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-red-500 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/30'
+                                    }`}>
+                                      <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                                    </div>
+                                    Déconnexion
+                                  </button>
+                                )}
+                              </Menu.Item>
+                            </div>
+                          </Menu.Items>
+                        </Transition>
+                      </>
+                    )}
                   </Menu>
                 </>
               ) : (
                 <Link
                   href="/login"
-                  className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-cyan-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   Connexion
                 </Link>
@@ -307,15 +372,16 @@ export function Navbar() {
               {/* Bouton menu mobile */}
               <button
                 type="button"
-                className="lg:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-300"
+                className="lg:hidden p-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-all duration-300 relative group"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 <span className="sr-only">Ouvrir le menu</span>
                 {mobileMenuOpen ? (
-                  <XMarkIcon className="h-6 w-6" />
+                  <XMarkIcon className="h-6 w-6 relative z-10" />
                 ) : (
-                  <Bars3Icon className="h-6 w-6" />
+                  <Bars3Icon className="h-6 w-6 relative z-10" />
                 )}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             </div>
           </div>
@@ -334,38 +400,57 @@ export function Navbar() {
         leaveTo="opacity-0 translate-x-full"
       >
         <div className="lg:hidden fixed inset-0 z-[100] flex">
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative ml-auto w-80 h-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg shadow-xl border-l border-gray-200/20 dark:border-gray-700/20">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-md" onClick={() => setMobileMenuOpen(false)} />
+          <div className="relative ml-auto w-80 h-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl border-l border-gray-200/50 dark:border-gray-700/50">
             <div className="h-full overflow-y-auto p-6">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
+              {/* Effet de brillance en arrière-plan */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 pointer-events-none"></div>
+              
+              <div className="relative flex items-center justify-between mb-8 pb-4 border-b border-gray-200/30 dark:border-gray-700/30">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-xl blur-md opacity-30"></div>
+                    <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-2 rounded-xl shadow-lg">
+                      <HomeIcon className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Menu
+                  </h2>
+                </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-all duration-300"
                 >
                   <XMarkIcon className="h-6 w-6" />
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="relative space-y-6">
                 {navigationGroups.map((group) => (
                   <div key={group.name}>
-                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
                       {group.name}
                     </h3>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {group.items.map((item) => (
                         <Link
                           key={item.name}
                           href={item.href}
                           onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                          className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                             isActive(item.href)
-                              ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300'
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/50'
+                              ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                           }`}
                         >
-                          <item.icon className="h-5 w-5 mr-3" />
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
+                            isActive(item.href)
+                              ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                          }`}>
+                            <item.icon className="h-4 w-4" />
+                          </div>
                           {item.name}
                         </Link>
                       ))}
@@ -374,18 +459,24 @@ export function Navbar() {
                 ))}
 
                 {/* Actions supplémentaires pour mobile */}
-                <div className="pt-6 border-t border-gray-200/20 dark:border-gray-700/20">
-                  <div className="space-y-1">
+                <div className="relative pt-6 mt-6 border-t border-gray-200/30 dark:border-gray-700/30">
+                  <div className="space-y-1.5">
                     <Link
                       href="/configuration"
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                         isActive('/configuration')
-                          ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/50'
+                          ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                       }`}
                     >
-                      <Cog6ToothIcon className="h-5 w-5 mr-3" />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
+                        isActive('/configuration')
+                          ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      }`}>
+                        <Cog6ToothIcon className="h-4 w-4" />
+                      </div>
                       Configuration
                     </Link>
 
@@ -393,22 +484,30 @@ export function Navbar() {
                       <Link
                         href="/utilisateurs"
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                        className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                           isActive('/utilisateurs')
-                            ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/50'
+                            ? 'bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 text-blue-700 dark:text-blue-400 shadow-md'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
                         }`}
                       >
-                        <UserCircleIcon className="h-5 w-5 mr-3" />
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
+                          isActive('/utilisateurs')
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                        }`}>
+                          <UserCircleIcon className="h-4 w-4" />
+                        </div>
                         Utilisateurs
                       </Link>
                     )}
 
                     <button
                       onClick={() => signOut({ callbackUrl: '/' })}
-                      className="flex items-center w-full px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
+                      className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
                     >
-                      <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                        <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                      </div>
                       Déconnexion
                     </button>
                   </div>
