@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { PencilSquareIcon } from '@heroicons/react/24/outline'
 import { SearchableSelect } from '@/components/SearchableSelect'
+import { PPSSUpdateModal } from '@/components/modals/PPSSUpdateModal'
 
 interface ChantierData {
   id?: string;
@@ -67,6 +68,12 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
   })
   const [saving, setSaving] = useState(false)
   const isInitialLoad = useRef(true)
+  const [showPPSSModal, setShowPPSSModal] = useState(false)
+  const [ppssModalData, setPpssModalData] = useState<{
+    success: boolean
+    message: string
+    warning?: string
+  } | null>(null)
 
   const fetchContactsForClient = useCallback(async (clientId: string, preserveContactId?: string) => {
     if (!clientId) {
@@ -224,13 +231,20 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
       if (result.ppssError) {
         console.warn('Problème avec la génération du PPSS:', result.ppssError);
         // Afficher un message d'avertissement mais continuer
-        alert(`Chantier mis à jour avec succès !\n\nAvertissement: ${result.ppssError}`);
+        setPpssModalData({
+          success: true,
+          message: 'Chantier mis à jour avec succès !',
+          warning: result.ppssError
+        })
+        setShowPPSSModal(true)
       } else {
         // Tout s'est bien passé, y compris le PPSS
-        alert('Chantier mis à jour avec succès ! Le PPSS a été automatiquement régénéré.');
+        setPpssModalData({
+          success: true,
+          message: 'Le PPSS a été automatiquement régénéré.'
+        })
+        setShowPPSSModal(true)
       }
-
-      router.push('/chantiers')
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error)
       setError(error instanceof Error ? error.message : 'Erreur lors de la mise à jour du chantier')
@@ -520,6 +534,21 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmation PPSS */}
+      {ppssModalData && (
+        <PPSSUpdateModal
+          isOpen={showPPSSModal}
+          onClose={() => {
+            setShowPPSSModal(false)
+            setPpssModalData(null)
+            router.push('/chantiers')
+          }}
+          success={ppssModalData.success}
+          message={ppssModalData.message}
+          warning={ppssModalData.warning}
+        />
+      )}
     </div>
   )
 } 
