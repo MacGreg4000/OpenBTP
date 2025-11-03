@@ -157,7 +157,7 @@ export class PDFGenerator {
       // Options par défaut
       const pdfOptions: PuppeteerPDFOptions = {
         format: options.format || 'A4',
-        landscape: options.orientation === 'landscape' || true,
+        landscape: options.orientation === 'landscape',
         printBackground: true,
         margin: options.margins || {
           top: '15mm',
