@@ -113,7 +113,7 @@ export function Navbar() {
   return (
     <>
       {/* Navbar principale */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200/20 dark:border-gray-700/20">
+      <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200/20 dark:border-gray-700/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             
@@ -161,7 +161,7 @@ export function Navbar() {
             {/* Navigation desktop avec dropdowns */}
             <div className="hidden lg:flex items-center space-x-1">
               {navigationGroups.map((group) => (
-                <Menu as="div" key={group.name} className="relative">
+                <Menu as="div" key={group.name} className="relative z-[100]">
                   <Menu.Button className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
                     getActiveGroup() === group.name
                       ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-300 shadow-sm'
@@ -180,7 +180,7 @@ export function Navbar() {
                     leaveFrom="opacity-100 translate-y-0"
                     leaveTo="opacity-0 translate-y-1"
                   >
-                    <Menu.Items className="absolute left-0 mt-2 w-56 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl shadow-lg border border-gray-200/20 dark:border-gray-700/20 divide-y divide-gray-100/20 dark:divide-gray-700/20 focus:outline-none">
+                    <Menu.Items className="absolute left-0 mt-2 w-56 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl shadow-lg border border-gray-200/20 dark:border-gray-700/20 divide-y divide-gray-100/20 dark:divide-gray-700/20 focus:outline-none z-[100]">
                       <div className="p-1">
                         {group.items.map((item) => (
                           <Menu.Item key={item.name}>
@@ -232,7 +232,7 @@ export function Navbar() {
                   <ThemeToggle />
 
                   {/* Menu utilisateur */}
-                  <Menu as="div" className="relative">
+                  <Menu as="div" className="relative z-[100]">
                     <Menu.Button className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-300 group">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
@@ -260,7 +260,7 @@ export function Navbar() {
                       leaveFrom="opacity-100 translate-y-0"
                       leaveTo="opacity-0 translate-y-1"
                     >
-                      <Menu.Items className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl shadow-lg border border-gray-200/20 dark:border-gray-700/20 divide-y divide-gray-100/20 dark:divide-gray-700/20 focus:outline-none">
+                      <Menu.Items className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl shadow-lg border border-gray-200/20 dark:border-gray-700/20 divide-y divide-gray-100/20 dark:divide-gray-700/20 focus:outline-none z-[100]">
                         <div className="p-1">
                           <Menu.Item>
                             {({ active }) => (
@@ -333,7 +333,7 @@ export function Navbar() {
         leaveFrom="opacity-100 translate-x-0"
         leaveTo="opacity-0 translate-x-full"
       >
-        <div className="lg:hidden fixed inset-0 z-40 flex">
+        <div className="lg:hidden fixed inset-0 z-[100] flex">
           <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
           <div className="relative ml-auto w-80 h-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg shadow-xl border-l border-gray-200/20 dark:border-gray-700/20">
             <div className="h-full overflow-y-auto p-6">

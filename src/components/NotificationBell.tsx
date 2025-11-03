@@ -144,7 +144,7 @@ export function NotificationBell() {
   }
 
   return (
-    <Menu as="div" className="relative">
+    <Menu as="div" className="relative z-[100]">
       {() => (
           <>
             <Menu.Button className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
@@ -172,7 +172,7 @@ export function NotificationBell() {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 mt-2 w-96 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200 dark:border-gray-700 max-h-[600px] flex flex-col overflow-hidden">
+              <Menu.Items className="absolute right-0 mt-2 w-96 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200 dark:border-gray-700 max-h-[600px] flex flex-col overflow-hidden z-[100]">
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
                   <div className="flex items-center justify-between">
