@@ -90,16 +90,41 @@ model soustraitant {
 }
 
 model contrat {
-  id             String       @id @default(cuid())
-  soustraitantId String
-  url            String
-  dateGeneration DateTime     @default(now())
-  dateSignature  DateTime?
-  estSigne       Boolean      @default(false)
-  token          String?      @unique
-  soustraitant   soustraitant @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
+  id                  String       @id @default(cuid())
+  soustraitantId      String
+  url                 String
+  dateGeneration      DateTime     @default(now())
+  dateSignature       DateTime?
+  estSigne            Boolean      @default(false)
+  token               String?      @unique
+  // Champs d'audit pour renforcer la valeur juridique
+  signatureIP         String?      // Adresse IP du signataire
+  signatureUserAgent  String?      @db.Text // User Agent du navigateur
+  signatureConsentement Boolean?   // Confirmation du consentement explicite
+  signatureIdentiteConfirmee Boolean? // Confirmation de l'identité du signataire
+  signatureHorodatageCertifie DateTime? // Horodatage certifié de la signature
+  soustraitant        soustraitant @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
+  auditLogs           ContratSignatureAudit[]
 
   @@index([soustraitantId])
+}
+
+// Journal d'audit complet pour chaque signature
+model ContratSignatureAudit {
+  id                  String   @id @default(cuid())
+  contratId           String
+  contrat             contrat  @relation(fields: [contratId], references: [id], onDelete: Cascade)
+  action              String   // "SIGNATURE", "CONSULTATION", "CONSENTEMENT"
+  ipAddress           String?  // Adresse IP
+  userAgent           String?  @db.Text // User Agent
+  timestamp           DateTime @default(now()) // Horodatage de l'action
+  details             String?  @db.Text // Détails supplémentaires en JSON
+  emailSignataire     String?  // Email du signataire
+  nomSignataire       String?  // Nom du signataire
+
+  @@index([contratId])
+  @@index([timestamp])
+  @@map("contrat_signature_audit")
 }
 
 model FicheTechnique {
@@ -237,6 +262,7 @@ model companysettings {
   email         String
   tva           String
   logo          String?
+  signature     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime
   emailFrom     String?

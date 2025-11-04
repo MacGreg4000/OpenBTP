@@ -18,6 +18,7 @@ interface CompanySettings {
   iban: string
   tva: string
   logo: string // URL du logo stocké
+  signature: string // URL de la signature stockée
   emailHost: string
   emailPort: string
   emailSecure: boolean
@@ -43,6 +44,7 @@ export default function ConfigurationPage() {
     iban: '',
     tva: '',
     logo: '',
+    signature: '',
     emailHost: '',
     emailPort: '',
     emailSecure: false,
@@ -116,6 +118,28 @@ export default function ConfigurationPage() {
       }
     } catch (error) {
       console.error('Erreur upload logo:', error)
+    }
+  }
+
+  const handleSignatureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('signature', file)
+
+    try {
+      const res = await fetch('/api/settings/signature', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (res.ok) {
+        const { url } = await res.json()
+        setSettings(prev => ({ ...prev, signature: url }))
+      }
+    } catch (error) {
+      console.error('Erreur upload signature:', error)
     }
   }
 
@@ -280,6 +304,27 @@ export default function ConfigurationPage() {
                 src={settings.logo} 
                 alt="Logo de l'entreprise" 
                 className="mt-2 h-20 object-contain"
+              />
+              </>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Signature
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleSignatureChange}
+              className="mt-1 block w-full"
+            />
+            {settings.signature && (
+              <>
+              <img 
+                src={settings.signature} 
+                alt="Signature de l'entreprise" 
+                className="mt-2 h-20 object-contain border border-gray-300 dark:border-gray-600"
               />
               </>
             )}

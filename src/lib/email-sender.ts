@@ -71,7 +71,14 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
     const fromName = settings?.emailFromName || process.env.EMAIL_FROM_NAME || 'Secotech'
     
     // Préparer les options d'envoi
-    const mailOptions: any = {
+    const mailOptions: {
+      from: string
+      to: string
+      subject: string
+      html: string
+      cc?: string
+      bcc?: string
+    } = {
       from: `"${fromName}" <${fromEmail}>`,
       to,
       subject,
@@ -120,7 +127,15 @@ export async function sendEmailWithAttachment(
     const fromName = settings?.emailFromName || process.env.EMAIL_FROM_NAME || 'Secotech'
     
     // Préparer les options d'envoi
-    const mailOptions: any = {
+    const mailOptions: {
+      from: string
+      to: string
+      subject: string
+      html: string
+      attachments?: Array<{ filename: string; content: Buffer; contentType?: string }>
+      cc?: string
+      bcc?: string
+    } = {
       from: `"${fromName}" <${fromEmail}>`,
       to: Array.isArray(to) ? to.join(', ') : to,
       subject,

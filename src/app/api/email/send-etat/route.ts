@@ -242,7 +242,15 @@ export async function POST(request: Request) {
     });
 
     // 6. Envoyer l'e-mail
-    const mailOptions: any = {
+    const mailOptions: {
+      from: string
+      to: string
+      subject: string
+      html: string
+      attachments: Array<{ filename: string; content: Buffer; contentType: string }>
+      cc?: string
+      bcc?: string
+    } = {
       from: `"${companySettingsRaw.name || 'Votre Entreprise'}" <${companySettingsRaw.emailFrom || companySettingsRaw.emailUser}>`,
       to: recipientEmail,
       subject: subject,

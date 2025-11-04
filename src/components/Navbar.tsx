@@ -22,7 +22,8 @@ import {
   DocumentDuplicateIcon,
   SwatchIcon,
   CalendarDaysIcon,
-  TruckIcon
+  TruckIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
@@ -81,6 +82,7 @@ export function Navbar() {
         { name: 'Bons de régie', href: '/bons-regie', icon: ClipboardDocumentListIcon },
         { name: 'Choix client', href: '/choix-clients', icon: SwatchIcon },
         { name: 'SAV', href: '/sav', icon: DocumentDuplicateIcon },
+        { name: 'Métrés soumis', href: '/metres', icon: ChartBarIcon },
       ]
     },
     {

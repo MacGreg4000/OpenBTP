@@ -168,10 +168,42 @@ export class NotificationService {
 
     let content = template
 
+    // Mapping des clés camelCase vers leur équivalent avec underscore pour les templates
+    const keyMapping: Record<string, string> = {
+      chantierId: 'CHANTIER_ID',
+      chantierNom: 'CHANTIER_NOM',
+      metreId: 'METRE_ID',
+      soustraitantId: 'SOUSTRAITANT_ID',
+      soustraitantNom: 'SOUSTRAITANT_NOM',
+      userId: 'USER_ID',
+      userName: 'USER_NAME',
+      remarqueId: 'REMARQUE_ID',
+      ticketSAVId: 'TICKET_SAV_ID',
+      documentId: 'DOCUMENT_ID',
+      montant: 'MONTANT',
+      date: 'DATE',
+      nom: 'NOM',
+      titre: 'TITRE',
+      message: 'MESSAGE',
+      priorite: 'PRIORITE',
+      num: 'NUM',
+      nb: 'NB',
+      uploader: 'UPLOADER',
+      client: 'CLIENT',
+      id: 'ID',
+    }
+
     // Remplacer les variables dans le template
     Object.entries(metadata).forEach(([key, value]) => {
-      const regex = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g')
+      // Essayer d'abord avec le mapping (underscore)
+      const mappedKey = keyMapping[key] || key.toUpperCase().replace(/([A-Z])/g, '_$1').substring(1)
+      const regex = new RegExp(`\\[${mappedKey}\\]`, 'g')
       content = content.replace(regex, String(value || ''))
+      
+      // Aussi remplacer avec la clé directe (sans underscore) pour compatibilité
+      const directKey = key.toUpperCase()
+      const directRegex = new RegExp(`\\[${directKey}\\]`, 'g')
+      content = content.replace(directRegex, String(value || ''))
     })
 
     // Générer un titre court (première ligne ou 80 premiers caractères)
@@ -256,10 +288,42 @@ export class NotificationService {
   private static replaceTemplateVariables(template: string, metadata?: NotificationMetadata): string {
     if (!metadata) return template
 
+    // Mapping des clés camelCase vers leur équivalent avec underscore pour les templates
+    const keyMapping: Record<string, string> = {
+      chantierId: 'CHANTIER_ID',
+      chantierNom: 'CHANTIER_NOM',
+      metreId: 'METRE_ID',
+      soustraitantId: 'SOUSTRAITANT_ID',
+      soustraitantNom: 'SOUSTRAITANT_NOM',
+      userId: 'USER_ID',
+      userName: 'USER_NAME',
+      remarqueId: 'REMARQUE_ID',
+      ticketSAVId: 'TICKET_SAV_ID',
+      documentId: 'DOCUMENT_ID',
+      montant: 'MONTANT',
+      date: 'DATE',
+      nom: 'NOM',
+      titre: 'TITRE',
+      message: 'MESSAGE',
+      priorite: 'PRIORITE',
+      num: 'NUM',
+      nb: 'NB',
+      uploader: 'UPLOADER',
+      client: 'CLIENT',
+      id: 'ID',
+    }
+
     let content = template
     Object.entries(metadata).forEach(([key, value]) => {
-      const regex = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g')
+      // Essayer d'abord avec le mapping (underscore)
+      const mappedKey = keyMapping[key] || key.toUpperCase().replace(/([A-Z])/g, '_$1').substring(1)
+      const regex = new RegExp(`\\[${mappedKey}\\]`, 'g')
       content = content.replace(regex, String(value || ''))
+      
+      // Aussi remplacer avec la clé directe (sans underscore) pour compatibilité
+      const directKey = key.toUpperCase()
+      const directRegex = new RegExp(`\\[${directKey}\\]`, 'g')
+      content = content.replace(directRegex, String(value || ''))
     })
     return content
   }

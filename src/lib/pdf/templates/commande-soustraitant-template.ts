@@ -477,7 +477,7 @@ export function generateCommandeSoustraitantHTML(
                     </tr>
                 </thead>
                 <tbody>
-                    ${data.lignes.map((ligne, index) => `
+                    ${data.lignes.map((ligne) => `
                         <tr>
                             <td class="text-center font-bold">${ligne.article}</td>
                             <td>${ligne.description}</td>

@@ -46,7 +46,15 @@ export async function sendEmail(emailData: EmailData): Promise<boolean> {
     }
 
     // Préparer les options d'envoi
-    const mailOptions: any = {
+    const mailOptions: {
+      from: string
+      to: string
+      subject: string
+      text?: string
+      html?: string
+      cc?: string
+      bcc?: string
+    } = {
       from: `"${settings.emailFromName || settings.name}" <${settings.emailFrom || settings.email}>`,
       to: emailData.to,
       subject: emailData.subject,

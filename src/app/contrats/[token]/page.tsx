@@ -39,6 +39,8 @@ export default function SignerContratPage(props: { params: Promise<{ token: stri
   const [contrat, setContrat] = useState<ContratData | null>(null)
   const [signing, setSigning] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [identityConfirmed, setIdentityConfirmed] = useState(false)
+  const [consentGiven, setConsentGiven] = useState(false)
   const sigCanvas = useRef<SignatureCanvasRef | null>(null)
   // const router = useRouter()
 
@@ -74,6 +76,16 @@ export default function SignerContratPage(props: { params: Promise<{ token: stri
       return
     }
 
+    if (!identityConfirmed) {
+      setError('Veuillez confirmer votre identité avant de continuer.')
+      return
+    }
+
+    if (!consentGiven) {
+      setError('Veuillez accepter les conditions avant de continuer.')
+      return
+    }
+
     try {
       setSigning(true)
       const signatureData = sigCanvas.current.toDataURL('image/png')
@@ -84,7 +96,11 @@ export default function SignerContratPage(props: { params: Promise<{ token: stri
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ signature: signatureBase64 }),
+        body: JSON.stringify({ 
+          signature: signatureBase64,
+          identityConfirmed,
+          consentGiven
+        }),
       })
 
       if (!response.ok) {
@@ -184,6 +200,46 @@ export default function SignerContratPage(props: { params: Promise<{ token: stri
           </div>
           
           <div className="border-t border-gray-200 pt-6">
+            {/* Vérification d'identité */}
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Vérification de votre identité</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                Veuillez confirmer que vous êtes bien :
+              </p>
+              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-blue-200 dark:border-blue-700 mb-3">
+                <p className="font-semibold text-gray-900 dark:text-white">{contrat?.soustraitant.nom}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{contrat?.soustraitant.email}</p>
+              </div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={identityConfirmed}
+                  onChange={(e) => setIdentityConfirmed(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  Je confirme être <strong>{contrat?.soustraitant.nom}</strong> et avoir accès à l'adresse email <strong>{contrat?.soustraitant.email}</strong>
+                </span>
+              </label>
+            </div>
+
+            {/* Consentement explicite */}
+            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Consentement et acceptation</h3>
+              <label className="flex items-start">
+                <input
+                  type="checkbox"
+                  checked={consentGiven}
+                  onChange={(e) => setConsentGiven(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+                />
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  J'ai lu et compris les termes du contrat. Je confirme avoir consulté le document complet et j'accepte de signer électroniquement ce contrat de sous-traitance. 
+                  Je comprends que cette signature électronique a la même valeur légale qu'une signature manuscrite conformément au Règlement eIDAS (UE) 910/2014 et à la législation belge en vigueur.
+                </span>
+              </label>
+            </div>
+
             <h2 className="text-lg font-medium text-gray-900">Votre signature</h2>
             <p className="mt-1 text-sm text-gray-500">
               Veuillez signer ci-dessous en utilisant votre souris ou votre doigt sur un écran tactile.
@@ -211,8 +267,8 @@ export default function SignerContratPage(props: { params: Promise<{ token: stri
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={signing}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                disabled={signing || !identityConfirmed || !consentGiven}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {signing ? 'Signature en cours...' : 'Signer le contrat'}
               </button>

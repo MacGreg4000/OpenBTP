@@ -116,7 +116,7 @@ export default function DashboardPage() {
   const router = useRouter()
   
   const [dashboardData, setDashboardData] = useState({
-    kpis: { totalChantiers: 0, chantiersEnCours: 0, chiffreAffaires: 0, tachesEnAttente: 0 },
+    kpis: { totalChantiers: 0, chantiersEnCours: 0, chiffreAffaires: 0, tachesEnAttente: 0, montantEtatsAvancementMoisPrecedent: 0 },
     chantiersByCategory: { enPreparation: 0, enCours: 0, termines: 0 },
     chantiersMap: [],
     loading: true

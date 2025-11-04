@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon } from '@heroicons/react/24/outline'
+import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon, EyeIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import PhotosTabContent from './PhotosTabContent'
 import FichesTechniquesTabContent from './FichesTechniquesTabContent'
 
@@ -49,10 +49,13 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
   const [currentTagFilter, setCurrentTagFilter] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null)
+  const [previewDocument, setPreviewDocument] = useState<Document | null>(null)
 
   // États pour l\'édition des tags d\'un document existant
   const [editingTagsDocId, setEditingTagsDocId] = useState<number | null>(null);
   const [tagsForModalEdit, setTagsForModalEdit] = useState<string[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<number>>(new Set());
+  const [isBulkTagEditOpen, setIsBulkTagEditOpen] = useState(false);
 
   // État pour le modal de sélection des tags pour l\'upload
   const [isTagUploadModalOpen, setIsTagUploadModalOpen] = useState(false);
@@ -93,6 +96,11 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
   useEffect(() => {
     fetchDocuments()
   }, [fetchDocuments])
+
+  // Réinitialiser la sélection quand le filtre change
+  useEffect(() => {
+    setSelectedDocumentIds(new Set())
+  }, [currentTagFilter])
 
   // Gestion du drag & drop
   const handleDragOver = (e: React.DragEvent) => {
@@ -194,27 +202,88 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
 
   // Soumettre la mise à jour des tags
   const handleSubmitTagUpdate = async () => {
-    if (editingTagsDocId === null) return
+    if (editingTagsDocId === null && selectedDocumentIds.size === 0) return
 
     try {
-      const response = await fetch(`/api/chantiers/${chantierId}/documents/${editingTagsDocId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tags: tagsForModalEdit })
-      })
+      // Si on modifie plusieurs documents
+      if (selectedDocumentIds.size > 0) {
+        const updatePromises = Array.from(selectedDocumentIds).map(docId =>
+          fetch(`/api/chantiers/${chantierId}/documents/${docId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tags: tagsForModalEdit })
+          })
+        )
 
-      if (response.ok) {
-        setEditingTagsDocId(null)
-        setTagsForModalEdit([])
-        await fetchDocuments() // Recharger les documents
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
-        console.error('Erreur lors de la mise à jour des tags:', errorData)
-        setError(errorData.error || 'Erreur lors de la mise à jour des tags')
+        const results = await Promise.all(updatePromises)
+        const allOk = results.every(r => r.ok)
+
+        if (allOk) {
+          setSelectedDocumentIds(new Set())
+          setIsBulkTagEditOpen(false)
+          setTagsForModalEdit([])
+          await fetchDocuments()
+        } else {
+          setError('Erreur lors de la mise à jour des tags pour certains documents')
+        }
+      } else if (editingTagsDocId) {
+        // Modification d'un seul document
+        const response = await fetch(`/api/chantiers/${chantierId}/documents/${editingTagsDocId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tags: tagsForModalEdit })
+        })
+
+        if (response.ok) {
+          setEditingTagsDocId(null)
+          setTagsForModalEdit([])
+          await fetchDocuments()
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+          console.error('Erreur lors de la mise à jour des tags:', errorData)
+          setError(errorData.error || 'Erreur lors de la mise à jour des tags')
+        }
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour des tags:', error)
       setError('Erreur lors de la mise à jour des tags')
+    }
+  }
+
+  // Gestion de la sélection multiple
+  const toggleDocumentSelection = (docId: number) => {
+    setSelectedDocumentIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(docId)) {
+        newSet.delete(docId)
+      } else {
+        newSet.add(docId)
+      }
+      return newSet
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedDocumentIds.size === filteredDocuments.length) {
+      setSelectedDocumentIds(new Set())
+    } else {
+      setSelectedDocumentIds(new Set(filteredDocuments.map(doc => doc.id)))
+    }
+  }
+
+  const handleBulkTagEdit = () => {
+    // Si tous les documents sélectionnés ont les mêmes tags, les pré-remplir
+    const selectedDocs = filteredDocuments.filter(doc => selectedDocumentIds.has(doc.id))
+    if (selectedDocs.length > 0) {
+      // Prendre les tags communs à tous les documents sélectionnés
+      const commonTags = selectedDocs[0].tags?.map(t => t.nom) || []
+      const allCommonTags = selectedDocs.slice(1).reduce((common, doc) => {
+        const docTags = doc.tags?.map(t => t.nom) || []
+        return common.filter(tag => docTags.includes(tag))
+      }, commonTags)
+      
+      setTagsForModalEdit(allCommonTags)
+      setIsBulkTagEditOpen(true)
     }
   }
 
@@ -414,6 +483,15 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                 </div>
               </div>
               <div className="flex items-center space-x-4">
+                {selectedDocumentIds.size > 0 && (
+                  <button
+                    onClick={handleBulkTagEdit}
+                    className="inline-flex items-center px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200"
+                  >
+                    <TagIcon className="h-5 w-5 mr-2" />
+                    Modifier les tags ({selectedDocumentIds.size})
+                  </button>
+                )}
                 <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm">
                   📊 {filteredDocuments.length} document{filteredDocuments.length > 1 ? 's' : ''}
                 </span>
@@ -431,6 +509,14 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        checked={filteredDocuments.length > 0 && selectedDocumentIds.size === filteredDocuments.length}
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Nom
                     </th>
@@ -450,7 +536,15 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredDocuments.map((document) => (
-                    <tr key={document.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={document.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedDocumentIds.has(document.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedDocumentIds.has(document.id)}
+                          onChange={() => toggleDocumentSelection(document.id)}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <DocumentIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3" />
@@ -482,29 +576,30 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                         {new Date(document.createdAt).toLocaleDateString('fr-FR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <a
-                            href={document.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setPreviewDocument(document)}
+                            className="p-2 rounded-lg text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+                            title="Voir le document"
                           >
-                            Voir
-                          </a>
+                            <EyeIcon className="h-5 w-5" />
+                          </button>
                           <button
                             onClick={() => {
                               setEditingTagsDocId(document.id)
                               setTagsForModalEdit(document.tags?.map(t => t.nom) || [])
                             }}
-                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                            className="p-2 rounded-lg text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all duration-200"
+                            title="Modifier les tags"
                           >
-                            Tags
+                            <TagIcon className="h-5 w-5" />
                           </button>
                           <button
                             onClick={() => handleDeleteDocument(document.id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            className="p-2 rounded-lg text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                            title="Supprimer"
                           >
-                            Supprimer
+                            <TrashIcon className="h-5 w-5" />
                           </button>
                         </div>
                       </td>
@@ -572,8 +667,102 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
         </div>
       )}
 
-      {/* Modal d'édition des tags */}
-      {editingTagsDocId !== null && (
+      {/* Modal de prévisualisation des documents */}
+      {previewDocument && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b-2 border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-50/50 to-blue-50/50 dark:from-blue-900/10 dark:to-blue-900/10">
+              <h3 className="text-lg font-black text-gray-900 dark:text-white">{previewDocument.nom}</h3>
+              <button
+                onClick={() => setPreviewDocument(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-auto max-h-[calc(90vh-4rem)]">
+              {(() => {
+                const fileExtension = previewDocument.nom.split('.').pop()?.toLowerCase() || ''
+                const mimeType = previewDocument.mimeType?.toLowerCase() || ''
+                const isImage = mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)
+                const isPDF = mimeType === 'application/pdf' || fileExtension === 'pdf'
+                const isText = ['txt', 'md', 'csv'].includes(fileExtension)
+
+                if (isImage) {
+                  return (
+                    <div className="flex justify-center">
+                      <img
+                        src={previewDocument.url}
+                        alt={previewDocument.nom}
+                        className="max-w-full h-auto rounded-lg shadow-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                          const parent = target.parentElement
+                          if (parent) {
+                            parent.innerHTML = '<p class="text-gray-500 text-center p-4">Erreur lors du chargement de l\'image</p>'
+                          }
+                        }}
+                      />
+                    </div>
+                  )
+                }
+                if (isPDF) {
+                  return (
+                    <div className="w-full h-[calc(90vh-8rem)]">
+                      <iframe
+                        src={`${previewDocument.url}#toolbar=0`}
+                        className="w-full h-full rounded-lg shadow-lg"
+                        title={previewDocument.nom}
+                        onError={() => {
+                          const iframe = document.querySelector('iframe[title="' + previewDocument.nom + '"]') as HTMLIFrameElement
+                          if (iframe) {
+                            iframe.style.display = 'none'
+                            const parent = iframe.parentElement
+                            if (parent) {
+                              parent.innerHTML = '<p class="text-gray-500 text-center p-4">Erreur lors du chargement du PDF. <a href="' + previewDocument.url + '" target="_blank" class="text-blue-600 hover:underline">Cliquez ici pour le télécharger</a></p>'
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  )
+                }
+                if (isText) {
+                  return (
+                    <div className="p-4">
+                      <p className="text-gray-500 text-center">Prévisualisation non disponible pour les fichiers texte</p>
+                    </div>
+                  )
+                }
+                return (
+                  <div className="p-4 text-center">
+                    <DocumentIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-500">Prévisualisation non disponible pour ce type de fichier</p>
+                    <p className="text-sm text-gray-400 mt-2">Type: {previewDocument.mimeType || 'Inconnu'}</p>
+                  </div>
+                )
+              })()}
+            </div>
+            
+            <div className="flex justify-end p-4 border-t-2 border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-50/50 to-blue-50/50 dark:from-blue-900/10 dark:to-blue-900/10">
+              <a
+                href={previewDocument.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                Télécharger
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'édition des tags (un seul document) */}
+      {editingTagsDocId !== null && !isBulkTagEditOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
           <div className="relative p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800">
             <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
@@ -598,7 +787,56 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
             </div>
             <div className="flex items-center justify-end space-x-3">
               <button
-                onClick={() => { setEditingTagsDocId(null); setTagsForModalEdit([]); }}
+                onClick={() => { 
+                  setEditingTagsDocId(null)
+                  setTagsForModalEdit([])
+                  setIsBulkTagEditOpen(false)
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSubmitTagUpdate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-500"
+              >
+                Enregistrer les tags
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'édition des tags (plusieurs documents) */}
+      {isBulkTagEditOpen && selectedDocumentIds.size > 0 && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
+          <div className="relative p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
+              Modifier les tags de {selectedDocumentIds.size} document{selectedDocumentIds.size > 1 ? 's' : ''}
+            </h3>
+            <div className="space-y-2 mb-6">
+              {DOCUMENT_TAGS.map(tag => (
+                <div key={`bulk-tag-${tag}`} className="flex items-center">
+                  <input
+                    id={`bulk-modal-tag-${tag}`}
+                    name={`bulk-modal-tag-${tag}`}
+                    type="checkbox"
+                    checked={tagsForModalEdit.includes(tag)}
+                    onChange={() => handleTagSelectionForModal(tag)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <label htmlFor={`bulk-modal-tag-${tag}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-100">
+                    {tag}
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                onClick={() => { 
+                  setIsBulkTagEditOpen(false)
+                  setTagsForModalEdit([])
+                }}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
               >
                 Annuler

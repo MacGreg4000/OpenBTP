@@ -5,12 +5,12 @@ import { prisma } from '@/lib/prisma/client'
 export async function GET() {
   try {
     const metres = await prisma.metreSoustraitant.findMany({
-      where: { statut: { in: ['SOUMIS', 'PARTIELLEMENT_VALIDE'] } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         statut: true,
         createdAt: true,
+        commentaire: true,
         chantier: { select: { chantierId: true, nomChantier: true } },
         soustraitant: { select: { id: true, nom: true } }
       }

@@ -169,7 +169,14 @@ export async function POST(
     const toEmail = typeof recipient === 'string' && recipient ? recipient : companySettings.email
 
     // Préparer les options d'envoi
-    const mailOptions: any = {
+    const mailOptions: {
+      from: string
+      to: string
+      subject: string
+      html: string
+      cc?: string
+      bcc?: string
+    } = {
       from: `"${companySettings.emailFromName || companySettings.name}" <${companySettings.emailFrom || companySettings.email}>`,
       to: toEmail,
       subject: `Commande ${commandeData.reference || `#${commandeData.id}`} - ${commandeData.nomChantier}`,

@@ -22,7 +22,7 @@ import {
   LABELS_PRIORITE_SAV
 } from '@/types/sav'
 import { Button } from '@/components/ui'
-import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
+import { SearchableSelect } from '@/components/SearchableSelect'
 
 interface Chantier {
   id: string

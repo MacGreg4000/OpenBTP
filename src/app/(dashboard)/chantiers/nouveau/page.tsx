@@ -353,20 +353,19 @@ export default function NouveauChantierPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     État du chantier
                   </label>
-                                     <SelectField
-                     label=""
-                     name="etatChantier"
-                     value={formData.etatChantier}
-                     onChange={(e) => setFormData(prev => ({
-                       ...prev,
-                       etatChantier: e.target.value
-                     }))}
-                     className="w-full"
-                   >
+                  <select
+                    name="etatChantier"
+                    value={formData.etatChantier}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      etatChantier: e.target.value
+                    }))}
+                    className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
                     <option value="En préparation">En préparation</option>
                     <option value="En cours">En cours</option>
                     <option value="Terminé">Terminé</option>
-                  </SelectField>
+                  </select>
                 </div>
               </div>
             </div>

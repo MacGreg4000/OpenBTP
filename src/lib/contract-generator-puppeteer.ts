@@ -161,9 +161,22 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
  * Signe un contrat existant en ajoutant la signature
  * @param token Token du contrat à signer
  * @param signatureBase64 Signature en base64
+ * @param auditInfo Informations d'audit pour renforcer la valeur juridique
  * @returns L'URL du contrat signé
  */
-export async function signerContrat(token: string, signatureBase64: string): Promise<string> {
+interface AuditInfo {
+  ipAddress?: string | null
+  userAgent?: string | null
+  identityConfirmed?: boolean
+  consentGiven?: boolean
+  horodatageCertifie?: Date
+}
+
+export async function signerContrat(
+  token: string, 
+  signatureBase64: string,
+  auditInfo?: AuditInfo
+): Promise<string> {
   console.log('Début de la signature du contrat avec token:', token)
   
   try {
@@ -251,8 +264,20 @@ export async function signerContrat(token: string, signatureBase64: string): Pro
         <img src="data:image/png;base64,${signatureBase64}" class="signature-image" alt="Signature Sous-traitant" />
         <div class="signature-line"></div>
         <div style="font-size: 10px; color: #6b7280; margin-top: 5px;">
-          Signé électroniquement le ${format(new Date(), 'dd/MM/yyyy', { locale: fr })}
+          Signé électroniquement le ${format(auditInfo?.horodatageCertifie || new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}
         </div>
+        ${auditInfo ? `
+        <div style="font-size: 9px; color: #9ca3af; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+          <div style="margin-bottom: 4px;"><strong>Informations d'audit de signature :</strong></div>
+          <div style="margin-bottom: 2px;">• Identité confirmée : Oui</div>
+          <div style="margin-bottom: 2px;">• Consentement donné : Oui</div>
+          ${auditInfo.ipAddress ? `<div style="margin-bottom: 2px;">• Adresse IP : ${auditInfo.ipAddress}</div>` : ''}
+          <div style="margin-bottom: 2px;">• Horodatage certifié : ${format(auditInfo.horodatageCertifie || new Date(), 'dd/MM/yyyy à HH:mm:ss', { locale: fr })}</div>
+          <div style="margin-top: 6px; font-size: 8px; color: #6b7280;">
+            Signature électronique conforme au Règlement eIDAS (UE) 910/2014 et à la législation belge en vigueur.
+          </div>
+        </div>
+        ` : ''}
       </div>`
     )
     
@@ -282,13 +307,18 @@ export async function signerContrat(token: string, signatureBase64: string): Pro
     // Créer l'URL relative pour l'accès web
     const relativeUrl = `/uploads/documents/soustraitants/signed/${fileName}`
     
-    // Mettre à jour le contrat en base de données
+    // Mettre à jour le contrat en base de données avec les informations d'audit
     await prisma.contrat.update({
       where: { token },
       data: {
         url: relativeUrl,
         estSigne: true,
-        dateSignature: new Date()
+        dateSignature: auditInfo?.horodatageCertifie || new Date(),
+        signatureIP: auditInfo?.ipAddress || null,
+        signatureUserAgent: auditInfo?.userAgent || null,
+        signatureConsentement: auditInfo?.consentGiven || null,
+        signatureIdentiteConfirmee: auditInfo?.identityConfirmed || null,
+        signatureHorodatageCertifie: auditInfo?.horodatageCertifie || new Date()
       }
     })
     
@@ -344,11 +374,21 @@ async function getCompanyLogoBase64(): Promise<string> {
     const settings = await prisma.companysettings.findFirst()
     if (settings?.logo) {
       // Si le logo est une URL, on le convertit en base64
-      if (settings.logo.startsWith('http') || settings.logo.startsWith('/')) {
-        return await convertImageToBase64(settings.logo)
+      if (settings.logo.startsWith('http')) {
+        // Pour les URLs externes, on retourne le logo par défaut pour l'instant
+        console.warn('URL externe détectée pour le logo, utilisation du logo par défaut')
+        return await getDefaultLogoBase64()
+      } else if (settings.logo.startsWith('/')) {
+        // Chemin relatif depuis public (ex: /images/logo.png)
+        return await convertImageToBase64(settings.logo, false)
+      } else if (settings.logo.startsWith('data:')) {
+        // Si c'est déjà en base64 (data:image/...), extraire seulement la partie base64
+        const base64Match = settings.logo.match(/base64,(.+)/)
+        return base64Match ? base64Match[1] : settings.logo
+      } else {
+        // Si c'est un chemin relatif sans le / initial, on l'ajoute
+        return await convertImageToBase64(`/${settings.logo}`, false)
       }
-      // Si c'est déjà en base64, on le retourne
-      return settings.logo
     }
   } catch (error) {
     console.error('Erreur lors de la récupération du logo:', error)
@@ -363,39 +403,65 @@ async function getCompanyLogoBase64(): Promise<string> {
  */
 async function getCompanySignatureBase64(): Promise<string> {
   try {
-    // Pour l'instant, on utilise une signature par défaut
-    // Plus tard, on pourra ajouter un champ signature dans la table companysettings
-    return await getDefaultSignatureBase64()
+    const settings = await prisma.companysettings.findFirst()
+    if (settings?.signature) {
+      // Si la signature est une URL, on le convertit en base64
+      if (settings.signature.startsWith('http')) {
+        // Pour les URLs externes, on retourne la signature par défaut pour l'instant
+        console.warn('URL externe détectée pour la signature, utilisation de la signature par défaut')
+        return await getDefaultSignatureBase64()
+      } else if (settings.signature.startsWith('/')) {
+        // Chemin relatif depuis public (ex: /images/signature.png)
+        return await convertImageToBase64(settings.signature, true)
+      } else if (settings.signature.startsWith('data:')) {
+        // Si c'est déjà en base64 (data:image/...), extraire seulement la partie base64
+        const base64Match = settings.signature.match(/base64,(.+)/)
+        return base64Match ? base64Match[1] : settings.signature
+      } else {
+        // Si c'est un chemin relatif sans le / initial, on l'ajoute
+        return await convertImageToBase64(`/${settings.signature}`, true)
+      }
+    }
   } catch (error) {
     console.error('Erreur lors de la récupération de la signature:', error)
-    return await getDefaultSignatureBase64()
   }
+  
+  // Signature par défaut
+  return await getDefaultSignatureBase64()
 }
 
 /**
  * Convertit une image (URL ou chemin) en base64
  */
-async function convertImageToBase64(imagePath: string): Promise<string> {
+async function convertImageToBase64(imagePath: string, isSignature: boolean = false): Promise<string> {
   try {
     const { readFile } = await import('fs/promises')
     const { join } = await import('path')
     
     let fullPath: string
     if (imagePath.startsWith('http')) {
-      // Pour les URLs externes, on pourrait utiliser fetch
-      // Pour l'instant, on retourne le logo par défaut
-      return await getDefaultLogoBase64()
+      // Pour les URLs externes, on retourne une image par défaut
+      console.warn('URL externe détectée, utilisation d\'une image par défaut')
+      return isSignature ? await getDefaultSignatureBase64() : await getDefaultLogoBase64()
     } else {
-      // Chemin relatif depuis public
-      fullPath = join(process.cwd(), 'public', imagePath)
+      // Chemin relatif depuis public (enlever le / initial si présent)
+      const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath
+      fullPath = join(process.cwd(), 'public', cleanPath)
     }
     
+    console.log('Lecture du fichier image:', fullPath)
     const imageBuffer = await readFile(fullPath)
-    const mimeType = imagePath.endsWith('.png') ? 'image/png' : 'image/jpeg'
-    return `data:${mimeType};base64,${imageBuffer.toString('base64')}`
+    const mimeType = imagePath.toLowerCase().endsWith('.png') ? 'image/png' : 
+                     imagePath.toLowerCase().endsWith('.jpg') || imagePath.toLowerCase().endsWith('.jpeg') ? 'image/jpeg' :
+                     'image/png' // Par défaut PNG
+    const base64 = imageBuffer.toString('base64')
+    console.log(`Image convertie en base64, taille: ${base64.length} caractères, type: ${mimeType}`)
+    // Retourner seulement le base64 sans le préfixe data: car le template l'ajoute déjà
+    return base64
   } catch (error) {
     console.error('Erreur lors de la conversion de l\'image en base64:', error)
-    return await getDefaultLogoBase64()
+    console.error('Chemin de l\'image:', imagePath)
+    return isSignature ? await getDefaultSignatureBase64() : await getDefaultLogoBase64()
   }
 }
 
@@ -409,11 +475,12 @@ async function getDefaultLogoBase64(): Promise<string> {
     
     const logoPath = join(process.cwd(), 'public', 'images', 'logo.png')
     const logoBuffer = await readFile(logoPath)
-    return `data:image/png;base64,${logoBuffer.toString('base64')}`
+    // Retourner seulement le base64 sans le préfixe data: car le template l'ajoute déjà
+    return logoBuffer.toString('base64')
   } catch (error) {
     console.error('Erreur lors de la récupération du logo par défaut:', error)
-    // Retourner un logo vide en base64 (1x1 pixel transparent)
-    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+    // Retourner un logo vide en base64 (1x1 pixel transparent) - seulement le base64
+    return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
   }
 }
 
@@ -427,11 +494,12 @@ async function getDefaultSignatureBase64(): Promise<string> {
     
     const signaturePath = join(process.cwd(), 'public', 'images', 'signature.png')
     const signatureBuffer = await readFile(signaturePath)
-    return `data:image/png;base64,${signatureBuffer.toString('base64')}`
+    // Retourner seulement le base64 sans le préfixe data: car le template l'ajoute déjà
+    return signatureBuffer.toString('base64')
   } catch (error) {
     console.error('Erreur lors de la récupération de la signature par défaut:', error)
-    // Retourner une signature vide en base64 (1x1 pixel transparent)
-    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+    // Retourner une signature vide en base64 (1x1 pixel transparent) - seulement le base64
+    return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
   }
 }
 

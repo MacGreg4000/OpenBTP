@@ -4,7 +4,7 @@ import { notifier } from '@/lib/services/notificationService'
 
 interface MetreLineInput {
   ligneCommandeId?: number
-  article: string
+  article?: string
   description?: string
   type?: string
   unite?: string
@@ -79,7 +79,7 @@ export async function POST(request: Request, props: { params: Promise<{ type: 'o
         lignes: {
           create: lignes.map((l) => ({
             ligneCommandeId: l.ligneCommandeId ?? null,
-            article: l.article,
+            article: l.article || l.description || 'Sans article',
             description: l.description ?? '',
             type: l.type ?? 'QP',
             unite: l.unite ?? 'U',
