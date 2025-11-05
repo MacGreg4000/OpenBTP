@@ -168,7 +168,7 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
         // Gérer l'erreur si le JSON est malformé, peut-être retourner une erreur 400
       }
     }
-    console.log('POST documents - tags à connecter:', tagsToConnect);
+    console.log('POST documents - tags à connecter (AVANT traitement métadonnées):', tagsToConnect);
 
     // Récupérer les métadonnées supplémentaires
     let metadata: JsonValue | null = null;
@@ -201,6 +201,7 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
           // Si la source est 'photo-interne', forcer le tag "Interne" et supprimer "Rapport"
           if (metadataObj?.source === 'photo-interne') {
             console.log('✅ POST documents - Photo interne détectée, forçage du tag "Interne"');
+            console.log('🔍 Tags AVANT nettoyage:', tagsToConnect.map(t => t.nom));
             // Supprimer "Rapport" des tags s'il est présent
             tagsToConnect = tagsToConnect.filter(tag => tag.nom.toLowerCase() !== 'rapport');
             // Ajouter "Interne" s'il n'est pas déjà présent
@@ -208,6 +209,7 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
             if (!hasInterne) {
               tagsToConnect.push({ nom: 'Interne' });
             }
+            console.log('🔍 Tags APRÈS nettoyage:', tagsToConnect.map(t => t.nom));
           }
         } catch (e) {
           console.error('Erreur lors du parsing des métadonnées:', e);
@@ -264,6 +266,89 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
       }
       
       console.log('POST documents - Utilisateur trouvé:', userExists.id)
+      
+      // 🔧 CORRECTION : Pour les photos-chantier, garantir qu'on a toujours un tag
+      // Si pas de tags et type photo-chantier, ajouter "Interne" par défaut
+      if (documentType === 'photo-chantier' && tagsToConnect.length === 0) {
+        console.log('⚠️ POST documents - Photo sans tags, ajout de "Interne" par défaut');
+        tagsToConnect.push({ nom: 'Interne' });
+      }
+      
+      console.log('🔍 POST documents - Tags FINAUX à connecter lors de la création:', tagsToConnect.map(t => t.nom));
+      
+      // Déterminer si on doit forcer "Interne" AVANT la création du document
+      let shouldForceInterne = false;
+      if (documentType === 'photo-chantier') {
+        // Vérifier si metadata.source === 'photo-interne'
+        if (metadata && typeof metadata === 'object') {
+          const metadataObj = metadata as { source?: string };
+          if (metadataObj.source === 'photo-interne') {
+            shouldForceInterne = true;
+            console.log('🔧 POST documents - Source photo-interne détectée, forçage du tag "Interne"');
+          }
+        }
+        // Vérifier aussi si "Interne" est déjà dans les tags à connecter
+        if (tagsToConnect.some(t => t.nom.toLowerCase() === 'interne')) {
+          shouldForceInterne = true;
+          console.log('🔧 POST documents - Tag "Interne" présent dans tagsToConnect, forçage');
+        }
+      }
+
+      // 🔧 CORRECTION CRITIQUE : Utiliser upsert pour garantir le tag "Interne" et éviter que Prisma connecte "Rapport"
+      let tagsToConnectFinal: Array<{ id: string }> = [];
+      
+      if (shouldForceInterne) {
+        // IMPORTANT : Vérifier d'abord si un tag "Rapport" existe et le supprimer/éviter
+        // Utiliser upsert pour garantir que le tag "Interne" existe et obtenir son ID
+        // On force le nom avec la première lettre en majuscule pour éviter les problèmes de casse
+        const tagInterne = await prisma.tag.upsert({
+          where: { nom: 'Interne' },
+          create: { nom: 'Interne' },
+          update: {},
+          select: { id: true, nom: true }
+        });
+        console.log('✅ Tag "Interne" obtenu:', tagInterne);
+        
+        // Vérifier qu'on n'a pas accidentellement récupéré un tag "Rapport"
+        if (tagInterne.nom.toLowerCase() === 'rapport') {
+          console.error('🚨 ERREUR CRITIQUE: Le tag "Interne" retourné est en fait "Rapport" !');
+          // Créer un nouveau tag "Interne" avec un nom légèrement différent pour éviter le conflit
+          const tagInterneCorrect = await prisma.tag.create({
+            data: { nom: 'Interne' },
+            select: { id: true, nom: true }
+          });
+          tagsToConnectFinal = [{ id: tagInterneCorrect.id }];
+        } else {
+          tagsToConnectFinal = [{ id: tagInterne.id }];
+        }
+      } else if (tagsToConnect.length > 0) {
+        // Pour les autres cas, utiliser upsert pour chaque tag
+        for (const tagObj of tagsToConnect) {
+          const tag = await prisma.tag.upsert({
+            where: { nom: tagObj.nom },
+            create: { nom: tagObj.nom },
+            update: {},
+            select: { id: true }
+          });
+          tagsToConnectFinal.push({ id: tag.id });
+        }
+      }
+
+      console.log('🔍 POST documents - Tags finaux avec IDs:', tagsToConnectFinal.map(t => t.id));
+      
+      // 🔍 DEBUG : Vérifier les tags qui vont être connectés
+      if (tagsToConnectFinal.length > 0) {
+        for (const tagRef of tagsToConnectFinal) {
+          const tagCheck = await prisma.tag.findUnique({
+            where: { id: tagRef.id },
+            select: { id: true, nom: true }
+          });
+          console.log('🔍 POST documents - Tag vérifié:', tagCheck);
+          if (tagCheck && tagCheck.nom.toLowerCase() === 'rapport') {
+            console.error('🚨 ERREUR CRITIQUE: Le tag avec cet ID est "Rapport" et non "Interne" !');
+          }
+        }
+      }
 
       // Créer le document dans la base de données
       const document = await prisma.document.create({
@@ -277,12 +362,9 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
           createdBy: userExists.id,
           updatedAt: new Date(),
           // ...(documentTag && { tag: documentTag }), // Ancien champ
-          ...(tagsToConnect.length > 0 && { 
+          ...(tagsToConnectFinal.length > 0 && { 
             tags: { 
-              connectOrCreate: tagsToConnect.map(tagObj => ({ // tagsToConnect est [{nom: 'Tag1'}, {nom: 'Tag2'}]
-                where: { nom: tagObj.nom },
-                create: { nom: tagObj.nom },
-              }))
+              connect: tagsToConnectFinal
             } 
           }),
           ...(metadata ? { metadata } : {})
@@ -300,41 +382,64 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
       });
 
       console.log('POST documents - document créé avec succès:', document.id)
+      console.log('🔍 POST documents - Tags créés dans le document:', document.tags.map(t => t.nom));
       
-      // 🔍 Vérification finale pour les photos : si metadata.source === 'photo-interne' 
-      // et que "Rapport" est présent ou "Interne" est absent, corriger
-      if (documentType === 'photo-chantier' && metadata && typeof metadata === 'object') {
-        const metadataObj = metadata as { source?: string };
-        if (metadataObj.source === 'photo-interne') {
-          // Récupérer le document avec ses tags
+      // 🔍 Vérification finale OBLIGATOIRE pour TOUTES les photos-chantier avec source 'photo-interne'
+      // TOUJOURS forcer le tag "Interne" et supprimer "Rapport", même si on pense qu'on a déjà fait le bon tag
+      if (documentType === 'photo-chantier') {
+        // Vérifier si metadata.source === 'photo-interne'
+        const hasPhotoInterneSource = metadata && typeof metadata === 'object' && (metadata as { source?: string }).source === 'photo-interne';
+        const shouldCheckFinal = shouldForceInterne || hasPhotoInterneSource;
+        
+        console.log('🔍 POST documents - shouldCheckFinal:', shouldCheckFinal, 'hasPhotoInterneSource:', hasPhotoInterneSource, 'shouldForceInterne:', shouldForceInterne);
+        
+        // TOUJOURS vérifier si metadata.source === 'photo-interne', même si shouldForceInterne est false
+        if (hasPhotoInterneSource || shouldCheckFinal) {
+          console.log('🔍 POST documents - Vérification finale OBLIGATOIRE pour photo-chantier');
+          
+          // Récupérer le document avec ses tags IMMÉDIATEMENT après création
           const docWithTags = await prisma.document.findUnique({
             where: { id: document.id },
             include: { tags: true }
           });
           
           if (docWithTags) {
-            const tagNames = docWithTags.tags.map(t => t.nom.toLowerCase());
-            const hasRapport = tagNames.includes('rapport');
-            const hasInterne = tagNames.includes('interne');
+            const tagNames = docWithTags.tags.map(t => t.nom);
+            const tagNamesLower = tagNames.map(t => t.toLowerCase());
+            const hasRapport = tagNamesLower.includes('rapport');
+            const hasInterne = tagNamesLower.includes('interne');
             
-            if (hasRapport || !hasInterne) {
-              console.log('🔧 POST documents - Correction des tags: Suppression de "Rapport", ajout de "Interne"');
+            console.log('🔍 POST documents - Tags actuels après création:', tagNames);
+            console.log('🔍 POST documents - hasRapport:', hasRapport, 'hasInterne:', hasInterne);
+            
+            // SI "Rapport" est présent OU si les tags ne sont pas exactement ["Interne"], corriger
+            if (hasRapport || !hasInterne || tagNames.length !== 1 || tagNames[0] !== 'Interne') {
+              console.log('🚨 POST documents - PROBLÈME DÉTECTÉ: Tags incorrects, correction FORCÉE');
+              console.log('🔧 POST documents - Suppression de tous les tags, ajout de "Interne" uniquement');
               
-              // Supprimer tous les tags et ajouter seulement "Interne"
-              await prisma.document.update({
+              // Créer ou obtenir le tag "Interne"
+              const tagInterne = await prisma.tag.upsert({
+                where: { nom: 'Interne' },
+                create: { nom: 'Interne' },
+                update: {},
+                select: { id: true, nom: true }
+              });
+              
+              console.log('✅ Tag "Interne" créé/trouvé:', tagInterne);
+              
+              // Supprimer TOUS les tags et ajouter SEULEMENT "Interne" en utilisant l'ID
+              const updateResult = await prisma.document.update({
                 where: { id: document.id },
                 data: {
                   tags: {
-                    set: [],
-                    connectOrCreate: {
-                      where: { nom: 'Interne' },
-                      create: { nom: 'Interne' }
-                    }
+                    set: [{ id: tagInterne.id }]
                   }
                 }
               });
               
-              // Récupérer le document corrigé
+              console.log('✅ POST documents - Document mis à jour:', updateResult.id);
+              
+              // Récupérer le document corrigé avec TOUS les champs
               const correctedDoc = await prisma.document.findUnique({
                 where: { id: document.id },
                 include: {
@@ -349,9 +454,18 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
                 }
               });
               
-              console.log('✅ POST documents - Tags corrigés:', correctedDoc?.tags.map(t => t.nom));
-              return NextResponse.json(correctedDoc);
+              if (correctedDoc) {
+                console.log('✅ POST documents - Tags corrigés:', correctedDoc.tags.map(t => t.nom));
+                console.log('✅ POST documents - Nombre de tags:', correctedDoc.tags.length);
+                return NextResponse.json(correctedDoc);
+              } else {
+                console.error('❌ POST documents - Impossible de récupérer le document corrigé');
+              }
+            } else {
+              console.log('✅ POST documents - Tags déjà corrects (["Interne"] uniquement), pas de correction nécessaire');
             }
+          } else {
+            console.error('❌ POST documents - Impossible de récupérer le document avec tags');
           }
         }
       }

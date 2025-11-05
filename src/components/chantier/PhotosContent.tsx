@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { EyeIcon, CalendarIcon, UserIcon, CameraIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, CalendarIcon, UserIcon, CameraIcon, TrashIcon, PencilIcon, TagIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import toast from 'react-hot-toast'
 
 interface PhotoExterne {
   id: string
@@ -46,9 +47,11 @@ interface PhotoChantier {
   url: string
   createdAt: string
   uploadedBy: string
+  documentId?: string // ID numérique du document pour l'API
+  tags?: { nom: string }[] // Tags de la relation Prisma
   metadata?: {
     annotation?: string
-    tags?: string[]
+    tags?: string[] // Tags dans metadata (ancien format)
   }
 }
 
@@ -77,6 +80,15 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
     photoName: '' 
   })
   const [deleting, setDeleting] = useState(false)
+  
+  // État pour l'édition des tags
+  const [editTagsModal, setEditTagsModal] = useState<{ show: boolean; photo: PhotoChantier | null }>({
+    show: false,
+    photo: null
+  })
+  const [editingTags, setEditingTags] = useState<string[]>([])
+  const [newTagName, setNewTagName] = useState('')
+  const [savingTags, setSavingTags] = useState(false)
 
   // Type guards
   const isExtOrManuelle = (p: PhotoItem): p is (PhotoExterne & { url: string; index: number; type: 'externe' | 'manuelle' }) =>
@@ -150,7 +162,7 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
           const documentsList = Array.isArray(dataChantier) ? dataChantier : (dataChantier.documents || [])
           
           const photosChantierList: PhotoChantier[] = documentsList.map((doc: {
-            id: string
+            id: string | number
             nom: string
             url: string
             type: string
@@ -158,14 +170,26 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
             createdAt: string
             metadata?: { [key: string]: unknown }
             User?: { name?: string }
-          }) => ({
-            id: doc.id.toString(),
-            nom: doc.nom,
-            url: doc.url,
-            createdAt: doc.createdAt,
-            uploadedBy: doc.User?.name || 'Inconnu',
-            metadata: doc.metadata || {}
-          }))
+            tags?: { nom: string }[]
+          }) => {
+            // 🔍 DEBUG : Log des tags pour chaque photo
+            console.log(`🔍 PhotosContent - Photo ${doc.nom}:`, {
+              tags: doc.tags?.map(t => t.nom) || [],
+              metadataTags: (doc.metadata as any)?.tags || [],
+              metadataSource: (doc.metadata as any)?.source
+            });
+            
+            return {
+              id: doc.id.toString(),
+              documentId: typeof doc.id === 'number' ? doc.id.toString() : doc.id,
+              nom: doc.nom,
+              url: doc.url,
+              createdAt: doc.createdAt,
+              uploadedBy: doc.User?.name || 'Inconnu',
+              tags: doc.tags || [],
+              metadata: doc.metadata || {}
+            };
+          })
           
           setPhotosChantier(photosChantierList)
           console.log(`📸 ${photosChantierList.length} photos de chantier chargées`)
@@ -200,16 +224,29 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
             }))
           )
       case 'internes':
-        return photosExternes
-          .filter(photo => photo.isManual) // Seulement les photos manuelles (internes)
-          .flatMap(photo => 
-            (photo.urls || []).map((url, index) => ({
+        // Photos manuelles (internes) + photos de chantier avec tag "Interne"
+        return [
+          ...photosExternes
+            .filter(photo => photo.isManual)
+            .flatMap(photo => 
+              (photo.urls || []).map((url, index) => ({
+                ...photo,
+                url,
+                index,
+                type: 'manuelle' as const
+              }))
+            ),
+          ...photosChantier
+            .filter(photo => {
+              // Inclure les photos avec le tag "Interne"
+              const hasInterneTag = photo.tags?.some(tag => tag.nom.toLowerCase() === 'interne');
+              return hasInterneTag;
+            })
+            .map(photo => ({
               ...photo,
-              url,
-              index,
-              type: 'manuelle' as const
+              type: 'chantier' as const
             }))
-          )
+        ]
       case 'remarques':
         return photosRemarques.map(photo => ({
           ...photo,
@@ -221,10 +258,18 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
           type: 'sav' as const
         }))
       case 'chantier':
-        return photosChantier.map(photo => ({
-          ...photo,
-          type: 'chantier' as const
-        }))
+        // Onglet "Rapports" : seulement les photos de chantier avec tag "Rapport" ou sans tag "Interne"
+        return photosChantier
+          .filter(photo => {
+            const hasInterneTag = photo.tags?.some(tag => tag.nom.toLowerCase() === 'interne');
+            const hasRapportTag = photo.tags?.some(tag => tag.nom.toLowerCase() === 'rapport');
+            // Inclure si pas de tag "Interne" OU si tag "Rapport" présent
+            return !hasInterneTag || hasRapportTag;
+          })
+          .map(photo => ({
+            ...photo,
+            type: 'chantier' as const
+          }))
       default:
         return [
           ...photosExternes.flatMap(photo => 
@@ -425,6 +470,65 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
             <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm">
               📊 {filteredPhotos.length} photo{filteredPhotos.length > 1 ? 's' : ''}
             </span>
+            {/* Bouton pour vider les photos - visible uniquement sur l'onglet chantier */}
+            {activeTab === 'chantier' && (
+              <button
+                onClick={async (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  
+                  console.log('🗑️ Bouton "Vider toutes les photos" cliqué', { chantierId, count: photosChantier.length })
+                  
+                  const confirmed = window.confirm(`Êtes-vous sûr de vouloir supprimer toutes les ${photosChantier.length} photos de chantier ? Cette action est irréversible.`)
+                  
+                  if (!confirmed) {
+                    console.log('❌ Suppression annulée par l\'utilisateur')
+                    return
+                  }
+                  
+                  console.log('✅ Confirmation reçue, suppression en cours...')
+                  
+                  try {
+                    const url = `/api/chantiers/${chantierId}/documents/cleanup-photos`
+                    console.log('📡 Appel API:', url)
+                    
+                    const response = await fetch(url, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                    })
+                    
+                    console.log('📥 Réponse API:', response.status, response.statusText)
+                    
+                    if (!response.ok) {
+                      const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+                      console.error('❌ Erreur API:', errorData)
+                      throw new Error(errorData.error || 'Erreur lors de la suppression')
+                    }
+                    
+                    const result = await response.json()
+                    console.log('✅ Résultat:', result)
+                    
+                    toast.success(`✅ ${result.deleted || result.message || 'Toutes les photos ont été supprimées'}`)
+                    
+                    // Recharger les photos après un court délai
+                    setTimeout(() => {
+                      window.location.reload()
+                    }, 1000)
+                  } catch (error) {
+                    console.error('❌ Erreur:', error)
+                    const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression des photos'
+                    toast.error(`❌ ${errorMessage}`)
+                  }
+                }}
+                className="inline-flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm font-medium shadow-sm transition-colors cursor-pointer"
+                type="button"
+              >
+                <TrashIcon className="h-4 w-4 mr-1" />
+                Vider toutes les photos {photosChantier.length > 0 ? `(${photosChantier.length})` : ''}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -434,9 +538,16 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
         <nav className="-mb-px flex space-x-8">
           {[
             { key: 'all', label: 'Toutes', count: photosExternes.flatMap(p => p.urls || []).length + photosRemarques.length + photosSAV.length + photosChantier.length },
-            { key: 'chantier', label: 'Rapports', count: photosChantier.length },
+            { key: 'chantier', label: 'Rapports', count: photosChantier.filter(p => {
+                const hasInterneTag = p.tags?.some(tag => tag.nom.toLowerCase() === 'interne');
+                const hasRapportTag = p.tags?.some(tag => tag.nom.toLowerCase() === 'rapport');
+                return !hasInterneTag || hasRapportTag;
+              }).length },
             { key: 'externes', label: 'Externes', count: photosExternes.filter(p => !p.isManual).flatMap(p => p.urls || []).length },
-            { key: 'internes', label: 'Internes', count: photosExternes.filter(p => p.isManual).flatMap(p => p.urls || []).length },
+            { key: 'internes', label: 'Internes', count: photosExternes.filter(p => p.isManual).flatMap(p => p.urls || []).length + photosChantier.filter(p => {
+                const hasInterneTag = p.tags?.some(tag => tag.nom.toLowerCase() === 'interne');
+                return hasInterneTag;
+              }).length },
             { key: 'remarques', label: 'Remarques', count: photosRemarques.length },
             { key: 'sav', label: 'SAV', count: photosSAV.length }
           ].map(tab => (
@@ -483,18 +594,38 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
               
               {/* Badge du type */}
               <div className="absolute top-2 left-2">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  photo.type === 'externe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                  photo.type === 'manuelle' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                  photo.type === 'remarque' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                  photo.type === 'chantier' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
-                  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                }`}>
-                  {photo.type === 'externe' ? 'Externe' :
-                   photo.type === 'manuelle' ? 'Interne' :
-                   photo.type === 'remarque' ? 'Remarque' :
-                   photo.type === 'chantier' ? 'Rapport' : 'SAV'}
-                </span>
+                {(() => {
+                  // Pour les photos de chantier, afficher le tag réel au lieu du type
+                  if (photo.type === 'chantier' && photo.tags && photo.tags.length > 0) {
+                    const tagNom = photo.tags[0].nom;
+                    const isInterne = tagNom.toLowerCase() === 'interne';
+                    return (
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        isInterne 
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                          : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                      }`}>
+                        {tagNom}
+                      </span>
+                    );
+                  }
+                  
+                  // Pour les autres types, afficher le type comme avant
+                  return (
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      photo.type === 'externe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                      photo.type === 'manuelle' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                      photo.type === 'remarque' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                      photo.type === 'chantier' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    }`}>
+                      {photo.type === 'externe' ? 'Externe' :
+                       photo.type === 'manuelle' ? 'Interne' :
+                       photo.type === 'remarque' ? 'Remarque' :
+                       photo.type === 'chantier' ? 'Rapport' : 'SAV'}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Icône de visualisation */}
@@ -788,7 +919,36 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
                       <p className="text-gray-700 dark:text-gray-300">📝 {selectedPhoto.metadata.annotation}</p>
                     </div>
                   )}
-                  {selectedPhoto.metadata?.tags && selectedPhoto.metadata.tags.length > 0 && (
+                  {/* Tags de la relation Prisma (prioritaires) */}
+                  {selectedPhoto.type === 'chantier' && selectedPhoto.tags && selectedPhoto.tags.length > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tags:</span>
+                        <button
+                          onClick={() => {
+                            if (selectedPhoto.type === 'chantier' && selectedPhoto.documentId) {
+                              setEditingTags(selectedPhoto.tags?.map(t => t.nom) || [])
+                              setEditTagsModal({ show: true, photo: selectedPhoto })
+                            }
+                          }}
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-1"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                          Modifier
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedPhoto.tags.map((tag, idx) => (
+                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            <TagIcon className="h-3 w-3 mr-1" />
+                            {tag.nom}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Tags dans metadata (ancien format, à afficher seulement si pas de tags Prisma) */}
+                  {selectedPhoto.type === 'chantier' && (!selectedPhoto.tags || selectedPhoto.tags.length === 0) && selectedPhoto.metadata?.tags && selectedPhoto.metadata.tags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {selectedPhoto.metadata.tags.map((tag, idx) => (
                         <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -849,6 +1009,166 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'édition des tags */}
+      {editTagsModal.show && editTagsModal.photo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                Modifier les tags
+              </h3>
+              <button
+                onClick={() => setEditTagsModal({ show: false, photo: null })}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Photo: <strong>{editTagsModal.photo.nom}</strong>
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Tags actuels:
+              </label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {editingTags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => setEditingTags(editingTags.filter((_, i) => i !== idx))}
+                      className="ml-2 text-blue-600 hover:text-blue-800"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && newTagName.trim()) {
+                      e.preventDefault()
+                      if (!editingTags.includes(newTagName.trim())) {
+                        setEditingTags([...editingTags, newTagName.trim()])
+                        setNewTagName('')
+                      }
+                    }
+                  }}
+                  placeholder="Ajouter un tag..."
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+                <button
+                  onClick={() => {
+                    if (newTagName.trim() && !editingTags.includes(newTagName.trim())) {
+                      setEditingTags([...editingTags, newTagName.trim()])
+                      setNewTagName('')
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => setEditTagsModal({ show: false, photo: null })}
+                disabled={savingTags}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                  if (!editTagsModal.photo?.documentId || !chantierId) return
+                  
+                  setSavingTags(true)
+                  try {
+                    const response = await fetch(
+                      `/api/chantiers/${chantierId}/documents/${editTagsModal.photo.documentId}`,
+                      {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tags: editingTags }),
+                      }
+                    )
+
+                    if (!response.ok) {
+                      throw new Error('Erreur lors de la mise à jour des tags')
+                    }
+
+                    toast.success('Tags mis à jour avec succès')
+                    
+                    // Recharger les photos pour afficher les nouveaux tags
+                    const fetchAllPhotos = async () => {
+                      const responseChantier = await fetch(`/api/chantiers/${chantierId}/documents?type=photo-chantier`)
+                      if (responseChantier.ok) {
+                        const dataChantier = await responseChantier.json()
+                        const documentsList = Array.isArray(dataChantier) ? dataChantier : (dataChantier.documents || [])
+                        const photosChantierList: PhotoChantier[] = documentsList.map((doc: {
+                          id: string | number
+                          nom: string
+                          url: string
+                          type: string
+                          taille: number
+                          createdAt: string
+                          metadata?: { [key: string]: unknown }
+                          User?: { name?: string }
+                          tags?: { nom: string }[]
+                        }) => ({
+                          id: doc.id.toString(),
+                          documentId: typeof doc.id === 'number' ? doc.id.toString() : doc.id,
+                          nom: doc.nom,
+                          url: doc.url,
+                          createdAt: doc.createdAt,
+                          uploadedBy: doc.User?.name || 'Inconnu',
+                          tags: doc.tags || [],
+                          metadata: doc.metadata || {}
+                        }))
+                        setPhotosChantier(photosChantierList)
+                      }
+                    }
+                    await fetchAllPhotos()
+                    
+                    setEditTagsModal({ show: false, photo: null })
+                  } catch (error) {
+                    console.error('Erreur:', error)
+                    toast.error('Erreur lors de la mise à jour des tags')
+                  } finally {
+                    setSavingTags(false)
+                  }
+                }}
+                disabled={savingTags}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50 flex items-center"
+              >
+                {savingTags ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Enregistrement...
+                  </>
+                ) : (
+                  'Enregistrer'
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -11,14 +11,20 @@ import {
   DocumentTextIcon,
   PaperAirplaneIcon,
   PlusIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  TagIcon,
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
+
+const TAGS_PAR_DEFAUT = ['Général']
 
 interface Photo {
   id: string
   file: File
   preview: string
   annotation: string
+  tags: string[]
 }
 
 interface Personne {
@@ -27,15 +33,27 @@ interface Personne {
   fonction: string
 }
 
+interface Note {
+  id: string
+  contenu: string
+  tags: string[]
+}
+
 export default function MobileNouveauRapportPage() {
   const router = useRouter()
   const { selectedChantier } = useSelectedChantier()
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes] = useState<Note[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [personnes, setPersonnes] = useState<Personne[]>([])
   const [nouveauNom, setNouveauNom] = useState('')
   const [nouvelleFonction, setNouvelleFonction] = useState('')
+  const [nouvelleNote, setNouvelleNote] = useState('')
+  const [noteTags, setNoteTags] = useState<string[]>(['Général'])
+  const [tagsDisponibles, setTagsDisponibles] = useState<string[]>([...TAGS_PAR_DEFAUT])
+  const [nouveauTag, setNouveauTag] = useState('')
+  const [tagsMenuOpen, setTagsMenuOpen] = useState(false)
+  const [personnesSectionOpen, setPersonnesSectionOpen] = useState(true)
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -44,7 +62,69 @@ export default function MobileNouveauRapportPage() {
       router.push('/mobile')
       return
     }
+    // Charger les tags personnalisés depuis le localStorage
+    try {
+      const savedTags = localStorage.getItem('tags_personnalises')
+      if (savedTags) {
+        const parsedTags = JSON.parse(savedTags)
+        if (Array.isArray(parsedTags) && parsedTags.length > 0) {
+          const filteredTags = parsedTags.filter(
+            (tag: string) =>
+              tag !== 'testag' && tag.trim() !== '' && tag.length > 0 && !TAGS_PAR_DEFAUT.includes(tag)
+          )
+          setTagsDisponibles([...TAGS_PAR_DEFAUT, ...filteredTags])
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des tags personnalisés:', error)
+    }
   }, [selectedChantier, router])
+
+  // Sauvegarder les tags personnalisés
+  const saveTagsToLocalStorage = (tags: string[]) => {
+    try {
+      const customTags = tags.filter((tag) => !TAGS_PAR_DEFAUT.includes(tag))
+      localStorage.setItem('tags_personnalises', JSON.stringify(customTags))
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des tags personnalisés:', error)
+    }
+  }
+
+  const handleAddGlobalTag = () => {
+    if (!nouveauTag.trim()) return
+
+    if (!tagsDisponibles.includes(nouveauTag.trim())) {
+      const newTags = [...tagsDisponibles, nouveauTag.trim()]
+      setTagsDisponibles(newTags)
+      saveTagsToLocalStorage(newTags)
+      setNouveauTag('')
+    }
+  }
+
+  const handleRemoveGlobalTag = (tag: string) => {
+    if (TAGS_PAR_DEFAUT.includes(tag)) return
+
+    const newTags = tagsDisponibles.filter((t) => t !== tag)
+    setTagsDisponibles(newTags)
+    saveTagsToLocalStorage(newTags)
+
+    // Retirer le tag des notes et photos qui l'utilisent
+    setNotes((prev) =>
+      prev.map((note) => ({
+        ...note,
+        tags: note.tags.filter((t) => t !== tag),
+      }))
+    )
+    setPhotos((prev) =>
+      prev.map((photo) => ({
+        ...photo,
+        tags: (photo.tags || []).filter((t) => t !== tag),
+      }))
+    )
+    if (noteTags.includes(tag)) {
+      setNoteTags((prev) => prev.filter((t) => t !== tag))
+    }
+  }
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -56,6 +136,7 @@ export default function MobileNouveauRapportPage() {
         file,
         preview: URL.createObjectURL(file),
         annotation: '',
+        tags: ['Rapport'],
       }
       setPhotos((prev) => [...prev, photo])
     })
@@ -94,12 +175,75 @@ export default function MobileNouveauRapportPage() {
     setPersonnes((prev) => prev.filter((p) => p.id !== id))
   }
 
+  const handleAddNote = () => {
+    if (!nouvelleNote.trim()) return
+
+    const note: Note = {
+      id: Math.random().toString(36).substring(2, 9),
+      contenu: nouvelleNote.trim(),
+      tags: [...noteTags],
+    }
+
+    setNotes((prev) => [...prev, note])
+    setNouvelleNote('')
+    setNoteTags(['Général'])
+  }
+
+  const handleRemoveNote = (id: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== id))
+  }
+
+  const handleUpdateNoteContent = (id: string, contenu: string) => {
+    setNotes((prev) =>
+      prev.map((note) => (note.id === id ? { ...note, contenu } : note))
+    )
+  }
+
+  const handleToggleNoteTag = (noteId: string, tag: string) => {
+    setNotes((prev) =>
+      prev.map((note) => {
+        if (note.id === noteId) {
+          if (note.tags.includes(tag)) {
+            return { ...note, tags: note.tags.filter((t) => t !== tag) }
+          } else {
+            return { ...note, tags: [...note.tags, tag] }
+          }
+        }
+        return note
+      })
+    )
+  }
+
+  const handleToggleNewNoteTag = (tag: string) => {
+    if (noteTags.includes(tag)) {
+      setNoteTags((prev) => prev.filter((t) => t !== tag))
+    } else {
+      setNoteTags((prev) => [...prev, tag])
+    }
+  }
+
+  const handlePhotoTagToggle = (photoId: string, tag: string) => {
+    setPhotos((prev) =>
+      prev.map((photo) => {
+        if (photo.id === photoId) {
+          const tags = photo.tags || []
+          if (tags.includes(tag)) {
+            return { ...photo, tags: tags.filter((t) => t !== tag) }
+          } else {
+            return { ...photo, tags: [...tags, tag] }
+          }
+        }
+        return photo
+      })
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!selectedChantier) return
 
-    if (!notes.trim() && photos.length === 0) {
+    if (notes.length === 0 && photos.length === 0) {
       alert('Veuillez ajouter au moins une note ou une photo')
       return
     }
@@ -114,7 +258,7 @@ export default function MobileNouveauRapportPage() {
         formData.append('file', photo.file)
         formData.append('chantierId', selectedChantier.chantierId)
         formData.append('annotation', photo.annotation || '')
-        formData.append('tags', JSON.stringify(['Rapport']))
+        formData.append('tags', JSON.stringify(photo.tags.length > 0 ? photo.tags : ['Rapport']))
 
         const response = await fetch('/api/rapports/upload-photo', {
           method: 'POST',
@@ -137,13 +281,17 @@ export default function MobileNouveauRapportPage() {
         body: JSON.stringify({
           chantierId: selectedChantier.chantierId,
           date,
-          notes: notes || [],
+          notes: notes,
           personnes,
-          photos: uploadedPhotos.map((p) => ({
-            url: p.url,
-            preview: p.url,
-            caption: p.annotation,
-          })),
+          photos: uploadedPhotos.map((p, index) => {
+            const photo = photos[index]
+            return {
+              url: p.url,
+              preview: p.url,
+              caption: p.annotation,
+              tags: photo?.tags || ['Rapport'],
+            }
+          }),
         }),
       })
 
@@ -160,7 +308,7 @@ export default function MobileNouveauRapportPage() {
       formData.append('type', 'rapport-visite')
       formData.append('personnesPresentes', JSON.stringify(personnes))
       formData.append('tags', JSON.stringify([]))
-      formData.append('notes', notes)
+      formData.append('notes', JSON.stringify(notes.map(n => n.contenu).join('\n\n')))
 
       const uploadResponse = await fetch(
         `/api/chantiers/${selectedChantier.chantierId}/documents`,
@@ -224,72 +372,242 @@ export default function MobileNouveauRapportPage() {
           </div>
 
           {/* Personnes présentes */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setPersonnesSectionOpen(!personnesSectionOpen)}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <UserGroupIcon className="h-5 w-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Personnes présentes</h3>
+                {personnes.length > 0 && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                    {personnes.length}
+                  </span>
+                )}
+              </div>
+              {personnesSectionOpen ? (
+                <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+              ) : (
+                <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+              )}
+            </button>
+
+            {personnesSectionOpen && (
+              <div className="px-4 pb-4 space-y-3">
+
+                {personnes.length > 0 && (
+                  <div className="space-y-2">
+                    {personnes.map((personne) => (
+                      <div
+                        key={personne.id}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{personne.nom}</p>
+                          <p className="text-xs text-gray-500">{personne.fonction}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePersonne(personne.id)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nom"
+                    value={nouveauNom}
+                    onChange={(e) => setNouveauNom(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Fonction"
+                    value={nouvelleFonction}
+                    onChange={(e) => setNouvelleFonction(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPersonne}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Gestion des tags */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <TagIcon className="h-5 w-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Tags disponibles</h3>
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                  {tagsDisponibles.length}
+                </span>
+              </div>
+              {tagsMenuOpen ? (
+                <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+              ) : (
+                <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+              )}
+            </button>
+
+            {tagsMenuOpen && (
+              <div className="px-4 pb-4 space-y-3 border-t border-gray-200">
+                {/* Ajouter un nouveau tag */}
+                <div className="flex gap-2 pt-3">
+                  <input
+                    type="text"
+                    placeholder="Nouveau tag (ex: électricien, carreleur, client...)"
+                    value={nouveauTag}
+                    onChange={(e) => setNouveauTag(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleAddGlobalTag()
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddGlobalTag}
+                    disabled={!nouveauTag.trim()}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Liste des tags disponibles */}
+                <div className="flex flex-wrap gap-2">
+                  {tagsDisponibles.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                    >
+                      {tag}
+                      {!TAGS_PAR_DEFAUT.includes(tag) && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGlobalTag(tag)}
+                          className="ml-2 p-0.5 text-purple-600 hover:text-purple-800 rounded-full hover:bg-purple-200"
+                        >
+                          <XMarkIcon className="h-3 w-3" />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
           <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-200">
             <div className="flex items-center gap-2 mb-3">
-              <UserGroupIcon className="h-5 w-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Personnes présentes</h3>
+              <DocumentTextIcon className="h-5 w-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Notes</h3>
             </div>
 
-            {personnes.length > 0 && (
-              <div className="space-y-2 mb-3">
-                {personnes.map((personne) => (
+            {/* Liste des notes existantes */}
+            {notes.length > 0 && (
+              <div className="space-y-3 mb-3">
+                {notes.map((note) => (
                   <div
-                    key={personne.id}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                    key={note.id}
+                    className="p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{personne.nom}</p>
-                      <p className="text-xs text-gray-500">{personne.fonction}</p>
+                    <div className="flex items-start justify-between mb-2">
+                      <textarea
+                        value={note.contenu}
+                        onChange={(e) => handleUpdateNoteContent(note.id, e.target.value)}
+                        placeholder="Contenu de la note..."
+                        rows={3}
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNote(note.id)}
+                        className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePersonne(personne.id)}
-                      className="p-1 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <XMarkIcon className="h-4 w-4" />
-                    </button>
+                    {/* Tags de la note */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {tagsDisponibles.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => handleToggleNoteTag(note.id, tag)}
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            note.tags.includes(tag)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Nom"
-                value={nouveauNom}
-                onChange={(e) => setNouveauNom(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            {/* Formulaire pour ajouter une nouvelle note */}
+            <div className="space-y-2">
+              <textarea
+                value={nouvelleNote}
+                onChange={(e) => setNouvelleNote(e.target.value)}
+                placeholder="Ajouter une nouvelle note..."
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
-              <input
-                type="text"
-                placeholder="Fonction"
-                value={nouvelleFonction}
-                onChange={(e) => setNouvelleFonction(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
+              {/* Tags pour la nouvelle note */}
+              <div className="flex flex-wrap gap-1 mb-2">
+                {tagsDisponibles.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleToggleNewNoteTag(tag)}
+                    className={`px-2 py-1 text-xs rounded-full ${
+                      noteTags.includes(tag)
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
-                onClick={handleAddPersonne}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                onClick={handleAddNote}
+                disabled={!nouvelleNote.trim()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="h-5 w-5" />
+                <PlusIcon className="h-4 w-4" />
+                <span>Ajouter la note</span>
               </button>
             </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notes du rapport de visite..."
-              rows={6}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
           </div>
 
           {/* Photos */}
@@ -347,6 +665,23 @@ export default function MobileNouveauRapportPage() {
                       }
                       className="w-full mt-2 px-2 py-1 text-xs border border-gray-300 rounded"
                     />
+                    {/* Tags pour la photo */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {tagsDisponibles.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => handlePhotoTagToggle(photo.id, tag)}
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            (photo.tags || []).includes(tag)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -356,7 +691,7 @@ export default function MobileNouveauRapportPage() {
           {/* Bouton submit */}
           <button
             type="submit"
-            disabled={saving || (!notes.trim() && photos.length === 0)}
+            disabled={saving || (notes.length === 0 && photos.length === 0)}
             className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PaperAirplaneIcon className="h-5 w-5" />

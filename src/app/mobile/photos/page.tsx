@@ -24,7 +24,7 @@ export default function MobilePhotosPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [selectedPhotos, setSelectedPhotos] = useState<Array<{ id: string; file: File; preview: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -64,59 +64,92 @@ export default function MobilePhotosPage() {
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !selectedChantier) return
+    const files = e.target.files
+    if (!files || !selectedChantier) return
 
-    // Créer une prévisualisation
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setPreview(reader.result as string)
+    // Ajouter tous les fichiers sélectionnés
+    const newPhotos: Array<{ id: string; file: File; preview: string }> = []
+    
+    Array.from(files).forEach((file) => {
+      const id = Math.random().toString(36).substring(2, 9)
+      const preview = URL.createObjectURL(file)
+      newPhotos.push({ id, file, preview })
+    })
+
+    setSelectedPhotos((prev) => [...prev, ...newPhotos])
+
+    // Réinitialiser l'input pour permettre de sélectionner à nouveau
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
-    reader.readAsDataURL(file)
+  }
+
+  const handleRemovePhoto = (id: string) => {
+    setSelectedPhotos((prev) => {
+      const photo = prev.find((p) => p.id === id)
+      if (photo) {
+        URL.revokeObjectURL(photo.preview)
+      }
+      return prev.filter((p) => p.id !== id)
+    })
   }
 
   const handleUpload = async () => {
-    if (!fileInputRef.current?.files?.[0] || !selectedChantier || !preview) return
-
-    const file = fileInputRef.current.files[0]
+    if (selectedPhotos.length === 0 || !selectedChantier) return
 
     try {
       setUploading(true)
 
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('type', 'photo-chantier')
-      formData.append('tagsJsonString', JSON.stringify(['Interne']))
-      formData.append('metadata', JSON.stringify({ source: 'photo-interne' }))
+      // Uploader toutes les photos en parallèle
+      const uploadPromises = selectedPhotos.map(async (photo) => {
+        const formData = new FormData()
+        formData.append('file', photo.file)
+        formData.append('type', 'photo-chantier')
+        formData.append('tagsJsonString', JSON.stringify(['Interne']))
+        formData.append('metadata', JSON.stringify({ source: 'photo-interne' }))
 
-      const response = await fetch(
-        `/api/chantiers/${selectedChantier.chantierId}/documents`,
-        {
-          method: 'POST',
-          body: formData,
+        const response = await fetch(
+          `/api/chantiers/${selectedChantier.chantierId}/documents`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Erreur lors de l'upload de ${photo.file.name}`)
         }
-      )
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'upload')
-      }
+        return response.json()
+      })
+
+      await Promise.all(uploadPromises)
+
+      // Nettoyer les URLs des prévisualisations
+      selectedPhotos.forEach((photo) => {
+        URL.revokeObjectURL(photo.preview)
+      })
 
       // Réinitialiser et recharger
-      setPreview(null)
+      setSelectedPhotos([])
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
       await loadPhotos()
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error)
-      alert('Erreur lors de l\'upload de la photo')
+      alert(error instanceof Error ? error.message : 'Erreur lors de l\'upload des photos')
     } finally {
       setUploading(false)
     }
   }
 
   const handleCancelPreview = () => {
-    setPreview(null)
+    // Nettoyer les URLs des prévisualisations
+    selectedPhotos.forEach((photo) => {
+      URL.revokeObjectURL(photo.preview)
+    })
+    setSelectedPhotos([])
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -154,33 +187,50 @@ export default function MobilePhotosPage() {
             type="file"
             accept="image/*"
             capture="environment"
+            multiple
             onChange={handleFileSelect}
             className="hidden"
           />
 
-          {!preview ? (
+          {selectedPhotos.length === 0 ? (
             <button
               onClick={() => fileInputRef.current?.click()}
               className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-colors"
             >
               <CameraIcon className="h-6 w-6" />
-              <span>Prendre une photo</span>
+              <span>Ajouter des photos</span>
             </button>
           ) : (
             <div className="space-y-3">
-              <div className="relative">
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-64 object-cover rounded-xl"
-                />
-                <button
-                  onClick={handleCancelPreview}
-                  className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                >
-                  <XMarkIcon className="h-5 w-5" />
-                </button>
+              {/* Grille de prévisualisations */}
+              <div className="grid grid-cols-2 gap-3">
+                {selectedPhotos.map((photo) => (
+                  <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img
+                      src={photo.preview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={() => handleRemovePhoto(photo.id)}
+                      className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
+              
+              {/* Bouton pour ajouter plus de photos */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 transition-colors"
+              >
+                <CameraIcon className="h-5 w-5" />
+                <span>Ajouter d'autres photos</span>
+              </button>
+
+              {/* Boutons d'action */}
               <div className="flex gap-3">
                 <button
                   onClick={handleCancelPreview}
@@ -193,7 +243,7 @@ export default function MobilePhotosPage() {
                   disabled={uploading}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-colors disabled:opacity-50"
                 >
-                  {uploading ? 'Envoi...' : 'Enregistrer'}
+                  {uploading ? `Envoi (${selectedPhotos.length})...` : `Enregistrer ${selectedPhotos.length} photo${selectedPhotos.length > 1 ? 's' : ''}`}
                 </button>
               </div>
             </div>

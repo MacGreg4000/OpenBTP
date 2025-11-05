@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
-import { CameraIcon, CloudArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import React, { useState, useEffect } from 'react'
+import { CameraIcon, CloudArrowUpIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
 import PhotosContent from './PhotosContent'
+import toast from 'react-hot-toast'
 
 interface PhotosTabContentProps {
   chantierId: string
@@ -20,6 +21,24 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
   const [uploadProgress, setUploadProgress] = useState(0)
   const [description, setDescription] = useState('')
   const [dragActive, setDragActive] = useState(false)
+  const [photosCount, setPhotosCount] = useState(0)
+
+  // Charger le nombre de photos de chantier
+  useEffect(() => {
+    const loadPhotosCount = async () => {
+      try {
+        const response = await fetch(`/api/chantiers/${chantierId}/documents?type=photo-chantier`)
+        if (response.ok) {
+          const data = await response.json()
+          const documentsList = Array.isArray(data) ? data : (data.documents || [])
+          setPhotosCount(documentsList.length)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement du nombre de photos:', error)
+      }
+    }
+    loadPhotosCount()
+  }, [chantierId])
 
   // Gestion du drag & drop
   const handleDrag = (e: React.DragEvent) => {
@@ -335,6 +354,58 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
             </div>
           )}
         </div>
+
+      {/* Bouton pour vider toutes les photos */}
+      {photosCount > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                Photos de chantier dans la base de données
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {photosCount} photo{photosCount > 1 ? 's' : ''} trouvée{photosCount > 1 ? 's' : ''}
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!window.confirm(`Êtes-vous sûr de vouloir supprimer toutes les ${photosCount} photos de chantier ? Cette action est irréversible.`)) {
+                  return
+                }
+                
+                try {
+                  const response = await fetch(`/api/chantiers/${chantierId}/documents/cleanup-photos`, {
+                    method: 'POST',
+                  })
+                  
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+                    throw new Error(errorData.error || 'Erreur lors de la suppression')
+                  }
+                  
+                  const result = await response.json()
+                  toast.success(`✅ ${result.deleted || result.message || 'Toutes les photos ont été supprimées'}`)
+                  
+                  setPhotosCount(0)
+                  
+                  // Recharger la page après un court délai
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 1000)
+                } catch (error) {
+                  console.error('Erreur:', error)
+                  const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression des photos'
+                  toast.error(`❌ ${errorMessage}`)
+                }
+              }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+            >
+              <TrashIcon className="h-4 w-4 mr-2" />
+              Vider toutes les photos ({photosCount})
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Affichage de toutes les photos */}
       <PhotosContent chantierId={chantierId} />

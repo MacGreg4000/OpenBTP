@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       },
       date,
       personnes: personnes || [],
-      notes: notes || [],
+      notes: Array.isArray(notes) ? notes : (notes ? [{ id: '1', contenu: notes, tags: [] }] : []),
       photos: photosWithBase64,
       tagFilter,
       logoBase64
