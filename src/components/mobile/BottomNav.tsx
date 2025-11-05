@@ -7,12 +7,14 @@ import {
   BuildingOfficeIcon,
   CameraIcon,
   DocumentTextIcon,
+  ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline'
 import {
   HomeIcon as HomeIconSolid,
   BuildingOfficeIcon as BuildingOfficeIconSolid,
   CameraIcon as CameraIconSolid,
   DocumentTextIcon as DocumentTextIconSolid,
+  ClipboardDocumentCheckIcon as ClipboardDocumentCheckIconSolid,
 } from '@heroicons/react/24/solid'
 
 export function BottomNav() {
@@ -48,6 +50,13 @@ export function BottomNav() {
       iconSolid: DocumentTextIconSolid,
       requiresChantier: true,
     },
+    {
+      path: '/mobile/rapports/nouveau',
+      label: 'Rapport',
+      icon: ClipboardDocumentCheckIcon,
+      iconSolid: ClipboardDocumentCheckIconSolid,
+      requiresChantier: true,
+    },
   ]
 
   const handleNavClick = (item: typeof navItems[0]) => {
@@ -60,7 +69,7 @@ export function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 safe-area-bottom z-50">
-      <div className="max-w-md mx-auto grid grid-cols-4 py-2">
+      <div className="max-w-md mx-auto grid grid-cols-5 py-2">
         {navItems.map((item) => {
           const isActive = pathname === item.path
           const Icon = isActive ? item.iconSolid : item.icon
