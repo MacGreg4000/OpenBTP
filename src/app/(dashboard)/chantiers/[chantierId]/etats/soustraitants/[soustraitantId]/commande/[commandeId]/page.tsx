@@ -502,13 +502,13 @@ export default function CommandeSousTraitantPage(
                       Unité
                     </th>
                     <th className="px-4 py-4 text-right font-semibold text-gray-700 dark:text-gray-200">
+                      Quantité
+                    </th>
+                    <th className="px-4 py-4 text-right font-semibold text-gray-700 dark:text-gray-200">
                       <div className="flex items-center justify-end">
                         <CurrencyEuroIcon className="h-4 w-4 mr-1" />
                         P.U.
                       </div>
-                    </th>
-                    <th className="px-4 py-4 text-right font-semibold text-gray-700 dark:text-gray-200">
-                      Quantité
                     </th>
                     <th className="px-4 py-4 text-right font-semibold text-gray-700 dark:text-gray-200">
                       <div className="flex items-center justify-end">
@@ -569,21 +569,6 @@ export default function CommandeSousTraitantPage(
                         <td className="px-4 py-4 text-right">
                           {isEditing ? (
                             <NumericInput
-                              value={ligneTemp?.prixUnitaire ?? ligne.prixUnitaire}
-                              onChangeNumber={(val)=> handleInputChange(ligne.id, 'prixUnitaire', val)}
-                              step="0.01"
-                              className="w-24 px-3 py-2 text-right border-2 border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 font-medium"
-                            />
-                          ) : (
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {ligne.prixUnitaire.toLocaleString('fr-FR')} €
-                            </span>
-                          )}
-                        </td>
-                        
-                        <td className="px-4 py-4 text-right">
-                          {isEditing ? (
-                            <NumericInput
                               value={ligneTemp?.quantite ?? ligne.quantite}
                               onChangeNumber={(val)=> handleInputChange(ligne.id, 'quantite', val)}
                               step="0.01"
@@ -592,6 +577,21 @@ export default function CommandeSousTraitantPage(
                           ) : (
                             <span className="font-medium text-gray-900 dark:text-gray-100">
                               {ligne.quantite.toLocaleString('fr-FR')}
+                            </span>
+                          )}
+                        </td>
+                        
+                        <td className="px-4 py-4 text-right">
+                          {isEditing ? (
+                            <NumericInput
+                              value={ligneTemp?.prixUnitaire ?? ligne.prixUnitaire}
+                              onChangeNumber={(val)=> handleInputChange(ligne.id, 'prixUnitaire', val)}
+                              step="0.01"
+                              className="w-24 px-3 py-2 text-right border-2 border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 font-medium"
+                            />
+                          ) : (
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              {ligne.prixUnitaire.toLocaleString('fr-FR')} €
                             </span>
                           )}
                         </td>

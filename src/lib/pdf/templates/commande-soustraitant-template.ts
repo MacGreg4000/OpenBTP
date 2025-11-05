@@ -471,8 +471,8 @@ export function generateCommandeSoustraitantHTML(
                         <th style="width: 30%">Description</th>
                         <th style="width: 5%" class="text-center">Type</th>
                         <th style="width: 5%" class="text-center">Unité</th>
-                        <th style="width: 10%" class="text-right">P.U. (€)</th>
                         <th style="width: 8%" class="text-center">Quantité</th>
+                        <th style="width: 10%" class="text-right">P.U. (€)</th>
                         <th style="width: 12%" class="text-right">Total (€)</th>
                     </tr>
                 </thead>
@@ -483,8 +483,8 @@ export function generateCommandeSoustraitantHTML(
                             <td>${ligne.description}</td>
                             <td class="text-center">${ligne.type}</td>
                             <td class="text-center">${ligne.unite}</td>
-                            <td class="text-right">${ligne.prixUnitaire.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                             <td class="text-center">${ligne.quantite.toLocaleString('fr-FR')}</td>
+                            <td class="text-right">${ligne.prixUnitaire.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                             <td class="text-right montant font-bold">${ligne.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                         </tr>
                     `).join('')}
