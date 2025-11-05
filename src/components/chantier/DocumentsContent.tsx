@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon, EyeIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import PhotosTabContent from './PhotosTabContent'
 import FichesTechniquesTabContent from './FichesTechniquesTabContent'
+import MetresTabContent from './MetresTabContent'
 
 interface Tag {
   id: string;
@@ -44,7 +45,7 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const [activeTab, setActiveTab] = useState<'documents' | 'photos' | 'fiches-techniques'>('documents')
+  const [activeTab, setActiveTab] = useState<'documents' | 'photos' | 'fiches-techniques' | 'metres'>('documents')
   const [selectedTagsForUpload, setSelectedTagsForUpload] = useState<string[]>([])
   const [currentTagFilter, setCurrentTagFilter] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -363,6 +364,16 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
           >
             Fiches techniques
           </button>
+          <button
+            onClick={() => setActiveTab('metres')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'metres'
+                ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            Métrés
+          </button>
         </nav>
       </div>
 
@@ -612,8 +623,10 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
         </div>
       ) : activeTab === 'photos' ? (
         <PhotosTabContent chantierId={chantierId} />
-      ) : (
+      ) : activeTab === 'fiches-techniques' ? (
         <FichesTechniquesTabContent chantierId={chantierId} />
+      ) : (
+        <MetresTabContent chantierId={chantierId} />
       )}
 
       {/* Modal de prévisualisation des photos */}

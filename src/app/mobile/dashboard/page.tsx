@@ -20,6 +20,7 @@ import {
   FolderIcon,
   DocumentDuplicateIcon,
   ArrowPathIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline'
 
 interface ChantierDetails {
@@ -365,6 +366,14 @@ export default function MobileDashboardPage() {
             >
               <DocumentDuplicateIcon className="h-8 w-8 text-orange-600 mb-2" />
               <span className="text-sm font-medium text-gray-900">Créer un rapport</span>
+            </button>
+
+            <button
+              onClick={() => router.push('/mobile/metres/nouveau')}
+              className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 hover:border-indigo-300 transition-colors"
+            >
+              <ClipboardDocumentListIcon className="h-8 w-8 text-indigo-600 mb-2" />
+              <span className="text-sm font-medium text-gray-900">Nouveau métré</span>
             </button>
           </div>
         </div>

@@ -537,6 +537,7 @@ model Chantier {
   commandes            Commande[]             @relation("CommandeToChantier")
   commandeSousTraitant CommandeSousTraitant[]
   metresSoustraitant   MetreSoustraitant[]
+  metresChantier       MetreChantier[]
   etatsAvancement      EtatAvancement[]
   receptionsChantier   ReceptionChantier[]
   // Planning ressources
@@ -822,6 +823,9 @@ model User {
   
   // Gestion de chantiers
   chantiersGeres            ChantierGestionnaire[]
+  
+  // Métrés de chantier
+  metresChantierCrees       MetreChantier[] @relation("MetresChantierCrees")
 }
 
 model BonRegie {
@@ -1036,6 +1040,63 @@ model MetreLigne {
 
   @@index([metreId])
   @@map("metre_ligne")
+}
+
+// MÉTRÉS CHANTIER (INTERNE)
+// ==========================
+
+model MetreChantier {
+  id              String   @id @default(uuid())
+  chantierId      String
+  date            DateTime @default(now())
+  commentaire     String?  @db.Text
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  chantier        Chantier @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  createdByUser   User     @relation("MetresChantierCrees", fields: [createdBy], references: [id])
+  categories      MetreCategorie[]
+
+  @@index([chantierId])
+  @@index([createdBy])
+  @@map("metre_chantier")
+}
+
+model MetreCategorie {
+  id              String   @id @default(uuid())
+  metreChantierId String
+  nom             String
+  unite           String   @default("m²")
+  ordre           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  metreChantier   MetreChantier @relation(fields: [metreChantierId], references: [id], onDelete: Cascade)
+  lignes          MetreChantierLigne[]
+
+  @@index([metreChantierId])
+  @@map("metre_categorie")
+}
+
+model MetreChantierLigne {
+  id              String   @id @default(uuid())
+  categorieId     String
+  description     String
+  unite           String   @default("m²")
+  longueur        Float?
+  largeur         Float?
+  hauteur         Float?
+  quantite        Float
+  notes           String?  @db.Text
+  ordre           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  categorie       MetreCategorie @relation(fields: [categorieId], references: [id], onDelete: Cascade)
+
+  @@index([categorieId])
+  @@map("metre_chantier_ligne")
 }
 
 model Tag {
