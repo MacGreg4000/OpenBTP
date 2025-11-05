@@ -1,19 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
 
 export default function NotFound() {
-  useEffect(() => {
-    // Nettoyer les service workers au cas où
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(const registration of registrations) {
-          registration.unregister()
-        }
-      })
-    }
-  }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

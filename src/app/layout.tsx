@@ -6,6 +6,11 @@ import '../styles/mobile-keyboard.css'
 export const metadata = {
   title: 'OpenBTP',
   description: 'Application de gestion de chantiers',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+  },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -20,6 +25,8 @@ export const metadata = {
 }
 
 import RootClientProviders from '@/components/providers/RootClientProviders'
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
+import PWAInstall from '@/components/PWAInstall'
 
 export default function RootLayout({
   children,
@@ -32,6 +39,8 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <RootClientProviders>
           {children}
+          <ServiceWorkerRegistration />
+          <PWAInstall />
         </RootClientProviders>
       </body>
     </html>

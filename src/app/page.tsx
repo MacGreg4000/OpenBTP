@@ -11,15 +11,6 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Nettoyer automatiquement les service workers au chargement
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(const registration of registrations) {
-          registration.unregister()
-        }
-      }).catch(err => console.log('SW cleanup error:', err))
-    }
-
     // Redirection vers login si non authentifié
     if (status === 'unauthenticated') {
       router.replace('/login')
