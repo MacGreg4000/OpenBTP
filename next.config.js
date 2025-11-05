@@ -54,34 +54,6 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   analyzerMode: 'static',
 });
 
-// PWA (seulement en production - chargement conditionnel pour éviter les erreurs en dev)
-let config = withBundleAnalyzer(nextConfig)
-
-if (process.env.NODE_ENV === 'production') {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const withPWA = require('next-pwa')({
-      dest: 'public',
-      register: true,
-      skipWaiting: true,
-      disable: false,
-      runtimeCaching: [
-        {
-          urlPattern: /^https?.*/,
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'offlineCache',
-            expiration: {
-              maxEntries: 200,
-            },
-          },
-        },
-      ],
-    });
-    config = withPWA(config)
-  } catch (error) {
-    console.warn('⚠️  next-pwa non disponible, PWA désactivée:', error.message)
-  }
-}
+const config = withBundleAnalyzer(nextConfig)
 
 module.exports = config

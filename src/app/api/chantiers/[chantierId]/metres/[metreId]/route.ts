@@ -111,7 +111,7 @@ export async function PATCH(
     // Mettre à jour le métré avec transaction
     const metre = await prisma.$transaction(async (tx) => {
       // Mettre à jour les champs de base
-      const updatedMetre = await tx.metreChantier.update({
+      await tx.metreChantier.update({
         where: { id: params.metreId },
         data: {
           ...(date && { date: new Date(date) }),
@@ -128,7 +128,7 @@ export async function PATCH(
 
         // Recréer les catégories et leurs lignes
         for (const cat of categories) {
-          const createdCat = await tx.metreCategorie.create({
+          await tx.metreCategorie.create({
             data: {
               metreChantierId: params.metreId,
               nom: cat.nom,

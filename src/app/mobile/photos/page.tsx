@@ -33,7 +33,7 @@ export default function MobilePhotosPage() {
       return
     }
     loadPhotos()
-  }, [selectedChantier, router])
+  }, [selectedChantier, router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadPhotos = async () => {
     if (!selectedChantier) return
@@ -47,10 +47,21 @@ export default function MobilePhotosPage() {
       if (response.ok) {
         const data = await response.json()
         // Filtrer seulement les photos avec tag "Interne"
-        const photosInterne = data.filter((doc: any) => {
+        interface DocumentTag {
+          nom: string
+        }
+        interface DocumentFromAPI {
+          id: number
+          nom: string
+          url: string
+          createdAt: string
+          tags?: DocumentTag[] | string[]
+          metadata?: string | { annotation?: string }
+        }
+        const photosInterne = data.filter((doc: DocumentFromAPI) => {
           const tags = doc.tags || []
-          return tags.some((tag: any) => 
-            tag.nom?.toLowerCase() === 'interne' || 
+          return tags.some((tag: DocumentTag | string) => 
+            (typeof tag === 'object' && tag.nom?.toLowerCase() === 'interne') || 
             (typeof tag === 'string' && tag.toLowerCase() === 'interne')
           )
         })

@@ -1,6 +1,5 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
@@ -24,7 +23,6 @@ interface Chantier {
 }
 
 export default function MobileHomePage() {
-  const { data: session } = useSession()
   const router = useRouter()
   const { selectedChantier, setSelectedChantier } = useSelectedChantier()
   const [chantiers, setChantiers] = useState<Chantier[]>([])
@@ -64,7 +62,14 @@ export default function MobileHomePage() {
         
         // Filtrer seulement EN_COURS et EN_PREPARATION
         // L'API retourne etatChantier (libellé) : 'En cours', 'En préparation'
-        const actifs = chantiersList.filter((c: any) => {
+        interface ChantierFromAPI {
+          chantierId: string
+          nomChantier: string
+          statut?: string
+          etat?: string
+          etatChantier?: string
+        }
+        const actifs = chantiersList.filter((c: ChantierFromAPI) => {
           const statut = c.statut || c.etat
           const etatChantier = c.etatChantier || c.etat
           

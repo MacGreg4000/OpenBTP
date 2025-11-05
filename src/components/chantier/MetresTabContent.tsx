@@ -7,7 +7,6 @@ import {
   ChevronUpIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon,
   PlusIcon,
   ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline'
@@ -55,12 +54,11 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
   const [loading, setLoading] = useState(true)
   const [expandedMetres, setExpandedMetres] = useState<Set<string>>(new Set())
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [selectedMetre, setSelectedMetre] = useState<Metre | null>(null)
   const [deletingMetreId, setDeletingMetreId] = useState<string | null>(null)
 
   useEffect(() => {
     loadMetres()
-  }, [chantierId])
+  }, [chantierId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMetres = async () => {
     try {

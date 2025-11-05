@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const imagesDir = path.join(process.cwd(), 'public', 'images')
     try {
       await mkdir(imagesDir, { recursive: true })
-    } catch (error) {
+    } catch {
       // Le dossier existe déjà, on continue
     }
 

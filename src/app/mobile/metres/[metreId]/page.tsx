@@ -57,7 +57,7 @@ export default function MobileEditMetrePage() {
       return
     }
     loadMetre()
-  }, [selectedChantier, metreId, router])
+  }, [selectedChantier, metreId, router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMetre = async () => {
     if (!selectedChantier) return
@@ -77,11 +77,11 @@ export default function MobileEditMetrePage() {
       setDate(format(new Date(data.date), 'yyyy-MM-dd'))
       setCommentaire(data.commentaire || '')
       setCategories(
-        data.categories.map((cat: any) => ({
+        data.categories.map((cat: MetreCategorie) => ({
           id: cat.id,
           nom: cat.nom,
           unite: cat.unite,
-          lignes: cat.lignes.map((ligne: any) => ({
+          lignes: cat.lignes.map((ligne: MetreLigne) => ({
             id: ligne.id,
             description: ligne.description,
             unite: ligne.unite,

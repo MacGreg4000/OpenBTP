@@ -6,11 +6,6 @@ import '../styles/mobile-keyboard.css'
 export const metadata = {
   title: 'OpenBTP',
   description: 'Application de gestion de chantiers',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-  },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

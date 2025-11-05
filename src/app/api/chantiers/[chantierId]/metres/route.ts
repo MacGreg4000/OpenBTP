@@ -106,12 +106,12 @@ export async function POST(
         commentaire: commentaire || null,
         createdBy: session.user.id,
         categories: {
-          create: categories.map((cat, catIndex) => ({
+          create: categories.map((cat) => ({
             nom: cat.nom,
             unite: cat.unite,
             ordre: cat.ordre,
             lignes: {
-              create: cat.lignes.map((ligne, ligneIndex) => ({
+              create: cat.lignes.map((ligne) => ({
                 description: ligne.description,
                 unite: ligne.unite,
                 longueur: ligne.longueur || null,

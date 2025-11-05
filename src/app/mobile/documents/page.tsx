@@ -36,7 +36,7 @@ export default function MobileDocumentsPage() {
       return
     }
     loadDocuments()
-  }, [selectedChantier, router])
+  }, [selectedChantier, router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadDocuments = async () => {
     if (!selectedChantier) return

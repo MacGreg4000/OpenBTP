@@ -11,7 +11,6 @@ import {
   CurrencyEuroIcon,
   CameraIcon,
   DocumentTextIcon,
-  ArrowRightIcon,
   ChevronRightIcon,
   IdentificationIcon,
   UserIcon,
@@ -68,7 +67,7 @@ export default function MobileDashboardPage() {
       return
     }
     loadChantierDetails()
-  }, [selectedChantier, router])
+  }, [selectedChantier, router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadChantierDetails = async () => {
     if (!selectedChantier) return

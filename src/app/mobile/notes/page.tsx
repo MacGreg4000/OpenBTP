@@ -33,7 +33,7 @@ export default function MobileNotesPage() {
       return
     }
     loadNotes()
-  }, [selectedChantier, router])
+  }, [selectedChantier, router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadNotes = async () => {
     if (!selectedChantier) return

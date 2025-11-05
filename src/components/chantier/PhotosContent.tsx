@@ -41,6 +41,13 @@ interface PhotoSAV {
   ticketTitre: string
 }
 
+interface PhotoMetadata {
+  annotation?: string
+  source?: string
+  tags?: string[]
+  [key: string]: unknown
+}
+
 interface PhotoChantier {
   id: string
   nom: string
@@ -49,10 +56,7 @@ interface PhotoChantier {
   uploadedBy: string
   documentId?: string // ID numérique du document pour l'API
   tags?: { nom: string }[] // Tags de la relation Prisma
-  metadata?: {
-    annotation?: string
-    tags?: string[] // Tags dans metadata (ancien format)
-  }
+  metadata?: PhotoMetadata
 }
 
 interface PhotosContentProps {
@@ -173,10 +177,11 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
             tags?: { nom: string }[]
           }) => {
             // 🔍 DEBUG : Log des tags pour chaque photo
+            const metadata = typeof doc.metadata === 'string' ? JSON.parse(doc.metadata) : doc.metadata as PhotoMetadata | null
             console.log(`🔍 PhotosContent - Photo ${doc.nom}:`, {
               tags: doc.tags?.map(t => t.nom) || [],
-              metadataTags: (doc.metadata as any)?.tags || [],
-              metadataSource: (doc.metadata as any)?.source
+              metadataTags: metadata?.tags || [],
+              metadataSource: metadata?.source
             });
             
             return {
