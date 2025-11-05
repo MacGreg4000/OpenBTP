@@ -6,11 +6,11 @@ import '../styles/mobile-keyboard.css'
 export const metadata = {
   title: 'OpenBTP',
   description: 'Application de gestion de chantiers',
-  // Empêcher la mise en cache PWA
+  manifest: '/manifest.json',
   appleWebApp: {
-    capable: false,
+    capable: true,
+    statusBarStyle: 'default',
   },
-  manifest: undefined,
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -18,6 +18,9 @@ export const metadata = {
       { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
     ],
     shortcut: '/favicon.svg',
+    apple: [
+      { url: '/favicon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
   },
 }
 

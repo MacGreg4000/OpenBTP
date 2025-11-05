@@ -193,6 +193,22 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
       if (metadataStr) {
         try {
           metadata = JSON.parse(metadataStr) as JsonValue;
+          
+          // 🔍 DEBUG: Log pour vérifier la source
+          const metadataObj = metadata as { source?: string };
+          console.log('🔍 POST documents - metadata.source:', metadataObj?.source);
+          
+          // Si la source est 'photo-interne', forcer le tag "Interne" et supprimer "Rapport"
+          if (metadataObj?.source === 'photo-interne') {
+            console.log('✅ POST documents - Photo interne détectée, forçage du tag "Interne"');
+            // Supprimer "Rapport" des tags s'il est présent
+            tagsToConnect = tagsToConnect.filter(tag => tag.nom.toLowerCase() !== 'rapport');
+            // Ajouter "Interne" s'il n'est pas déjà présent
+            const hasInterne = tagsToConnect.some(tag => tag.nom.toLowerCase() === 'interne');
+            if (!hasInterne) {
+              tagsToConnect.push({ nom: 'Interne' });
+            }
+          }
         } catch (e) {
           console.error('Erreur lors du parsing des métadonnées:', e);
         }
@@ -284,6 +300,62 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
       });
 
       console.log('POST documents - document créé avec succès:', document.id)
+      
+      // 🔍 Vérification finale pour les photos : si metadata.source === 'photo-interne' 
+      // et que "Rapport" est présent ou "Interne" est absent, corriger
+      if (documentType === 'photo-chantier' && metadata && typeof metadata === 'object') {
+        const metadataObj = metadata as { source?: string };
+        if (metadataObj.source === 'photo-interne') {
+          // Récupérer le document avec ses tags
+          const docWithTags = await prisma.document.findUnique({
+            where: { id: document.id },
+            include: { tags: true }
+          });
+          
+          if (docWithTags) {
+            const tagNames = docWithTags.tags.map(t => t.nom.toLowerCase());
+            const hasRapport = tagNames.includes('rapport');
+            const hasInterne = tagNames.includes('interne');
+            
+            if (hasRapport || !hasInterne) {
+              console.log('🔧 POST documents - Correction des tags: Suppression de "Rapport", ajout de "Interne"');
+              
+              // Supprimer tous les tags et ajouter seulement "Interne"
+              await prisma.document.update({
+                where: { id: document.id },
+                data: {
+                  tags: {
+                    set: [],
+                    connectOrCreate: {
+                      where: { nom: 'Interne' },
+                      create: { nom: 'Interne' }
+                    }
+                  }
+                }
+              });
+              
+              // Récupérer le document corrigé
+              const correctedDoc = await prisma.document.findUnique({
+                where: { id: document.id },
+                include: {
+                  User: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true
+                    }
+                  },
+                  tags: true
+                }
+              });
+              
+              console.log('✅ POST documents - Tags corrigés:', correctedDoc?.tags.map(t => t.nom));
+              return NextResponse.json(correctedDoc);
+            }
+          }
+        }
+      }
+      
       return NextResponse.json(document)
     } catch (dbError: unknown) {
       const dbMessage = dbError instanceof Error ? dbError.message : String(dbError)
