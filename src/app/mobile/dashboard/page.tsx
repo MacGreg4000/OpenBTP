@@ -129,17 +129,11 @@ export default function MobileDashboardPage() {
     }).format(amount)
   }
 
-  const handleViewCommande = async () => {
+  const handleViewCommande = () => {
     if (!chantierDetails?.commande) return
     
-    try {
-      // Ouvrir le PDF dans un nouvel onglet
-      const pdfUrl = `/api/commandes/${chantierDetails.commande.id}/pdf-modern`
-      window.open(pdfUrl, '_blank')
-    } catch (error) {
-      console.error('Erreur lors de l\'ouverture du PDF:', error)
-      alert('Erreur lors de l\'ouverture du PDF de la commande')
-    }
+    // Naviguer vers la page de visualisation PDF avec barre de navigation
+    router.push(`/mobile/commande/${chantierDetails.commande.id}`)
   }
 
   if (loading) {
@@ -161,33 +155,35 @@ export default function MobileDashboardPage() {
     <div className="min-h-screen pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 text-white">
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            {/* Bouton retour */}
             <button
               onClick={() => router.push('/mobile')}
-              className="p-2 -ml-2 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-2 -ml-2 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
             >
-              <ArrowLeftIcon className="h-6 w-6" />
+              <ArrowLeftIcon className="h-5 w-5" />
             </button>
+
+            {/* Icône et nom du chantier */}
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30 flex-shrink-0">
+              <BuildingOfficeIcon className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-black truncate">{chantierDetails.nomChantier}</h1>
+              {chantierDetails.clientNom && (
+                <p className="text-xs text-blue-100 truncate">{chantierDetails.clientNom}</p>
+              )}
+            </div>
+
+            {/* Bouton changement de chantier */}
             <button
               onClick={handleChangeChantier}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors group"
+              className="p-2 -mr-2 hover:bg-white/20 rounded-lg transition-colors group flex-shrink-0"
               title="Changer de chantier"
             >
               <ArrowPathIcon className="h-5 w-5 group-hover:animate-spin transition-transform" />
             </button>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30">
-              <BuildingOfficeIcon className="h-7 w-7" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-black truncate">{chantierDetails.nomChantier}</h1>
-              {chantierDetails.clientNom && (
-                <p className="text-sm text-blue-100 mt-1">{chantierDetails.clientNom}</p>
-              )}
-            </div>
           </div>
         </div>
       </div>

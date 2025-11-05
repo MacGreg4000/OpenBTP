@@ -86,7 +86,8 @@ export default function MobileDocumentsPage() {
   }
 
   const handleViewDocument = (doc: Document) => {
-    window.open(doc.url, '_blank')
+    // Naviguer vers la page de visualisation avec barre de navigation
+    router.push(`/mobile/document/${doc.id}`)
   }
 
   if (!selectedChantier) {

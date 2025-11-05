@@ -23,14 +23,14 @@ interface QuickAction {
 
 const quickActions: QuickAction[] = [
   {
-    id: 'nouveau-chantier',
-    title: 'Nouveau chantier',
+    id: 'chantiers',
+    title: 'Chantiers',
     icon: BuildingOffice2Icon,
-    href: '/chantiers/nouveau',
+    href: '/chantiers',
     color: 'from-blue-500 to-indigo-600',
     bgColor: 'from-blue-50 to-indigo-50',
     hoverColor: 'shadow-blue-500/30',
-    shortcut: 'N'
+    shortcut: 'C'
   },
   {
     id: 'bon-regie',

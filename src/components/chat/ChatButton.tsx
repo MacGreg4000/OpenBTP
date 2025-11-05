@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useChat } from './context/ChatContext';
 import { createPortal } from 'react-dom';
 import ChatWindow from '../chat/ChatWindow';
@@ -6,6 +7,10 @@ import ChatWindow from '../chat/ChatWindow';
 const ChatButton: React.FC = () => {
   const { toggleChat, isOpen, chats } = useChat();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  
+  // Masquer le chat sur les pages mobiles
+  const isMobilePage = pathname?.startsWith('/mobile');
   
   // Compter les messages non lus
   const unreadCount = chats.reduce((acc, chat) => {
@@ -17,7 +22,7 @@ const ChatButton: React.FC = () => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || isMobilePage) return null;
 
   return (
     <>
