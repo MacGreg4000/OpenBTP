@@ -6,7 +6,7 @@ import {
   DocumentArrowUpIcon
 } from '@heroicons/react/24/outline'
 import DetailChoixCard from './DetailChoixCard'
-import Select from 'react-select'
+import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
 
 interface Chantier {
   chantierId: string
@@ -104,16 +104,26 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
   const fetchChantiers = async () => {
     try {
       const response = await fetch('/api/chantiers')
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
       const data = await response.json()
-      // L'API retourne { data: [...], meta: {...} }
-      if (data.data && Array.isArray(data.data)) {
+      // L'API retourne { chantiers: [...], meta: {...} }
+      if (data.chantiers && Array.isArray(data.chantiers)) {
+        setChantiers(data.chantiers)
+      } else if (data.data && Array.isArray(data.data)) {
+        // Fallback pour l'ancien format
         setChantiers(data.data)
       } else if (Array.isArray(data)) {
         // Fallback si l'API retourne directement un array
         setChantiers(data)
+      } else {
+        console.warn('Format de réponse inattendu pour /api/chantiers:', data)
+        setChantiers([])
       }
     } catch (error) {
       console.error('Erreur lors du chargement des chantiers:', error)
+      setChantiers([])
     }
   }
 
@@ -221,17 +231,11 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
     await onSubmit(formData)
   }
 
-  const chantierOptions = useMemo(() => {
-    const base = [{ value: '', label: 'Aucun (client en réflexion)' }]
+  const chantierOptions = useMemo<SearchableSelectOption[]>(() => {
+    const base: SearchableSelectOption[] = [{ value: null, label: 'Aucun (client en réflexion)' }]
     const others = chantiers.map((c) => ({ value: c.chantierId, label: c.nomChantier }))
     return [...base, ...others]
   }, [chantiers])
-
-  const selectedChantierOption = useMemo(() => {
-    // Trouver l'objet option exact pour que react-select affiche correctement la valeur contrôlée
-    const match = chantierOptions.find((opt) => opt.value === (chantierId || ''))
-    return match || chantierOptions[0]
-  }, [chantierOptions, chantierId])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -295,20 +299,15 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Chantier associé
             </label>
-            <Select
-              classNamePrefix="rs"
-              isClearable
-              isSearchable
-              placeholder="Rechercher un chantier..."
+            <SearchableSelect
               options={chantierOptions}
-              value={selectedChantierOption}
-              onChange={(opt) => setChantierId((opt?.value as string) || '')}
-              styles={{
-                control: (base) => ({ ...base, backgroundColor: 'var(--input-bg)', borderColor: 'var(--input-border)' }),
-                singleValue: (base) => ({ ...base, color: 'var(--input-text)' }),
-                input: (base) => ({ ...base, color: 'var(--input-text)' }),
-                menu: (base) => ({ ...base, zIndex: 50 })
-              }}
+              value={chantierId || null}
+              onChange={(value) => setChantierId(value ? String(value) : '')}
+              placeholder="Rechercher un chantier..."
+              searchPlaceholder="Rechercher un chantier..."
+              emptyMessage="Aucun chantier trouvé"
+              showAllOption={true}
+              allOptionLabel="Aucun (client en réflexion)"
             />
           </div>
 
