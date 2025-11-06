@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentCheckIcon, PlusCircleIcon } from '@heroicons/react/24/outline'
 import { Button, FormInput } from '@/components/ui'
 import { format } from 'date-fns'
 import React from 'react'
@@ -99,19 +99,50 @@ export default function NouvelleReceptionPage({ params }: { params: Promise<{ ch
   if (!chantier) return <div className="p-8">Chantier non trouvé</div>
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-          <ClipboardDocumentCheckIcon className="h-8 w-8 mr-2 text-red-500" />
-          Nouvelle réception - {chantier.nomChantier}
-        </h1>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Créez une nouvelle réception pour enregistrer les remarques à corriger
-        </p>
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Header léger style backdrop-blur */}
+      <div className="mb-6">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+          {/* Effet de fond subtil avec dégradé red/rose (couleur de l'icône Réception) - opacité 60% */}
+          <div className="absolute inset-0 bg-gradient-to-br from-red-600/60 via-red-700/60 to-rose-800/60 dark:from-red-600/30 dark:via-red-700/30 dark:to-rose-800/30"></div>
+          
+          <div className="relative z-10 p-4 sm:p-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                  <ClipboardDocumentCheckIcon className="w-6 h-6 mr-3 text-red-900 dark:text-white" />
+                  <h1 className="text-xl font-bold text-red-900 dark:text-white">
+                    Nouvelle réception
+                  </h1>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  type="submit"
+                  form="reception-form"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-red-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-900 dark:border-white"></div>
+                      Création...
+                    </>
+                  ) : (
+                    <>
+                      <PlusCircleIcon className="h-5 w-5" />
+                      Créer la réception
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-        <form onSubmit={handleSubmit} className="p-6">
+        <form id="reception-form" onSubmit={handleSubmit} className="p-6">
           {error && (
             <div className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
               <div className="flex">
@@ -147,22 +178,8 @@ export default function NouvelleReceptionPage({ params }: { params: Promise<{ ch
               required
             />
 
-            <div className="pt-5 flex justify-end space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                Annuler
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={saving}
-                isLoading={saving}
-              >
-                {saving ? 'Création...' : 'Créer la réception'}
-              </Button>
+            <div className="pt-5">
+              {/* Le bouton est maintenant dans le header */}
             </div>
           </div>
         </form>

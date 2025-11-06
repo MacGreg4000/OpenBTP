@@ -699,41 +699,63 @@ export default function ReceptionDetailPage() {
         />
       )}
 
-      {/* Header */}
-      <div className="md:flex md:items-center md:justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center mb-2">
-            <ClipboardDocumentCheckIcon className="h-8 w-8 mr-3 text-red-600" />
-            <h1 className="text-3xl font-bold leading-tight text-gray-900 dark:text-white">
-              Réception: {chantier?.nomChantier || 'Chargement...'}
-            </h1>
-          </div>
-          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
-            <p>Créée le: {formatDateForDisplay(reception.dateCreation)} par {reception.createdBy?.name || reception.createdBy?.email || 'N/A'}</p>
-            <p>Date limite: <span className="font-semibold">{formatDateForDisplay(reception.dateLimite)}</span></p>
-            <p>Statut: <span className={`font-semibold ${reception.estFinalise ? 'text-green-600' : 'text-yellow-600'}`}>{reception.estFinalise ? 'Finalisée' : 'En cours'}</span></p>
-            {reception.codePIN && 
-              <div className="flex items-center">
-                <p className="mr-2">Accès public principal:</p>
-                <span className="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded mr-2">{reception.codePIN}</span>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={copyExternalLink}
-                  className="text-xs py-1 px-2"
-                  title="Copier le lien public général"
-                >
-                  {linkCopied ? (
-                    <><ClipboardIcon className="h-3.5 w-3.5 mr-1" />Copié!</>
-                  ) : (
-                    <><LinkIcon className="h-3.5 w-3.5 mr-1" />Copier Lien</>
-                  )}
-                </Button>
+      {/* Header léger style backdrop-blur */}
+      <div className="mb-6">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+          {/* Effet de fond subtil avec dégradé red/rose (couleur de l'icône Réception) - opacité 60% */}
+          <div className="absolute inset-0 bg-gradient-to-br from-red-600/60 via-red-700/60 to-rose-800/60 dark:from-red-600/30 dark:via-red-700/30 dark:to-rose-800/30"></div>
+          
+          <div className="relative z-10 p-4 sm:p-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                  <ClipboardDocumentCheckIcon className="w-6 h-6 mr-3 text-red-900 dark:text-white" />
+                  <h1 className="text-xl font-bold text-red-900 dark:text-white">
+                    Réception
+                  </h1>
+                </div>
               </div>
-            }
+              <div className="flex items-center space-x-4">
+                <Link
+                  href={`/chantiers/${chantierId}/reception/nouveau`}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-red-900 dark:text-white"
+                >
+                  <PlusCircleIcon className="h-5 w-5" />
+                  Créer la réception
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="mt-4 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-3">
+      </div>
+
+      {/* Informations de la réception */}
+      <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <p>Créée le: {formatDateForDisplay(reception.dateCreation)} par {reception.createdBy?.name || reception.createdBy?.email || 'N/A'}</p>
+          <p>Date limite: <span className="font-semibold">{formatDateForDisplay(reception.dateLimite)}</span></p>
+          <p>Statut: <span className={`font-semibold ${reception.estFinalise ? 'text-green-600' : 'text-yellow-600'}`}>{reception.estFinalise ? 'Finalisée' : 'En cours'}</span></p>
+          {reception.codePIN && 
+            <div className="flex items-center">
+              <p className="mr-2">Accès public principal:</p>
+              <span className="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded mr-2">{reception.codePIN}</span>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={copyExternalLink}
+                className="text-xs py-1 px-2"
+                title="Copier le lien public général"
+              >
+                {linkCopied ? (
+                  <><ClipboardIcon className="h-3.5 w-3.5 mr-1" />Copié!</>
+                ) : (
+                  <><LinkIcon className="h-3.5 w-3.5 mr-1" />Copier Lien</>
+                )}
+              </Button>
+            </div>
+          }
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
           {firstImagePlan && (
             <Button variant="outline" onClick={handleOpenAnnotatedPlanModal} disabled={loadingState.planAnnotation} className="w-full md:w-auto">
               {loadingState.planAnnotation ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div> : <EyeIcon className="h-5 w-5 mr-2" />}Plan Annoté

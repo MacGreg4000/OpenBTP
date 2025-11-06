@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
-import { PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
+import { PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon, EyeIcon } from '@heroicons/react/24/outline'
 import ChantierGestionnaires from '@/components/chantier/ChantierGestionnaires'
 
 interface ChantierData {
@@ -107,33 +107,54 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
       <DocumentExpirationAlert />
       
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* En-tête moderne */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 rounded-2xl p-6 mb-8 shadow-xl border border-blue-200 dark:border-blue-700">
-          <div className="flex flex-col md:flex-row md:items-center justify-between">
-            <div className="text-white mb-4 md:mb-0">
-              <div className="flex items-center">
-                <h1 className="text-3xl font-bold text-white drop-shadow-sm">
+        {/* Header léger style backdrop-blur */}
+        <div className="mb-6">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            {/* Effet de fond subtil avec dégradé sky blue (couleur pour Consulter) - opacité 60% */}
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-600/60 via-sky-700/60 to-cyan-800/60 dark:from-sky-600/30 dark:via-sky-700/30 dark:to-cyan-800/30"></div>
+            
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                    <EyeIcon className="w-6 h-6 mr-3 text-sky-900 dark:text-white" />
+                    <h1 className="text-xl font-bold text-sky-900 dark:text-white">
+                      Consulter
+                    </h1>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => router.push(`/chantiers/${params.chantierId}/edit`)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-sky-900 dark:text-white"
+                  >
+                    <PencilSquareIcon className="h-5 w-5" />
+                    Éditer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Informations du chantier */}
+        <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {chantier.nomChantier}
-                </h1>
-                <span className={`ml-4 px-3 py-1 rounded-full text-sm font-semibold ${getStatutBadgeColor(chantier.statut)}`}>
+                </h2>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatutBadgeColor(chantier.statut)}`}>
                   {getStatutLabel(chantier.statut)}
                 </span>
               </div>
               {chantier.numeroIdentification && (
-                <div className="mt-2">
-                  <span className="text-sm text-blue-100 dark:text-blue-200 font-medium">
-                    N° {chantier.numeroIdentification}
-                  </span>
-                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  N° {chantier.numeroIdentification}
+                </p>
               )}
             </div>
-            <button
-              onClick={() => router.push(`/chantiers/${params.chantierId}/edit`)}
-              className="px-6 py-3 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center space-x-2 font-semibold"
-            >
-              <PencilSquareIcon className="h-5 w-5" />
-              <span>Éditer</span>
-            </button>
           </div>
         </div>
         

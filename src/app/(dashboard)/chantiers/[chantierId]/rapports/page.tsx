@@ -109,58 +109,43 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <DocumentExpirationAlert />
       
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* En-tête moderne */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 rounded-2xl p-6 mb-8 shadow-xl border border-blue-200 dark:border-blue-700">
-          <div className="flex flex-col md:flex-row md:items-center justify-between">
-            <div className="text-white">
-              <div className="flex items-center">
-                <div className="flex items-center mr-4">
-                  <div className="bg-blue-500 dark:bg-blue-400 text-white px-3 py-1 rounded-full text-sm font-semibold mr-3 shadow-md border-2 border-blue-300 dark:border-blue-200">
-                    <DocumentTextIcon className="h-4 w-4 mr-1 inline" />
-                    RAPPORTS DE VISITE
-                  </div>
+      {/* Header léger style backdrop-blur */}
+      <div className="mb-6">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+          {/* Effet de fond subtil avec dégradé orange/red (couleur de l'icône Rapports) - opacité 60% */}
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-600/60 via-orange-700/60 to-red-800/60 dark:from-orange-600/30 dark:via-orange-700/30 dark:to-red-800/30"></div>
+          
+          <div className="relative z-10 p-4 sm:p-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                  <DocumentTextIcon className="w-6 h-6 mr-3 text-orange-900 dark:text-white" />
+                  <h1 className="text-xl font-bold text-orange-900 dark:text-white">
+                    Rapports de visite
+                  </h1>
                 </div>
-                <h1 className="text-2xl font-bold text-white drop-shadow-sm">
-                  Gestion des Rapports
-                </h1>
               </div>
-              <div className="mt-2">
-                {chantier && (
-                  <span className="text-sm text-blue-100 dark:text-blue-200 font-medium flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    {chantier.nomChantier}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Contenu principal */}
-        <div className="space-y-8">
-          {/* Section Rapports de visite */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full shadow-lg ring-2 ring-blue-200 dark:ring-blue-700">
-                  <DocumentTextIcon className="w-5 h-5 mr-2" />
-                  <span className="font-bold text-lg">Rapports de visite</span>
-                </div>
+              <div className="flex items-center space-x-4">
                 <Link
                   href={`/chantiers/${params.chantierId}/rapports/nouveau`}
-                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
                 >
-                  <PlusIcon className="h-5 w-5 mr-2" />
+                  <PlusIcon className="h-5 w-5" />
                   Nouveau rapport
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Contenu principal */}
+      <div className="space-y-8">
+          {/* Section Rapports de visite */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-6">
               {rapports.length === 0 ? (
                 <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/30 rounded-xl border border-blue-200 dark:border-blue-800">
@@ -253,7 +238,6 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
             </div>
           </div>
         </div>
-      </div>
 
       {/* Modale d'envoi par email */}
       {selectedRapport && (

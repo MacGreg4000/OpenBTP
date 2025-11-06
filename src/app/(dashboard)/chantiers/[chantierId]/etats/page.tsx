@@ -8,7 +8,8 @@ import {
   EyeIcon,
   TrashIcon,
   EnvelopeIcon,
-  DocumentArrowDownIcon
+  DocumentArrowDownIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline'
 import { EtatAvancement, EtatAvancementEtendu } from '@/types/etat-avancement'
 // Link non utilisé
@@ -531,32 +532,22 @@ export default function ChantierEtatsPage(props: PageProps) {
           />
         )}
         
-        {/* En-tête moderne */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 rounded-2xl p-6 mb-8 shadow-xl border border-blue-200 dark:border-blue-700">
-          <div className="flex flex-col md:flex-row md:items-center justify-between">
-            <div className="text-white">
-              <div className="flex items-center">
-                <div className="flex items-center mr-4">
-                  <div className="bg-blue-500 dark:bg-blue-400 text-white px-3 py-1 rounded-full text-sm font-semibold mr-3 shadow-md border-2 border-blue-300 dark:border-blue-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    ÉTATS D'AVANCEMENT
+        {/* Header léger style backdrop-blur */}
+        <div className="mb-6">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            {/* Effet de fond subtil avec dégradé indigo/purple (couleur de l'icône États) - opacité 60% */}
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/60 via-indigo-700/60 to-purple-800/60 dark:from-indigo-600/30 dark:via-indigo-700/30 dark:to-purple-800/30"></div>
+            
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                    <ChartBarIcon className="w-6 h-6 mr-3 text-indigo-900 dark:text-white" />
+                    <h1 className="text-xl font-bold text-indigo-900 dark:text-white">
+                      États d'avancement
+                    </h1>
                   </div>
                 </div>
-                <h1 className="text-2xl font-bold text-white drop-shadow-sm">
-                  Gestion des États
-                </h1>
-              </div>
-              <div className="mt-2">
-                {chantier && (
-                  <span className="text-sm text-blue-100 dark:text-blue-200 font-medium flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    {chantier.nomChantier}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -617,13 +608,23 @@ export default function ChantierEtatsPage(props: PageProps) {
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-end mb-6 px-6">
+                  <div className="flex justify-end mt-6 mb-6 px-6">
                     <button
                       onClick={handleCreateEtat}
-                      className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      disabled={_isCreating}
+                      className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-lg hover:from-indigo-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <PlusIcon className="h-5 w-5 mr-2" />
-                      Nouvel état d'avancement
+                      {_isCreating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                          Création...
+                        </>
+                      ) : (
+                        <>
+                          <PlusIcon className="h-5 w-5 mr-2" />
+                          Nouvel état d'avancement
+                        </>
+                      )}
                     </button>
                   </div>
                     <TableEtatsAvancement etats={etatsAvancement as EtatAvancementEtendu[]} chantierIdValue={chantierId} />

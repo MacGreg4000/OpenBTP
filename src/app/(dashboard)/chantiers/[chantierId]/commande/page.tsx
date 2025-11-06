@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, use, useCallback } from 'react';
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentArrowDownIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentArrowDownIcon, ArrowLeftIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
 import LigneCommande from '@/components/commande/LigneCommande'
 // removed unused uuid and prisma imports
 // Import ExcelJS uniquement côté action
@@ -899,41 +899,28 @@ export default function CommandePage(props: CommandePageProps) {
   if (status === 'loading') return <div className="p-8">Chargement...</div>
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* <Toaster position="top-right" /> */} {/* Déplacé vers RootClientProviders */}
       {ConfirmationModalComponent}
       
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-        {/* En-tête avec informations principales et boutons d'action */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-8 overflow-hidden">
-          {/* Motif de fond sophistiqué */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-700/20"></div>
-          <div className="absolute top-0 left-0 w-full h-full">
-            <div className="absolute top-4 left-4 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-            <div className="absolute bottom-4 right-4 w-24 h-24 bg-purple-300/20 rounded-full blur-lg"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-indigo-400/10 rounded-full blur-2xl"></div>
-          </div>
-          
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="flex items-center">
-              <button
-                onClick={() => router.push(`/chantiers/${chantierId}/etats`)}
-                className="mr-4 text-white/80 hover:text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl border border-white/30 hover:border-white/50 hover:scale-105"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-              </button>
-              <div>
-                <div className="flex items-center mb-3">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header léger style backdrop-blur */}
+        <div className="mb-6">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            {/* Effet de fond subtil avec dégradé blue/indigo (couleur de l'icône Commande) - opacité 60% */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/60 via-blue-700/60 to-indigo-800/60 dark:from-blue-600/30 dark:via-blue-700/30 dark:to-indigo-800/30"></div>
+            
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-1">
                   <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                    <svg className="w-6 h-6 mr-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span className="font-bold text-xl">
+                    <CurrencyEuroIcon className="w-6 h-6 mr-3 text-blue-900 dark:text-white" />
+                    <h1 className="text-xl font-bold text-blue-900 dark:text-white">
                       Commande {commande.reference ? `#${commande.reference}` : 'Nouvelle'}
-                    </span>
+                    </h1>
                   </div>
                   {isLocked && (
-                    <span className="ml-4 inline-flex items-center px-3 py-2 rounded-full text-sm font-semibold bg-red-500/90 text-white shadow-lg ring-2 ring-red-300/50 backdrop-blur-sm">
+                    <span className="inline-flex items-center px-3 py-2 rounded-full text-sm font-semibold bg-red-500/90 text-white shadow-lg ring-2 ring-red-300/50 backdrop-blur-sm">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
@@ -941,71 +928,67 @@ export default function CommandePage(props: CommandePageProps) {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-white/90">
-                  <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    📅 {commande.dateCommande ? new Date(commande.dateCommande).toLocaleDateString('fr-FR') : 'Date non définie'}
-                  </span>
-                  <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    🏗️ {chantier?.nomChantier || 'Chantier non défini'}
-                  </span>
-                  {commande.clientNom && (
-                    <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      👤 {commande.clientNom}
-                    </span>
+                <div className="flex items-center space-x-4">
+                  {commande.id && (
+                    <button
+                      onClick={() => window.open(`/api/commandes/${commande.id}/pdf-modern`, '_blank')}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-blue-900 dark:text-white"
+                    >
+                      <DocumentArrowDownIcon className="h-5 w-5" />
+                      Générer PDF
+                    </button>
                   )}
-                  <span className="inline-flex items-center px-3 py-1 bg-emerald-500/80 backdrop-blur-sm rounded-full text-sm font-bold shadow-sm ring-2 ring-emerald-300/50">
-                    💰 {commande.total.toFixed(2)} €
-                  </span>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving || isLocked}
+                    className={`inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-blue-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-900 dark:border-white"></div>
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Enregistrer
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
-            
-            <div className="flex space-x-3 self-end md:self-auto">
-              {commande.id && (
-                <button
-                  onClick={() => window.open(`/api/commandes/${commande.id}/pdf-modern`, '_blank')}
-                  className="inline-flex items-center px-6 py-3 bg-blue-600/90 hover:bg-blue-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm border border-blue-400/50 hover:border-blue-300 hover:scale-105 font-semibold"
-                >
-                  <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                  📄 Générer PDF
-                </button>
-              )}
-              
-              
-              <button
-                onClick={handleSave}
-                disabled={saving || isLocked}
-                className={`inline-flex items-center px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm border border-white/30 hover:border-white/50 font-semibold ${
-                  (saving || isLocked) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-                }`}
-              >
-                {saving ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    ⏳ Enregistrement...
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                    </svg>
-                    💾 Enregistrer
-                  </>
-                )}
-              </button>
-            </div>
+          </div>
+        </div>
+
+        {/* Informations de la commande */}
+        <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              📅 {commande.dateCommande ? new Date(commande.dateCommande).toLocaleDateString('fr-FR') : 'Date non définie'}
+            </span>
+            <span className="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              🏗️ {chantier?.nomChantier || 'Chantier non défini'}
+            </span>
+            {commande.clientNom && (
+              <span className="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                👤 {commande.clientNom}
+              </span>
+            )}
+            <span className="inline-flex items-center px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-sm font-bold text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-300/50 dark:ring-emerald-700/50">
+              💰 {commande.total.toFixed(2)} €
+            </span>
           </div>
         </div>
         
@@ -1017,119 +1000,41 @@ export default function CommandePage(props: CommandePageProps) {
             </div>
           ) : (
             <>
-              {/* En-tête de la commande */}
-              <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border-2 border-gray-200 dark:border-gray-600">
-                  <h2 className="text-lg md:text-xl font-bold mb-4 border-b-2 pb-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">Informations générales</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm md:text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Référence</label>
-                      <input
-                        type="text"
-                        value={commande.reference || ''}
-                        onChange={(e) => setCommande({ ...commande, reference: e.target.value })}
-                        disabled={isLocked}
-                        className="w-full px-3 py-2.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
-                        placeholder="Référence..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm md:text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Date</label>
-                      <input
-                        type="date"
-                        value={commande.dateCommande ? new Date(commande.dateCommande).toISOString().substr(0, 10) : ''}
-                        onChange={(e) => setCommande({ ...commande, dateCommande: new Date(e.target.value) })}
-                        disabled={isLocked}
-                        className="w-full px-3 py-2.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border-2 border-gray-200 dark:border-gray-600">
-                  <h2 className="text-lg md:text-xl font-bold mb-4 border-b-2 pb-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">Paramètres</h2>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="block text-sm md:text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">
-                        Taux TVA (%) <span className="text-xs text-gray-600 dark:text-gray-300">(Déroulant)</span>
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={commande.tauxTVA}
-                          onChange={(e) => {
-                            const newTauxTVA = parseFloat(e.target.value);
-                            const newTVA = commande.sousTotal * (newTauxTVA / 100);
-                            const newTotal = commande.sousTotal + newTVA;
-                            setCommande({
-                              ...commande,
-                              tauxTVA: newTauxTVA,
-                              tva: newTVA,
-                              total: newTotal
-                            });
-                          }}
-                          disabled={isLocked}
-                          className="w-full appearance-none px-3 py-2.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
-                        >
-                          <option value="0">0%</option>
-                          <option value="6">6%</option>
-                          <option value="21">21%</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
-                          <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Tableau des lignes de commande */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-200 dark:border-gray-600 overflow-hidden mb-6">
-                <div className="relative px-6 py-6 bg-gradient-to-br from-cyan-600 via-blue-700 to-indigo-800 text-white overflow-hidden">
-                  {/* Motif de fond élégant */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-indigo-800/20"></div>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-16 -translate-y-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-300/20 rounded-full blur-xl transform -translate-x-8 translate-y-8"></div>
-                  
-                  <div className="relative z-10 flex items-center justify-between">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden mb-6">
+                <div className="relative px-6 py-4 bg-gradient-to-br from-blue-600/10 via-blue-700/10 to-indigo-800/10 dark:from-blue-600/5 dark:via-blue-700/5 dark:to-indigo-800/5 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                        <svg className="w-6 h-6 mr-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <span className="font-bold text-xl">📋 Détail de la commande</span>
-                      </div>
+                      <h2 className="text-lg font-bold text-blue-900 dark:text-white">Détail de la commande</h2>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm">
-                        📊 {commande.lignes.length} ligne{commande.lignes.length > 1 ? 's' : ''}
+                      <span className="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {commande.lignes.length} ligne{commande.lignes.length > 1 ? 's' : ''}
                       </span>
-                      <span className="inline-flex items-center px-3 py-1 bg-emerald-500/80 backdrop-blur-sm rounded-full text-sm font-bold shadow-sm ring-2 ring-emerald-300/50">
-                        💰 {commande.sousTotal.toFixed(2)} € HT
+                      <span className="inline-flex items-center px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-sm font-bold text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-300/50 dark:ring-emerald-700/50">
+                        {commande.sousTotal.toFixed(2)} € HT
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
                   <DndProvider backend={HTML5Backend}>
-                    <table className="min-w-full divide-y-2 divide-gray-300 dark:divide-gray-600">
-                      <thead className="bg-gradient-to-r from-slate-100 to-gray-100 dark:from-slate-700 dark:to-gray-700">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700/50">
                         <tr>
-                          <th scope="col" className="px-4 py-4 text-left text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-8">#</th>
-                          <th scope="col" className="px-4 py-4 text-left text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">📝 Article</th>
-                          <th scope="col" className="hidden sm:table-cell px-4 py-4 text-left text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">📄 Description</th>
-                          <th scope="col" className="px-4 py-4 text-left text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-24">🏗️ Type</th>
-                          <th scope="col" className="px-4 py-4 text-left text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-24">📏 Unité</th>
-                          <th scope="col" className="px-4 py-4 text-center text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-24">🔢 Quantité</th>
-                          <th scope="col" className="px-4 py-4 text-right text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-24">💰 Prix Unit.</th>
-                          <th scope="col" className="px-4 py-4 text-right text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-24">💵 Total</th>
-                          <th scope="col" className="px-4 py-4 text-center text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-16">⭐ Option</th>
-                          <th scope="col" className="px-4 py-4 text-center text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider w-16">⚙️ Action</th>
+                          <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-8">#</th>
+                          <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Article</th>
+                          <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</th>
+                          <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Type</th>
+                          <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Unité</th>
+                          <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Quantité</th>
+                          <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Prix Unit.</th>
+                          <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Total</th>
+                          <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-16">Option</th>
+                          <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-16">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y-2 divide-gray-200 dark:divide-gray-600">
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {commande.lignes.map((ligne, index) => (
                           <LigneCommande
                             key={index}
@@ -1154,12 +1059,12 @@ export default function CommandePage(props: CommandePageProps) {
                   </DndProvider>
                 </div>
                 {!isLocked && (
-                  <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-600/10 via-blue-700/10 to-indigo-800/10 dark:from-blue-600/5 dark:via-blue-700/5 dark:to-indigo-800/5">
                     <button
                       onClick={addLigne}
-                      className="flex items-center justify-center w-full md:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 dark:from-blue-700 dark:to-indigo-800 dark:hover:from-blue-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                       Ajouter une ligne
@@ -1168,114 +1073,175 @@ export default function CommandePage(props: CommandePageProps) {
                 )}
               </div>
 
-              {/* Résumé de la commande */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <div className="flex flex-col space-y-3">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border-2 border-gray-200 dark:border-gray-600">
-                      <h2 className="text-lg md:text-xl font-bold mb-4 border-b-2 pb-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">Actions</h2>
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          onClick={triggerFileInput}
+              {/* En-tête de la commande */}
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                  <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Informations générales</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Référence</label>
+                      <input
+                        type="text"
+                        value={commande.reference || ''}
+                        onChange={(e) => setCommande({ ...commande, reference: e.target.value })}
+                        disabled={isLocked}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 transition-colors"
+                        placeholder="Référence..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+                      <input
+                        type="date"
+                        value={commande.dateCommande ? new Date(commande.dateCommande).toISOString().substr(0, 10) : ''}
+                        onChange={(e) => setCommande({ ...commande, dateCommande: new Date(e.target.value) })}
+                        disabled={isLocked}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                  <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Paramètres</h2>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Taux TVA (%)
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={commande.tauxTVA}
+                          onChange={(e) => {
+                            const newTauxTVA = parseFloat(e.target.value);
+                            const newTVA = commande.sousTotal * (newTauxTVA / 100);
+                            const newTotal = commande.sousTotal + newTVA;
+                            setCommande({
+                              ...commande,
+                              tauxTVA: newTauxTVA,
+                              tva: newTVA,
+                              total: newTotal
+                            });
+                          }}
                           disabled={isLocked}
-                          className={`flex items-center px-4 py-2.5 text-sm md:text-base font-medium rounded-md shadow-sm bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600 transition-colors ${
-                            isLocked ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
+                          className="w-full appearance-none px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 transition-colors"
                         >
-                          <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-                          Importer Excel
-                        </button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          onChange={importExcelFile}
-                          accept=".xlsx,.xls"
-                          className="hidden"
-                        />
-                        <button
-                          onClick={downloadExcelTemplate}
-                          className="flex items-center px-4 py-2.5 text-sm md:text-base font-medium rounded-md shadow-sm bg-green-600 text-white hover:bg-green-500 dark:bg-green-700 dark:hover:bg-green-600 transition-colors"
-                        >
-                          <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                          Template Excel
-                        </button>
-                        
-                        {commande && (
-                          <button
-                            onClick={exportCommandeToExcel}
-                            className={`flex items-center px-4 py-2.5 text-sm md:text-base font-medium rounded-md shadow-sm transition-colors ${
-                              commande.id 
-                                ? 'bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600' 
-                                : 'bg-gray-400 text-white hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500'
-                            }`}
-                            title={!commande.id ? 'Enregistrez d\'abord la commande pour pouvoir l\'exporter' : 'Exporter la commande en Excel'}
-                          >
-                            <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                            Exporter Excel
-                            {!commande.id && (
-                              <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs bg-yellow-500 text-white rounded-full">!</span>
-                            )}
-                          </button>
-                        )}
-                        {commande.id && (
-                          <button
-                            onClick={handleReopenCommande}
-                            className={`flex items-center px-4 py-2.5 text-sm md:text-base font-medium rounded-md shadow-sm ${
-                              isLocked
-                                ? 'bg-amber-600 text-white hover:bg-amber-500 dark:bg-amber-700 dark:hover:bg-amber-600'
-                                : 'bg-gray-600 text-white hover:bg-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600'
-                            } transition-colors`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              {isLocked ? (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0v4" />
-                              ) : (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                              )}
-                            </svg>
-                            {isLocked ? 'Déverrouiller' : 'Verrouiller'}
-                          </button>
-                        )}
+                          <option value="0">0%</option>
+                          <option value="6">6%</option>
+                          <option value="21">21%</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                          <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="lg:col-span-1">
-                  <div className="relative bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 text-white rounded-xl shadow-lg overflow-hidden p-6">
-                    {/* Motif de fond élégant */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-cyan-800/20"></div>
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-xl transform translate-x-8 -translate-y-8"></div>
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-300/20 rounded-full blur-2xl transform -translate-x-16 translate-y-16"></div>
-                    
-                    <div className="relative z-10">
-                      <div className="flex items-center mb-6">
-                        <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                          <svg className="w-5 h-5 mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
-                          <span className="font-bold text-lg">💰 Récapitulatif</span>
-                        </div>
-                      </div>
+              </div>
+
+              {/* Résumé de la commande */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                    <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Actions</h2>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={triggerFileInput}
+                        disabled={isLocked}
+                        className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 dark:from-blue-700 dark:to-indigo-800 dark:hover:from-blue-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
+                          isLocked ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <ArrowUpTrayIcon className="h-5 w-5" />
+                        Importer Excel
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={importExcelFile}
+                        accept=".xlsx,.xls"
+                        className="hidden"
+                      />
+                      <button
+                        onClick={downloadExcelTemplate}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 dark:from-green-700 dark:to-emerald-800 dark:hover:from-green-600 dark:hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      >
+                        <ArrowDownTrayIcon className="h-5 w-5" />
+                        Template Excel
+                      </button>
                       
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 md:p-4 bg-white/20 backdrop-blur-sm rounded-lg shadow-md">
-                          <span className="text-white font-semibold text-sm md:text-base">📊 Sous-total HT:</span>
-                          <span className="font-bold text-white text-base md:text-lg">{commande.sousTotal.toFixed(2)} €</span>
+                      {commande && (
+                        <button
+                          onClick={exportCommandeToExcel}
+                          className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                            commande.id 
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 dark:from-blue-700 dark:to-indigo-800 dark:hover:from-blue-600 dark:hover:to-indigo-700 focus:ring-blue-500' 
+                              : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-500 dark:hover:to-gray-600 focus:ring-gray-500 opacity-60 cursor-not-allowed'
+                          }`}
+                          title={!commande.id ? 'Enregistrez d\'abord la commande pour pouvoir l\'exporter' : 'Exporter la commande en Excel'}
+                          disabled={!commande.id}
+                        >
+                          <DocumentArrowDownIcon className="h-5 w-5" />
+                          Exporter Excel
+                          {!commande.id && (
+                            <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs bg-yellow-500 text-white rounded-full">!</span>
+                          )}
+                        </button>
+                      )}
+                      {commande.id && (
+                        <button
+                          onClick={handleReopenCommande}
+                          className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                            isLocked
+                              ? 'bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 dark:from-amber-700 dark:to-orange-800 dark:hover:from-amber-600 dark:hover:to-orange-700 focus:ring-amber-500'
+                              : 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 dark:from-gray-700 dark:to-gray-800 dark:hover:from-gray-600 dark:hover:to-gray-700 focus:ring-gray-500'
+                          }`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            {isLocked ? (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0v4" />
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            )}
+                          </svg>
+                          {isLocked ? 'Déverrouiller' : 'Verrouiller'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="lg:col-span-1">
+                  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                    <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Récapitulatif</h2>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sous-total HT:</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{commande.sousTotal.toFixed(2)} €</span>
+                      </div>
+                      {commande.totalOptions > 0 && (
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total options:</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{commande.totalOptions.toFixed(2)} €</span>
                         </div>
-                        {commande.totalOptions > 0 && (
-                          <div className="flex justify-between items-center p-3 md:p-4 bg-white/20 backdrop-blur-sm rounded-lg shadow-md">
-                            <span className="text-white font-semibold text-sm md:text-base">⭐ Total options:</span>
-                            <span className="font-bold text-white text-base md:text-lg">{commande.totalOptions.toFixed(2)} €</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center p-3 md:p-4 bg-white/20 backdrop-blur-sm rounded-lg shadow-md">
-                          <span className="text-white font-semibold text-sm md:text-base">🧾 TVA ({commande.tauxTVA}%):</span>
-                          <span className="font-bold text-white text-base md:text-lg">{commande.tva.toFixed(2)} €</span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 md:p-5 bg-white/30 backdrop-blur-sm rounded-xl shadow-xl ring-2 ring-white/50 mt-4">
-                          <span className="font-bold text-white text-lg md:text-xl">🎯 Total TTC:</span>
-                          <span className="font-bold text-2xl md:text-3xl text-white drop-shadow-lg">{commande.total.toFixed(2)} €</span>
-                        </div>
+                      )}
+                      <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">TVA ({commande.tauxTVA}%):</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{commande.tva.toFixed(2)} €</span>
+                      </div>
+                      <div className="flex justify-between items-center p-4 bg-gradient-to-br from-blue-600/10 via-blue-700/10 to-indigo-800/10 dark:from-blue-600/5 dark:via-blue-700/5 dark:to-indigo-800/5 rounded-lg border border-blue-200 dark:border-blue-800 mt-4">
+                        <span className="font-bold text-lg text-gray-900 dark:text-white">Total TTC:</span>
+                        <span className="font-bold text-2xl text-blue-900 dark:text-white">{commande.total.toFixed(2)} €</span>
                       </div>
                     </div>
                   </div>

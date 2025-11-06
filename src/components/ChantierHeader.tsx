@@ -50,10 +50,10 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
       href: `/chantiers/${chantierId}`,
       icon: EyeIcon,
       label: 'Consulter',
-      gradient: 'from-gray-600 via-gray-700 to-gray-800',
-      glow: 'from-gray-400 to-gray-600',
-      shadow: 'shadow-gray-500/50',
-      hoverShadow: 'hover:shadow-gray-500/30',
+      gradient: 'from-sky-500 via-sky-600 to-cyan-700',
+      glow: 'from-sky-400 to-cyan-600',
+      shadow: 'shadow-sky-500/50',
+      hoverShadow: 'hover:shadow-sky-500/30',
       isActive: pathname === `/chantiers/${chantierId}`
     },
     {

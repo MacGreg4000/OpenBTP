@@ -149,7 +149,7 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <UserIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          <UserIcon className="h-6 w-6 text-sky-600 dark:text-sky-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Gestionnaires du chantier
           </h2>
@@ -166,7 +166,7 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <UserIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          <UserIcon className="h-6 w-6 text-sky-600 dark:text-sky-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Gestionnaires du chantier
           </h2>
@@ -174,7 +174,7 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
         {canManage && !showAddForm && (
           <button
             onClick={() => setShowAddForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <UserPlusIcon className="h-4 w-4" />
             Ajouter
@@ -187,7 +187,7 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
       </p>
 
       {showAddForm && (
-        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+        <div className="mb-4 p-4 bg-sky-50 dark:bg-sky-900/20 rounded-lg border border-sky-200 dark:border-sky-800">
           <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
             Ajouter un gestionnaire
           </h3>
@@ -195,7 +195,7 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500"
               disabled={isSubmitting}
             >
               <option value="">Sélectionner un utilisateur</option>
@@ -208,7 +208,7 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
             <button
               onClick={handleAddGestionnaire}
               disabled={isSubmitting || !selectedUserId}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
             >
               {isSubmitting ? 'Ajout...' : 'Ajouter'}
             </button>
@@ -246,8 +246,8 @@ export default function ChantierGestionnaires({ chantierId }: ChantierGestionnai
               className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                  <UserIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <div className="w-10 h-10 bg-sky-100 dark:bg-sky-900/30 rounded-full flex items-center justify-center">
+                  <UserIcon className="h-5 w-5 text-sky-600 dark:text-sky-400" />
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">
