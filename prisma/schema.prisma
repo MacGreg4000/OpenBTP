@@ -523,6 +523,8 @@ model Chantier {
   statut               String                 @default("A_VENIR")
   typeDuree            String                 @default("CALENDRIER")
   villeChantier        String?
+  latitude             Float?
+  longitude            Float?
   avenants             Avenant[]
   client               Client?                @relation(fields: [clientId], references: [id])
   contact              Contact?               @relation(fields: [contactId], references: [id])

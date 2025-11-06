@@ -2,8 +2,9 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
-import { PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon, EyeIcon } from '@heroicons/react/24/outline'
+import { PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon, EyeIcon, ArrowUpTrayIcon, MapIcon } from '@heroicons/react/24/outline'
 import ChantierGestionnaires from '@/components/chantier/ChantierGestionnaires'
+import toast from 'react-hot-toast'
 
 interface ChantierData {
   id?: string;
@@ -14,6 +15,8 @@ interface ChantierData {
   statut?: 'EN_COURS' | 'TERMINE' | 'A_VENIR' | 'EN_PREPARATION' | string;
   adresseChantier?: string | null;
   villeChantier?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   dureeEnJours?: number | null;
   typeDuree?: 'CALENDRIER' | 'OUVRABLE' | string | null;
   budget?: number | null;
@@ -87,6 +90,40 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
       case 'EN_PREPARATION':
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+    }
+  }
+
+  const handleShareLocation = () => {
+    if (!chantier?.latitude || !chantier?.longitude) return
+
+    const { latitude, longitude } = chantier
+    
+    // Créer les liens Google Maps et Waze
+    const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
+    const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`
+    
+    // Texte à partager
+    const shareText = `Localisation du chantier "${chantier.nomChantier}":\n\nGoogle Maps: ${googleMapsUrl}\nWaze: ${wazeUrl}`
+
+    // Utiliser l'API Web Share si disponible
+    if (navigator.share) {
+      navigator.share({
+        title: `Localisation - ${chantier.nomChantier}`,
+        text: shareText
+      }).catch((error) => {
+        // Ignorer l'erreur si l'utilisateur a simplement annulé le partage
+        if (error.name !== 'AbortError') {
+          console.error('Erreur lors du partage:', error)
+        }
+      })
+    } else {
+      // Fallback : copier dans le presse-papiers
+      navigator.clipboard.writeText(shareText).then(() => {
+        toast.success('Lien de localisation copié dans le presse-papiers !')
+      }).catch(() => {
+        // Fallback ultime : afficher les liens
+        toast.error('Impossible de copier le lien. Veuillez réessayer.')
+      })
     }
   }
 
@@ -220,12 +257,28 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
                     <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Adresse du chantier
                     </label>
-                    <div className="flex items-start text-gray-900 dark:text-gray-100">
-                      <MapPinIcon className="h-5 w-5 mr-2 text-gray-400 mt-0.5" />
-                      <div>
-                        <p>{chantier.adresseChantier}</p>
+                    <div className="flex items-start gap-3">
+                      <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-900 dark:text-gray-100">{chantier.adresseChantier}</p>
                         {chantier.villeChantier && (
                           <p className="text-sm text-gray-600 dark:text-gray-400">{chantier.villeChantier}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Localisation:</span>
+                        {chantier.latitude && chantier.longitude ? (
+                          <button
+                            onClick={handleShareLocation}
+                            className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors"
+                            title="Partager la localisation GPS"
+                          >
+                            <ArrowUpTrayIcon className="h-5 w-5" />
+                          </button>
+                        ) : (
+                          <div className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg opacity-50" title="Aucune localisation GPS enregistrée">
+                            <MapIcon className="h-5 w-5 text-gray-400" />
+                          </div>
                         )}
                       </div>
                     </div>

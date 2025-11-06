@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
 import { BottomNav } from '@/components/mobile/BottomNav'
+import toast from 'react-hot-toast'
+import { useConfirmation } from '@/components/modals/confirmation-modal'
 import {
   MapPinIcon,
   BuildingOfficeIcon,
@@ -20,6 +22,8 @@ import {
   DocumentDuplicateIcon,
   ArrowPathIcon,
   ClipboardDocumentListIcon,
+  ArrowUpTrayIcon,
+  MapIcon,
 } from '@heroicons/react/24/outline'
 
 interface ChantierDetails {
@@ -35,6 +39,8 @@ interface ChantierDetails {
   clientAdresse?: string | null
   clientTelephone?: string | null
   statut?: string
+  latitude?: number | null
+  longitude?: number | null
   contact?: {
     id: string
     nom: string
@@ -60,6 +66,9 @@ export default function MobileDashboardPage() {
   const { selectedChantier, setSelectedChantier } = useSelectedChantier()
   const [chantierDetails, setChantierDetails] = useState<ChantierDetails | null>(null)
   const [loading, setLoading] = useState(true)
+  const [capturingLocation, setCapturingLocation] = useState(false)
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+  const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
 
   useEffect(() => {
     if (!selectedChantier) {
@@ -90,6 +99,8 @@ export default function MobileDashboardPage() {
           clientAdresse: data.clientAdresse || data.client?.adresse,
           clientTelephone: data.clientTelephone,
           statut: data.statut || selectedChantier.statut,
+          latitude: data.latitude,
+          longitude: data.longitude,
           contact: data.contact,
           client: data.client,
         })
@@ -136,6 +147,125 @@ export default function MobileDashboardPage() {
     router.push(`/mobile/commande/${chantierDetails.commande.id}`)
   }
 
+  const handleCaptureLocation = async () => {
+    if (!selectedChantier) return
+
+    try {
+      setCapturingLocation(true)
+      
+      // Demander la permission et obtenir la position
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        })
+      })
+
+      const { latitude, longitude } = position.coords
+
+      // Enregistrer la position via l'API
+      const response = await fetch(`/api/chantiers/${selectedChantier.chantierId}/geolocation`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude })
+      })
+
+      if (response.ok) {
+        // Mettre à jour l'état local
+        setChantierDetails(prev => prev ? { ...prev, latitude, longitude } : null)
+        toast.success('Localisation enregistrée avec succès !')
+      } else {
+        throw new Error('Erreur lors de l\'enregistrement')
+      }
+    } catch (error) {
+      console.error('Erreur lors de la capture de la localisation:', error)
+      if (error && typeof error === 'object' && 'code' in error && error.code === 1) {
+        toast.error('Permission de géolocalisation refusée. Veuillez autoriser l\'accès à votre position.')
+      } else {
+        toast.error('Erreur lors de la capture de la localisation. Veuillez réessayer.')
+      }
+    } finally {
+      setCapturingLocation(false)
+    }
+  }
+
+  const handleShareLocation = () => {
+    if (!chantierDetails?.latitude || !chantierDetails?.longitude) return
+
+    const { latitude, longitude } = chantierDetails
+    
+    // Créer les liens Google Maps et Waze
+    const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
+    const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`
+    
+    // Texte à partager
+    const shareText = `Localisation du chantier "${chantierDetails.nomChantier}":\n\nGoogle Maps: ${googleMapsUrl}\nWaze: ${wazeUrl}`
+
+    // Utiliser l'API Web Share si disponible (mobile)
+    if (navigator.share) {
+      navigator.share({
+        title: `Localisation - ${chantierDetails.nomChantier}`,
+        text: shareText
+      }).catch((error) => {
+        // Ignorer l'erreur si l'utilisateur a simplement annulé le partage
+        if (error.name !== 'AbortError') {
+          console.error('Erreur lors du partage:', error)
+        }
+      })
+    } else {
+      // Fallback : copier dans le presse-papiers
+      navigator.clipboard.writeText(shareText).then(() => {
+        toast.success('Lien de localisation copié dans le presse-papiers !')
+      }).catch(() => {
+        // Fallback ultime : afficher les liens
+        toast.error('Impossible de copier le lien. Veuillez réessayer.')
+      })
+    }
+  }
+
+  const handleLongPressStart = () => {
+    if (!chantierDetails?.latitude || !chantierDetails?.longitude) return
+
+    const timer = setTimeout(() => {
+      if (!selectedChantier) return
+
+      showConfirmation({
+        title: 'Supprimer la localisation',
+        message: 'Voulez-vous supprimer la localisation GPS enregistrée ?',
+        type: 'warning',
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
+        onConfirm: async () => {
+          try {
+            const response = await fetch(`/api/chantiers/${selectedChantier.chantierId}/geolocation`, {
+              method: 'DELETE'
+            })
+
+            if (response.ok) {
+              setChantierDetails(prev => prev ? { ...prev, latitude: null, longitude: null } : null)
+              toast.success('Localisation supprimée avec succès !')
+            } else {
+              throw new Error('Erreur lors de la suppression')
+            }
+          } catch (error) {
+            console.error('Erreur lors de la suppression de la localisation:', error)
+            toast.error('Erreur lors de la suppression de la localisation.')
+          }
+        }
+      })
+    }, 2000) // 2 secondes
+
+    setLongPressTimer(timer)
+  }
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -152,7 +282,9 @@ export default function MobileDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <>
+      {ConfirmationModalComponent}
+      <div className="min-h-screen pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 text-white">
         <div className="max-w-md mx-auto px-4 py-3">
@@ -217,6 +349,37 @@ export default function MobileDashboardPage() {
                     {chantierDetails.adresseChantier}
                     {chantierDetails.villeChantier && `, ${chantierDetails.villeChantier}`}
                   </p>
+                </div>
+                {/* Bouton GPS sur la même ligne */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-gray-500">Localisation:</span>
+                  {chantierDetails.latitude && chantierDetails.longitude ? (
+                    <button
+                      onTouchStart={handleLongPressStart}
+                      onTouchEnd={handleLongPressEnd}
+                      onMouseDown={handleLongPressStart}
+                      onMouseUp={handleLongPressEnd}
+                      onMouseLeave={handleLongPressEnd}
+                      onClick={handleShareLocation}
+                      className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors"
+                      title="Partager la localisation (maintenir 2s pour supprimer)"
+                    >
+                      <ArrowUpTrayIcon className="h-5 w-5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCaptureLocation}
+                      disabled={capturingLocation}
+                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Capturer la localisation GPS"
+                    >
+                      {capturingLocation ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      ) : (
+                        <MapIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -376,6 +539,7 @@ export default function MobileDashboardPage() {
 
       <BottomNav />
     </div>
+    </>
   )
 }
 
