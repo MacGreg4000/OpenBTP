@@ -188,30 +188,6 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
 
   return (
     <div className="space-y-6">
-      {/* Bouton pour ajouter des photos */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Gestion des photos
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Ajoutez des photos manuellement ou consultez toutes les photos du chantier
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setUploadedFiles([])
-              setDescription('')
-            }}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
-          >
-            <CloudArrowUpIcon className="h-4 w-4 mr-2" />
-            Réinitialiser
-          </button>
-        </div>
-      </div>
-
       {/* Zone de drag & drop (toujours visible) */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         {/* Zone de drag & drop */}

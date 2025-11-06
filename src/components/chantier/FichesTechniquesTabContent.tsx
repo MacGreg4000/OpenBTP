@@ -290,22 +290,22 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     <div className="space-y-6">
       {/* En-tête */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="relative px-6 py-6 bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-800 text-white overflow-hidden rounded-t-lg">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-pink-800/20"></div>
+        <div className="relative px-6 py-6 bg-gradient-to-br from-emerald-600/10 via-teal-700/10 to-cyan-800/10 dark:from-emerald-600/10 dark:via-teal-700/10 dark:to-cyan-800/10 text-emerald-900 dark:text-white overflow-hidden rounded-t-lg backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-cyan-800/20"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-16 -translate-y-16"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-300/20 rounded-full blur-xl transform -translate-x-8 translate-y-8"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-300/20 rounded-full blur-xl transform -translate-x-8 translate-y-8"></div>
           
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                  <DocumentTextIcon className="w-6 h-6 mr-3 text-white" />
-                  <span className="font-bold text-xl">📋 Sélection des Fiches Techniques</span>
+                  <DocumentTextIcon className="w-6 h-6 mr-3 text-emerald-900 dark:text-white" />
+                  <span className="font-bold text-xl text-emerald-900 dark:text-white">📋 Sélection des Fiches Techniques</span>
                 </div>
               </div>
             </div>
 
-            <p className="text-sm text-white/90">
+            <p className="text-sm text-emerald-800 dark:text-white/90">
               Sélectionnez les fiches techniques à inclure dans votre dossier. Un PDF sera généré avec une page de garde et une table des matières.
             </p>
           </div>

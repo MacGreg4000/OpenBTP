@@ -208,33 +208,19 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Métrés du chantier
-        </h3>
-        <button
-          onClick={() => router.push(`/chantiers/${chantierId}/metres/nouveau`)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-        >
-          <PlusIcon className="h-5 w-5" />
-          Nouveau métré
-        </button>
-      </div>
+      {metres.map((metre) => {
+        const isExpanded = expandedMetres.has(metre.id)
+        const totalMetre = calculateTotalMetre(metre)
+        const totalLignes = metre.categories.reduce(
+          (sum, cat) => sum + cat.lignes.length,
+          0
+        )
 
-      <div className="space-y-4">
-        {metres.map((metre) => {
-          const isExpanded = expandedMetres.has(metre.id)
-          const totalMetre = calculateTotalMetre(metre)
-          const totalLignes = metre.categories.reduce(
-            (sum, cat) => sum + cat.lignes.length,
-            0
-          )
-
-          return (
-            <div
-              key={metre.id}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
-            >
+        return (
+          <div
+            key={metre.id}
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
+          >
               {/* En-tête du métré */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
@@ -447,10 +433,9 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
                   </div>
                 </div>
               )}
-            </div>
-          )
-        })}
-      </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

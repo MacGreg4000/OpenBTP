@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { EyeIcon, CalendarIcon, UserIcon, CameraIcon, TrashIcon, PencilIcon, TagIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -93,6 +93,10 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
   const [editingTags, setEditingTags] = useState<string[]>([])
   const [newTagName, setNewTagName] = useState('')
   const [savingTags, setSavingTags] = useState(false)
+  
+  // Refs pour les onglets (pour calculer la position de l'indicateur)
+  const photoTabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const [photoIndicatorStyle, setPhotoIndicatorStyle] = useState({ width: 0, left: 0 })
 
   // Type guards
   const isExtOrManuelle = (p: PhotoItem): p is (PhotoExterne & { url: string; index: number; type: 'externe' | 'manuelle' }) =>
@@ -213,6 +217,25 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
 
     fetchAllPhotos()
   }, [chantierId])
+
+  // Mettre à jour la position de l'indicateur coulissant pour les onglets de photos
+  useEffect(() => {
+    const tabs = ['all', 'chantier', 'externes', 'internes', 'remarques', 'sav'] as const
+    const currentIndex = tabs.indexOf(activeTab)
+    const activeTabRef = photoTabRefs.current[currentIndex]
+
+    if (activeTabRef) {
+      const nav = activeTabRef.parentElement
+      if (nav) {
+        const navRect = nav.getBoundingClientRect()
+        const tabRect = activeTabRef.getBoundingClientRect()
+        setPhotoIndicatorStyle({
+          width: tabRect.width,
+          left: tabRect.left - navRect.left,
+        })
+      }
+    }
+  }, [activeTab])
 
   // Filtrer les photos selon l'onglet actif
   const getFilteredPhotos = (): PhotoItem[] => {
@@ -459,20 +482,20 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
       {/* Header avec statistiques */}
-      <div className="relative px-6 py-6 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 text-white overflow-hidden mb-6 rounded-lg">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-800/20"></div>
+      <div className="relative px-6 py-6 bg-gradient-to-br from-emerald-600/10 via-teal-700/10 to-cyan-800/10 dark:from-emerald-600/10 dark:via-teal-700/10 dark:to-cyan-800/10 text-emerald-900 dark:text-white overflow-hidden mb-6 rounded-lg backdrop-blur-sm">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-cyan-800/20"></div>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-16 -translate-y-16"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-300/20 rounded-full blur-xl transform -translate-x-8 translate-y-8"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-300/20 rounded-full blur-xl transform -translate-x-8 translate-y-8"></div>
         
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center">
             <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-              <CameraIcon className="w-6 h-6 mr-3 text-white" />
-              <span className="font-bold text-xl">📸 Photos de chantier</span>
+              <CameraIcon className="w-6 h-6 mr-3 text-emerald-900 dark:text-white" />
+              <span className="font-bold text-xl text-emerald-900 dark:text-white">📸 Photos de chantier</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm">
+            <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm text-emerald-900 dark:text-white">
               📊 {filteredPhotos.length} photo{filteredPhotos.length > 1 ? 's' : ''}
             </span>
             {/* Bouton pour vider les photos - visible uniquement sur l'onglet chantier */}
@@ -538,9 +561,18 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
         </div>
       </div>
 
-      {/* Onglets de filtrage */}
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-        <nav className="-mb-px flex space-x-8">
+      {/* Onglets de filtrage avec style cohérent */}
+      <div className="relative border-b border-gray-200 dark:border-gray-700 mb-6">
+        <nav className="relative -mb-px flex justify-center space-x-1 sm:space-x-4">
+          {/* Indicateur coulissant animé - dégradé vert clair à vert foncé */}
+          <div
+            className="absolute bottom-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-600 to-emerald-800 rounded-t-full transition-all duration-300 ease-in-out shadow-lg"
+            style={{
+              width: photoIndicatorStyle.width || 0,
+              left: photoIndicatorStyle.left || 0,
+            }}
+          />
+          
           {[
             { key: 'all', label: 'Toutes', count: photosExternes.flatMap(p => p.urls || []).length + photosRemarques.length + photosSAV.length + photosChantier.length },
             { key: 'chantier', label: 'Rapports', count: photosChantier.filter(p => {
@@ -555,14 +587,15 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
               }).length },
             { key: 'remarques', label: 'Remarques', count: photosRemarques.length },
             { key: 'sav', label: 'SAV', count: photosSAV.length }
-          ].map(tab => (
+          ].map((tab, index) => (
             <button
               key={tab.key}
+              ref={(el) => { photoTabRefs.current[index] = el }}
               onClick={() => setActiveTab(tab.key as 'all' | 'externes' | 'internes' | 'remarques' | 'sav' | 'chantier')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`relative py-3 px-4 sm:px-6 font-medium text-sm transition-all duration-300 rounded-t-lg ${
                 activeTab === tab.key
-                  ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'text-emerald-700 dark:text-emerald-400 bg-gradient-to-b from-emerald-50 to-transparent dark:from-emerald-900/30 dark:to-transparent shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
               }`}
             >
               {tab.label} ({tab.count})
