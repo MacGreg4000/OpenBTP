@@ -621,7 +621,6 @@ export default function MobileNouveauRapportPage() {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               multiple
               onChange={handlePhotoSelect}
               className="hidden"

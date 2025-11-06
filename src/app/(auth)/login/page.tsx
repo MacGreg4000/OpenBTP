@@ -1,7 +1,7 @@
 'use client'
 import { signIn, getSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui'
 import Link from 'next/link'
 import { 
@@ -15,11 +15,15 @@ import {
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [mounted, setMounted] = useState(false)
+
+  // Récupérer le callbackUrl depuis les paramètres de l'URL
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
 
   // Animation d'entrée
   useEffect(() => {
@@ -29,11 +33,11 @@ export default function LoginPage() {
     const checkSession = async () => {
       const session = await getSession()
       if (session) {
-        router.push('/dashboard')
+        router.push(callbackUrl)
       }
     }
     checkSession()
-  }, [router])
+  }, [router, callbackUrl])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -46,7 +50,7 @@ export default function LoginPage() {
         email: formData.get('email') as string,
         password: formData.get('password') as string,
         redirect: false,
-        callbackUrl: '/dashboard'
+        callbackUrl: callbackUrl
       })
 
       console.log('Réponse de connexion:', response)
@@ -55,10 +59,10 @@ export default function LoginPage() {
         console.log('Erreur de connexion:', response.error)
         setError('Identifiants invalides')
       } else if (response?.ok) {
-        console.log('Connexion réussie, redirection...')
+        console.log('Connexion réussie, redirection vers:', callbackUrl)
         
-        // Redirection immédiate sans animation
-        window.location.href = '/dashboard'
+        // Redirection immédiate sans animation vers le callbackUrl
+        window.location.href = callbackUrl
         return // Arrêter l'exécution ici
       } else {
         console.log('Réponse inattendue:', response)

@@ -92,6 +92,7 @@ export const config = {
     '/bons-regie/:path*',
     '/utilisateurs/:path*',
     '/planning/:path*',
-    '/configuration/:path*'
+    '/configuration/:path*',
+    '/mobile/:path*'
   ],
 }; 

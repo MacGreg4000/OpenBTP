@@ -2,7 +2,7 @@
 
 import { SelectedChantierProvider } from '@/contexts/SelectedChantierContext'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function MobileLayout({
@@ -12,12 +12,15 @@ export default function MobileLayout({
 }) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (status === 'loading') return
 
     if (status === 'unauthenticated') {
-      router.push('/login')
+      // Récupérer le chemin actuel pour le callbackUrl
+      const currentPath = pathname || '/mobile'
+      router.push(`/login?callbackUrl=${encodeURIComponent(currentPath)}`)
       return
     }
 
@@ -28,7 +31,7 @@ export default function MobileLayout({
         return
       }
     }
-  }, [status, session, router])
+  }, [status, session, router, pathname])
 
   if (status === 'loading') {
     return (

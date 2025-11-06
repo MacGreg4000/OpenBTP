@@ -572,7 +572,6 @@ export default function PublicReceptionDetailPage({
                                     ref={fileInputRef}
                                     onChange={handlePhotoChange}
                                     accept="image/*"
-                                    capture="environment"
                                   />
                                 </label>
                               </div>

@@ -197,7 +197,6 @@ export default function MobilePhotosPage() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             multiple
             onChange={handleFileSelect}
             className="hidden"

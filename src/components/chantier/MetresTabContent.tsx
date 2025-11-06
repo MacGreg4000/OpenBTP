@@ -9,6 +9,7 @@ import {
   TrashIcon,
   PlusIcon,
   ClipboardDocumentListIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -55,6 +56,7 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
   const [expandedMetres, setExpandedMetres] = useState<Set<string>>(new Set())
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [deletingMetreId, setDeletingMetreId] = useState<string | null>(null)
+  const [exportingMetreId, setExportingMetreId] = useState<string | null>(null)
 
   useEffect(() => {
     loadMetres()
@@ -142,6 +144,40 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
     router.push(`/mobile/metres/${metreId}`)
   }
 
+  const handleExportPDF = async (metreId: string) => {
+    try {
+      setExportingMetreId(metreId)
+      const url = `/api/chantiers/${chantierId}/metres/${metreId}/pdf-modern`
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération du PDF')
+      }
+
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      
+      // Récupérer le nom de fichier depuis les headers
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filename = contentDisposition
+        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') || `metre-${metreId}.pdf`
+        : `metre-${metreId}.pdf`
+      
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(downloadUrl)
+    } catch (error) {
+      console.error('Erreur lors de l\'export PDF:', error)
+      alert('Erreur lors de l\'export du PDF')
+    } finally {
+      setExportingMetreId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -157,10 +193,10 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
         <ClipboardDocumentListIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-600 font-medium mb-2">Aucun métré pour ce chantier</p>
         <p className="text-sm text-gray-500 mb-4">
-          Créez un nouveau métré depuis l'application mobile
+          Créez un nouveau métré pour ce chantier
         </p>
         <button
-          onClick={() => router.push('/mobile/metres/nouveau')}
+          onClick={() => router.push(`/chantiers/${chantierId}/metres/nouveau`)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
@@ -177,7 +213,7 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
           Métrés du chantier
         </h3>
         <button
-          onClick={() => router.push('/mobile/metres/nouveau')}
+          onClick={() => router.push(`/chantiers/${chantierId}/metres/nouveau`)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
         >
           <PlusIcon className="h-5 w-5" />
@@ -230,10 +266,23 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
                       </div>
                     </div>
                   </button>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleExportPDF(metre.id)}
+                      disabled={exportingMetreId === metre.id}
+                      className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Exporter en PDF"
+                      aria-label="Exporter en PDF"
+                    >
+                      {exportingMetreId === metre.id ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+                      ) : (
+                        <ArrowDownTrayIcon className="h-5 w-5" />
+                      )}
+                    </button>
                     <button
                       onClick={() => handleEditMetre(metre.id)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                      className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                       title="Éditer"
                     >
                       <PencilIcon className="h-5 w-5" />
@@ -241,7 +290,7 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
                     <button
                       onClick={() => handleDeleteMetre(metre.id)}
                       disabled={deletingMetreId === metre.id}
-                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg disabled:opacity-50"
+                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg disabled:opacity-50 transition-colors"
                       title="Supprimer"
                     >
                       <TrashIcon className="h-5 w-5" />
