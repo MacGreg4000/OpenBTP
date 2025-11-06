@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon, EyeIcon, TrashIcon, ArrowDownTrayIcon, CameraIcon, DocumentTextIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline'
+import { ArrowUpTrayIcon, ArrowLeftIcon, ArrowRightIcon, XMarkIcon, TagIcon, DocumentIcon, EyeIcon, TrashIcon, ArrowDownTrayIcon, CameraIcon, DocumentTextIcon, ClipboardDocumentListIcon, SwatchIcon } from '@heroicons/react/24/outline'
 import PhotosTabContent from './PhotosTabContent'
 import FichesTechniquesTabContent from './FichesTechniquesTabContent'
 import MetresTabContent from './MetresTabContent'
+import ChoixClientTabContent from './ChoixClientTabContent'
 
 interface Tag {
   id: string;
@@ -45,7 +46,7 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const [activeTab, setActiveTab] = useState<'documents' | 'photos' | 'fiches-techniques' | 'metres'>('documents')
+  const [activeTab, setActiveTab] = useState<'documents' | 'photos' | 'fiches-techniques' | 'metres' | 'choix-client'>('documents')
   const [selectedTagsForUpload, setSelectedTagsForUpload] = useState<string[]>([])
   const [currentTagFilter, setCurrentTagFilter] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -109,10 +110,10 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
 
   // Mettre à jour la position de l'indicateur coulissant
   useEffect(() => {
-    const tabs = ['documents', 'photos', 'fiches-techniques', 'metres'] as const
+    const tabs = ['documents', 'photos', 'fiches-techniques', 'metres', 'choix-client'] as const
     const currentIndex = tabs.indexOf(activeTab)
     const activeTabRef = tabRefs.current[currentIndex]
-    
+
     if (activeTabRef) {
       const nav = activeTabRef.parentElement
       if (nav) {
@@ -414,6 +415,18 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
             <ClipboardDocumentListIcon className={`h-5 w-5 transition-colors ${activeTab === 'metres' ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`} />
             <span>Métrés</span>
           </button>
+          <button
+            ref={(el) => { tabRefs.current[4] = el }}
+            onClick={() => setActiveTab('choix-client')}
+            className={`relative py-3 px-4 sm:px-6 font-medium text-sm flex items-center gap-2 transition-all duration-300 rounded-t-lg ${
+              activeTab === 'choix-client'
+                ? 'text-emerald-700 dark:text-emerald-400 bg-gradient-to-b from-emerald-50 to-transparent dark:from-emerald-900/30 dark:to-transparent shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            }`}
+          >
+            <SwatchIcon className={`h-5 w-5 transition-colors ${activeTab === 'choix-client' ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`} />
+            <span>Choix client</span>
+          </button>
         </nav>
       </div>
 
@@ -665,8 +678,10 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
         <PhotosTabContent chantierId={chantierId} />
       ) : activeTab === 'fiches-techniques' ? (
         <FichesTechniquesTabContent chantierId={chantierId} />
-      ) : (
+      ) : activeTab === 'metres' ? (
         <MetresTabContent chantierId={chantierId} />
+      ) : (
+        <ChoixClientTabContent chantierId={chantierId} />
       )}
 
       {/* Modal de prévisualisation des photos */}
