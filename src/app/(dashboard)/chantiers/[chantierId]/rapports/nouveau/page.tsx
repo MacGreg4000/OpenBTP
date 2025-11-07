@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, use } from 'react';
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
@@ -1035,7 +1036,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
       const response = await fetch(`/api/chantiers/${params.chantierId}/documents`, {
         method: 'POST',
         body: formData
-      })
+      });
 
       if (!response.ok) {
         throw new Error("Échec de l'envoi du rapport")
@@ -1134,70 +1135,95 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
     alert("Le formulaire a été réinitialisé.");
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement du chantier...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Header moderne avec navigation */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.back()}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {isEditing ? 'Modifier le rapport' : 'Nouveau rapport de visite'}
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Chantier: {chantier?.nomChantier || 'Chargement...'}
-                </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-rose-100 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/80 via-orange-600/80 to-red-700/80 dark:from-orange-500/35 dark:via-orange-600/35 dark:to-red-700/35" />
+          <div className="relative z-10 p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/chantiers/${params.chantierId}/rapports`}
+                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/40 bg-white/20 backdrop-blur-sm text-white shadow-sm shadow-orange-900/30 hover:bg-white/30 transition"
+                  >
+                    <ArrowLeftIcon className="h-4 w-4" />
+                    <span className="text-sm font-semibold">Retour</span>
+                  </Link>
+
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 text-white">
+                    <DocumentTextIcon className="h-5 w-5 mr-3" />
+                    <span className="text-base sm:text-lg font-bold">
+                      {isEditing ? 'Modifier un rapport de visite' : 'Nouveau rapport de visite'}
+                    </span>
+                  </div>
+
+                  {chantier?.nomChantier && (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/25 text-white border border-white/40 rounded-full text-xs font-semibold shadow-sm">
+                      Chantier · {chantier.nomChantier}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-white/90">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="opacity-90">Date du rapport</span>
+                    <span className="font-semibold">
+                      {new Date(date).toLocaleDateString('fr-FR')}
+                    </span>
+                  </span>
+                  {isEditing && documentId && (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="opacity-90">Mode</span>
+                      <span className="font-semibold">Édition</span>
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            {/* Indicateur de statut */}
-            <div className="flex items-center space-x-4">
-              {isOffline && (
-                <div className="flex items-center space-x-2 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
-                  <WifiIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                  <span className="text-sm text-yellow-700 dark:text-yellow-300">Hors ligne</span>
+
+              <div className="flex flex-col sm:items-end gap-3">
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  {isOffline ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 text-white rounded-full text-sm font-semibold">
+                      <WifiIcon className="h-4 w-4" />
+                      Hors ligne
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 text-white rounded-full text-sm font-semibold">
+                      <WifiIcon className="h-4 w-4" />
+                      En ligne
+                    </span>
+                  )}
+
+                  {lastSavedTime && (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 text-white rounded-full text-xs font-semibold">
+                      Sauvegarde auto · {lastSavedTime.toLocaleTimeString()}
+                    </span>
+                  )}
                 </div>
-              )}
-              {!isOffline && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                  <WifiIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="text-sm text-green-700 dark:text-green-300">En ligne</span>
+
+                <div className="flex flex-wrap items-center justify-end gap-3 text-xs text-white/80">
+                  <span className="inline-flex items-center gap-2">
+                    <CloudArrowUpIcon className="h-4 w-4" />
+                    Sauvegarde locale toutes les 30s
+                  </span>
+                  {isOffline && (
+                    <span className="inline-flex items-center gap-2">
+                      <ExclamationTriangleIcon className="h-4 w-4" />
+                      Les PDF seront disponibles en local
+                    </span>
+                  )}
                 </div>
-              )}
-              
-              {lastSavedTime && (
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Dernière sauvegarde: {lastSavedTime.toLocaleTimeString()}
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
               <p className="text-gray-600 dark:text-gray-400">Chargement du chantier...</p>
             </div>
           </div>

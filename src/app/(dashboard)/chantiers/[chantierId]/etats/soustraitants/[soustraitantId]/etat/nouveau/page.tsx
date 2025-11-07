@@ -442,90 +442,107 @@ export default function NouvelEtatAvancementPage(
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* <Toaster position="top-right" /> */} {/* Déplacé vers RootClientProviders */}
       
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* En-tête avec navigation */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="flex items-center space-x-4">
-            <Link href={`/chantiers/${params.chantierId}/etats`}>
-              <button className="p-3 bg-white/80 backdrop-blur-sm border-2 border-gray-200 hover:bg-white hover:border-blue-300 hover:shadow-lg transition-all duration-200 rounded-xl text-gray-600 hover:text-blue-600 dark:bg-gray-800/80 dark:border-gray-700 dark:hover:border-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                <ArrowLeftIcon className="h-5 w-5" />
-              </button>
-            </Link>
-            <div>
-              <div className="flex items-center space-x-3">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-600 dark:from-white dark:to-blue-400 bg-clip-text text-transparent">
-                  {editingEtatId && editingEtatId !== '0' ? 'Éditer état d\'avancement sous-traitant' : 'Nouvel état d\'avancement sous-traitant'}
-                </h1>
-                <div className="flex items-center px-3 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full border border-blue-200 dark:border-blue-700">
-                  <DocumentCheckIcon className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-1" />
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">État #{etatAvancement.numero}</span>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/75 via-orange-600/75 to-amber-700/75 dark:from-orange-500/35 dark:via-orange-600/35 dark:to-amber-700/35" />
+          <div className="relative z-10 p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/chantiers/${params.chantierId}/etats`}
+                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/40 bg-white/20 backdrop-blur-sm text-white shadow-sm shadow-indigo-900/30 hover:bg-white/30 transition"
+                  >
+                    <ArrowLeftIcon className="h-4 w-4" />
+                    <span className="text-sm font-semibold">Retour</span>
+                  </Link>
+
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 text-white">
+                    <DocumentCheckIcon className="h-5 w-5 mr-3" />
+                    <span className="text-base sm:text-lg font-bold">
+                      {editingEtatId && editingEtatId !== '0' ? 'Éditer état d\'avancement sous-traitant' : 'Nouvel état d\'avancement sous-traitant'}
+                    </span>
+                  </div>
+
+                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/25 text-white border border-white/40 rounded-full text-xs font-semibold shadow-sm">
+                    <span className="font-semibold">État #{etatAvancement.numero}</span>
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-white/90">
+                  {commandeValidee?.soustraitantNom && (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="opacity-90">Sous-traitant</span>
+                      <span className="font-semibold">{commandeValidee.soustraitantNom}</span>
+                    </span>
+                  )}
+                  {commandeValidee?.reference && (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="opacity-90">Commande</span>
+                      <span className="font-semibold">{commandeValidee.reference}</span>
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-2">
+                    <span className="opacity-90">Créé par</span>
+                    <span className="font-semibold">{session?.user?.email || '—'}</span>
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center mt-2 space-x-4">
-                <div className="flex items-center text-gray-600 dark:text-gray-300">
-                  <span className="font-medium">{commandeValidee?.soustraitantNom}</span>
-                </div>
-                <div className="flex items-center text-gray-600 dark:text-gray-300">
-                  <span className="font-medium">Commande: {commandeValidee?.reference}</span>
-                </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {etatAvancement.id > 0 && (
+                  <button
+                    onClick={handleGenererPDF}
+                    disabled={saving || validating}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition disabled:opacity-60"
+                  >
+                    <DocumentArrowDownIcon className="h-5 w-5" />
+                    PDF
+                  </button>
+                )}
+
+                {!etatAvancement.estFinalise ? (
+                  <button
+                    onClick={handleValidation}
+                    disabled={saving || validating}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg hover:bg-emerald-600 transition disabled:opacity-60"
+                  >
+                    {saving || validating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        {editingEtatId && editingEtatId !== '0' ? 'Validation...' : 'Création...'}
+                      </>
+                    ) : (
+                      <>
+                        <CheckIcon className="h-5 w-5" />
+                        {editingEtatId && editingEtatId !== '0' ? 'Valider l\'état' : 'Créer l\'état'}
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleReopenEtat}
+                    disabled={saving || validating}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition disabled:opacity-60"
+                  >
+                    {validating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        Réouverture...
+                      </>
+                    ) : (
+                      <>
+                        <PencilSquareIcon className="h-5 w-5" />
+                        Réouvrir l'état
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
-          
-          {/* Actions */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {etatAvancement.id > 0 && (
-              <button
-                onClick={handleGenererPDF}
-                disabled={saving || validating}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
-              >
-                <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                PDF
-              </button>
-            )}
-            
-            {!etatAvancement.estFinalise ? (
-              <button
-                onClick={handleValidation}
-                disabled={saving || validating}
-                className="inline-flex items-center px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                {saving || validating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                    {editingEtatId && editingEtatId !== '0' ? 'Validation...' : 'Création...'}
-                  </>
-                ) : (
-                  <>
-                    <CheckIcon className="h-5 w-5 mr-2" />
-                    {editingEtatId && editingEtatId !== '0' ? 'Valider l\'état' : 'Créer l\'état d\'avancement'}
-                  </>
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={handleReopenEtat}
-                disabled={saving || validating}
-                className="inline-flex items-center px-6 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                {validating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                    Réouverture...
-                  </>
-                ) : (
-                  <>
-                    <PencilSquareIcon className="h-5 w-5 mr-2" />
-                    Réouvrir l'état
-                  </>
-                )}
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* Composant unifié pour l'état d'avancement */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
           <EtatAvancementUnifie
             etat={etatAvancement}

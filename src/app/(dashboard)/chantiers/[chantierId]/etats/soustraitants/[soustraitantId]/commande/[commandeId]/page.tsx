@@ -351,289 +351,255 @@ export default function CommandeSousTraitantPage(
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* <Toaster position="top-right" /> */} {/* Déplacé vers RootClientProviders */}
       
-      <div className="container mx-auto py-8 px-4 space-y-8">
-        {/* En-tête avec navigation */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="flex items-center space-x-4">
-            <Link href={`/chantiers/${params.chantierId}/etats`}>
-              <button className="p-3 bg-white/80 backdrop-blur-sm border-2 border-gray-200 hover:bg-white hover:border-blue-300 hover:shadow-lg transition-all duration-200 rounded-xl text-gray-600 hover:text-blue-600 dark:bg-gray-800/80 dark:border-gray-700 dark:hover:border-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                <ArrowLeftIcon className="h-5 w-5" />
-              </button>
-            </Link>
-            <div>
-              <div className="flex items-center space-x-3">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-600 dark:from-white dark:to-blue-400 bg-clip-text text-transparent">
-                  Commande sous-traitant
-                </h1>
-                {commande.estVerrouillee && (
-                  <div className="flex items-center px-3 py-1 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 rounded-full border border-orange-200 dark:border-orange-700">
-                    <LockClosedIcon className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-1" />
-                    <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Verrouillée</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center mt-2 space-x-4">
-                <div className="flex items-center text-gray-600 dark:text-gray-300">
-                  <DocumentCheckIcon className="h-4 w-4 mr-1 text-blue-500" />
-                  <span className="font-medium">{commande.reference || `Commande #${commande.id}`}</span>
-                </div>
-                <div className="flex items-center text-gray-600 dark:text-gray-300">
-                  <BuildingOfficeIcon className="h-4 w-4 mr-1 text-green-500" />
-                  <span className="font-medium">{commande.soustraitantNom}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Actions */}
-          <div className="flex items-center gap-3 flex-wrap text-[0]">
-            {commande.estVerrouillee && (
-              <>
-                <button
-                  onClick={handleGenererPDF}
-                  disabled={submitting}
-                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 text-base"
-                >
-                  <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                  PDF
-                </button>
-                
-                {commande.soustraitantEmail && (
-                  <button
-                    onClick={handleEnvoyerEmail}
-                    disabled={submitting}
-                    className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 text-base"
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/60 via-orange-600/60 to-amber-700/60 dark:from-orange-500/30 dark:via-orange-600/30 dark:to-amber-700/30" />
+          <div className="relative z-10 p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={`/chantiers/${params.chantierId}/etats`}
+                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/40 bg-white/20 backdrop-blur-sm text-white shadow-sm shadow-orange-900/30 hover:bg-white/30 transition"
                   >
-                    <EnvelopeIcon className="h-5 w-5 mr-2" />
-                    Envoyer
-                  </button>
+                    <ArrowLeftIcon className="h-4 w-4" />
+                    <span className="text-sm font-semibold">Retour</span>
+                  </Link>
+
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 text-white">
+                    <ClipboardDocumentListIcon className="h-5 w-5 mr-3" />
+                    <span className="text-base sm:text-lg font-bold">Commande sous-traitant</span>
+                  </div>
+
+                  {commande.estVerrouillee && (
+                    <span className="inline-flex items-center px-3 py-1 bg-white/25 text-white border border-white/40 rounded-full text-xs font-semibold shadow-sm">
+                      <LockClosedIcon className="h-4 w-4 mr-1" />
+                      Verrouillée
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-white/90">
+                  <span className="inline-flex items-center gap-2">
+                    <DocumentCheckIcon className="h-4 w-4" />
+                    {commande.reference || `Commande #${commande.id}`}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <BuildingOfficeIcon className="h-4 w-4" />
+                    {commande.soustraitantNom}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <CurrencyEuroIcon className="h-4 w-4" />
+                    {commande.total.toLocaleString('fr-FR')} € TTC
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {commande.estVerrouillee && (
+                  <>
+                    <button
+                      onClick={handleGenererPDF}
+                      disabled={submitting}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition disabled:opacity-60"
+                    >
+                      <DocumentArrowDownIcon className="h-5 w-5" />
+                      PDF
+                    </button>
+
+                    {commande.soustraitantEmail && (
+                      <button
+                        onClick={handleEnvoyerEmail}
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition disabled:opacity-60"
+                      >
+                        <EnvelopeIcon className="h-5 w-5" />
+                        Envoyer
+                      </button>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-            
-            <button
-              onClick={handleVerrouillage}
-              disabled={submitting}
-              className={`inline-flex items-center px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50 text-base ${
-                commande.estVerrouillee
-                  ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white'
-                  : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
-              }`}
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  {commande.estVerrouillee ? 'Déverrouillage...' : 'Verrouillage...'}
-                </>
-              ) : (
-                <>
-                  {commande.estVerrouillee ? (
+
+                <button
+                  onClick={handleVerrouillage}
+                  disabled={submitting}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg transition disabled:opacity-60 ${
+                    commande.estVerrouillee
+                      ? 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
+                      : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                  }`}
+                >
+                  {submitting ? (
                     <>
-                      <LockOpenIcon className="h-5 w-5 mr-2" />
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                      {commande.estVerrouillee ? 'Déverrouillage...' : 'Validation...'}
+                    </>
+                  ) : commande.estVerrouillee ? (
+                    <>
+                      <LockOpenIcon className="h-5 w-5" />
                       Déverrouiller
                     </>
                   ) : (
                     <>
-                      <LockClosedIcon className="h-5 w-5 mr-2" />
+                      <LockClosedIcon className="h-5 w-5" />
                       Valider et verrouiller
                     </>
                   )}
-                </>
-              )}
-            </button>
-            
-            {commande.estVerrouillee && (
-              <Link
-                href={`/chantiers/${params.chantierId}/etats/soustraitants/${params.soustraitantId}/etat/nouveau`}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-base"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Nouvel état
-              </Link>
-            )}
-          </div>
-        </div>
-        
-        {/* Carte principale */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border-0 dark:bg-gray-800/80 overflow-hidden">
-          {/* En-tête de la carte */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <ClipboardDocumentListIcon className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Détail de la commande</h2>
-                <p className="text-blue-100 text-sm mt-1">
-                  {commande.lignes.length} ligne{commande.lignes.length > 1 ? 's' : ''} • Total: {commande.sousTotal.toLocaleString('fr-FR')} €
-                </p>
+                </button>
+
+                {commande.estVerrouillee && (
+                  <Link
+                    href={`/chantiers/${params.chantierId}/etats/soustraitants/${params.soustraitantId}/etat/nouveau`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                    Nouvel état
+                  </Link>
+                )}
               </div>
             </div>
           </div>
-          
-          {/* Tableau des lignes */}
-          <div className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <colgroup>
-                  <col style={{ width: '80px' }} />
-                  <col style={{ width: '200px' }} />
-                  <col style={{ width: '80px' }} />
-                  <col style={{ width: '120px' }} />
-                  <col style={{ width: '120px' }} />
-                  <col style={{ width: '140px' }} />
-                  <col style={{ width: '120px' }} />
-                </colgroup>
-                <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
-                    <th className="px-4 py-4 text-left font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center">
-                        <HashtagIcon className="h-4 w-4 mr-1" />
-                        Art.
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 text-left font-semibold text-gray-700 dark:text-gray-200">
-                      Description
-                    </th>
-                    <th className="px-4 py-4 text-center font-semibold text-gray-700 dark:text-gray-200">
-                      Unité
-                    </th>
-                    <th className="px-4 py-4 text-right font-semibold text-gray-700 dark:text-gray-200">
-                      Quantité
-                    </th>
-                    <th className="px-4 py-4 text-right font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center justify-end">
-                        <CurrencyEuroIcon className="h-4 w-4 mr-1" />
-                        P.U.
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 text-right font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center justify-end">
-                        <CurrencyEuroIcon className="h-4 w-4 mr-1" />
-                        Total
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 text-center font-semibold text-gray-700 dark:text-gray-200">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {commande.lignes.map((ligne, index) => {
-                    const isEditing = ligneEnEdition === ligne.id;
-                    const ligneTemp = lignesTemp[ligne.id];
-                    
-                    return (
-                      <tr 
-                        key={ligne.id} 
-                        className={`
-                          border-b border-gray-100 dark:border-gray-700 transition-all duration-200
-                          ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}
-                          ${isEditing 
-                            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-700 shadow-sm' 
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                          }
-                        `}
-                      >
-                        <td className="px-4 py-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                            {ligne.article}
-                          </span>
-                        </td>
-                        
-                        <td className="px-4 py-4">
-                          {isEditing ? (
-                            <textarea
-                              value={ligneTemp?.description || ''}
-                              onChange={(e) => handleInputChange(ligne.id, 'description', e.target.value)}
-                              className="w-full px-3 py-2 border-2 border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 resize-none"
-                              rows={2}
-                              placeholder="Description de la ligne..."
-                            />
-                          ) : (
-                            <div className="font-medium text-gray-900 dark:text-gray-100">
-                              {ligne.description}
-                            </div>
-                          )}
-                        </td>
-                        
-                        <td className="px-4 py-4 text-center">
-                          <span className="text-gray-600 dark:text-gray-300 font-medium">
-                            {ligne.unite}
-                          </span>
-                        </td>
-                        
-                        <td className="px-4 py-4 text-right">
-                          {isEditing ? (
-                            <NumericInput
-                              value={ligneTemp?.quantite ?? ligne.quantite}
-                              onChangeNumber={(val)=> handleInputChange(ligne.id, 'quantite', val)}
-                              step="0.01"
-                              className="w-20 px-3 py-2 text-right border-2 border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 font-medium"
-                            />
-                          ) : (
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {ligne.quantite.toLocaleString('fr-FR')}
+        </div>
+
+        <div className="grid gap-8">
+          <div className="space-y-6">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 rounded-full text-sm font-semibold">
+                    <ClipboardDocumentListIcon className="h-4 w-4" />
+                    Lignes de commande
+                  </span>
+                  <span className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                    {commande.lignes.length} ligne{commande.lignes.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Total HT : {commande.sousTotal.toLocaleString('fr-FR')} €
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <colgroup>
+                    <col style={{ width: '80px' }} />
+                    <col />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '120px' }} />
+                  </colgroup>
+                  <thead className="bg-gray-50 dark:bg-gray-800/70">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Art.</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Description</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Unité</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Quantité</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">P.U.</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Total</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {commande.lignes.map((ligne, index) => {
+                      const isEditing = ligneEnEdition === ligne.id;
+                      const ligneTemp = lignesTemp[ligne.id];
+
+                      return (
+                        <tr
+                          key={ligne.id}
+                          className={`transition-colors ${
+                            isEditing
+                              ? 'bg-blue-50 dark:bg-blue-900/20'
+                              : index % 2 === 0
+                                ? 'bg-white dark:bg-gray-800'
+                                : 'bg-gray-50 dark:bg-gray-800/80'
+                          }`}
+                        >
+                          <td className="px-4 py-4">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                              {ligne.article}
                             </span>
-                          )}
-                        </td>
-                        
-                        <td className="px-4 py-4 text-right">
-                          {isEditing ? (
-                            <NumericInput
-                              value={ligneTemp?.prixUnitaire ?? ligne.prixUnitaire}
-                              onChangeNumber={(val)=> handleInputChange(ligne.id, 'prixUnitaire', val)}
-                              step="0.01"
-                              className="w-24 px-3 py-2 text-right border-2 border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 font-medium"
-                            />
-                          ) : (
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {ligne.prixUnitaire.toLocaleString('fr-FR')} €
-                            </span>
-                          )}
-                        </td>
-                        
-                        <td className="px-4 py-4 text-right">
-                          <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
-                            {isEditing && ligneTemp
-                              ? (ligneTemp.prixUnitaire * ligneTemp.quantite).toLocaleString('fr-FR')
-                              : ligne.total.toLocaleString('fr-FR')
-                            } €
-                          </span>
-                        </td>
-                        
-                        <td className="px-4 py-4">
-                          <div className="flex justify-center space-x-2">
+                          </td>
+                          <td className="px-4 py-4 align-top">
                             {isEditing ? (
-                              <>
-                                <button
-                                  onClick={() => handleSaveLigne(ligne.id)}
-                                  disabled={submitting}
-                                  className="p-2 bg-green-100 hover:bg-green-200 text-green-600 hover:text-green-700 rounded-lg transition-all duration-200 disabled:opacity-50"
-                                  title="Enregistrer"
-                                >
-                                  <CheckIcon className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={handleCancelEdit}
-                                  disabled={submitting}
-                                  className="p-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg transition-all duration-200 disabled:opacity-50"
-                                  title="Annuler"
-                                >
-                                  <XMarkIcon className="h-4 w-4" />
-                                </button>
-                              </>
+                              <textarea
+                                value={ligneTemp?.description || ''}
+                                onChange={(e) => handleInputChange(ligne.id, 'description', e.target.value)}
+                                className="w-full px-3 py-2 text-sm border-2.border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+                                rows={2}
+                              />
                             ) : (
-                              <>
-                                {!commande.estVerrouillee && (
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ligne.description}</p>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center text-sm text-gray-600 dark:text-gray-300">
+                            {ligne.unite}
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            {isEditing ? (
+                              <NumericInput
+                                value={ligneTemp?.quantite ?? ligne.quantite}
+                                onChangeNumber={(val) => handleInputChange(ligne.id, 'quantite', val)}
+                                step="0.01"
+                                className="w-24 px-3 py-2 text-sm text-right border-2 border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                              />
+                            ) : (
+                              <span className="font-semibold text-gray-900 dark:text-gray-100">{ligne.quantite.toLocaleString('fr-FR')}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            {isEditing ? (
+                              <NumericInput
+                                value={ligneTemp?.prixUnitaire ?? ligne.prixUnitaire}
+                                onChangeNumber={(val) => handleInputChange(ligne.id, 'prixUnitaire', val)}
+                                step="0.01"
+                                className="w-24 px-3 py-2 text-sm text-right border-2 border-blue-200 rounded-lg bg-white dark:bg-gray-700 dark:border-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                              />
+                            ) : (
+                              <span className="font-semibold text-gray-900 dark:text-gray-100">{ligne.prixUnitaire.toLocaleString('fr-FR')} €</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <span className="font-bold text-gray-900 dark:text-gray-100">
+                              {isEditing && ligneTemp
+                                ? (ligneTemp.prixUnitaire * ligneTemp.quantite).toLocaleString('fr-FR')
+                                : ligne.total.toLocaleString('fr-FR')
+                              } €
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex justify-center gap-2">
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    onClick={() => handleSaveLigne(ligne.id)}
+                                    disabled={submitting}
+                                    className="p-2 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 hover:text-green-700 transition disabled:opacity-50"
+                                    title="Enregistrer"
+                                  >
+                                    <CheckIcon className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    disabled={submitting}
+                                    className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 transition disabled:opacity-50"
+                                    title="Annuler"
+                                  >
+                                    <XMarkIcon className="h-4 w-4" />
+                                  </button>
+                                </>
+                              ) : (
+                                !commande.estVerrouillee && (
                                   <>
                                     <button
                                       onClick={() => handleEditLigne(ligne.id)}
                                       disabled={submitting}
-                                      className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-lg transition-all duration-200 disabled:opacity-50"
+                                      className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 transition disabled:opacity-50"
                                       title="Modifier"
                                     >
                                       <PencilIcon className="h-4 w-4" />
@@ -641,32 +607,118 @@ export default function CommandeSousTraitantPage(
                                     <button
                                       onClick={() => handleDeleteLigne(ligne.id)}
                                       disabled={submitting}
-                                      className="p-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg transition-all duration-200 disabled:opacity-50"
+                                      className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 transition disabled:opacity-50"
                                       title="Supprimer"
                                     >
                                       <TrashIcon className="h-4 w-4" />
                                     </button>
                                   </>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                                )
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {!commande.estVerrouillee && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Ajoutez des lignes pour compléter la commande sous-traitant.</p>
+                  <button
+                    onClick={addLigne}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg hover:shadow-xl transition"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                    Ajouter une ligne
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-          
-          {/* Section résumé financier simplifiée (sans TTC) */}
-          <div className="p-6 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 border-t border-gray-200 dark:border-gray-600">
-            <div className="flex justify-end">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 min-w-80">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700 dark:text-gray-200 font-semibold">Total HT</span>
-                  <span className="text-xl font-bold text-gray-900 dark:text-white">{commande.sousTotal.toLocaleString('fr-FR')} €</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Informations générales</h2>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Référence</label>
+                    <input
+                      type="text"
+                      value={commande.reference || ''}
+                      onChange={(e) => setCommande({ ...commande, reference: e.target.value })}
+                      disabled={commande.estVerrouillee}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 transition"
+                      placeholder="Référence de la commande"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+                    <input
+                      type="date"
+                      value={commande.dateCommande ? new Date(commande.dateCommande).toISOString().slice(0, 10) : ''}
+                      onChange={(e) => setCommande({ ...commande, dateCommande: new Date(e.target.value) })}
+                      disabled={commande.estVerrouillee}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 transition"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Paramètres</h2>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Taux de TVA (%)</label>
+                  <div className="relative">
+                    <select
+                      value={commande.tauxTVA}
+                      onChange={(e) => {
+                        const newTauxTVA = parseFloat(e.target.value);
+                        const newTVA = commande.sousTotal * (newTauxTVA / 100);
+                        const newTotal = commande.sousTotal + newTVA;
+                        setCommande({
+                          ...commande,
+                          tauxTVA: newTauxTVA,
+                          tva: newTVA,
+                          total: newTotal
+                        });
+                      }}
+                      disabled={commande.estVerrouillee}
+                      className="w-full appearance-none px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 transition"
+                    >
+                      <option value="0">0%</option>
+                      <option value="6">6%</option>
+                      <option value="21">21%</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Résumé financier</h2>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-300">Sous-total HT</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{commande.sousTotal.toLocaleString('fr-FR')} €</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-300">TVA ({commande.tauxTVA}%)</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{commande.tva.toLocaleString('fr-FR')} €</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Total TTC</span>
+                    <span className="text-xl font-bold text-orange-600 dark:text-orange-300">{commande.total.toLocaleString('fr-FR')} €</span>
+                  </div>
                 </div>
               </div>
             </div>

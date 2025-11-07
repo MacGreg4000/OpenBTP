@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react'
+import Link from 'next/link'
 import { type Chantier } from '@/types/chantier'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { 
@@ -33,11 +34,6 @@ export default function EtatAvancementPage(props: PageProps) {
   const [hasNextEtat, setHasNextEtat] = useState(false)
   const [mois, setMois] = useState<string>('')
   const [currentCommentaires, setCurrentCommentaires] = useState<string>('')
-
-  // Fonction pour gérer la navigation
-  const handleNavigation = (path: string) => {
-    window.location.href = path
-  }
 
   useEffect(() => {
     const fetchChantier = async () => {
@@ -300,130 +296,124 @@ export default function EtatAvancementPage(props: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <DocumentExpirationAlert />
-      
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation */}
-        <div className="mb-6">
-          <button
-            onClick={() => handleNavigation(`/chantiers/${params.chantierId}/etats`)}
-            className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            Retour aux états d'avancement
-          </button>
-        </div>
 
-        {/* En-tête moderne */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 rounded-2xl p-6 mb-8 shadow-xl border border-blue-200 dark:border-blue-700">
-          <div className="flex flex-col md:flex-row md:items-center justify-between">
-            <div className="text-white">
-              <div className="flex items-center">
-                <div className="flex items-center mr-4">
-                  <div className="bg-blue-500 dark:bg-blue-400 text-white px-3 py-1 rounded-full text-sm font-semibold mr-3 shadow-md border-2 border-blue-300 dark:border-blue-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    CLIENT
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="relative bg-white/80.dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all durée-300 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/80 via-indigo-600/80 to-purple-700/80 dark:from-indigo-500/35 dark:via-indigo-600/35 dark:to-purple-700/35" />
+          <div className="relative z-10 p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/chantiers/${params.chantierId}/etats`}
+                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/40 bg-white/20 backdrop-blur-sm text-white shadow-sm shadow-indigo-900/30 hover:bg-white/30 transition"
+                  >
+                    <ArrowLeftIcon className="h-4 w-4" />
+                    <span className="text-sm font-semibold">Retour</span>
+                  </Link>
+
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 text-white">
+                    <CheckCircleIcon className="h-5 w-5 mr-3" />
+                    <span className="text-base sm:text-lg font-bold">État d'avancement n°{etatAvancement.numero}</span>
                   </div>
+
+                  {etatAvancement.estFinalise && (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/25 text-white border border-white/40 rounded-full text-xs font-semibold shadow-sm">
+                      <CheckCircleIcon className="h-4 w-4" />
+                      Validé
+                    </span>
+                  )}
                 </div>
-                <h1 className="text-2xl font-bold text-white drop-shadow-sm">
-                  État d'avancement n°{etatAvancement.numero}
-                </h1>
-                {etatAvancement.estFinalise && (
-                  <span className="ml-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 border border-green-200 dark:border-green-700 shadow-sm">
-                    <CheckCircleIcon className="h-4 w-4 mr-1" />
-                    Validé
+
+                <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-white/90">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="opacity-90">Date</span>
+                    <span className="font-semibold">{new Date(etatAvancement.date).toLocaleDateString('fr-FR')}</span>
                   </span>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="opacity-90">Période</span>
+                    <select
+                      value={mois}
+                      onChange={(e) => handleMoisChange(e.target.value)}
+                      disabled={etatAvancement?.estFinalise}
+                      className={`bg-white/20 border-0 text-white font-semibold rounded-full px-3 py-1 focus:outline-none focus:ring-2 focus:ring-white/40 ${etatAvancement?.estFinalise ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                    >
+                      <option value="" className="text-gray-900">Période de travaux</option>
+                      {['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((moisOption) => (
+                        <option key={moisOption} value={moisOption} className="text-gray-900">{moisOption}</option>
+                      ))}
+                    </select>
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="opacity-90">Chantier</span>
+                    <span className="font-semibold">{chantier.nomChantier}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition"
+                  title="Télécharger PDF"
+                >
+                  <DocumentArrowDownIcon className="h-5 w-5" />
+                  PDF
+                </button>
+
+                <button
+                  onClick={handleExportExcel}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition"
+                  title="Télécharger Excel"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Excel
+                </button>
+
+                {!etatAvancement.estFinalise ? (
+                  <button
+                    onClick={handleValidation}
+                    disabled={validating}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg hover:bg-emerald-600 transition disabled:opacity-60"
+                  >
+                    {validating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        Validation...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircleIcon className="h-5 w-5" />
+                        Valider l'état
+                      </>
+                    )}
+                  </button>
+                ) : !hasNextEtat && (
+                  <button
+                    onClick={handleReopenEtat}
+                    disabled={validating}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-white/35 transition disabled:opacity-60"
+                  >
+                    {validating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        Réouverture...
+                      </>
+                    ) : (
+                      <>
+                        <PencilSquareIcon className="h-5 w-5" />
+                        Réouvrir l'état
+                      </>
+                    )}
+                  </button>
                 )}
               </div>
-              <div className="flex items-center mt-2">
-                <span className="text-sm text-blue-100 dark:text-blue-200 font-medium flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {new Date(etatAvancement.date).toLocaleDateString('fr-FR')}
-                </span>
-                <span className="mx-2 text-blue-300 dark:text-blue-400">•</span>
-                <span className="text-sm text-blue-100 dark:text-blue-200 font-medium flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <select 
-                    value={mois} 
-                    onChange={(e) => handleMoisChange(e.target.value)}
-                    className={`bg-transparent border-0 focus:ring-0 p-0 text-blue-100 dark:text-blue-200 ${!etatAvancement?.estFinalise ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                    disabled={etatAvancement?.estFinalise}
-                  >
-                    <option value="" className="text-gray-900">Période de travaux</option>
-                    <option value="Janvier" className="text-gray-900">Janvier</option>
-                    <option value="Février" className="text-gray-900">Février</option>
-                    <option value="Mars" className="text-gray-900">Mars</option>
-                    <option value="Avril" className="text-gray-900">Avril</option>
-                    <option value="Mai" className="text-gray-900">Mai</option>
-                    <option value="Juin" className="text-gray-900">Juin</option>
-                    <option value="Juillet" className="text-gray-900">Juillet</option>
-                    <option value="Août" className="text-gray-900">Août</option>
-                    <option value="Septembre" className="text-gray-900">Septembre</option>
-                    <option value="Octobre" className="text-gray-900">Octobre</option>
-                    <option value="Novembre" className="text-gray-900">Novembre</option>
-                    <option value="Décembre" className="text-gray-900">Décembre</option>
-                  </select>
-                </span>
-                <span className="mx-2 text-blue-300 dark:text-blue-400">•</span>
-                <span className="text-sm text-blue-100 dark:text-blue-200 font-medium flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  {chantier.nomChantier}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 self-end md:self-auto mt-4 md:mt-0">
-              <button
-                onClick={handleDownloadPDF}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-500 dark:bg-green-700 dark:hover:bg-green-600 flex items-center justify-center shadow-md transition-all hover:shadow-lg border border-green-700 hover:border-green-500 dark:border-green-600 dark:hover:border-green-500"
-                title="Télécharger PDF"
-              >
-                <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                PDF
-              </button>
-              
-              <button
-                onClick={handleExportExcel}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600 flex items-center justify-center shadow-md transition-all hover:shadow-lg border border-blue-700 hover:border-blue-500 dark:border-blue-600 dark:hover:border-blue-500"
-                title="Télécharger Excel"
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Excel
-              </button>
-              
-              {!etatAvancement.estFinalise ? (
-                <button
-                  onClick={handleValidation}
-                  disabled={validating}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-500 dark:bg-indigo-700 dark:hover:bg-indigo-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all hover:shadow-lg border border-indigo-700 hover:border-indigo-500 dark:border-indigo-600 dark:hover:border-indigo-500"
-                >
-                  <CheckCircleIcon className="h-5 w-5 mr-2" />
-                  {validating ? 'Validation...' : 'Valider l\'état'}
-                </button>
-              ) : !hasNextEtat && (
-                <button
-                  onClick={handleReopenEtat}
-                  disabled={validating}
-                  className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-500 dark:bg-amber-700 dark:hover:bg-amber-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all hover:shadow-lg border border-amber-700 hover:border-amber-500 dark:border-amber-600 dark:hover:border-amber-500"
-                >
-                  <PencilSquareIcon className="h-5 w-5 mr-2" />
-                  {validating ? 'Réouverture...' : 'Réouvrir l\'état'}
-                </button>
-              )}
             </div>
           </div>
         </div>
-        
-        {/* Contenu principal */}
+
         <div className="bg-gray-50 dark:bg-gray-900">
           <style jsx global>{`
             /* Style personnalisé pour les tableaux */

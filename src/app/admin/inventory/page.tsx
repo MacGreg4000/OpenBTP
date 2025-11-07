@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
+import { PageHeader } from '@/components/PageHeader'
 import { RackWithEmplacements } from '@/types/inventory'
 import { 
   PlusIcon,
@@ -87,9 +89,11 @@ export default function RackAdminPage() {
       setLignes(4)
       setColonnes(5)
       setShowForm(false)
+      toast.success('Rack créé avec succès')
     } catch (err) {
       setError('Erreur lors de la création du rack')
       console.error(err)
+      toast.error('Impossible de créer le rack')
     } finally {
       setSubmitting(false)
     }
@@ -169,10 +173,10 @@ export default function RackAdminPage() {
       
       // Fermer la modal
       setRackToDelete(null)
-      alert('Rack supprimé avec succès')
+      toast.success('Rack supprimé avec succès')
     } catch (err) {
       console.error('Erreur:', err)
-      alert(err instanceof Error ? err.message : 'Erreur lors de la suppression du rack')
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression du rack')
     } finally {
       setDeleting(false)
     }
@@ -193,113 +197,87 @@ export default function RackAdminPage() {
       : 0
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* En-tête avec gradient */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">          
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center">
-                <Cog6ToothIcon className="h-8 w-8 text-white mr-3" />
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    Administration des Racks
-                  </h1>
-                  <p className="mt-2 text-emerald-100">
-                    Créez et gérez vos espaces de stockage
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 md:mt-0 flex space-x-3">
-              <Link
-                href="/inventory"
-                className="inline-flex items-center px-4 py-2 border border-white/20 rounded-md shadow-sm text-sm font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
-              >
-                <ArchiveBoxIcon className="h-4 w-4 mr-2" />
-                Voir l'inventaire
-              </Link>
-              <button
-                onClick={() => setShowForm(!showForm)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-emerald-700 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
-              >
-                {showForm ? (
-                  <>
-                    <XMarkIcon className="h-4 w-4 mr-2" />
-                    Annuler
-                  </>
-                ) : (
-                  <>
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Nouveau rack
-                  </>
-                )}
-              </button>
-            </div>
+  const statsCards = (
+    <div className="flex items-center gap-2">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+            <BuildingStorefrontIcon className="h-4 w-4 text-white" />
           </div>
-
-          {/* Statistiques */}
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <BuildingStorefrontIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-emerald-100 truncate">
-                      Racks configurés
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {stats.totalRacks}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CubeIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-emerald-100 truncate">
-                      Total emplacements
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {stats.totalEmplacements}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-3 border border-white/20">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ChartBarIcon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-3 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-emerald-100 truncate">
-                      Taille moyenne
-                    </dt>
-                    <dd className="text-lg font-semibold text-white">
-                      {stats.moyenneTaille} empl.
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Racks</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.totalRacks}</div>
           </div>
         </div>
       </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <CubeIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Emplacements</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.totalEmplacements}</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-lg flex items.center justify-center">
+            <ChartBarIcon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Taille moy.</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{stats.moyenneTaille}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
-      {/* Contenu principal */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-teal-100/40 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Administration des racks"
+        subtitle="Créez et gérez vos espaces de stockage"
+        icon={Cog6ToothIcon}
+        badgeColor="from-emerald-500 via-teal-500 to-emerald-700"
+        gradientColor="from-emerald-500/10 via-teal-500/10 to-emerald-700/10"
+        stats={statsCards}
+        actions={
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link
+              href="/inventory"
+              className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white/90 dark:bg-gray-800/80 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm"
+            >
+              <ArchiveBoxIcon className="h-4 w-4" />
+              Inventaire
+            </Link>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg shadow-lg transition-all duration-200 ${
+                showForm
+                  ? 'text-emerald-700 dark:text-emerald-200 bg-white/90 dark:bg-gray-800/80 border border-emerald-200/70 dark:border-emerald-700/60 hover:bg-white dark:hover:bg-gray-700'
+                  : 'text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-600'
+              }`}
+            >
+              {showForm ? (
+                <>
+                  <XMarkIcon className="h-4 w-4" />
+                  Annuler
+                </>
+              ) : (
+                <>
+                  <PlusIcon className="h-4 w-4" />
+                  Nouveau rack
+                </>
+              )}
+            </button>
+          </div>
+        }
+      />
+
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
             <div className="flex">
@@ -417,8 +395,6 @@ export default function RackAdminPage() {
                   </h3>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 overflow-auto">
                     <div className="inline-block">
-              </div>
-              
                       {renderRackPreview()}
                     </div>
                   </div>
@@ -450,9 +426,10 @@ export default function RackAdminPage() {
                     )}
                   </button>
                 </div>
-          </form>
-        </div>
-      )}
+              </div>
+            </form>
+          </div>
+        )}
         
         {loading ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12">
@@ -464,19 +441,21 @@ export default function RackAdminPage() {
         ) : (
           <>
             {racks.length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-                <BuildingStorefrontIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <div className="text-center py-14 px-8 bg-gradient-to-br from-emerald-50 via-teal-100 to-green-100 dark:from-emerald-900/20 dark:via-teal-900/25 dark:to-green-900/20 rounded-3xl border border-emerald-200/70 dark:border-emerald-800/60 shadow-lg">
+                <div className="mx-auto w-20 h-20 flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-green-600 shadow-xl ring-2 ring-white/40 mb-6">
+                  <BuildingStorefrontIcon className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-emerald-900 dark:text-white mb-2">
                   Aucun rack configuré
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-                  Commencez par créer votre premier rack pour organiser votre inventaire.
+                <p className="text-emerald-800/80 dark:text-emerald-200/80 text-sm mb-6 max-w-md mx-auto">
+                  Créez votre premier rack pour organiser efficacement vos matériaux dans l’inventaire.
                 </p>
                 <button
                   onClick={() => setShowForm(true)}
-                  className="inline-flex items-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-transform duration-200 hover:-translate-y-0.5"
                 >
-                  <PlusIcon className="h-4 w-4 mr-2" />
+                  <PlusIcon className="h-4 w-4" />
                   Créer mon premier rack
                 </button>
               </div>

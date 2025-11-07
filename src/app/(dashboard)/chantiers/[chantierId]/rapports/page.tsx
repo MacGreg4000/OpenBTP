@@ -148,21 +148,21 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-6">
               {rapports.length === 0 ? (
-                <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/30 rounded-xl border border-blue-200 dark:border-blue-800">
-                  <div className="mx-auto w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 mb-6 shadow-lg">
+                <div className="text-center py-12 bg-gradient-to-br from-orange-50 via-amber-100 to-rose-100 dark:from-orange-900/20 dark:via-amber-900/25 dark:to-rose-900/30 rounded-xl border border-orange-200/80 dark:border-amber-800/60">
+                  <div className="mx-auto w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 mb-6 shadow-lg ring-2 ring-white/40">
                     <DocumentTextIcon className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-xl font-semibold text-orange-900 dark:text-white mb-2">
                     Aucun rapport de visite
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  <p className="text-orange-800/80 dark:text-orange-200/80 mb-6 max-w-md mx-auto">
                     Créez votre premier rapport de visite pour documenter l'avancement des travaux.
                   </p>
                   <Link
                     href={`/chantiers/${params.chantierId}/rapports/nouveau`}
-                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:from-orange-600 hover:to-red-700 transform hover:-translate-y-0.5"
                   >
-                    <PlusIcon className="h-5 w-5 mr-2" />
+                    <PlusIcon className="h-5 w-5" />
                     Créer un rapport
                   </Link>
                 </div>
