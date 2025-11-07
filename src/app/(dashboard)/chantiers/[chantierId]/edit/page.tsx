@@ -2,7 +2,7 @@
 import { useState, useEffect, use, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
-import { PencilSquareIcon } from '@heroicons/react/24/outline'
+import { PencilSquareIcon, EyeIcon } from '@heroicons/react/24/outline'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { PPSSUpdateModal } from '@/components/modals/PPSSUpdateModal'
 
@@ -276,24 +276,35 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
       <DocumentExpirationAlert />
       
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* En-tête moderne */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 rounded-2xl p-6 mb-8 shadow-xl border border-blue-200 dark:border-blue-700">
-          <div className="flex flex-col md:flex-row md:items-center justify-between">
-            <div className="text-white">
-              <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-white drop-shadow-sm">
-                  Édition
-                </h1>
-              </div>
-              <div className="mt-2">
-                {chantier && (
-                  <span className="text-sm text-blue-100 dark:text-blue-200 font-medium flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    {chantier.nomChantier}
-                  </span>
-                )}
+        {/* En-tête moderne harmonisé avec la page Consulter */}
+        <div className="mb-6">
+          <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-600/60 via-sky-700/60 to-cyan-800/60 dark:from-sky-600/30 dark:via-sky-700/30 dark:to-cyan-800/30" />
+
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3">
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                    <PencilSquareIcon className="w-6 h-6 mr-3 text-sky-900 dark:text-white" />
+                    <h1 className="text-xl font-bold text-sky-900 dark:text-white">
+                      Éditer
+                    </h1>
+                  </div>
+                  {chantier.numeroIdentification && (
+                    <span className="px-3 py-1 rounded-full bg-white/30 backdrop-blur-sm text-sky-900 dark:text-white shadow-sm text-xs sm:text-sm font-semibold inline-flex w-max">
+                      N° {chantier.numeroIdentification}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => router.push(`/chantiers/${params.chantierId}`)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-sky-900 dark:text-white"
+                  >
+                    <EyeIcon className="h-5 w-5" />
+                    Consulter
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -304,7 +315,7 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
           {/* Section Modification du chantier */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full shadow-lg ring-2 ring-emerald-200 dark:ring-emerald-700">
+              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-sky-500 via-sky-600 to-cyan-700 text-white rounded-full shadow-lg ring-2 ring-sky-200 dark:ring-sky-700">
                 <PencilSquareIcon className="w-5 h-5 mr-2" />
                 <span className="font-bold text-lg">Informations du chantier</span>
               </div>

@@ -10,15 +10,15 @@ import {
   EyeIcon,
   CurrencyEuroIcon,
   ClipboardDocumentCheckIcon,
-  ArrowUturnLeftIcon
+  ChevronLeftIcon
 } from '@heroicons/react/24/outline'
 
 interface ChantierHeaderProps {
   chantierId: string
   chantier: {
     nomChantier: string
-    numeroIdentification?: string | null
     etatChantier: string
+    numeroIdentification?: string | null
   }
 }
 
@@ -118,6 +118,23 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
     },
   ];
 
+  const currentAction = actions.find((action) => action.isActive) ?? actions[0];
+  const ChantierIcon = currentAction.icon;
+
+  const getStatutLabel = (etat: string) => {
+    switch (etat) {
+      case 'EN_COURS':
+        return 'En cours';
+      case 'TERMINE':
+        return 'Terminé';
+      case 'A_VENIR':
+        return 'À venir';
+      case 'EN_PREPARATION':
+      default:
+        return 'En préparation';
+    }
+  };
+
   return (
     <div className="relative w-full overflow-visible">
       {/* Effet de fond animé */}
@@ -127,32 +144,45 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
         {/* Container flex pour titre + boutons sur la même ligne - effet flottant */}
         <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 ${isCompact ? 'p-2' : 'p-5 hover:-translate-y-1'}`}>
           
-          <div className="relative flex flex-col lg:flex-row items-center gap-4">
-            {/* Titre du chantier */}
-            <div className={`flex-shrink-0 lg:absolute lg:left-4 transition-all duration-300 ${isCompact ? 'lg:left-2' : ''}`}>
-              <h1 className={`${isCompact ? 'text-sm' : getTitleSize(chantier.nomChantier)} font-black text-blue-600 dark:text-blue-400 break-words text-center lg:text-left transition-all duration-300`}>
-                {chantier.nomChantier}
-              </h1>
-              {chantier.numeroIdentification && !isCompact && (
-                <p className="text-xs text-blue-600 dark:text-blue-400 font-bold mt-1 flex items-center gap-2 justify-center lg:justify-start">
-                  <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                  ID: {chantier.numeroIdentification}
-                </p>
-              )}
-              {/* Bouton Retour aux chantiers */}
-              {!isCompact && (
-                <Link 
-                  href="/chantiers"
-                  className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-all duration-200 hover:shadow-md border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600"
-                >
-                  <ArrowUturnLeftIcon className="h-3.5 w-3.5" />
-                  <span>Retour aux chantiers</span>
-                </Link>
-              )}
+          <div className={`relative flex flex-col gap-4 w-full ${isCompact ? '' : 'lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-6'}`}>
+            <div className={`flex items-center gap-3 ${isCompact ? 'gap-2' : ''}`}>
+              <Link
+                href="/chantiers"
+                className={`group relative inline-flex items-center justify-center rounded-full border border-emerald-200/60 dark:border-emerald-900/40 bg-white/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-200 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}
+              >
+                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-100/70 via-emerald-200/60 to-teal-200/60 dark:from-emerald-900/30 dark:via-emerald-800/20 dark:to-teal-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ChevronLeftIcon className="relative h-4 w-4" />
+              </Link>
+
+              <div className={`inline-flex items-center gap-4 border border-white/50 dark:border-emerald-900/40 bg-white/85 dark:bg-emerald-950/30 shadow-lg shadow-emerald-500/15 backdrop-blur-sm ${isCompact ? 'px-4 py-2 rounded-2xl' : 'px-5 py-3 rounded-3xl'}`}>
+                <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40 ${isCompact ? 'w-9 h-9' : 'w-11 h-11'}`}>
+                  <ChantierIcon className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'} drop-shadow-md`} />
+                </div>
+                <div>
+                  <h1 className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold text-gray-900 dark:text-white flex items-center gap-3 transition-all duration-300`}>
+                    {chantier.nomChantier}
+                    {chantier.numeroIdentification && (
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200 ${isCompact ? 'hidden lg:inline-flex' : ''}`}>
+                        {chantier.numeroIdentification}
+                      </span>
+                    )}
+                  </h1>
+                  {chantier.numeroIdentification && (
+                    <p className={`text-xs text-emerald-700/80 dark:text-emerald-200/80 flex items-center gap-2 transition-opacity ${isCompact ? 'mt-1 lg:hidden' : 'mt-1'}`}>
+                      <span className="inline-block w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                      ID : {chantier.numeroIdentification}
+                    </p>
+                  )}
+                  <p className={`text-xs text-emerald-700/80 dark:text-emerald-200/80 transition-opacity ${isCompact ? 'mt-1 hidden lg:block' : 'mt-1'}`}>
+                    Statut : {getStatutLabel(chantier.etatChantier)}
+                  </p>
+                </div>
+              </div>
             </div>
-            
+
             {/* Navigation moderne avec cards flottantes - centrée */}
-            <nav className={`flex flex-wrap gap-3 justify-center flex-1 lg:mx-auto transition-all duration-300 ${isCompact ? 'gap-2' : ''}`}>
+            <div className="w-full flex justify-center">
+              <nav className={`flex flex-wrap gap-3 justify-center transition-all duration-300 ${isCompact ? 'gap-2' : ''}`}>
             {actions.map((action) => {
               const Icon = action.icon;
               return (
@@ -193,6 +223,24 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
               );
             })}
           </nav>
+            </div>
+
+            {/* Placeholder pour équilibrer la grille en desktop */}
+            <div className={`hidden lg:flex items-center gap-3 ${isCompact ? 'gap-2' : ''} opacity-0 pointer-events-none select-none`}>
+              <div
+                className={`group relative inline-flex items-center justify-center rounded-full border border-emerald-200/60 dark:border-emerald-900/40 bg-white/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-200 shadow-lg shadow-emerald-500/10 ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}
+              />
+              <div className={`inline-flex items-center gap-4 border border-white/50 dark:border-emerald-900/40 bg-white/85 dark:bg-emerald-950/30 shadow-lg shadow-emerald-500/15 backdrop-blur-sm ${isCompact ? 'px-4 py-2 rounded-2xl' : 'px-5 py-3 rounded-3xl'}`}>
+                <div className={`flex items-center justify-center rounded-2xl ${isCompact ? 'w-9 h-9' : 'w-11 h-11'}`}>
+                  <ChantierIcon className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                </div>
+                <div>
+                  <span className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold`}>
+                    {chantier.nomChantier}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

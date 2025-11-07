@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
-import { PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon, EyeIcon, ArrowUpTrayIcon, MapIcon } from '@heroicons/react/24/outline'
+import { PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon, EyeIcon, ArrowUpTrayIcon, MapIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import ChantierGestionnaires from '@/components/chantier/ChantierGestionnaires'
 import toast from 'react-hot-toast'
 
@@ -65,34 +65,6 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
     fetchChantier()
   }, [params.chantierId])
 
-  const getStatutLabel = (statut: string | undefined | null) => {
-    switch (statut) {
-      case 'EN_COURS':
-        return 'En cours'
-      case 'TERMINE':
-        return 'Terminé'
-      case 'A_VENIR':
-        return 'À venir'
-      case 'EN_PREPARATION':
-      default:
-        return 'En préparation'
-    }
-  }
-
-  const getStatutBadgeColor = (statut: string | undefined | null) => {
-    switch (statut) {
-      case 'EN_COURS':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-      case 'TERMINE':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-      case 'A_VENIR':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-      case 'EN_PREPARATION':
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-    }
-  }
-
   const handleShareLocation = () => {
     if (!chantier?.latitude || !chantier?.longitude) return
 
@@ -149,16 +121,21 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
             {/* Effet de fond subtil avec dégradé sky blue (couleur pour Consulter) - opacité 60% */}
             <div className="absolute inset-0 bg-gradient-to-br from-sky-600/60 via-sky-700/60 to-cyan-800/60 dark:from-sky-600/30 dark:via-sky-700/30 dark:to-cyan-800/30"></div>
-            
+
             <div className="relative z-10 p-4 sm:p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 flex-1">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3">
                   <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
                     <EyeIcon className="w-6 h-6 mr-3 text-sky-900 dark:text-white" />
                     <h1 className="text-xl font-bold text-sky-900 dark:text-white">
                       Consulter
                     </h1>
                   </div>
+                  {chantier.numeroIdentification && (
+                    <span className="px-3 py-1 rounded-full bg-white/30 backdrop-blur-sm text-sky-900 dark:text-white shadow-sm text-xs sm:text-sm font-semibold inline-flex w-max">
+                      N° {chantier.numeroIdentification}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center space-x-4">
                   <button
@@ -174,27 +151,6 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
           </div>
         </div>
 
-        {/* Informations du chantier */}
-        <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {chantier.nomChantier}
-                </h2>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatutBadgeColor(chantier.statut)}`}>
-                  {getStatutLabel(chantier.statut)}
-                </span>
-              </div>
-              {chantier.numeroIdentification && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  N° {chantier.numeroIdentification}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-        
         {/* Contenu principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Colonne principale */}
@@ -202,9 +158,10 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
             {/* Informations générales */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                  Informations générales
-                </h2>
+                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-sky-500 via-sky-600 to-cyan-700 text-white rounded-full shadow-lg ring-2 ring-sky-200 dark:ring-sky-700">
+                  <InformationCircleIcon className="w-5 h-5 mr-2" />
+                  <span className="font-bold text-lg">Informations du chantier</span>
+                </div>
               </div>
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
