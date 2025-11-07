@@ -62,9 +62,32 @@ export async function PUT(request: Request, props: { params: Promise<{ commandeI
     const commandeData = await request.json()
     console.log('Données reçues pour mise à jour:', commandeData)
 
+    const chantierPrimaryId: string | undefined = commandeData.chantierId
+    const chantierSlug: string | undefined = commandeData.chantierSlug || commandeData.chantierId
+
     // Préparer les données pour la mise à jour
+    const existingChantier = await prisma.chantier.findUnique({ where: { id: existingCommande.chantierId } })
+    let targetChantier = null
+
+    if (chantierPrimaryId) {
+      targetChantier = await prisma.chantier.findUnique({ where: { id: chantierPrimaryId } })
+    }
+    if (!targetChantier && chantierSlug) {
+      targetChantier = await prisma.chantier.findUnique({ where: { chantierId: chantierSlug } })
+    }
+    if (!targetChantier) {
+      targetChantier = existingChantier
+    }
+
+    if (!targetChantier) {
+      return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 400 })
+    }
+
+    const targetChantierId = targetChantier.id
+    const previousChantierId = existingCommande.chantierId
+
     const commandeUpdateData = {
-      chantierId: commandeData.chantierId,
+      chantierId: targetChantierId,
       clientId: commandeData.clientId,
       dateCommande: new Date(commandeData.dateCommande),
       reference: commandeData.reference || null,
@@ -110,12 +133,11 @@ export async function PUT(request: Request, props: { params: Promise<{ commandeI
       }
     }
 
-    // Mettre à jour le montant total du chantier
+    // Mettre à jour le montant total du chantier ciblé
     const commandes = await prisma.commande.findMany({
-      where: { chantierId: existingCommande.chantierId }
+      where: { chantierId: targetChantierId }
     })
     
-    // Calculer le montant total en additionnant uniquement les commandes avec statut VALIDEE
     const montantTotal = commandes
       .filter((cmd) => cmd.statut === 'VALIDEE')
       .reduce((sum: number, cmd) => sum + Number(cmd.total || 0), 0)
@@ -123,9 +145,25 @@ export async function PUT(request: Request, props: { params: Promise<{ commandeI
     console.log('Montant total calculé:', montantTotal, 'à partir de', commandes.length, 'commandes')
     
     await prisma.chantier.update({
-      where: { id: existingCommande.chantierId },
+      where: { id: targetChantierId },
       data: { budget: montantTotal }
     })
+
+    // Si le chantier a changé, mettre à jour l'ancien chantier également
+    if (previousChantierId !== targetChantierId) {
+      const anciennesCommandes = await prisma.commande.findMany({
+        where: { chantierId: previousChantierId }
+      })
+
+      const ancienMontantTotal = anciennesCommandes
+        .filter((cmd) => cmd.statut === 'VALIDEE')
+        .reduce((sum: number, cmd) => sum + Number(cmd.total || 0), 0)
+
+      await prisma.chantier.update({
+        where: { id: previousChantierId },
+        data: { budget: ancienMontantTotal }
+      })
+    }
 
     // Récupérer la commande mise à jour avec ses lignes
     const commandeWithLignes = await prisma.commande.findUnique({

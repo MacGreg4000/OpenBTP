@@ -39,6 +39,7 @@ interface LigneCommande {
 interface Commande {
   id?: number;
   chantierId: string;
+  chantierSlug?: string;
   clientId: string | null;
   clientNom?: string | null;
   dateCommande: Date;
@@ -75,9 +76,11 @@ export default function CommandePage(props: CommandePageProps) {
     totalOptions: 0,
     tva: 0,
     total: 0,
-    statut: 'brouillon'
+    statut: 'brouillon',
+    chantierSlug: chantierId
   })
-  const [chantier, setChantier] = useState<{ nomChantier?: string } | null>(null)
+  const [chantier, setChantier] = useState<{ nomChantier?: string; id?: string } | null>(null)
+  const [chantierPrimaryId, setChantierPrimaryId] = useState<string | null>(null)
 
   // Force le taux de TVA à 0% au premier rendu
   useEffect(() => {
@@ -108,6 +111,8 @@ export default function CommandePage(props: CommandePageProps) {
       }
       const chantierData = await chantierResponse.json();
       console.log('Données du chantier chargées:', chantierData);
+      const primaryId: string = chantierData.id;
+      setChantierPrimaryId(primaryId);
       
       // Récupérer le client
       let clientNom = null;
@@ -128,7 +133,8 @@ export default function CommandePage(props: CommandePageProps) {
       
       // Initialiser une nouvelle commande par défaut
       let newCommande: Commande = {
-        chantierId: chantierId,
+        chantierId: primaryId,
+        chantierSlug: chantierId,
         clientId: clientId,
         clientNom: clientNom,
         dateCommande: new Date(),
@@ -163,7 +169,8 @@ export default function CommandePage(props: CommandePageProps) {
               // Mettre à jour l'état avec les données récupérées
               newCommande = {
                 id: commande.id,
-                chantierId: chantierId,
+                chantierId: commande.chantierId || primaryId,
+                chantierSlug: chantierId,
                 clientId: commande.clientId || clientId,
                 clientNom: clientNom,
                 dateCommande: new Date(commande.dateCommande),
@@ -223,7 +230,8 @@ export default function CommandePage(props: CommandePageProps) {
               // Mettre à jour l'état avec les données récupérées
               newCommande = {
                 id: derniereCommande.id,
-                chantierId: chantierId,
+                chantierId: derniereCommande.chantierId || primaryId,
+                chantierSlug: chantierId,
                 clientId: derniereCommande.clientId || clientId,
                 clientNom: clientNom,
                 dateCommande: new Date(derniereCommande.dateCommande),
@@ -287,6 +295,9 @@ export default function CommandePage(props: CommandePageProps) {
         if (!res.ok) throw new Error('Erreur lors de la récupération du chantier')
         const data = await res.json()
         setChantier(data)
+        if (data.id) {
+          setChantierPrimaryId(data.id)
+        }
       } catch (error) {
         console.error('Erreur:', error)
         toast.error('Erreur lors du chargement des informations du chantier')
@@ -474,6 +485,7 @@ export default function CommandePage(props: CommandePageProps) {
       type CommandePayload = {
         id?: number;
         chantierId: string;
+        chantierSlug?: string;
         clientId: string | null;
         dateCommande: string;
         reference: string | null;
@@ -498,9 +510,15 @@ export default function CommandePage(props: CommandePageProps) {
         }>;
       };
 
+      if (!chantierPrimaryId) {
+        toast.error('Erreur: ID du chantier non disponible');
+        return;
+      }
+
       const commandeData: CommandePayload = {
         id: commande.id, // Inclure l'ID seulement s'il existe
-        chantierId: chantierId,
+        chantierId: chantierPrimaryId,
+        chantierSlug: commande.chantierSlug || chantierId,
         clientId: commande.clientId,
         dateCommande: commande.dateCommande.toISOString(),
         reference: commande.reference || null,
@@ -559,7 +577,8 @@ export default function CommandePage(props: CommandePageProps) {
         ...savedCommande,
         dateCommande: new Date(savedCommande.dateCommande),
         lignes: savedCommande.lignes || [],
-        clientNom: commande.clientNom // Conserver le nom du client
+        clientNom: commande.clientNom, // Conserver le nom du client
+        chantierSlug: commande.chantierSlug || chantierId
       });
       
       // Mise à jour de l'état de verrouillage
@@ -586,7 +605,7 @@ export default function CommandePage(props: CommandePageProps) {
     try {
       // Vérifier si l'utilisateur est un administrateur ou le créateur de la commande
       if (!session) {
-        alert('Vous devez être connecté pour rouvrir une commande.');
+        toast.error('Vous devez être connecté pour rouvrir une commande.');
         return;
       }
       
@@ -596,19 +615,48 @@ export default function CommandePage(props: CommandePageProps) {
                        (commande.createdBy && commande.createdBy === session.user.email);
       
       if (!canReopen) {
-        alert('Vous n\'avez pas les droits pour rouvrir cette commande. Seuls les administrateurs, managers ou le créateur de la commande peuvent la rouvrir.');
+        toast.error('Vous n\'avez pas les droits pour rouvrir cette commande.');
         return;
       }
       
       if (!commande.id) {
-        alert('Impossible de rouvrir une commande qui n\'a pas encore été enregistrée.');
+        toast.error('Impossible de rouvrir une commande qui n\'a pas encore été enregistrée.');
         return;
       }
+
+      // Vérifier s'il existe des états d'avancement pour ce chantier (client ou sous-traitant)
+      try {
+        const etatsResponse = await fetch(`/api/chantiers/${chantierId}/etats-avancement`);
+        if (etatsResponse.ok) {
+          const etats = await etatsResponse.json();
+          if (Array.isArray(etats) && etats.length > 0) {
+            showConfirmation({
+              title: 'Déverrouillage impossible',
+              message: 'Cette commande est déjà associée à au moins un état d\'avancement. Vous ne pouvez pas la déverrouiller.',
+              type: 'warning',
+              confirmText: 'Compris',
+              showCancel: false,
+              onConfirm: () => {}
+            });
+            return;
+          }
+        } else {
+          console.warn('Impossible de vérifier les états d\'avancement:', await etatsResponse.text());
+        }
+      } catch (etatError) {
+        console.error('Erreur lors de la vérification des états d\'avancement:', etatError);
+      }
       
+      if (!chantierPrimaryId) {
+        toast.error('Erreur: ID du chantier non disponible');
+        return;
+      }
+
       // Préparer les données pour la mise à jour
       const commandeData = {
         id: commande.id,
-        chantierId: commande.chantierId,
+        chantierId: chantierPrimaryId,
+        chantierSlug: commande.chantierSlug || chantierId,
         clientId: commande.clientId,
         dateCommande: commande.dateCommande.toISOString(),
         reference: commande.reference,
@@ -647,16 +695,17 @@ export default function CommandePage(props: CommandePageProps) {
         ...updatedCommande,
         dateCommande: new Date(updatedCommande.dateCommande),
         lignes: updatedCommande.lignes || [],
-        clientNom: commande.clientNom // Conserver le nom du client
+        clientNom: commande.clientNom, // Conserver le nom du client
+        chantierSlug: commande.chantierSlug || chantierId
       });
       
       // Mettre à jour l'état de verrouillage
       setIsLocked(false);
       
-      alert('Commande rouverte avec succès');
+      toast.success('Commande déverrouillée avec succès');
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     }
   };
 
@@ -1196,23 +1245,15 @@ export default function CommandePage(props: CommandePageProps) {
                           )}
                         </button>
                       )}
-                      {commande.id && (
+                      {commande.id && isLocked && commande.statut === 'VALIDEE' && (
                         <button
                           onClick={handleReopenCommande}
-                          className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                            isLocked
-                              ? 'bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 dark:from-amber-700 dark:to-orange-800 dark:hover:from-amber-600 dark:hover:to-orange-700 focus:ring-amber-500'
-                              : 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 dark:from-gray-700 dark:to-gray-800 dark:hover:from-gray-600 dark:hover:to-gray-700 focus:ring-gray-500'
-                          }`}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 dark:from-amber-700 dark:to-orange-800 dark:hover:from-amber-600 dark:hover:to-orange-700 focus:ring-amber-500"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            {isLocked ? (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0v4" />
-                            ) : (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            )}
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0v4" />
                           </svg>
-                          {isLocked ? 'Déverrouiller' : 'Verrouiller'}
+                          Déverrouiller
                         </button>
                       )}
                     </div>

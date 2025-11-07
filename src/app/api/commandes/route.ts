@@ -26,15 +26,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validation des données
-    if (!commandeData.chantierId) {
+    const chantierPrimaryId: string | undefined = commandeData.chantierId;
+    const chantierSlug: string | undefined = commandeData.chantierSlug || commandeData.chantierId;
+
+    if (!chantierPrimaryId && !chantierSlug) {
       return NextResponse.json({ error: 'chantierId est requis' }, { status: 400 })
     }
 
-    // Vérifier que le chantier existe
-    const chantier = await prisma.chantier.findUnique({
-      where: { chantierId: commandeData.chantierId }
-    })
+    let chantier = null;
+    if (chantierPrimaryId) {
+      chantier = await prisma.chantier.findUnique({ where: { id: chantierPrimaryId } })
+    }
+    if (!chantier && chantierSlug) {
+      chantier = await prisma.chantier.findUnique({ where: { chantierId: chantierSlug } })
+    }
     if (!chantier) {
       return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 400 })
     }
@@ -165,7 +170,7 @@ export async function POST(request: Request) {
       
       // Mise à jour du budget du chantier avec le montant total des commandes
       await prisma.chantier.update({
-        where: { chantierId: commandeData.chantierId },
+        where: { id: chantier.id },
         data: { budget: montantTotal }
       });
 
