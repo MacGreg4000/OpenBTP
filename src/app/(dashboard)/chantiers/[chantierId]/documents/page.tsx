@@ -1,14 +1,11 @@
 'use client'
 import { useState, useEffect, use } from 'react';
 import { DocumentDuplicateIcon } from '@heroicons/react/24/outline'
-import { type Chantier } from '@/types/chantier'
 import DocumentsContent from '@/components/chantier/DocumentsContent'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 
 export default function DocumentsPage(props: { params: Promise<{ chantierId: string }> }) {
   const params = use(props.params);
-  const [chantier, setChantier] = useState<Chantier | null>(null)
-  const [loading, setLoading] = useState(true)
   const [chantierId, setChantierId] = useState<string | null>(null)
 
   // Attendre les paramètres de route
@@ -20,26 +17,6 @@ export default function DocumentsPage(props: { params: Promise<{ chantierId: str
     
     initParams();
   }, [params]);
-
-  useEffect(() => {
-    if (!chantierId) return;
-    
-    const fetchChantier = async () => {
-      try {
-        const response = await fetch(`/api/chantiers/${chantierId}`)
-        if (response.ok) {
-          const data = await response.json()
-          setChantier(data)
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération du chantier:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchChantier()
-  }, [chantierId])
 
   if (!chantierId) {
     return (

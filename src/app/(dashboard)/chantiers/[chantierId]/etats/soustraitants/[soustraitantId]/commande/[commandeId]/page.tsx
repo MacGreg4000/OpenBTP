@@ -14,7 +14,6 @@ import {
   CheckIcon,
   XMarkIcon,
   EnvelopeIcon,
-  HashtagIcon,
   CurrencyEuroIcon,
   ClipboardDocumentListIcon,
   BuildingOfficeIcon
@@ -627,13 +626,6 @@ export default function CommandeSousTraitantPage(
               {!commande.estVerrouillee && (
                 <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
                   <p className="text-sm text-gray-500 dark:text-gray-400">Ajoutez des lignes pour compléter la commande sous-traitant.</p>
-                  <button
-                    onClick={addLigne}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg hover:shadow-xl transition"
-                  >
-                    <PlusIcon className="h-5 w-5" />
-                    Ajouter une ligne
-                  </button>
                 </div>
               )}
             </div>
@@ -659,7 +651,7 @@ export default function CommandeSousTraitantPage(
                     <input
                       type="date"
                       value={commande.dateCommande ? new Date(commande.dateCommande).toISOString().slice(0, 10) : ''}
-                      onChange={(e) => setCommande({ ...commande, dateCommande: new Date(e.target.value) })}
+                      onChange={(e) => setCommande({ ...commande, dateCommande: e.target.value })}
                       disabled={commande.estVerrouillee}
                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 transition"
                     />

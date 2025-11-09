@@ -1,14 +1,12 @@
 'use client'
 
 import { useRouter, useParams } from 'next/navigation'
-import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
 import { ArrowLeftIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 
 export default function MobileCommandePDFPage() {
   const router = useRouter()
   const params = useParams()
-  const { selectedChantier } = useSelectedChantier()
   const commandeId = params?.commandeId as string
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)

@@ -1,37 +1,13 @@
 'use client'
-import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation'
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline'
 import { AdminTasksContent } from '@/components/chantier/AdminTasksContent'
 import { NotesContent } from '@/components/chantier/NotesContent'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
-import { type Chantier } from '@/types/chantier'
 
 export default function NotesPage() {
   const params = useParams()
   const chantierId = (params?.chantierId as string) || null
-  const [chantier, setChantier] = useState<Chantier | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!chantierId) return;
-    
-    const fetchChantier = async () => {
-      try {
-        const response = await fetch(`/api/chantiers/${chantierId}`)
-        if (response.ok) {
-          const data = await response.json()
-          setChantier(data)
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération du chantier:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchChantier()
-  }, [chantierId])
 
   if (!chantierId) {
     return (

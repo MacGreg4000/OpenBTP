@@ -43,7 +43,7 @@ export default function MobileDocumentPDFPage() {
     }
 
     loadDocument()
-  }, [selectedChantier, documentId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedChantier, documentId])
 
   const handleDownload = () => {
     if (documentUrl) {

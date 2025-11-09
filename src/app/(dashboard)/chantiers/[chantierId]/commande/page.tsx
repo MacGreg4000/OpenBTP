@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, use, useCallback } from 'react';
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentArrowDownIcon, ArrowLeftIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentArrowDownIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
 import LigneCommande from '@/components/commande/LigneCommande'
 // removed unused uuid and prisma imports
 // Import ExcelJS uniquement côté action
