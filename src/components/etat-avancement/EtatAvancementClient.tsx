@@ -155,9 +155,18 @@ export default function EtatAvancementClient({
   useEffect(() => {
     // Calculer les totaux
     const totalCommandeInitiale = {
-      precedent: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantPrecedent, 0)),
-      actuel: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0)),
-      total: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0))
+      precedent: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => {
+        if (ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') return sum;
+        return sum + ligne.montantPrecedent;
+      }, 0)),
+      actuel: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => {
+        if (ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') return sum;
+        return sum + ligne.montantActuel;
+      }, 0)),
+      total: roundToTwoDecimals(memoizedCalculatedLignes.reduce((sum, ligne) => {
+        if (ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') return sum;
+        return sum + ligne.montantTotal;
+      }, 0))
     }
 
     const totalAvenants = {
@@ -523,48 +532,68 @@ export default function EtatAvancementClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                {memoizedCalculatedLignes.map((ligne) => (
-                  <tr key={ligne.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/10">
-                    <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.article}</td>
-                    <td className="w-96 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.description}</td>
-                    <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.type}</td>
-                    <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.unite}</td>
-                    <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">{formatMontant(ligne.prixUnitaire)} €</td>
-                    <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">{ligne.quantite}</td>
-                    <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {formatMontant(ligne.prixUnitaire * ligne.quantite)} €
-                    </td>
-                    <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {ligne.quantitePrecedente}
-                    </td>
-                    <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right bg-blue-50 dark:bg-blue-900/10 border-l border-gray-300 dark:border-gray-600">
-                      {!etatAvancement.estFinalise ? (
-                        <NumericInput
-                          value={quantites[ligne.id] ?? ligne.quantiteActuelle}
-                          onChangeNumber={(val)=> handleQuantiteActuelleChange(ligne.id, val)}
-                          step="0.01"
-                          min="0"
-                          className="w-16 text-right border rounded px-1 py-0.5 text-xs dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      ) : (
-                        ligne.quantiteActuelle
-                      )}
-                    </td>
-                    <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {ligne.quantiteTotale}
-                    </td>
-                    <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {formatMontant(ligne.montantPrecedent)} €
-                    </td>
-                    <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right bg-blue-50 dark:bg-blue-900/10">
-                      {formatMontant(ligne.montantActuel)} €
-                    </td>
-                    <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
-                      {formatMontant(ligne.montantTotal)} €
-                    </td>
-                    <td className="w-10 px-2 py-3"></td>
-                  </tr>
-                ))}
+                {memoizedCalculatedLignes.map((ligne) => {
+                  const isSectionHeader = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE';
+
+                  if (isSectionHeader) {
+                    return (
+                      <tr
+                        key={`${ligne.id}-section`}
+                        className={`${ligne.type === 'TITRE' ? 'bg-blue-50/80 dark:bg-blue-900/30' : 'bg-gray-100/80 dark:bg-gray-800/40'}`}
+                      >
+                        <td
+                          colSpan={14}
+                          className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-100"
+                        >
+                          {ligne.description || ligne.article}
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return (
+                    <tr key={ligne.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/10">
+                      <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.article}</td>
+                      <td className="w-96 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.description}</td>
+                      <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.type}</td>
+                      <td className="w-16 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">{ligne.unite}</td>
+                      <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">{formatMontant(ligne.prixUnitaire)} €</td>
+                      <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">{ligne.quantite}</td>
+                      <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
+                        {formatMontant(ligne.prixUnitaire * ligne.quantite)} €
+                      </td>
+                      <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
+                        {ligne.quantitePrecedente}
+                      </td>
+                      <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right bg-blue-50 dark:bg-blue-900/10 border-l border-gray-300 dark:border-gray-600">
+                        {!etatAvancement.estFinalise ? (
+                          <NumericInput
+                            value={quantites[ligne.id] ?? ligne.quantiteActuelle}
+                            onChangeNumber={(val)=> handleQuantiteActuelleChange(ligne.id, val)}
+                            step="0.01"
+                            min="0"
+                            className="w-16 text-right border rounded px-1 py-0.5 text-xs dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        ) : (
+                          ligne.quantiteActuelle
+                        )}
+                      </td>
+                      <td className="w-20 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
+                        {ligne.quantiteTotale}
+                      </td>
+                      <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
+                        {formatMontant(ligne.montantPrecedent)} €
+                      </td>
+                      <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right bg-blue-50 dark:bg-blue-900/10">
+                        {formatMontant(ligne.montantActuel)} €
+                      </td>
+                      <td className="w-28 px-2 py-3 text-xs text-gray-900 dark:text-gray-200 text-right">
+                        {formatMontant(ligne.montantTotal)} €
+                      </td>
+                      <td className="w-10 px-2 py-3"></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

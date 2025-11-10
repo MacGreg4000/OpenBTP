@@ -100,6 +100,38 @@ export function generateEtatAvancementHTML(
     accentLight: '#eff6ff', // Blue-50
   }
 
+  const lignesPrincipalesHTML = data.lignes.map(ligne => {
+    const isSection = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
+
+    if (isSection) {
+      const sectionClass = ligne.type === 'TITRE' ? 'section-row section-title' : 'section-row section-subtitle'
+      return `
+                        <tr class="${sectionClass}">
+                            <td colspan="12" class="section-cell">
+                                ${ligne.description || ligne.article}
+                            </td>
+                        </tr>
+      `
+    }
+
+    return `
+                        <tr>
+                            <td class="text-center font-bold">${ligne.article}</td>
+                            <td>${ligne.description}</td>
+                            <td class="text-center">${ligne.type}</td>
+                            <td class="text-center">${ligne.unite}</td>
+                            <td class="text-right">${ligne.prixUnitaire.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                            <td class="text-right">${ligne.quantite.toLocaleString('fr-FR')}</td>
+                            <td class="text-right">${ligne.quantitePrecedente.toLocaleString('fr-FR')}</td>
+                            <td class="text-right quantite-actuelle">${ligne.quantiteActuelle.toLocaleString('fr-FR')}</td>
+                            <td class="text-right font-bold">${ligne.quantiteTotale.toLocaleString('fr-FR')}</td>
+                            <td class="text-right">${ligne.montantPrecedent.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                            <td class="text-right montant">${ligne.montantActuel.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                            <td class="text-right font-bold montant">${ligne.montantTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                        </tr>
+    `
+  }).join('')
+
   return `
 <!DOCTYPE html>
 <html lang="fr">
@@ -333,6 +365,25 @@ export function generateEtatAvancementHTML(
             font-weight: bold;
             color: #1e40af;
         }
+
+        .section-row.section-title td {
+            background: linear-gradient(135deg, var(--color-accent-light) 0%, rgba(59,130,246,0.15) 100%);
+            color: var(--color-primary-dark);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-row.section-subtitle td {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .section-cell {
+            padding: 8px 6px;
+            font-size: 9px;
+        }
         
         /* Résumé financier */
         .financial-summary {
@@ -559,22 +610,7 @@ export function generateEtatAvancementHTML(
                     </tr>
                 </thead>
                 <tbody>
-                    ${data.lignes.map(ligne => `
-                        <tr>
-                            <td class="text-center font-bold">${ligne.article}</td>
-                            <td>${ligne.description}</td>
-                            <td class="text-center">${ligne.type}</td>
-                            <td class="text-center">${ligne.unite}</td>
-                            <td class="text-right">${ligne.prixUnitaire.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
-                            <td class="text-right">${ligne.quantite.toLocaleString('fr-FR')}</td>
-                            <td class="text-right">${ligne.quantitePrecedente.toLocaleString('fr-FR')}</td>
-                            <td class="text-right quantite-actuelle">${ligne.quantiteActuelle.toLocaleString('fr-FR')}</td>
-                            <td class="text-right font-bold">${ligne.quantiteTotale.toLocaleString('fr-FR')}</td>
-                            <td class="text-right">${ligne.montantPrecedent.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
-                            <td class="text-right montant">${ligne.montantActuel.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
-                            <td class="text-right font-bold montant">${ligne.montantTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
-                        </tr>
-                    `).join('')}
+                    ${lignesPrincipalesHTML}
                 </tbody>
             </table>
         </div>

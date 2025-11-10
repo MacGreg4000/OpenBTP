@@ -135,6 +135,12 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
     }
   };
 
+  // Tronquer le nom du chantier en mode compact (max 12 caractères + "...")
+  const getTruncatedTitle = (title: string) => {
+    if (title.length <= 12) return title;
+    return title.substring(0, 12) + '...';
+  };
+
   return (
     <div className="relative w-full overflow-visible">
       {/* Effet de fond animé */}
@@ -144,7 +150,7 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
         {/* Container flex pour titre + boutons sur la même ligne - effet flottant */}
         <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 ${isCompact ? 'p-2' : 'p-5 hover:-translate-y-1'}`}>
           
-          <div className={`relative flex flex-col gap-4 w-full ${isCompact ? '' : 'lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-6'}`}>
+          <div className="relative grid grid-cols-[auto_1fr_auto] items-center gap-3 w-full">
             <div className={`flex items-center gap-3 ${isCompact ? 'gap-2' : ''}`}>
               <Link
                 href="/chantiers"
@@ -160,10 +166,10 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <h1
-                    className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold text-gray-900 dark:text-white flex items-center gap-3 transition-all duration-300 whitespace-nowrap overflow-hidden text-ellipsis max-w-[70vw] sm:max-w-[55vw] lg:max-w-[32vw] xl:max-w-[28vw]`}
+                    className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold text-gray-900 dark:text-white flex items-center gap-3 transition-all duration-300 whitespace-nowrap`}
                     title={chantier.nomChantier}
                   >
-                    {chantier.nomChantier}
+                    {getTruncatedTitle(chantier.nomChantier)}
                     {chantier.numeroIdentification && (
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200 ${isCompact ? 'hidden lg:inline-flex' : ''}`}>
                         {chantier.numeroIdentification}
@@ -185,7 +191,7 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
 
             {/* Navigation moderne avec cards flottantes - centrée */}
             <div className="w-full flex justify-center">
-              <nav className={`flex flex-wrap gap-3 justify-center transition-all duration-300 ${isCompact ? 'gap-2' : ''}`}>
+              <nav className={`flex flex-nowrap gap-3 justify-center transition-all duration-300 ${isCompact ? 'gap-2' : ''}`}>
             {actions.map((action) => {
               const Icon = action.icon;
               return (
@@ -228,23 +234,14 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
           </nav>
             </div>
 
-            {/* Placeholder pour équilibrer la grille en desktop */}
-            <div className={`hidden lg:flex items-center gap-3 ${isCompact ? 'gap-2' : ''} opacity-0 pointer-events-none select-none`}>
-              <div
-                className={`group relative inline-flex items-center justify-center rounded-full border border-emerald-200/60 dark:border-emerald-900/40 bg-white/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-200 shadow-lg shadow-emerald-500/10 ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}
-              />
-              <div className={`inline-flex items-center gap-4 border border-white/50 dark:border-emerald-900/40 bg-white/85 dark:bg-emerald-950/30 shadow-lg shadow-emerald-500/15 backdrop-blur-sm ${isCompact ? 'px-4 py-2 rounded-2xl' : 'px-5 py-3 rounded-3xl'}`}>
-                <div className={`flex items-center justify-center rounded-2xl ${isCompact ? 'w-9 h-9' : 'w-11 h-11'}`}>
-                  <ChantierIcon className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                </div>
-                <div className="min-w-0">
-                  <span
-                    className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold whitespace-nowrap overflow-hidden text-ellipsis max-w-[70vw] sm:max-w-[55vw] lg:max-w-[32vw] xl:max-w-[28vw]`}
-                    title={chantier.nomChantier}
-                  >
-                    {chantier.nomChantier}
-                  </span>
-                </div>
+            {/* Placeholder pour équilibrer la grille - même taille que la gauche */}
+            <div className={`flex items-center gap-3 ${isCompact ? 'gap-2' : ''} opacity-0 pointer-events-none select-none`}>
+              <div className={`${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`} />
+              <div className={`inline-flex items-center gap-4 ${isCompact ? 'px-4 py-2' : 'px-5 py-3'}`}>
+                <div className={`${isCompact ? 'w-9 h-9' : 'w-11 h-11'}`} />
+                <span className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold whitespace-nowrap`}>
+                  {getTruncatedTitle(chantier.nomChantier)}
+                </span>
               </div>
             </div>
           </div>

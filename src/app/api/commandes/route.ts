@@ -94,18 +94,23 @@ export async function POST(request: Request) {
           // Créer les nouvelles lignes
           interface CreateLignePayload { ordre?: number|string; article?: string; description?: string; type?: string; unite?: string; prixUnitaire?: number|string; quantite?: number|string; total?: number|string; estOption?: boolean }
           await prisma.ligneCommande.createMany({
-            data: commandeData.lignes.map((ligne: CreateLignePayload) => ({
-              commandeId: commande.id,
-              ordre: Number(ligne.ordre) || 0,
-              article: ligne.article || '',
-              description: ligne.description || '',
-              type: ligne.type || 'QP',
-              unite: ligne.unite || 'Pièces',
-              prixUnitaire: Number(ligne.prixUnitaire) || 0,
-              quantite: Number(ligne.quantite) || 0,
-              total: Number(ligne.total) || 0,
-              estOption: Boolean(ligne.estOption)
-            }))
+            data: commandeData.lignes.map((ligne: CreateLignePayload) => {
+              const typeLigne = (typeof ligne.type === 'string' && ligne.type.trim() !== '') ? ligne.type : 'QP';
+              const isSection = typeLigne === 'TITRE' || typeLigne === 'SOUS_TITRE';
+              
+              return {
+                commandeId: commande.id,
+                ordre: Number(ligne.ordre) || 0,
+                article: ligne.article || (isSection ? (typeLigne === 'TITRE' ? 'ARTICLE_TITRE' : 'ARTICLE_SOUS_TITRE') : ''),
+                description: ligne.description || '',
+                type: typeLigne,
+                unite: isSection ? '' : (ligne.unite || 'Pièces'),
+                prixUnitaire: isSection ? 0 : Number(ligne.prixUnitaire) || 0,
+                quantite: isSection ? 0 : Number(ligne.quantite) || 0,
+                total: isSection ? 0 : Number(ligne.total) || 0,
+                estOption: isSection ? false : Boolean(ligne.estOption)
+              };
+            })
           });
         }
       } else {

@@ -46,6 +46,8 @@ export default function LigneCommande({
   deleteLigne
 }: LigneCommandeProps) {
   const ref = useRef<HTMLTableRowElement>(null)
+  const isSectionHeader = type === 'TITRE' || type === 'SOUS_TITRE'
+  const sectionLabel = type === 'TITRE' ? 'Titre' : 'Sous-titre'
 
   const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: unknown }>({
     accept: 'ligne',
@@ -96,89 +98,131 @@ export default function LigneCommande({
   drag(drop(ref))
 
   return (
-    <tr ref={ref} style={{ opacity }} data-handler-id={handlerId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-      <td className="px-3 py-2 whitespace-nowrap cursor-move">
-        <BarsArrowUpIcon className="h-5 w-5 text-gray-400" />
+    <tr
+      ref={ref}
+      style={{ opacity }}
+      data-handler-id={handlerId}
+      className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${isSectionHeader ? (type === 'TITRE' ? 'bg-blue-50/60 dark:bg-blue-900/30' : 'bg-gray-100/60 dark:bg-gray-800/40') : ''}`}
+    >
+      <td className="px-3 py-2 whitespace-nowrap cursor-move align-top">
+        <BarsArrowUpIcon className={`h-5 w-5 ${isSectionHeader ? 'text-blue-500 dark:text-blue-300' : 'text-gray-400'}`} />
       </td>
-      <td className="px-3 py-2 whitespace-nowrap">
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        {isSectionHeader ? (
+          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-200 bg-blue-100/70 dark:bg-blue-900/40 rounded">
+            {sectionLabel}
+          </span>
+        ) : (
+          <input
+            type="text"
+            className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
+            value={article}
+            onChange={(e) => updateLigne(id, 'article', e.target.value)}
+            disabled={isLocked}
+            style={{ maxWidth: '100px' }}
+          />
+        )}
+      </td>
+      <td className="px-3 py-2 align-top">
         <input
           type="text"
-          className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
-          value={article}
-          onChange={(e) => updateLigne(id, 'article', e.target.value)}
-          disabled={isLocked}
-          style={{ maxWidth: '100px' }}
-        />
-      </td>
-      <td className="px-3 py-2">
-        <input
-          type="text"
-          className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
+          className={`w-full px-2 py-1.5 text-sm md:text-base border-2 rounded-md focus:outline-none transition-colors ${
+            isSectionHeader
+              ? 'border-transparent bg-transparent text-blue-900 dark:text-blue-50 font-semibold text-base md:text-lg'
+              : 'border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800'
+          } ${isLocked ? 'disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500' : ''}`}
           value={description}
           onChange={(e) => updateLigne(id, 'description', e.target.value)}
           disabled={isLocked}
+          placeholder={isSectionHeader ? (type === 'TITRE' ? 'Titre de section' : 'Sous-titre de section') : undefined}
         />
       </td>
-      <td className="px-3 py-2 whitespace-nowrap">
-        <select
-          className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
-          value={type}
-          onChange={(e) => updateLigne(id, 'type', e.target.value)}
-          disabled={isLocked}
-        >
-          <option value="QP">QP</option>
-          <option value="QF">QF</option>
-          <option value="Forfait">Forfait</option>
-        </select>
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        {isSectionHeader ? (
+          <span className="inline-flex px-2 py-1 text-xs font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-200">
+            {sectionLabel}
+          </span>
+        ) : (
+          <select
+            className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
+            value={type}
+            onChange={(e) => updateLigne(id, 'type', e.target.value)}
+            disabled={isLocked}
+          >
+            <option value="QP">QP</option>
+            <option value="QF">QF</option>
+            <option value="Forfait">Forfait</option>
+          </select>
+        )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap">
-        <SelectField
-          label=""
-          name={`lignes[${index}].unite`}
-          value={unite}
-          onChange={(e) => updateLigne(id, 'unite', e.target.value)}
-          className="w-full"
-        >
-          <option value="Mct">Mct</option>
-          <option value="M2">M²</option>
-          <option value="M3">M³</option>
-          <option value="Heures">Heures</option>
-          <option value="Pièces">Pièces</option>
-        </SelectField>
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        {isSectionHeader ? (
+          <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+        ) : (
+          <SelectField
+            label=""
+            name={`lignes[${index}].unite`}
+            value={unite}
+            onChange={(e) => updateLigne(id, 'unite', e.target.value)}
+            className="w-full"
+          >
+            <option value="Mct">Mct</option>
+            <option value="M2">M²</option>
+            <option value="M3">M³</option>
+            <option value="Heures">Heures</option>
+            <option value="Pièces">Pièces</option>
+          </SelectField>
+        )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap">
-        <NumericInput
-          value={isNaN(quantite) ? 0 : quantite}
-          onChangeNumber={(val)=> updateLigne(id, 'quantite', isNaN(val) ? 0 : val)}
-          step="0.01"
-          min="0"
-          disabled={isLocked}
-          className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
-        />
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        {isSectionHeader ? (
+          <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+        ) : (
+          <NumericInput
+            value={isNaN(quantite) ? 0 : quantite}
+            onChangeNumber={(val)=> updateLigne(id, 'quantite', isNaN(val) ? 0 : val)}
+            step="0.01"
+            min="0"
+            disabled={isLocked}
+            className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
+          />
+        )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap">
-        <NumericInput
-          value={isNaN(prixUnitaire) ? 0 : prixUnitaire}
-          onChangeNumber={(val)=> updateLigne(id, 'prixUnitaire', isNaN(val) ? 0 : val)}
-          step="0.01"
-          min="0"
-          disabled={isLocked}
-          className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
-        />
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        {isSectionHeader ? (
+          <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+        ) : (
+          <NumericInput
+            value={isNaN(prixUnitaire) ? 0 : prixUnitaire}
+            onChangeNumber={(val)=> updateLigne(id, 'prixUnitaire', isNaN(val) ? 0 : val)}
+            step="0.01"
+            min="0"
+            disabled={isLocked}
+            className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus-border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled-bg-gray-600 disabled:text-gray-700 dark:disabled-text-gray-200 disabled-border-gray-300 dark:disabled-border-gray-500 transition-colors"
+          />
+        )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap text-right">
-        <span className="font-semibold text-gray-900 dark:text-gray-100">{total.toFixed(2)} €</span>
+      <td className="px-3 py-2 whitespace-nowrap text-right align-top">
+        {isSectionHeader ? (
+          <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+        ) : (
+          <span className="font-semibold text-gray-900 dark:text-gray-100">{total.toFixed(2)} €</span>
+        )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap">
-        <input
-          type="checkbox"
-          className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:border-gray-600 dark:bg-gray-700 disabled:opacity-50"
-          checked={estOption}
-          onChange={(e) => updateLigne(id, 'estOption', e.target.checked)}
-          disabled={isLocked}
-        />
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        {isSectionHeader ? (
+          <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+        ) : (
+          <input
+            type="checkbox"
+            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:border-gray-600 dark:bg-gray-700 disabled:opacity-50"
+            checked={estOption}
+            onChange={(e) => updateLigne(id, 'estOption', e.target.checked)}
+            disabled={isLocked}
+          />
+        )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap text-right">
+      <td className="px-3 py-2 whitespace-nowrap text-right align-top">
         <button
           type="button"
           onClick={() => deleteLigne(id)}

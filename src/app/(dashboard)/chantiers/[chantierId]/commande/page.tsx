@@ -368,7 +368,6 @@ export default function CommandePage(props: CommandePageProps) {
   // removed unused handleTVAChange
 
   const addLigne = () => {
-    // Générer un ID temporaire négatif pour éviter les conflits avec les IDs de la base de données
     const tempId = -(commande.lignes.length + 1);
     
     const newLigne: Omit<LigneCommande, 'id' | 'commandeId'> & { id: number } = {
@@ -390,13 +389,59 @@ export default function CommandePage(props: CommandePageProps) {
     }))
   }
 
-  
+  const addSectionLigne = (sectionType: 'TITRE' | 'SOUS_TITRE') => {
+    const tempId = -(commande.lignes.length + 1);
+    const isTitre = sectionType === 'TITRE';
+
+    const newLigne: Omit<LigneCommande, 'id' | 'commandeId'> & { id: number } = {
+      id: tempId,
+      ordre: commande.lignes.length,
+      article: isTitre ? 'ARTICLE_TITRE' : 'ARTICLE_SOUS_TITRE',
+      description: isTitre ? 'Nouveau titre' : 'Nouveau sous-titre',
+      type: sectionType,
+      unite: '',
+      prixUnitaire: 0,
+      quantite: 0,
+      total: 0,
+      estOption: false
+    };
+
+    setCommande(prev => {
+      const nouvellesLignes = [...prev.lignes, newLigne];
+      const { sousTotal, totalOptions, tva, total } = recalculerTotaux(nouvellesLignes);
+      return {
+        ...prev,
+        lignes: nouvellesLignes,
+        sousTotal,
+        totalOptions,
+        tva,
+        total
+      };
+    });
+  };
+
+  const addTitreLigne = () => addSectionLigne('TITRE');
+  const addSousTitreLigne = () => addSectionLigne('SOUS_TITRE');
 
   const updateLigne = (id: number, field: string, value: string | number | boolean) => {
     setCommande(prev => {
       const newLignes = prev.lignes.map(ligne => {
         if (ligne.id === id) {
           const updatedLigne = { ...ligne, [field]: value }
+
+          if (field === 'type' && (value === 'TITRE' || value === 'SOUS_TITRE')) {
+            updatedLigne.article = value === 'TITRE' ? 'ARTICLE_TITRE' : 'ARTICLE_SOUS_TITRE';
+            updatedLigne.unite = '';
+            updatedLigne.prixUnitaire = 0;
+            updatedLigne.quantite = 0;
+            updatedLigne.total = 0;
+            updatedLigne.estOption = false;
+          }
+
+          if ((ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') && field !== 'description') {
+            return ligne;
+          }
+
           // Recalculer le total de la ligne
           if (field === 'prixUnitaire' || field === 'quantite') {
             updatedLigne.total = Math.round((updatedLigne.prixUnitaire * updatedLigne.quantite) * 100) / 100
@@ -1109,15 +1154,31 @@ export default function CommandePage(props: CommandePageProps) {
                 </div>
                 {!isLocked && (
                   <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-600/10 via-blue-700/10 to-indigo-800/10 dark:from-blue-600/5 dark:via-blue-700/5 dark:to-indigo-800/5">
-                    <button
-                      onClick={addLigne}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 dark:from-blue-700 dark:to-indigo-800 dark:hover:from-blue-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Ajouter une ligne
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={addTitreLigne}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-900 dark:text-white bg-white/70 dark:bg-white/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-md"
+                      >
+                        <span className="text-lg leading-none">T</span>
+                        Ajouter un titre
+                      </button>
+                      <button
+                        onClick={addSousTitreLigne}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-900 dark:text-white bg-white/60 dark:bg-white/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-md"
+                      >
+                        <span className="text-lg leading-none">t</span>
+                        Ajouter un sous-titre
+                      </button>
+                      <button
+                        onClick={addLigne}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 dark:from-blue-700 dark:to-indigo-800 dark:hover:from-blue-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Ajouter une ligne
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

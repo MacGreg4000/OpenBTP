@@ -37,9 +37,46 @@ export function generateCommandeHTML(data: CommandeData): string {
   const { commande, entreprise, chantierId, logoBase64 } = data
   
   // Calculer les totaux
-  const totalHT = commande.lignes.reduce((sum, ligne) => sum + ligne.total, 0)
+  const lignesCalculables = commande.lignes.filter(ligne => ligne.type !== 'TITRE' && ligne.type !== 'SOUS_TITRE')
+  const totalHT = lignesCalculables.reduce((sum, ligne) => sum + ligne.total, 0)
   const totalTVA = totalHT * (commande.tauxTVA / 100)
   const totalTTC = totalHT + totalTVA
+
+  let ligneCompteur = 0
+  const lignesHTML = commande.lignes.map((ligne) => {
+    const isSection = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
+
+    if (isSection) {
+      const sectionClass = ligne.type === 'TITRE' ? 'section-row section-title' : 'section-row section-subtitle'
+      return `
+                        <tr class="${sectionClass}">
+                            <td colspan="9" class="section-cell">
+                                ${ligne.description || ligne.article}
+                            </td>
+                        </tr>
+      `
+    }
+
+    ligneCompteur += 1
+
+    return `
+                        <tr>
+                            <td class="text-center">${ligneCompteur}</td>
+                            <td><strong>${ligne.article}</strong></td>
+                            <td>${ligne.description}</td>
+                            <td class="text-center">${ligne.type}</td>
+                            <td class="text-center">${ligne.unite}</td>
+                            <td class="text-right montant">${ligne.prixUnitaire.toFixed(2)} €</td>
+                            <td class="text-center">${ligne.quantite}</td>
+                            <td class="text-right montant">${ligne.total.toFixed(2)} €</td>
+                            <td class="text-center">
+                                <span class="option-badge ${ligne.estOption ? 'option-yes' : 'option-no'}">
+                                    ${ligne.estOption ? 'Oui' : 'Non'}
+                                </span>
+                            </td>
+                        </tr>
+    `
+  }).join('')
 
   return `
 <!DOCTYPE html>
@@ -277,6 +314,26 @@ export function generateCommandeHTML(data: CommandeData): string {
             background: #f1f5f9;
             color: #64748b;
         }
+
+        .section-row.section-title td {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e3a8a;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .section-row.section-subtitle td {
+            background: #f1f5f9;
+            color: #1f2937;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .section-cell {
+            padding: 8px 6px;
+        }
         
         /* Résumé financier */
         .financial-summary {
@@ -480,23 +537,7 @@ export function generateCommandeHTML(data: CommandeData): string {
                     </tr>
                 </thead>
                 <tbody>
-                    ${commande.lignes.map((ligne, index) => `
-                        <tr>
-                            <td class="text-center">${index + 1}</td>
-                            <td><strong>${ligne.article}</strong></td>
-                            <td>${ligne.description}</td>
-                            <td class="text-center">${ligne.type}</td>
-                            <td class="text-center">${ligne.unite}</td>
-                            <td class="text-right montant">${ligne.prixUnitaire.toFixed(2)} €</td>
-                            <td class="text-center">${ligne.quantite}</td>
-                            <td class="text-right montant">${ligne.total.toFixed(2)} €</td>
-                            <td class="text-center">
-                                <span class="option-badge ${ligne.estOption ? 'option-yes' : 'option-no'}">
-                                    ${ligne.estOption ? 'Oui' : 'Non'}
-                                </span>
-                            </td>
-                        </tr>
-                    `).join('')}
+                    ${lignesHTML}
                 </tbody>
             </table>
         </div>
