@@ -158,8 +158,11 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
                 <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40 ${isCompact ? 'w-9 h-9' : 'w-11 h-11'}`}>
                   <ChantierIcon className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'} drop-shadow-md`} />
                 </div>
-                <div>
-                  <h1 className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold text-gray-900 dark:text-white flex items-center gap-3 transition-all duration-300`}>
+                <div className="flex flex-col min-w-0">
+                  <h1
+                    className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold text-gray-900 dark:text-white flex items-center gap-3 transition-all duration-300 whitespace-nowrap overflow-hidden text-ellipsis max-w-[70vw] sm:max-w-[55vw] lg:max-w-[32vw] xl:max-w-[28vw]`}
+                    title={chantier.nomChantier}
+                  >
                     {chantier.nomChantier}
                     {chantier.numeroIdentification && (
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200 ${isCompact ? 'hidden lg:inline-flex' : ''}`}>
@@ -234,8 +237,11 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
                 <div className={`flex items-center justify-center rounded-2xl ${isCompact ? 'w-9 h-9' : 'w-11 h-11'}`}>
                   <ChantierIcon className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
                 </div>
-                <div>
-                  <span className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold`}>
+                <div className="min-w-0">
+                  <span
+                    className={`${isCompact ? 'text-base' : getTitleSize(chantier.nomChantier)} font-bold whitespace-nowrap overflow-hidden text-ellipsis max-w-[70vw] sm:max-w-[55vw] lg:max-w-[32vw] xl:max-w-[28vw]`}
+                    title={chantier.nomChantier}
+                  >
                     {chantier.nomChantier}
                   </span>
                 </div>
