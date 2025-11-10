@@ -134,8 +134,8 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
         const ragData: RAGResponse = await ragResponse.json();
         setLastResponse(ragData);
 
-        // Si la réponse RAG a une bonne confiance, l'utiliser
-        if (ragData.confidence && ragData.confidence > 0.3) {
+        // Si la réponse RAG a une bonne confiance, l'utiliser (seuil augmenté à 0.5)
+        if (ragData.confidence && ragData.confidence >= 0.5) {
           botMessage = {
             type: 'bot',
             content: ragData.answer,
@@ -147,16 +147,42 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
               ragResponse: ragData as unknown as Record<string, unknown>
             }
           };
-        } else {
-          // Sinon, utiliser une réponse générale
+        } else if (ragData.confidence && ragData.confidence >= 0.3) {
+          // Confiance moyenne : afficher la réponse avec un avertissement
           botMessage = {
             type: 'bot',
-            content: `Je n'ai pas trouvé d'informations spécifiques dans la base de connaissances pour votre question "${userQuestion}". Pourriez-vous reformuler votre question ou me donner plus de contexte ? Je peux vous aider avec des questions sur les chantiers, les commandes, les états d'avancement, et la gestion de projet.`,
+            content: `⚠️ Réponse avec confiance modérée (${Math.round(ragData.confidence * 100)}%)\n\n${ragData.answer}\n\n💡 Si cette réponse ne correspond pas à votre besoin, reformulez votre question pour plus de précision.`,
             timestamp: new Date(),
             metadata: {
-              confidence: 0,
-              sources: 0,
-              processingTime: 0,
+              confidence: ragData.confidence,
+              sources: ragData.sources.length,
+              processingTime: ragData.processingTime,
+              ragResponse: ragData as unknown as Record<string, unknown>
+            }
+          };
+        } else {
+          // Confiance trop faible : réponse générique
+          botMessage = {
+            type: 'bot',
+            content: `Je n'ai pas trouvé d'informations suffisamment fiables dans la base de connaissances pour votre question "${userQuestion}". 
+
+💡 **Suggestions pour améliorer votre recherche :**
+• Soyez plus spécifique (ex: nom du chantier, numéro de commande)
+• Utilisez des mots-clés précis (client, matériau, machine, etc.)
+• Reformulez votre question différemment
+
+**Je peux vous aider avec :**
+📋 Chantiers et leur suivi
+💰 Commandes et devis  
+📊 États d'avancement
+👥 Clients et sous-traitants
+📦 Inventaire et matériaux
+🔧 Machines et équipements`,
+            timestamp: new Date(),
+            metadata: {
+              confidence: ragData.confidence || 0,
+              sources: ragData.sources?.length || 0,
+              processingTime: ragData.processingTime || 0,
               ragResponse: null
             }
           };

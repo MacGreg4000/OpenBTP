@@ -63,7 +63,7 @@ export class VectorStore {
     }
   }
 
-  // Rechercher les documents similaires
+  // Rechercher les documents similaires (OPTIMISÉ)
   async searchSimilar(queryEmbedding: number[], limit: number = 5, filter?: {
     type?: string;
     entityId?: string;
@@ -75,46 +75,74 @@ export class VectorStore {
         filter
       });
 
-      // Récupérer tous les documents avec embeddings (simplifié)
+      // Construire le where clause avec filtres
+      const whereClause: any = {
+        embedding: { not: null }
+      };
+
+      // Appliquer les filtres si spécifiés
+      if (filter?.type || filter?.entityId) {
+        const metadataFilters: string[] = [];
+        if (filter.type) {
+          metadataFilters.push(`"type":"${filter.type}"`);
+        }
+        if (filter.entityId) {
+          metadataFilters.push(`"entityId":"${filter.entityId}"`);
+        }
+        
+        // Filtrer par métadonnées (optimisation préliminaire)
+        if (metadataFilters.length > 0) {
+          whereClause.OR = metadataFilters.map(f => ({
+            metadata: { contains: f }
+          }));
+        }
+      }
+
+      // Récupérer un ensemble optimisé de documents
+      // On prend plus que nécessaire pour compenser les filtres
+      const batchSize = Math.min(limit * 10, 100); // Max 100 docs pour éviter la surcharge
       const documents = await prisma.documentChunk.findMany({
-        where: {
-          embedding: { not: null }
-        },
+        where: whereClause,
         orderBy: { updatedAt: 'desc' },
-        take: limit * 3, // Prendre plus pour filtrer après
+        take: batchSize,
       });
 
-      console.log(`📊 ${documents.length} documents trouvés avec embeddings`);
+      console.log(`📊 ${documents.length} documents candidats récupérés`);
       
       if (documents.length === 0) {
         console.log('⚠️ Aucun document trouvé avec embeddings - vérifiez la base de données');
         return [];
       }
 
-      // Calculer les similarités
-      const scoredDocuments: Array<{ chunk: DocumentChunk; score: number }> = [];
+      // Calculer les similarités en parallèle (optimisation)
+      const scoredDocumentsPromises = documents.map(async (doc) => {
+        if (!doc.embedding) return null;
+        
+        try {
+          const docEmbedding = JSON.parse(doc.embedding) as number[];
+          const similarity = this.cosineSimilarity(queryEmbedding, docEmbedding);
+          
+          // Filtrer les résultats avec score trop faible (seuil de 0.3)
+          if (similarity < 0.3) return null;
+          
+          const chunk: DocumentChunk = {
+            id: doc.id,
+            content: doc.content,
+            metadata: JSON.parse(doc.metadata),
+            embedding: docEmbedding,
+          };
 
-      for (const doc of documents) {
-        if (doc.embedding) {
-          try {
-            const docEmbedding = JSON.parse(doc.embedding) as number[];
-            const similarity = this.cosineSimilarity(queryEmbedding, docEmbedding);
-            
-            console.log(`🔍 Document ${doc.id}: similarité = ${similarity.toFixed(4)}`);
-            
-            const chunk: DocumentChunk = {
-              id: doc.id,
-              content: doc.content,
-              metadata: JSON.parse(doc.metadata),
-              embedding: docEmbedding,
-            };
-
-            scoredDocuments.push({ chunk, score: similarity });
-          } catch (error) {
-            console.warn('⚠️ Erreur lors du parsing de l\'embedding:', doc.id, error.message);
-          }
+          return { chunk, score: similarity };
+        } catch (error) {
+          console.warn('⚠️ Erreur lors du parsing de l\'embedding:', doc.id, error.message);
+          return null;
         }
-      }
+      });
+
+      const scoredResults = await Promise.all(scoredDocumentsPromises);
+      const scoredDocuments = scoredResults.filter((r): r is { chunk: DocumentChunk; score: number } => r !== null);
+
+      console.log(`✅ ${scoredDocuments.length} documents avec score > 0.3`);
 
       // Trier par score et retourner les meilleurs
       scoredDocuments.sort((a, b) => b.score - a.score);
