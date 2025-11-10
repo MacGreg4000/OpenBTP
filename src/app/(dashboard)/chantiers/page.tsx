@@ -19,7 +19,9 @@ import {
   XMarkIcon,
   PlusIcon,
   MagnifyingGlassIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ChevronUpDownIcon
 } from '@heroicons/react/24/outline'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { Pagination } from '@/components/Pagination'
@@ -36,6 +38,46 @@ function getStatusStyle(status: string) {
     default:
       return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
   }
+}
+
+// Composant pour les en-têtes triables
+type SortField = 'nomChantier' | 'numeroIdentification' | 'clientNom' | 'etatChantier' | 'budget' | 'dateCommencement'
+
+function SortableHeader({ 
+  field, 
+  label, 
+  currentSortField, 
+  sortDirection, 
+  onSort 
+}: { 
+  field: SortField
+  label: string
+  currentSortField: SortField | null
+  sortDirection: 'asc' | 'desc'
+  onSort: (field: SortField) => void
+}) {
+  const isActive = currentSortField === field
+  
+  return (
+    <th 
+      scope="col" 
+      className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        <span>{label}</span>
+        {isActive ? (
+          sortDirection === 'asc' ? (
+            <ChevronUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          ) : (
+            <ChevronDownIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          )
+        ) : (
+          <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+        )}
+      </div>
+    </th>
+  )
 }
 
 function ChantierCard({ chantier }: { chantier: Chantier }) {
@@ -160,6 +202,10 @@ export default function ChantiersPage() {
   const [selectedChantierId, setSelectedChantierId] = useState<string | null>(null)
   const [etatDropdownOpen, setEtatDropdownOpen] = useState(false)
   const [etatSearchTerm, setEtatSearchTerm] = useState('')
+  
+  // États pour le tri
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   
   // Charger la liste des clients
   useEffect(() => {
@@ -305,13 +351,77 @@ export default function ChantiersPage() {
     setChantierSearchTerm('')
   }
   
+  // Fonction pour gérer le clic sur un en-tête de colonne
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Si on clique sur la même colonne, on inverse le sens
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Nouvelle colonne, on commence par ordre croissant
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+  
+  // Fonction de tri personnalisée selon le type de données
+  const sortChantiers = (chantiers: Chantier[]) => {
+    if (!sortField) return chantiers
+    
+    return [...chantiers].sort((a, b) => {
+      let aValue: string | number
+      let bValue: string | number
+      
+      switch (sortField) {
+        case 'nomChantier':
+          aValue = a.nomChantier?.toLowerCase() || ''
+          bValue = b.nomChantier?.toLowerCase() || ''
+          break
+        case 'numeroIdentification':
+          aValue = a.numeroIdentification?.toLowerCase() || ''
+          bValue = b.numeroIdentification?.toLowerCase() || ''
+          break
+        case 'clientNom':
+          aValue = a.clientNom?.toLowerCase() || ''
+          bValue = b.clientNom?.toLowerCase() || ''
+          break
+        case 'etatChantier':
+          // Ordre personnalisé pour les statuts
+          const statusOrder: { [key: string]: number } = {
+            'Brouillon': 0,
+            'En préparation': 1,
+            'En cours': 2,
+            'Terminé': 3
+          }
+          aValue = statusOrder[a.etatChantier] ?? 999
+          bValue = statusOrder[b.etatChantier] ?? 999
+          break
+        case 'budget':
+          aValue = a.budget || 0
+          bValue = b.budget || 0
+          break
+        case 'dateCommencement':
+          aValue = a.dateCommencement ? new Date(a.dateCommencement).getTime() : 0
+          bValue = b.dateCommencement ? new Date(b.dateCommencement).getTime() : 0
+          break
+        default:
+          return 0
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+  }
+  
   // Le filtre d'état est maintenant géré par l'API, on ne filtre côté client que par nom et client
-  const chantiersFiltrés = chantiers.filter(chantier => {
-    const matchNom = !filtreNom || chantier.nomChantier.toLowerCase().includes(filtreNom.toLowerCase())
-    const matchChantierId = !selectedChantierId || chantier.chantierId === selectedChantierId
-    const matchClient = !filtreClientId || chantier.clientId === filtreClientId
-    return matchNom && matchChantierId && matchClient
-  })
+  const chantiersFiltrés = sortChantiers(
+    chantiers.filter(chantier => {
+      const matchNom = !filtreNom || chantier.nomChantier.toLowerCase().includes(filtreNom.toLowerCase())
+      const matchChantierId = !selectedChantierId || chantier.chantierId === selectedChantierId
+      const matchClient = !filtreClientId || chantier.clientId === filtreClientId
+      return matchNom && matchChantierId && matchClient
+    })
+  )
   
   // Trouver le nom du client sélectionné
   const selectedClientName = filtreClientId 
@@ -701,24 +811,48 @@ export default function ChantiersPage() {
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 sm:pl-6">
-                          Chantier
-                        </th>
-                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
-                          ID
-                        </th>
-                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
-                          Client
-                        </th>
-                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
-                          État
-                        </th>
-                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
-                          Montant
-                        </th>
-                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
-                          Date de début
-                        </th>
+                        <SortableHeader
+                          field="nomChantier"
+                          label="Chantier"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="numeroIdentification"
+                          label="ID"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="clientNom"
+                          label="Client"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="etatChantier"
+                          label="État"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="budget"
+                          label="Montant"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="dateCommencement"
+                          label="Date de début"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
                         <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-200 pr-4 sm:pr-6">
                           Actions
                         </th>
