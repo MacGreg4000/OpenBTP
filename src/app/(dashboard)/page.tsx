@@ -773,13 +773,13 @@ export default function DashboardPage() {
                   href="/chantiers"
                 />
                 <KPICard 
-                  title="En cours" 
+                  title="Chantiers en cours" 
                   value={kpis.chantiersEnCours} 
                   icon={<PlayIcon className="w-full h-full" />} 
                   accentColor="green"
                 />
                 <KPICard 
-                  title="CA Total" 
+                  title="Chiffre d'affaires à venir" 
                   value={formatEuros(kpis.chiffreAffaires)} 
                   icon={<CurrencyEuroIcon className="w-full h-full" />} 
                   accentColor="purple"

@@ -336,7 +336,7 @@ export default function EtatAvancementPage(props: PageProps) {
                       value={mois}
                       onChange={(e) => handleMoisChange(e.target.value)}
                       disabled={etatAvancement?.estFinalise}
-                      className={`bg-white/20 border-0 text-white font-semibold rounded-full px-3 py-1 focus:outline-none focus:ring-2 focus:ring-white/40 ${etatAvancement?.estFinalise ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                      className={`bg-white/20 border-0 text-white rounded-full px-3 py-1 focus:outline-none focus:ring-2 focus:ring-white/40 ${etatAvancement?.estFinalise ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                     >
                       <option value="" className="text-gray-900">Période de travaux</option>
                       {['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((moisOption) => (

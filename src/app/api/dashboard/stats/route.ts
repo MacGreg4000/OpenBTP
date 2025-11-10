@@ -46,13 +46,61 @@ export async function GET() {
     const totalChantiers = chantiers.length
     const chantiersEnCours = chantiers.filter(c => c.statut === 'EN_COURS').length
     
-    // Calculer le chiffre d'affaires total
-    const chiffreAffaires = chantiers.reduce((sum, chantier) => {
-      const montantCommandes = chantier.commandes
-        .filter(commande => commande.statut !== 'BROUILLON')
-        .reduce((total, commande) => total + (commande.total || 0), 0)
-      return sum + (montantCommandes > 0 ? montantCommandes : (chantier.budget || 0))
+    // Calculer le C.A. à venir : (commandes EN_PREPARATION + EN_COURS) - montants déjà facturés
+    // 1. Récupérer les chantiers actifs (EN_PREPARATION ou EN_COURS)
+    const chantiersActifs = await prisma.chantier.findMany({
+      where: {
+        statut: {
+          in: ['EN_PREPARATION', 'EN_COURS']
+        }
+      },
+      include: {
+        commandes: {
+          where: {
+            statut: {
+              not: 'BROUILLON'
+            }
+          },
+          select: {
+            id: true,
+            total: true
+          }
+        },
+        etatsAvancement: {
+          where: {
+            estFinalise: true
+          },
+          include: {
+            lignes: {
+              select: {
+                montantActuel: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    // 2. Calculer le total des commandes de base (hors avenants)
+    const totalCommandesBase = chantiersActifs.reduce((sum, chantier) => {
+      const montantCommandes = chantier.commandes.reduce((total, commande) => total + (commande.total || 0), 0)
+      return sum + montantCommandes
     }, 0)
+
+    // 3. Calculer le total des montants déjà facturés (états d'avancement finalisés)
+    const montantsDejFactures = chantiersActifs.reduce((sum, chantier) => {
+      const montantEtats = chantier.etatsAvancement.reduce((totalEtat, etat) => {
+        const montantLignes = etat.lignes.reduce((totalLignes, ligne) => {
+          const montant = ligne.montantActuel != null && !isNaN(Number(ligne.montantActuel)) ? Number(ligne.montantActuel) : 0
+          return totalLignes + montant
+        }, 0)
+        return totalEtat + montantLignes
+      }, 0)
+      return sum + montantEtats
+    }, 0)
+
+    // 4. C.A. à venir = Total commandes base - Montants déjà facturés
+    const chiffreAffaires = Math.max(0, totalCommandesBase - montantsDejFactures)
 
     // Calculer le montant total des états d'avancement du mois précédent
     const maintenant = new Date()
