@@ -150,7 +150,7 @@ const ChatWindow: React.FC = () => {
     >
       {/* Barre de titre avec onglets */}
       <div 
-        className={`bg-gradient-to-r from-blue-600 to-blue-500 text-white relative ${
+        className={`bg-gradient-to-r from-amber-500 via-orange-600 to-red-600 text-white relative ${
           isMobile ? 'cursor-default' : 'cursor-move'
         }`}
         onMouseDown={isMobile ? undefined : handleMouseDown}
@@ -162,7 +162,7 @@ const ChatWindow: React.FC = () => {
         {/* Bouton fermer - mobile en haut à gauche */}
         <button 
           onClick={closeChat}
-          className={`absolute text-white hover:text-red-200 p-2 rounded-full hover:bg-blue-700 transition-colors ${
+          className={`absolute text-white/90 hover:text-white p-2 rounded-full hover:bg-white/20 transition-colors ${
             isMobile ? 'top-2 left-2' : 'top-2 right-2'
           }`}
           aria-label="Fermer le chat"
@@ -178,8 +178,8 @@ const ChatWindow: React.FC = () => {
             onClick={() => setActiveTab('chat')}
             className={`flex-1 px-4 py-4 text-sm font-medium transition-colors ${
               activeTab === 'chat' 
-                ? 'bg-blue-700 text-white' 
-                : 'text-blue-100 hover:text-white hover:bg-blue-600'
+                ? 'bg-white/20 text-white' 
+                : 'text-white/80 hover:text-white hover:bg-white/10'
             }`}
           >
             <div className="flex items-center justify-center">
@@ -193,8 +193,8 @@ const ChatWindow: React.FC = () => {
             onClick={() => setActiveTab('rag')}
             className={`flex-1 px-4 py-4 text-sm font-medium transition-colors ${
               activeTab === 'rag' 
-                ? 'bg-blue-700 text-white' 
-                : 'text-blue-100 hover:text-white hover:bg-blue-600'
+                ? 'bg-white/20 text-white' 
+                : 'text-white/80 hover:text-white hover:bg-white/10'
             }`}
           >
             <div className="flex items-center justify-center">

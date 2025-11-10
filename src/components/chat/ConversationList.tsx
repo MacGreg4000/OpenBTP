@@ -154,7 +154,7 @@ const ConversationList: React.FC = () => {
             <p>Aucune conversation</p>
             <button 
               onClick={() => setShowNewChatModal(true)}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm"
+              className="mt-4 px-4 py-2 bg-gradient-to-r from-amber-500 via-orange-600 to-red-600 hover:from-amber-600 hover:via-orange-700 hover:to-red-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 text-sm font-semibold"
             >
               Démarrer une conversation
             </button>

@@ -28,13 +28,16 @@ const ChatButton: React.FC = () => {
     <>
       <button
         onClick={toggleChat}
-        className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg transition-transform transform hover:scale-105 flex items-center justify-center"
+        className="group fixed bottom-6 right-6 z-50 bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 hover:from-amber-600 hover:via-orange-700 hover:to-red-700 text-white rounded-full p-4 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center backdrop-blur-sm"
         aria-label="Chat"
+        style={{
+          boxShadow: '0 10px 25px -5px rgba(251, 146, 60, 0.3), 0 8px 10px -6px rgba(251, 146, 60, 0.2)'
+        }}
       >
         {/* Icône de message */}
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-6 w-6" 
+          className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"
@@ -49,10 +52,11 @@ const ChatButton: React.FC = () => {
         
         {/* Badge de notification */}
         {unreadCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse shadow-lg ring-2 ring-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
+        
       </button>
 
       {/* Fenêtre de chat en utilisant Portal pour le rendre en dehors de la hiérarchie DOM */}
