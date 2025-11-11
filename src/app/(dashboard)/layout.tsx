@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { FeaturesProvider } from '@/hooks/useFeatures'
 
 export default function DashboardLayout({
   children,
@@ -56,13 +57,15 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 overflow-visible">
-      <Navbar />
-      
-      <main className="pt-6 pb-6 overflow-visible">
-        {/* Le dashboard contrôle sa propre largeur, mais les autres pages ont besoin d'un container */}
-        {children}
-      </main>
-    </div>
+    <FeaturesProvider>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 overflow-visible">
+        <Navbar />
+        
+        <main className="pt-6 pb-6 overflow-visible">
+          {/* Le dashboard contrôle sa propre largeur, mais les autres pages ont besoin d'un container */}
+          {children}
+        </main>
+      </div>
+    </FeaturesProvider>
   )
 } 

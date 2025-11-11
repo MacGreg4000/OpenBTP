@@ -1,6 +1,9 @@
 import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Note: La vérification des modules actifs est gérée côté client et dans les API routes
+// Ce middleware se concentre sur l'authentification
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   
@@ -76,6 +79,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
   
+  // La vérification des modules actifs est gérée côté client et dans les API routes
+  // Le middleware se concentre sur l'authentification
   // console.log('✅ Accès autorisé');
   return NextResponse.next();
 }
@@ -92,7 +97,15 @@ export const config = {
     '/bons-regie/:path*',
     '/utilisateurs/:path*',
     '/planning/:path*',
+    '/planning-ressources/:path*',
     '/configuration/:path*',
-    '/mobile/:path*'
+    '/mobile/:path*',
+    '/inventory/:path*',
+    '/journal/:path*',
+    '/choix-clients/:path*',
+    '/sav/:path*',
+    '/metres/:path*',
+    '/planification-chargements/:path*',
+    '/admin/:path*'
   ],
 }; 

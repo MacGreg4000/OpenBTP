@@ -28,10 +28,12 @@ import {
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
 import { NotificationBell } from './NotificationBell'
+import { useFeatures } from '@/hooks/useFeatures'
 
 export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const { isEnabled } = useFeatures()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
   const [logoLoadStatus, setLogoLoadStatus] = useState<'loading' | 'loaded' | 'error' | 'none'>('loading')
@@ -63,40 +65,46 @@ export function Navbar() {
   // Ne pas afficher la navbar sur la page de login
   if (pathname === '/auth/login') return null
 
-  const navigationGroups = [
+  const allNavigationItems = [
     {
       name: 'Gestion',
       items: [
-        { name: 'Clients', href: '/clients', icon: UserGroupIcon },
-        { name: 'Sous-traitants et ouvriers', href: '/sous-traitants', icon: UserGroupIcon },
-        { name: 'Chantiers', href: '/chantiers', icon: BuildingOfficeIcon },
-        { name: 'Planning chantiers', href: '/planning', icon: CalendarIcon },
-        { name: 'Planning ressources', href: '/planning-ressources', icon: CalendarIcon },
-        { name: 'Journal', href: '/journal', icon: CalendarDaysIcon },
+        { name: 'Clients', href: '/clients', icon: UserGroupIcon, moduleCode: 'clients' },
+        { name: 'Sous-traitants et ouvriers', href: '/sous-traitants', icon: UserGroupIcon, moduleCode: 'sous_traitants' },
+        { name: 'Chantiers', href: '/chantiers', icon: BuildingOfficeIcon, moduleCode: 'chantiers' },
+        { name: 'Planning chantiers', href: '/planning', icon: CalendarIcon, moduleCode: 'planning' },
+        { name: 'Planning ressources', href: '/planning-ressources', icon: CalendarIcon, moduleCode: 'planning' },
+        { name: 'Journal', href: '/journal', icon: CalendarDaysIcon, moduleCode: 'journal' },
       ]
     },
     {
       name: 'Documents',
       items: [
-        { name: 'Administratifs', href: '/administratif/documents', icon: DocumentTextIcon },
-        { name: 'Bons de régie', href: '/bons-regie', icon: ClipboardDocumentListIcon },
-        { name: 'Choix client', href: '/choix-clients', icon: SwatchIcon },
-        { name: 'SAV', href: '/sav', icon: DocumentDuplicateIcon },
-        { name: 'Métrés soumis', href: '/metres', icon: ChartBarIcon },
+        { name: 'Administratifs', href: '/administratif/documents', icon: DocumentTextIcon, moduleCode: 'documents' },
+        { name: 'Bons de régie', href: '/bons-regie', icon: ClipboardDocumentListIcon, moduleCode: 'bons_regie' },
+        { name: 'Choix client', href: '/choix-clients', icon: SwatchIcon, moduleCode: 'choix_clients' },
+        { name: 'SAV', href: '/sav', icon: DocumentDuplicateIcon, moduleCode: 'sav' },
+        { name: 'Métrés soumis', href: '/metres', icon: ChartBarIcon, moduleCode: 'metres' },
       ]
     },
     {
       name: 'Organisation',
       items: [
-        { name: 'Outillage', href: '/outillage', icon: WrenchScrewdriverIcon },
-        { name: 'Inventaire', href: '/inventory', icon: CubeIcon },
+        { name: 'Outillage', href: '/outillage', icon: WrenchScrewdriverIcon, moduleCode: 'outillage' },
+        { name: 'Inventaire', href: '/inventory', icon: CubeIcon, moduleCode: 'inventory' },
         ...(session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER' 
-          ? [{ name: 'Planification chargements', href: '/planification-chargements', icon: TruckIcon }]
+          ? [{ name: 'Planification chargements', href: '/planification-chargements', icon: TruckIcon, moduleCode: 'planning_chargements' }]
           : []
         ),
       ]
     }
   ]
+
+  // Filtrer les éléments de navigation selon les modules actifs
+  const navigationGroups = allNavigationItems.map(group => ({
+    ...group,
+    items: group.items.filter(item => isEnabled(item.moduleCode))
+  })).filter(group => group.items.length > 0) // Ne garder que les groupes non vides
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -334,6 +342,29 @@ export function Navbar() {
                                   </Link>
                                 )}
                               </Menu.Item>
+                              
+                              {/* Gestion des modules (ADMIN uniquement) */}
+                              {session?.user?.role === 'ADMIN' && (
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <Link
+                                      href="/admin/modules"
+                                      className={`${
+                                        active ? 'bg-gradient-to-r from-purple-500/20 to-purple-700/20 text-purple-700 dark:text-purple-400 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                                      } group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200`}
+                                    >
+                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all duration-200 ${
+                                        active
+                                          ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg'
+                                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30'
+                                      }`}>
+                                        <Cog6ToothIcon className="h-4 w-4" />
+                                      </div>
+                                      Modules
+                                    </Link>
+                                  )}
+                                </Menu.Item>
+                              )}
                             </div>
                             <div className="p-2">
                               <Menu.Item>

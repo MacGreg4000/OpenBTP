@@ -1918,3 +1918,23 @@ model ChantierGestionnaire {
   @@index([userId])
   @@map("chantier_gestionnaires")
 }
+
+// Système de modules activables/désactivables
+model FeatureModule {
+  id          String   @id @default(uuid())
+  code        String   @unique // Code technique unique (ex: "inventory", "chat")
+  name        String   // Nom affichable (ex: "Inventaire")
+  description String?  @db.Text // Description du module
+  category    String   @default("general") // Catégorie (general, commercial, logistique, etc.)
+  icon        String?  // Nom de l'icône Heroicons
+  isActive    Boolean  @default(true) // Actif ou non
+  isSystem    Boolean  @default(false) // Module système (non désactivable)
+  dependencies String? @db.Text // JSON array des codes de modules requis
+  ordre       Int      @default(0) // Ordre d'affichage
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([isActive])
+  @@index([category])
+  @@map("feature_modules")
+}
