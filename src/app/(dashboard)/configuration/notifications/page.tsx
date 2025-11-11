@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   BellIcon,
@@ -72,8 +72,14 @@ export default function NotificationsConfigPage() {
           const usersRes = await fetch('/api/users')
           if (usersRes.ok) {
             const usersData = await usersRes.json()
-            // S'assurer que c'est un tableau
-            setUsers(Array.isArray(usersData) ? usersData : [])
+            // Gérer les formats { users: [...] } ou [...]
+            if (Array.isArray(usersData)) {
+              setUsers(usersData)
+            } else if (Array.isArray(usersData?.users)) {
+              setUsers(usersData.users)
+            } else {
+              setUsers([])
+            }
           }
         }
 
@@ -456,7 +462,7 @@ export default function NotificationsConfigPage() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {Object.entries(groupedTypes).map(([category, catTypes]) => (
-                <>
+                <Fragment key={category}>
                   {/* En-tête de catégorie */}
                   <tr key={`cat-${category}`} className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10">
                     <td colSpan={3} className="px-6 py-3">
@@ -525,7 +531,7 @@ export default function NotificationsConfigPage() {
                       </tr>
                     )
                   })}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
