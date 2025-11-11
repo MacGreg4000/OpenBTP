@@ -104,6 +104,16 @@ async function seedFeatureModules() {
       isSystem: false,
       ordre: 2
     },
+    {
+      code: 'devis',
+      name: 'Devis',
+      description: 'Création et gestion des devis clients',
+      category: 'commercial',
+      icon: 'DocumentTextIcon',
+      isActive: true,
+      isSystem: false,
+      ordre: 3
+    },
     
     // Modules optionnels
     {
@@ -154,7 +164,7 @@ async function seedFeatureModules() {
       icon: 'UserGroupIcon',
       isActive: true,
       isSystem: false,
-      ordre: 3
+      ordre: 4
     },
     {
       code: 'documents',

@@ -575,6 +575,7 @@ model Client {
   updatedAt DateTime
   Chantier  Chantier[]
   contacts  Contact[]
+  devis     Devis[]
 }
 
 model Contact {
@@ -828,6 +829,9 @@ model User {
   
   // Métrés de chantier
   metresChantierCrees       MetreChantier[] @relation("MetresChantierCrees")
+  
+  // Devis
+  devisCrees                Devis[]
 }
 
 model BonRegie {
@@ -1937,4 +1941,67 @@ model FeatureModule {
   @@index([isActive])
   @@index([category])
   @@map("feature_modules")
+}
+
+// Système de devis
+model Devis {
+  id                    String      @id @default(uuid())
+  numeroDevis           String      @unique // Format: DEV-YYYY-XXXX
+  clientId              String
+  dateCreation          DateTime    @default(now())
+  dateValidite          DateTime    // dateCreation + 30 jours par défaut
+  statut                StatutDevis @default(BROUILLON)
+  observations          String?     @db.Text
+  conditionsGenerales   String?     @db.Text
+  remiseGlobale         Decimal     @default(0) @db.Decimal(5, 2) // Pourcentage
+  montantHT             Decimal     @default(0) @db.Decimal(10, 2)
+  montantTVA            Decimal     @default(0) @db.Decimal(10, 2)
+  montantTTC            Decimal     @default(0) @db.Decimal(10, 2)
+  createdBy             String
+  convertedToCommandeId String?     @unique // Si converti en commande
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  // Relations
+  client                Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createur              User        @relation(fields: [createdBy], references: [id])
+  lignes                LigneDevis[]
+  
+  @@index([clientId])
+  @@index([statut])
+  @@index([dateCreation])
+  @@index([createdBy])
+  @@map("devis")
+}
+
+model LigneDevis {
+  id             String         @id @default(uuid())
+  devisId        String
+  ordre          Int
+  type           String         @default("QP") // QP=Quantité/Prix, TITRE, SOUS_TITRE
+  article        String?
+  description    String?        @db.Text
+  unite          String?
+  quantite       Decimal?       @db.Decimal(10, 2)
+  prixUnitaire   Decimal?       @db.Decimal(10, 2)
+  remise         Decimal        @default(0) @db.Decimal(5, 2) // Pourcentage par ligne
+  total          Decimal?       @db.Decimal(10, 2)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  // Relation
+  devis          Devis          @relation(fields: [devisId], references: [id], onDelete: Cascade)
+  
+  @@index([devisId])
+  @@index([ordre])
+  @@map("ligne_devis")
+}
+
+enum StatutDevis {
+  BROUILLON
+  EN_ATTENTE
+  ACCEPTE
+  REFUSE
+  CONVERTI
+  EXPIRE
 }
