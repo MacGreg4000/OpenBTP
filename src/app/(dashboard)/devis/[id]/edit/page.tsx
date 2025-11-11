@@ -1,20 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { DndProvider, useDrag, useDrop } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 import { 
   PlusIcon, 
   TrashIcon,
   ArrowLeftIcon,
-  ArrowsUpDownIcon
+  BarsArrowUpIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 interface Client {
   id: string
   nom: string
   email: string
+}
+
+interface Chantier {
+  chantierId: string
+  nomChantier: string
+  clientId: string
+  clientNom: string
 }
 
 interface LigneDevis {
@@ -34,24 +42,22 @@ export default function EditDevisPage() {
   const params = useParams()
   const devisId = params?.id as string
 
+  const [typeDevis, setTypeDevis] = useState<'DEVIS' | 'AVENANT'>('DEVIS')
+  const [reference, setReference] = useState('')
   const [clients, setClients] = useState<Client[]>([])
+  const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
+  const [selectedChantierId, setSelectedChantierId] = useState('')
   const [observations, setObservations] = useState('')
-  const [conditionsGenerales, setConditionsGenerales] = useState('')
+  const [tauxTVA, setTauxTVA] = useState(21)
   const [remiseGlobale, setRemiseGlobale] = useState(0)
   const [lignes, setLignes] = useState<LigneDevis[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
   useEffect(() => {
     loadClients()
+    loadChantiers()
     if (devisId) {
       loadDevis()
     }
@@ -69,6 +75,35 @@ export default function EditDevisPage() {
     }
   }
 
+  const loadChantiers = async () => {
+    try {
+      // Demander tous les chantiers sans filtre de statut, avec pagination élevée
+      const response = await fetch('/api/chantiers?etat=Tous les états&pageSize=1000')
+      if (response.ok) {
+        const data = await response.json()
+        // L'API retourne un objet { chantiers: [], meta: {} }
+        const chantiersList = data.chantiers || []
+        const chantiersData = chantiersList.map((c: any) => ({
+          chantierId: c.chantierId,
+          nomChantier: c.nomChantier,
+          clientId: c.clientId || '',
+          clientNom: c.clientNom || 'Client inconnu'
+        }))
+        setChantiers(chantiersData)
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des chantiers:', error)
+    }
+  }
+
+  const handleChantierChange = (chantierId: string) => {
+    setSelectedChantierId(chantierId)
+    const chantier = chantiers.find(c => c.chantierId === chantierId)
+    if (chantier) {
+      setSelectedClientId(chantier.clientId)
+    }
+  }
+
   const loadDevis = async () => {
     try {
       setLoading(true)
@@ -83,9 +118,12 @@ export default function EditDevisPage() {
           return
         }
 
+        setTypeDevis(devis.typeDevis || 'DEVIS')
+        setReference(devis.reference || '')
         setSelectedClientId(devis.clientId)
+        setSelectedChantierId(devis.chantierId || '')
         setObservations(devis.observations || '')
-        setConditionsGenerales(devis.conditionsGenerales || '')
+        setTauxTVA(Number(devis.tauxTVA) || 21)
         setRemiseGlobale(Number(devis.remiseGlobale) || 0)
         setLignes(devis.lignes.map((l: any) => ({
           id: l.id,
@@ -165,16 +203,12 @@ export default function EditDevisPage() {
     setLignes(lignes.filter(l => l.id !== id))
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    
-    if (over && active.id !== over.id) {
-      setLignes((items) => {
-        const oldIndex = items.findIndex(item => item.id === active.id)
-        const newIndex = items.findIndex(item => item.id === over.id)
-        return arrayMove(items, oldIndex, newIndex)
-      })
-    }
+  const moveLigne = (dragIndex: number, hoverIndex: number) => {
+    const dragLigne = lignes[dragIndex]
+    const newLignes = [...lignes]
+    newLignes.splice(dragIndex, 1)
+    newLignes.splice(hoverIndex, 0, dragLigne)
+    setLignes(newLignes)
   }
 
   const calculerTotaux = () => {
@@ -182,7 +216,7 @@ export default function EditDevisPage() {
     const totalHT = lignesCalculables.reduce((sum, l) => sum + l.total, 0)
     const montantRemise = totalHT * (remiseGlobale / 100)
     const totalHTApresRemise = totalHT - montantRemise
-    const totalTVA = totalHTApresRemise * 0.20
+    const totalTVA = totalHTApresRemise * (tauxTVA / 100)
     const totalTTC = totalHTApresRemise + totalTVA
 
     return {
@@ -195,8 +229,14 @@ export default function EditDevisPage() {
   }
 
   const handleSave = async () => {
-    if (!selectedClientId) {
+    // Validation selon le type
+    if (typeDevis === 'DEVIS' && !selectedClientId) {
       alert('Veuillez sélectionner un client')
+      return
+    }
+
+    if (typeDevis === 'AVENANT' && !selectedChantierId) {
+      alert('Veuillez sélectionner un chantier')
       return
     }
 
@@ -213,9 +253,12 @@ export default function EditDevisPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          typeDevis,
+          reference,
           clientId: selectedClientId,
+          chantierId: typeDevis === 'AVENANT' ? selectedChantierId : null,
           observations,
-          conditionsGenerales,
+          tauxTVA,
           remiseGlobale,
           montantHT: totaux.totalHTApresRemise,
           montantTVA: totaux.totalTVA,
@@ -252,58 +295,159 @@ export default function EditDevisPage() {
   const totaux = calculerTotaux()
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.push(`/devis/${devisId}`)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Modifier le devis</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Modifiez les informations du devis</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header léger style backdrop-blur */}
+        <div className="mb-6">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            {/* Effet de fond subtil avec dégradé orange/red (couleur Devis) - opacité 60% */}
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/60 via-orange-700/60 to-red-800/60 dark:from-orange-600/30 dark:via-orange-700/30 dark:to-red-800/30"></div>
+            
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push(`/devis/${devisId}`)}
+                  className="p-2 bg-white/30 backdrop-blur-sm rounded-lg hover:bg-white/40 transition-all duration-200"
+                >
+                  <ArrowLeftIcon className="h-5 w-5 text-orange-900 dark:text-white" />
+                </button>
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                    <DocumentTextIcon className="w-6 h-6 mr-3 text-orange-900 dark:text-white" />
+                    <h1 className="text-xl font-bold text-orange-900 dark:text-white">
+                      Modifier le devis
+                    </h1>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => router.push(`/devis/${devisId}`)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-900 dark:border-white"></div>
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Enregistrer
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => router.push(`/devis/${devisId}`)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
-          </button>
-        </div>
-      </div>
 
-      {/* Informations générales */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 space-y-4">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Informations générales</h2>
+        {/* Informations générales */}
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 space-y-6 mb-6 border border-gray-200/50 dark:border-gray-700/50">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
+          Informations générales
+        </h2>
         
+        {/* Type de devis : DEVIS ou AVENANT - En lecture seule en édition */}
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Type de document (non modifiable)
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold shadow-sm bg-gradient-to-r from-orange-100 to-orange-200 dark:from-orange-900/50 dark:to-orange-800/50 text-orange-900 dark:text-orange-300 ring-2 ring-orange-300/50 dark:ring-orange-500/50">
+              {typeDevis === 'DEVIS' ? '📄 Devis' : '📋 Avenant'}
+            </span>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Le type ne peut pas être modifié après création
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Référence */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              Référence
+            </label>
+            <input
+              type="text"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="Ex: Carrelage premium app 3"
+              className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Identification libre du devis/avenant
+            </p>
+          </div>
+
+          {/* Client ou Chantier selon le type */}
+          {typeDevis === 'DEVIS' ? (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Client *
+              </label>
+              <select
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium"
+              >
+                <option value="">Sélectionner un client</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Chantier *
+              </label>
+              <select
+                value={selectedChantierId}
+                onChange={(e) => handleChantierChange(e.target.value)}
+                className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium"
+              >
+                <option value="">Sélectionner un chantier</option>
+                {chantiers.map((chantier) => (
+                  <option key={chantier.chantierId} value={chantier.chantierId}>
+                    {chantier.nomChantier} - {chantier.clientNom}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Le client sera automatiquement déduit du chantier
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Client *
+              Taux de TVA
             </label>
             <select
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
+              value={tauxTVA}
+              onChange={(e) => setTauxTVA(parseFloat(e.target.value))}
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
             >
-              <option value="">Sélectionner un client</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.nom}
-                </option>
-              ))}
+              <option value="0">0% - Exonération</option>
+              <option value="6">6% - Taux réduit</option>
+              <option value="21">21% - Taux normal</option>
             </select>
           </div>
 
@@ -336,84 +480,75 @@ export default function EditDevisPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Conditions générales de vente
-          </label>
-          <textarea
-            value={conditionsGenerales}
-            onChange={(e) => setConditionsGenerales(e.target.value)}
-            rows={8}
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 font-mono text-xs"
-          />
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
+            <span className="font-medium">Note :</span> Les conditions générales de vente seront automatiquement ajoutées depuis le template configuré dans les paramètres de l'entreprise.
+          </p>
         </div>
       </div>
 
-      {/* Lignes du devis */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Lignes du devis</h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => addSectionLigne('TITRE')}
-              className="px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-md transition-colors"
-            >
-              Ajouter un titre
-            </button>
-            <button
-              onClick={() => addSectionLigne('SOUS_TITRE')}
-              className="px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-md transition-colors"
-            >
-              Ajouter un sous-titre
-            </button>
-            <button
-              onClick={addLigne}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700"
-            >
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Ajouter une ligne
-            </button>
+        {/* Lignes du devis */}
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden mb-6">
+          <div className="relative px-6 py-4 bg-gradient-to-br from-orange-600/10 via-orange-700/10 to-red-800/10 dark:from-orange-600/5 dark:via-orange-700/5 dark:to-red-800/5 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <h2 className="text-lg font-bold text-orange-900 dark:text-white">Lignes du devis</h2>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => addSectionLigne('TITRE')}
+                  className="px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-md transition-colors"
+                >
+                  Ajouter un titre
+                </button>
+                <button
+                  onClick={() => addSectionLigne('SOUS_TITRE')}
+                  className="px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-md transition-colors"
+                >
+                  Ajouter un sous-titre
+                </button>
+                <button
+                  onClick={addLigne}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  Ajouter une ligne
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={lignes.map(l => l.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="overflow-x-auto">
+          
+          <div className="overflow-x-auto">
+            <DndProvider backend={HTML5Backend}>
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
-                    <th className="w-8"></th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Article</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Description</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Unité</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Qté</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Prix U.</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Remise %</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
-                    <th className="w-12"></th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-8">#</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-32">Article</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-28">Unité</th>
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-32">Quantité</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-32">Prix Unit.</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Remise %</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-28">Total</th>
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-16">Action</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {lignes.map((ligne) => (
+                  {lignes.map((ligne, index) => (
                     <LigneDevisRow
                       key={ligne.id}
+                      index={index}
                       ligne={ligne}
                       onUpdate={updateLigne}
                       onDelete={deleteLigne}
+                      moveLigne={moveLigne}
                     />
                   ))}
                 </tbody>
               </table>
-            </div>
-          </SortableContext>
-        </DndContext>
+            </DndProvider>
+          </div>
 
         {lignes.length === 0 && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
@@ -425,62 +560,119 @@ export default function EditDevisPage() {
 
       {/* Totaux */}
       {lignes.filter(l => l.type === 'QP').length > 0 && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="max-w-md ml-auto space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Total HT</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {totaux.totalHT.toFixed(2)} €
-              </span>
+        <div className="flex justify-end">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 w-full max-w-md">
+            <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Récapitulatif</h2>
             </div>
-            {remiseGlobale > 0 && (
-              <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
-                <span>Remise globale ({remiseGlobale}%)</span>
-                <span>-{totaux.montantRemise.toFixed(2)} €</span>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total HT:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{totaux.totalHT.toFixed(2)} €</span>
               </div>
-            )}
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Total HT après remise</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {totaux.totalHTApresRemise.toFixed(2)} €
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">TVA (20%)</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {totaux.totalTVA.toFixed(2)} €
-              </span>
-            </div>
-            <div className="flex justify-between text-lg font-semibold pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-gray-900 dark:text-white">Total TTC</span>
-              <span className="text-orange-600 dark:text-orange-400">
-                {totaux.totalTTC.toFixed(2)} €
-              </span>
+              {remiseGlobale > 0 && (
+                <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Remise globale ({remiseGlobale}%):</span>
+                  <span className="font-semibold text-orange-700 dark:text-orange-300">-{totaux.montantRemise.toFixed(2)} €</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total HT après remise:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{totaux.totalHTApresRemise.toFixed(2)} €</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">TVA ({tauxTVA}%):</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{totaux.totalTVA.toFixed(2)} €</span>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-gradient-to-br from-orange-600/10 via-orange-700/10 to-red-800/10 dark:from-orange-600/5 dark:via-orange-700/5 dark:to-red-800/5 rounded-lg border border-orange-200 dark:border-orange-800 mt-4">
+                <span className="font-bold text-lg text-gray-900 dark:text-white">Total TTC:</span>
+                <span className="font-bold text-2xl text-orange-900 dark:text-white">{totaux.totalTTC.toFixed(2)} €</span>
+              </div>
             </div>
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
 
 // Composant pour une ligne de devis
 function LigneDevisRow({ 
+  index,
   ligne, 
   onUpdate, 
-  onDelete 
+  onDelete,
+  moveLigne
 }: { 
+  index: number
   ligne: LigneDevis
   onUpdate: (id: string, field: keyof LigneDevis, value: any) => void
   onDelete: (id: string) => void
+  moveLigne: (dragIndex: number, hoverIndex: number) => void
 }) {
+  const ref = useRef<HTMLTableRowElement>(null)
   const isSectionHeader = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
+
+  const [{ handlerId }, drop] = useDrop({
+    accept: 'ligne-devis',
+    collect(monitor: any) {
+      return {
+        handlerId: monitor.getHandlerId(),
+      }
+    },
+    hover(item: any, monitor: any) {
+      if (!ref.current) {
+        return
+      }
+      const dragIndex = item.index
+      const hoverIndex = index
+
+      if (dragIndex === hoverIndex) {
+        return
+      }
+
+      const hoverBoundingRect = ref.current?.getBoundingClientRect()
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+      const clientOffset = monitor.getClientOffset()
+      const hoverClientY = clientOffset!.y - hoverBoundingRect.top
+
+      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+        return
+      }
+      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+        return
+      }
+
+      moveLigne(dragIndex, hoverIndex)
+      item.index = hoverIndex
+    },
+  })
+
+  const [{ isDragging }, drag] = useDrag({
+    type: 'ligne-devis',
+    item: () => {
+      return { id: ligne.id, index }
+    },
+    collect: (monitor: any) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  })
+
+  const opacity = isDragging ? 0 : 1
+  drag(drop(ref))
 
   if (isSectionHeader) {
     return (
-      <tr className={ligne.type === 'TITRE' ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}>
-        <td className="px-3 py-2">
-          <ArrowsUpDownIcon className="h-4 w-4 text-gray-400 cursor-move" />
+      <tr 
+        ref={ref}
+        style={{ opacity }}
+        data-handler-id={handlerId}
+        className={ligne.type === 'TITRE' ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}
+      >
+        <td className="px-3 py-2 whitespace-nowrap cursor-move align-top">
+          <BarsArrowUpIcon className="h-5 w-5 text-orange-500 dark:text-orange-300" />
         </td>
         <td colSpan={7} className="px-3 py-2">
           <input
@@ -508,9 +700,14 @@ function LigneDevisRow({
   }
 
   return (
-    <tr>
-      <td className="px-3 py-2">
-        <ArrowsUpDownIcon className="h-4 w-4 text-gray-400 cursor-move" />
+    <tr
+      ref={ref}
+      style={{ opacity }}
+      data-handler-id={handlerId}
+      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+    >
+      <td className="px-3 py-2 whitespace-nowrap cursor-move align-top">
+        <BarsArrowUpIcon className="h-5 w-5 text-gray-400" />
       </td>
       <td className="px-3 py-2">
         <input
@@ -531,21 +728,25 @@ function LigneDevisRow({
         />
       </td>
       <td className="px-3 py-2">
-        <input
-          type="text"
+        <select
           value={ligne.unite}
           onChange={(e) => onUpdate(ligne.id, 'unite', e.target.value)}
-          className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-orange-500"
-          placeholder="U"
-        />
+          className="w-full px-2 py-1.5 text-sm border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
+        >
+          <option value="Mct">Mct</option>
+          <option value="M2">M²</option>
+          <option value="M3">M³</option>
+          <option value="Heures">Heures</option>
+          <option value="Pièces">Pièces</option>
+        </select>
       </td>
       <td className="px-3 py-2">
         <input
           type="number"
           step="0.01"
           value={ligne.quantite}
-          onChange={(e) => onUpdate(ligne.id, 'quantite', e.target.value)}
-          className="w-20 px-2 py-1 text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-orange-500"
+          onChange={(e) => onUpdate(ligne.id, 'quantite', parseFloat(e.target.value) || 0)}
+          className="w-full px-2 py-1.5 text-sm text-center border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
         />
       </td>
       <td className="px-3 py-2">
@@ -553,8 +754,8 @@ function LigneDevisRow({
           type="number"
           step="0.01"
           value={ligne.prixUnitaire}
-          onChange={(e) => onUpdate(ligne.id, 'prixUnitaire', e.target.value)}
-          className="w-24 px-2 py-1 text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-orange-500"
+          onChange={(e) => onUpdate(ligne.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
+          className="w-full px-2 py-1.5 text-sm text-right border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
         />
       </td>
       <td className="px-3 py-2">

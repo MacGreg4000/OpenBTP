@@ -22,6 +22,7 @@ interface SearchableSelectProps {
   showAllOption?: boolean
   allOptionLabel?: string
   renderOption?: (option: SearchableSelectOption) => React.ReactNode
+  colorScheme?: 'purple' | 'orange' | 'blue' | 'green'
 }
 
 export function SearchableSelect({
@@ -35,12 +36,47 @@ export function SearchableSelect({
   disabled = false,
   showAllOption = true,
   allOptionLabel = 'Tous',
-  renderOption
+  renderOption,
+  colorScheme = 'purple'
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Couleurs dynamiques selon le colorScheme
+  const colors = {
+    purple: {
+      ring: 'focus:ring-purple-500',
+      border: 'focus:border-purple-500',
+      hoverFrom: 'hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20',
+      selectedFrom: 'from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30',
+      selectedText: 'text-purple-700 dark:text-purple-300'
+    },
+    orange: {
+      ring: 'focus:ring-orange-500',
+      border: 'focus:border-orange-500',
+      hoverFrom: 'hover:from-orange-50 hover:to-red-50 dark:hover:from-orange-900/20 dark:hover:to-red-900/20',
+      selectedFrom: 'from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30',
+      selectedText: 'text-orange-700 dark:text-orange-300'
+    },
+    blue: {
+      ring: 'focus:ring-blue-500',
+      border: 'focus:border-blue-500',
+      hoverFrom: 'hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20',
+      selectedFrom: 'from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30',
+      selectedText: 'text-blue-700 dark:text-blue-300'
+    },
+    green: {
+      ring: 'focus:ring-green-500',
+      border: 'focus:border-green-500',
+      hoverFrom: 'hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20',
+      selectedFrom: 'from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30',
+      selectedText: 'text-green-700 dark:text-green-300'
+    }
+  }
+
+  const currentColors = colors[colorScheme]
 
   // Filtrer les options selon le terme de recherche
   const filteredOptions = options.filter(option => {
@@ -91,7 +127,7 @@ export function SearchableSelect({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full flex items-center justify-between px-3 py-2.5 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 ${
+        className={`w-full flex items-center justify-between px-3 py-2.5 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 ${currentColors.ring} ${currentColors.border} transition-all duration-200 ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
       >
@@ -115,7 +151,7 @@ export function SearchableSelect({
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                className={`w-full pl-8 pr-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 ${currentColors.ring} ${currentColors.border} transition-all duration-200`}
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
@@ -127,9 +163,9 @@ export function SearchableSelect({
               <button
                 type="button"
                 onClick={() => handleSelect(null)}
-                className={`w-full px-3 py-2.5 text-left text-sm hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 ${
+                className={`w-full px-3 py-2.5 text-left text-sm hover:bg-gradient-to-r ${currentColors.hoverFrom} transition-all duration-200 ${
                   value === null
-                    ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 text-purple-700 dark:text-purple-300 font-semibold'
+                    ? `bg-gradient-to-r ${currentColors.selectedFrom} ${currentColors.selectedText} font-semibold`
                     : 'text-gray-900 dark:text-white'
                 }`}
               >
@@ -161,9 +197,9 @@ export function SearchableSelect({
                     type="button"
                     onClick={() => !isDisabled && handleSelect(option.value)}
                     disabled={isDisabled}
-                    className={`w-full px-3 py-2.5 text-left text-sm hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
+                    className={`w-full px-3 py-2.5 text-left text-sm hover:bg-gradient-to-r ${currentColors.hoverFrom} transition-all duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                       isSelected
-                        ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 text-purple-700 dark:text-purple-300 font-semibold'
+                        ? `bg-gradient-to-r ${currentColors.selectedFrom} ${currentColors.selectedText} font-semibold`
                         : 'text-gray-900 dark:text-white'
                     } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >

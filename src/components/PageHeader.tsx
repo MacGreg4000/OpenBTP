@@ -42,7 +42,7 @@ export function PageHeader({
   // Couleur du texte basée sur badgeColor
   const getTextColor = () => {
     if (badgeColor.includes('indigo') || badgeColor.includes('purple')) return 'text-indigo-600 dark:text-indigo-400'
-    if (badgeColor.includes('amber') || badgeColor.includes('orange')) return 'text-amber-600 dark:text-amber-400'
+    if (badgeColor.includes('amber') || badgeColor.includes('orange') || badgeColor.includes('red')) return 'text-orange-600 dark:text-orange-400'
     if (badgeColor.includes('green') || badgeColor.includes('emerald')) return 'text-green-600 dark:text-green-400'
     if (badgeColor.includes('blue')) return 'text-blue-600 dark:text-blue-400'
     return 'text-blue-600 dark:text-blue-400'

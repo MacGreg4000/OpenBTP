@@ -3,20 +3,23 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PageHeader } from '@/components/PageHeader'
+import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
 import { 
-  PlusIcon, 
-  MagnifyingGlassIcon,
+  PlusIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
   ArrowPathIcon,
-  DocumentDuplicateIcon
+  EyeIcon
 } from '@heroicons/react/24/outline'
 
 interface Devis {
   id: string
   numeroDevis: string
+  typeDevis: 'DEVIS' | 'AVENANT'
+  reference: string | null
   dateCreation: string
   dateValidite: string
   statut: string
@@ -27,6 +30,10 @@ interface Devis {
     nom: string
     email: string
   }
+  chantier?: {
+    chantierId: string
+    nomChantier: string
+  } | null
   createur: {
     id: string
     name: string
@@ -73,8 +80,9 @@ export default function DevisPage() {
   const router = useRouter()
   const [devisList, setDevisList] = useState<Devis[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statutFilter, setStatutFilter] = useState<string>('ALL')
+  const [numeroFilter, setNumeroFilter] = useState<string | number | null>(null)
+  const [clientFilter, setClientFilter] = useState<string | number | null>(null)
+  const [statutFilter, setStatutFilter] = useState<string | number | null>(null)
 
   useEffect(() => {
     loadDevis()
@@ -95,16 +103,6 @@ export default function DevisPage() {
     }
   }
 
-  const devisFiltres = devisList.filter((devis) => {
-    const matchSearch = 
-      devis.numeroDevis.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      devis.client.nom.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchStatut = statutFilter === 'ALL' || devis.statut === statutFilter
-
-    return matchSearch && matchStatut
-  })
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: '2-digit',
@@ -120,6 +118,50 @@ export default function DevisPage() {
     }).format(amount)
   }
 
+  // Créer la liste des numéros de devis pour le filtre
+  const numeroOptions: SearchableSelectOption[] = devisList
+    .map(devis => ({
+      value: devis.id,
+      label: devis.numeroDevis,
+      subtitle: `${devis.client.nom} - ${formatCurrency(Number(devis.montantTTC))}`
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+
+  // Créer la liste des clients uniques pour le filtre
+  const clientOptions: SearchableSelectOption[] = devisList
+    .reduce((acc: any[], devis) => {
+      const existingClient = acc.find(c => c.value === devis.client.id)
+      if (!existingClient) {
+        acc.push({
+          value: devis.client.id,
+          label: devis.client.nom,
+          subtitle: devis.client.email
+        })
+      }
+      return acc
+    }, [])
+    .sort((a, b) => a.label.localeCompare(b.label))
+
+  // Créer la liste des statuts pour le filtre
+  const statutOptions: SearchableSelectOption[] = [
+    { value: 'BROUILLON', label: 'Brouillon' },
+    { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'ACCEPTE', label: 'Accepté' },
+    { value: 'REFUSE', label: 'Refusé' },
+    { value: 'CONVERTI', label: 'Converti' },
+    { value: 'EXPIRE', label: 'Expiré' }
+  ]
+
+  const devisFiltres = devisList.filter((devis) => {
+    const matchNumero = numeroFilter === null || devis.id === numeroFilter
+    
+    const matchClient = clientFilter === null || devis.client.id === clientFilter
+    
+    const matchStatut = statutFilter === null || devis.statut === statutFilter
+
+    return matchNumero && matchClient && matchStatut
+  })
+
   const isExpired = (devis: Devis) => {
     return new Date(devis.dateValidite) < new Date() && devis.statut === 'EN_ATTENTE'
   }
@@ -133,95 +175,110 @@ export default function DevisPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Devis</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Gérez vos devis clients
-          </p>
-        </div>
-        <Link
-          href="/devis/nouveau"
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Nouveau devis
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        title="Devis"
+        subtitle="Gérez vos devis clients"
+        icon={DocumentTextIcon}
+        badgeColor="from-orange-600 via-orange-700 to-red-700"
+        gradientColor="from-orange-600/10 via-orange-700/10 to-red-700/10"
+        actions={
+          <Link
+            href="/devis/nouveau"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Nouveau devis
+          </Link>
+        }
+      />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
       {/* Filtres */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Recherche */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Rechercher par numéro ou client..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-            />
-          </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">Filtres</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Filtre par numéro de devis */}
+          <SearchableSelect
+            options={numeroOptions}
+            value={numeroFilter}
+            onChange={setNumeroFilter}
+            placeholder="Sélectionner un numéro"
+            searchPlaceholder="Rechercher un numéro de devis..."
+            emptyMessage="Aucun devis trouvé"
+            showAllOption={true}
+            allOptionLabel="Tous les numéros"
+            colorScheme="orange"
+          />
+
+          {/* Filtre client avec recherche */}
+          <SearchableSelect
+            options={clientOptions}
+            value={clientFilter}
+            onChange={setClientFilter}
+            placeholder="Sélectionner un client"
+            searchPlaceholder="Rechercher un client..."
+            emptyMessage="Aucun client trouvé"
+            showAllOption={true}
+            allOptionLabel="Tous les clients"
+            colorScheme="orange"
+          />
 
           {/* Filtre statut */}
-          <div>
-            <select
-              value={statutFilter}
-              onChange={(e) => setStatutFilter(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-            >
-              <option value="ALL">Tous les statuts</option>
-              <option value="BROUILLON">Brouillon</option>
-              <option value="EN_ATTENTE">En attente</option>
-              <option value="ACCEPTE">Accepté</option>
-              <option value="REFUSE">Refusé</option>
-              <option value="CONVERTI">Converti</option>
-              <option value="EXPIRE">Expiré</option>
-            </select>
-          </div>
+          <SearchableSelect
+            options={statutOptions}
+            value={statutFilter}
+            onChange={setStatutFilter}
+            placeholder="Sélectionner un statut"
+            searchPlaceholder="Rechercher un statut..."
+            emptyMessage="Aucun statut trouvé"
+            showAllOption={true}
+            allOptionLabel="Tous les statuts"
+            colorScheme="orange"
+          />
         </div>
       </div>
 
       {/* Liste des devis */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Numéro
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Client
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Date création
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Validité
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Statut
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Montant HT
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Montant TTC
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20">
+              <tr>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Type
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Numéro
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Client / Chantier
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Date création
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Validité
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Statut
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Montant HT
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Montant TTC
+                </th>
+                <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700/50">
             {devisFiltres.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={9} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                   <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                   <p className="text-lg font-medium">Aucun devis trouvé</p>
                   <p className="mt-1">Créez votre premier devis pour commencer</p>
@@ -237,58 +294,81 @@ export default function DevisPage() {
                   <tr
                     key={devis.id}
                     onClick={() => router.push(`/devis/${devis.id}`)}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                    className="hover:bg-orange-50/50 dark:hover:bg-orange-900/10 cursor-pointer transition-all duration-200 group"
                   >
+                    {/* Colonne Type */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold shadow-sm ${
+                        devis.typeDevis === 'DEVIS' 
+                          ? 'bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 text-blue-900 dark:text-blue-300 ring-2 ring-blue-300/50 dark:ring-blue-500/50'
+                          : 'bg-gradient-to-r from-purple-100 to-purple-200 dark:from-purple-900/50 dark:to-purple-800/50 text-purple-900 dark:text-purple-300 ring-2 ring-purple-300/50 dark:ring-purple-500/50'
+                      }`}>
+                        {devis.typeDevis === 'DEVIS' ? '📄 Devis' : '📋 Avenant'}
+                      </span>
+                    </td>
+                    {/* Colonne Numéro */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-900 dark:text-white">
                         {devis.numeroDevis}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {devis.reference && (
+                        <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                          📌 {devis.reference}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                         {devis._count.lignes} ligne(s)
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
+                    {/* Colonne Client / Chantier */}
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
                         {devis.client.nom}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {devis.chantier && (
+                        <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1">
+                          🏗️ {devis.chantier.nomChantier}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         {devis.client.email}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
                       {formatDate(devis.dateCreation)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm ${expired ? 'text-red-600 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <div className={`text-sm font-semibold ${expired ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
                         {formatDate(devis.dateValidite)}
                       </div>
                       {expired && (
-                        <div className="text-xs text-red-600">
+                        <div className="text-xs font-bold text-red-600 dark:text-red-400">
                           Expiré
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statutInfo?.color || 'bg-gray-100 text-gray-800'}`}>
-                        {StatusIcon && <StatusIcon className="h-3.5 w-3.5 mr-1" />}
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${statutInfo?.color || 'bg-gray-100 text-gray-800'}`}>
+                        {StatusIcon && <StatusIcon className="h-4 w-4 mr-1.5" />}
                         {statutInfo?.label || devis.statut}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900 dark:text-white">
                       {formatCurrency(Number(devis.montantHT))}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white font-semibold">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-extrabold text-orange-700 dark:text-orange-400">
                       {formatCurrency(Number(devis.montantTTC))}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           router.push(`/devis/${devis.id}`)
                         }}
-                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                        className="inline-flex items-center justify-center p-2 rounded-lg text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition-all duration-200 group-hover:scale-110"
+                        title="Voir le devis"
                       >
-                        Voir
+                        <EyeIcon className="h-5 w-5" />
                       </button>
                     </td>
                   </tr>
@@ -297,37 +377,64 @@ export default function DevisPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Stats */}
       {devisFiltres.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Total devis</div>
-            <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
-              {devisFiltres.length}
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Total devis</div>
+                <div className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white">
+                  {devisFiltres.length}
+                </div>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl">
+                <DocumentTextIcon className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+              </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Montant total HT</div>
-            <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
-              {formatCurrency(devisFiltres.reduce((sum, d) => sum + Number(d.montantHT), 0))}
+          <div className="bg-gradient-to-br from-white to-orange-50 dark:from-gray-800 dark:to-orange-900/10 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-orange-200/50 dark:border-orange-700/50 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Montant total HT</div>
+                <div className="mt-2 text-3xl font-extrabold text-orange-700 dark:text-orange-400">
+                  {formatCurrency(devisFiltres.reduce((sum, d) => sum + Number(d.montantHT), 0))}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500 dark:text-gray-400">En attente</div>
-            <div className="mt-1 text-2xl font-semibold text-blue-600">
-              {devisFiltres.filter(d => d.statut === 'EN_ATTENTE').length}
+          <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900/10 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-blue-200/50 dark:border-blue-700/50 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">En attente</div>
+                <div className="mt-2 text-3xl font-extrabold text-blue-600 dark:text-blue-400">
+                  {devisFiltres.filter(d => d.statut === 'EN_ATTENTE').length}
+                </div>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl">
+                <ClockIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Acceptés</div>
-            <div className="mt-1 text-2xl font-semibold text-green-600">
-              {devisFiltres.filter(d => d.statut === 'ACCEPTE').length}
+          <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-green-900/10 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-green-200/50 dark:border-green-700/50 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Acceptés</div>
+                <div className="mt-2 text-3xl font-extrabold text-green-600 dark:text-green-400">
+                  {devisFiltres.filter(d => d.statut === 'ACCEPTE').length}
+                </div>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-xl">
+                <CheckCircleIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
+              </div>
             </div>
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

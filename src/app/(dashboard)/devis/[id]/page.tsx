@@ -10,22 +10,27 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   XCircleIcon,
-  DocumentArrowDownIcon
+  DocumentArrowDownIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 
 interface Devis {
   id: string
   numeroDevis: string
+  typeDevis: 'DEVIS' | 'AVENANT'
+  reference: string | null
   dateCreation: string
   dateValidite: string
   statut: string
   observations: string | null
-  conditionsGenerales: string | null
+  tauxTVA: number
   remiseGlobale: number
   montantHT: number
   montantTVA: number
   montantTTC: number
   convertedToCommandeId: string | null
+  convertedToEtatId: string | null
+  chantierId: string | null
   client: {
     id: string
     nom: string
@@ -33,6 +38,11 @@ interface Devis {
     telephone: string | null
     adresse: string | null
   }
+  chantier?: {
+    chantierId: string
+    nomChantier: string
+    adresse: string | null
+  } | null
   createur: {
     id: string
     name: string
@@ -133,6 +143,33 @@ export default function DevisDetailPage() {
     }
   }
 
+  const handleSendToClient = async () => {
+    if (!devis) return
+    
+    if (!confirm('Voulez-vous envoyer ce devis au client ? Il passera en statut "En attente".')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/devis/${devis.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut: 'EN_ATTENTE' })
+      })
+
+      if (response.ok) {
+        await loadDevis()
+        alert('Le devis a été envoyé au client et est maintenant en attente de validation.')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Erreur lors de l\'envoi du devis')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('Erreur lors de l\'envoi du devis')
+    }
+  }
+
   const handleDuplicate = async () => {
     if (!devis) return
     
@@ -183,7 +220,13 @@ export default function DevisDetailPage() {
   }
 
   const handleConvert = async () => {
-    if (!selectedChantierId) {
+    // Pour les DEVIS, on doit sélectionner un chantier
+    // Pour les AVENANTS, le chantier est déjà défini dans le devis
+    const chantierId = devis?.typeDevis === 'AVENANT' 
+      ? devis.chantierId 
+      : selectedChantierId
+
+    if (!chantierId) {
       alert('Veuillez sélectionner un chantier')
       return
     }
@@ -193,17 +236,28 @@ export default function DevisDetailPage() {
       const response = await fetch(`/api/devis/${devisId}/convert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chantierId: selectedChantierId })
+        body: JSON.stringify({ chantierId })
       })
 
       if (response.ok) {
         const result = await response.json()
-        alert(result.message || 'Devis converti avec succès')
-        await loadDevis()
-        setShowConvertModal(false)
-        // Optionnel : rediriger vers la commande créée
-        if (result.commande?.id) {
-          router.push(`/chantiers/${selectedChantierId}/commande?id=${result.commande.id}`)
+        
+        if (result.type === 'AVENANT') {
+          alert('L\'avenant a été ajouté avec succès à l\'état d\'avancement du chantier.')
+          await loadDevis()
+          setShowConvertModal(false)
+          // Rediriger vers les états d'avancement du chantier
+          if (result.etatAvancement?.chantierId) {
+            router.push(`/chantiers/${result.etatAvancement.chantierId}/etats`)
+          }
+        } else {
+          alert(result.message || 'Devis converti en commande avec succès')
+          await loadDevis()
+          setShowConvertModal(false)
+          // Rediriger vers la commande créée
+          if (result.commande?.id) {
+            router.push(`/chantiers/${chantierId}/commande?id=${result.commande.id}`)
+          }
         }
       } else {
         const error = await response.json()
@@ -265,326 +319,449 @@ export default function DevisDetailPage() {
   const canConvert = devis.statut === 'ACCEPTE'
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.push('/devis')}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Devis {devis.numeroDevis}
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Créé le {formatDate(devis.dateCreation)} par {devis.createur.name}
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header léger style backdrop-blur */}
+        <div className="mb-6">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            {/* Effet de fond subtil avec dégradé orange/red (couleur Devis) - opacité 60% */}
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/60 via-orange-700/60 to-red-800/60 dark:from-orange-600/30 dark:via-orange-700/30 dark:to-red-800/30"></div>
+            
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push('/devis')}
+                  className="p-2 bg-white/30 backdrop-blur-sm rounded-lg hover:bg-white/40 transition-all duration-200"
+                >
+                  <ArrowLeftIcon className="h-5 w-5 text-orange-900 dark:text-white" />
+                </button>
+                <div className="flex items-center gap-3 flex-1">
+                  {/* Badge Type */}
+                  <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg ring-2 backdrop-blur-sm ${
+                    devis.typeDevis === 'DEVIS' 
+                      ? 'bg-blue-500/90 text-white ring-blue-300/50'
+                      : 'bg-purple-500/90 text-white ring-purple-300/50'
+                  }`}>
+                    {devis.typeDevis === 'DEVIS' ? '📄 Devis' : '📋 Avenant'}
+                  </span>
+                  
+                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                    <DocumentTextIcon className="w-6 h-6 mr-3 text-orange-900 dark:text-white" />
+                    <div>
+                      <h1 className="text-xl font-bold text-orange-900 dark:text-white">
+                        {devis.numeroDevis}
+                        {devis.reference && (
+                          <span className="ml-2 text-sm font-semibold">
+                            - {devis.reference}
+                          </span>
+                        )}
+                      </h1>
+                      <p className="text-xs text-orange-800 dark:text-orange-100">
+                        Créé le {formatDate(devis.dateCreation)} par {devis.createur.name}
+                      </p>
+                    </div>
+                  </div>
+                  {isExpired() && (
+                    <span className="inline-flex items-center px-3 py-2 rounded-full text-sm font-semibold bg-red-500/90 text-white shadow-lg ring-2 ring-red-300/50 backdrop-blur-sm">
+                      Expiré
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-3">
+                  <a
+                    href={`/api/devis/${devisId}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
+                  >
+                    <DocumentArrowDownIcon className="h-5 w-5" />
+                    PDF
+                  </a>
 
-        <div className="flex space-x-2">
-          <a
-            href={`/api/devis/${devisId}/pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-            Télécharger PDF
-          </a>
+                  <button
+                    onClick={handleDuplicate}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
+                  >
+                    <DocumentDuplicateIcon className="h-5 w-5" />
+                    Dupliquer
+                  </button>
 
-          <button
-            onClick={handleDuplicate}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
-            Dupliquer
-          </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => router.push(`/devis/${devis.id}/edit`)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                      Modifier
+                    </button>
+                  )}
 
-          {canEdit && (
-            <button
-              onClick={() => router.push(`/devis/${devis.id}/edit`)}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <PencilIcon className="h-4 w-4 mr-2" />
-              Modifier
-            </button>
-          )}
+                  {canConvert && (
+                    <button
+                      onClick={() => {
+                        loadChantiers()
+                        setShowConvertModal(true)
+                      }}
+                      className={`inline-flex items-center gap-2 px-4 py-2 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg transition-all duration-200 text-white ring-2 ring-white/30 ${
+                        devis.typeDevis === 'DEVIS'
+                          ? 'bg-green-600/90 hover:bg-green-700'
+                          : 'bg-purple-600/90 hover:bg-purple-700'
+                      }`}
+                    >
+                      <ArrowPathIcon className="h-5 w-5" />
+                      {devis.typeDevis === 'DEVIS' ? 'Convertir en commande' : 'Ajouter comme avenant'}
+                    </button>
+                  )}
 
-          {canConvert && (
-            <button
-              onClick={() => {
-                loadChantiers()
-                setShowConvertModal(true)
-              }}
-              className="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-            >
-              <ArrowPathIcon className="h-4 w-4 mr-2" />
-              Convertir en commande
-            </button>
-          )}
-
-          <button
-            onClick={handleDelete}
-            className="inline-flex items-center px-3 py-2 border border-red-300 dark:border-red-600 rounded-md text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-          >
-            <TrashIcon className="h-4 w-4 mr-2" />
-            Supprimer
-          </button>
-        </div>
-      </div>
-
-      {/* Alerte expiration */}
-      {isExpired() && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <div className="flex items-center">
-            <XCircleIcon className="h-5 w-5 text-red-600 mr-2" />
-            <p className="text-sm text-red-800 dark:text-red-300 font-medium">
-              Ce devis a expiré le {formatDate(devis.dateValidite)}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Informations générales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Client */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Client</h2>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Nom:</span>
-              <span className="ml-2 text-gray-900 dark:text-white font-medium">{devis.client.nom}</span>
-            </div>
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Email:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">{devis.client.email}</span>
-            </div>
-            {devis.client.telephone && (
-              <div>
-                <span className="text-gray-500 dark:text-gray-400">Téléphone:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">{devis.client.telephone}</span>
+                  <button
+                    onClick={handleDelete}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-red-500/30 transition-all duration-200 text-red-900 dark:text-red-300"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            )}
-            {devis.client.adresse && (
-              <div>
-                <span className="text-gray-500 dark:text-gray-400">Adresse:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">{devis.client.adresse}</span>
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Détails devis */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Détails du devis</h2>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Statut:</span>
-              <span className="ml-2">
+        {/* Carte Chantier (si avenant) */}
+        {devis.typeDevis === 'AVENANT' && devis.chantier && (
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-purple-200/50 dark:border-purple-700/50 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="text-2xl">🏗️</span>
+              <div>
+                <div>Chantier associé</div>
+                <div className="text-xs font-normal text-gray-600 dark:text-gray-400">Cet avenant sera ajouté à l'état d'avancement de ce chantier</div>
+              </div>
+            </h2>
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Nom du chantier</span>
+                <span className="text-sm font-bold text-purple-900 dark:text-purple-300 text-right">{devis.chantier.nomChantier}</span>
+              </div>
+              {devis.chantier.adresse && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Adresse</span>
+                  <span className="text-sm text-gray-900 dark:text-white text-right max-w-xs">{devis.chantier.adresse}</span>
+                </div>
+              )}
+              <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
+                <a
+                  href={`/chantiers/${devis.chantier.chantierId}`}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 transition-colors"
+                >
+                  Voir le chantier →
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Informations générales avec design moderne */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Client */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
+              Client
+            </h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-start">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">Nom</span>
+                <span className="text-gray-900 dark:text-white font-semibold text-right">{devis.client.nom}</span>
+              </div>
+              <div className="flex justify-between items-start">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">Email</span>
+                <span className="text-gray-900 dark:text-white text-right">{devis.client.email}</span>
+              </div>
+              {devis.client.telephone && (
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Téléphone</span>
+                  <span className="text-gray-900 dark:text-white text-right">{devis.client.telephone}</span>
+                </div>
+              )}
+              {devis.client.adresse && (
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Adresse</span>
+                  <span className="text-gray-900 dark:text-white text-right max-w-xs">{devis.client.adresse}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Détails devis */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
+              Détails du devis
+            </h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">Statut</span>
                 <StatusBadge statut={devis.statut} />
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Validité:</span>
-              <span className={`ml-2 ${isExpired() ? 'text-red-600 font-medium' : 'text-gray-900 dark:text-white'}`}>
-                {formatDate(devis.dateValidite)}
-              </span>
-            </div>
-            {devis.remiseGlobale > 0 && (
-              <div>
-                <span className="text-gray-500 dark:text-gray-400">Remise globale:</span>
-                <span className="ml-2 text-orange-600 dark:text-orange-400 font-medium">
-                  {devis.remiseGlobale}%
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">Validité</span>
+                <span className={`font-semibold ${isExpired() ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+                  {formatDate(devis.dateValidite)}
                 </span>
               </div>
-            )}
-          </div>
+              {devis.remiseGlobale > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Remise globale</span>
+                  <span className="text-orange-600 dark:text-orange-400 font-bold">
+                    {devis.remiseGlobale}%
+                  </span>
+                </div>
+              )}
+            </div>
 
-          {/* Actions de statut */}
-          {devis.statut !== 'CONVERTI' && (
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-              {devis.statut === 'BROUILLON' && (
+            {/* Actions de statut */}
+            {devis.statut !== 'CONVERTI' && (
+              <div className="mt-6 pt-6 border-t border-gray-200/50 dark:border-gray-700/50 space-y-3">
                 <button
-                  onClick={() => handleChangeStatus('EN_ATTENTE')}
-                  className="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  onClick={handleSendToClient}
+                  disabled={devis.statut !== 'BROUILLON'}
+                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all duration-300 transform hover:scale-[1.02] ${
+                    devis.statut === 'BROUILLON'
+                      ? 'bg-gradient-to-r from-orange-600 via-orange-700 to-red-700 hover:from-orange-700 hover:via-orange-800 hover:to-red-800 shadow-lg hover:shadow-xl ring-2 ring-orange-300/50 dark:ring-orange-500/50'
+                      : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed opacity-50'
+                  }`}
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
                   Envoyer au client
                 </button>
-              )}
-              {devis.statut === 'EN_ATTENTE' && (
-                <>
-                  <button
-                    onClick={() => handleChangeStatus('ACCEPTE')}
-                    className="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircleIcon className="h-4 w-4 mr-2" />
-                    Marquer comme accepté
-                  </button>
-                  <button
-                    onClick={() => handleChangeStatus('REFUSE')}
-                    className="w-full inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <XCircleIcon className="h-4 w-4 mr-2" />
-                    Marquer comme refusé
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Observations */}
-      {devis.observations && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Observations</h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-            {devis.observations}
+                <button
+                  onClick={() => handleChangeStatus('ACCEPTE')}
+                  disabled={devis.statut === 'ACCEPTE' || devis.statut === 'CONVERTI'}
+                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all duration-300 transform hover:scale-[1.02] ${
+                    devis.statut !== 'ACCEPTE' && devis.statut !== 'CONVERTI'
+                      ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl ring-2 ring-green-300/50 dark:ring-green-500/50'
+                      : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  <CheckCircleIcon className="h-5 w-5" />
+                  Marquer comme accepté
+                </button>
+
+                <button
+                  onClick={() => handleChangeStatus('REFUSE')}
+                  disabled={devis.statut === 'REFUSE' || devis.statut === 'CONVERTI'}
+                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-[1.02] ${
+                    devis.statut !== 'REFUSE' && devis.statut !== 'CONVERTI'
+                      ? 'text-gray-700 dark:text-gray-200 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-600 dark:hover:to-gray-500 shadow hover:shadow-lg ring-2 ring-gray-300/50 dark:ring-gray-500/50'
+                      : 'text-white bg-gray-300 dark:bg-gray-600 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  <XCircleIcon className="h-5 w-5" />
+                  Marquer comme refusé
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Observations */}
+        {devis.observations && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
+              Observations
+            </h2>
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+              {devis.observations}
+            </p>
+          </div>
+        )}
+
+        {/* Lignes du devis */}
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
+            Lignes du devis
+          </h2>
+          <div className="overflow-x-auto -mx-6">
+            <div className="inline-block min-w-full align-middle px-6">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">#</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Article</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Description</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Unité</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Qté</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Prix U.</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Remise</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {devis.lignes.map((ligne, index) => {
+                    if (ligne.type === 'TITRE') {
+                      return (
+                        <tr key={ligne.id} className="bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10">
+                          <td colSpan={8} className="px-4 py-4 text-base font-bold text-gray-900 dark:text-white">
+                            {ligne.description || ligne.article}
+                          </td>
+                        </tr>
+                      )
+                    }
+                    if (ligne.type === 'SOUS_TITRE') {
+                      return (
+                        <tr key={ligne.id} className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10">
+                          <td colSpan={8} className="px-4 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200 pl-8">
+                            {ligne.description || ligne.article}
+                          </td>
+                        </tr>
+                      )
+                    }
+
+                    return (
+                      <tr key={ligne.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{ligne.article}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{ligne.description}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{ligne.unite}</td>
+                        <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">{ligne.quantite}</td>
+                        <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                          {formatCurrency(Number(ligne.prixUnitaire))}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-orange-600 dark:text-orange-400 font-medium">
+                          {ligne.remise > 0 ? `${ligne.remise}%` : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(Number(ligne.total))}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Totaux */}
+          <div className="mt-6 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end">
+              <div className="max-w-md w-full bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 backdrop-blur-xl rounded-xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-600/50">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm pb-3 border-b border-gray-200/50 dark:border-gray-600/50">
+                    <span className="text-gray-600 dark:text-gray-300 font-medium">Montant HT</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(Number(devis.montantHT))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm pb-3 border-b border-gray-200/50 dark:border-gray-600/50">
+                    <span className="text-gray-600 dark:text-gray-300 font-medium">TVA ({devis.tauxTVA}%)</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(Number(devis.montantTVA))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">Total TTC</span>
+                    <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                      {formatCurrency(Number(devis.montantTTC))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Note sur les CGV */}
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/50 rounded-2xl p-5 backdrop-blur-sm">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
+            <span className="font-medium">Note :</span> Les conditions générales de vente seront incluses dans le PDF généré, selon le template configuré dans les paramètres de l'entreprise.
           </p>
         </div>
-      )}
 
-      {/* Lignes du devis */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Lignes du devis</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Article</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Description</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Unité</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qté</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Prix U.</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Remise</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {devis.lignes.map((ligne, index) => {
-                if (ligne.type === 'TITRE') {
-                  return (
-                    <tr key={ligne.id} className="bg-orange-50 dark:bg-orange-900/20">
-                      <td colSpan={8} className="px-4 py-3 text-base font-bold text-gray-900 dark:text-white">
-                        {ligne.description || ligne.article}
-                      </td>
-                    </tr>
-                  )
-                }
-                if (ligne.type === 'SOUS_TITRE') {
-                  return (
-                    <tr key={ligne.id} className="bg-blue-50 dark:bg-blue-900/20">
-                      <td colSpan={8} className="px-4 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200 pl-8">
-                        {ligne.description || ligne.article}
-                      </td>
-                    </tr>
-                  )
-                }
-
-                return (
-                  <tr key={ligne.id}>
-                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{ligne.article}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{ligne.description}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{ligne.unite}</td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">{ligne.quantite}</td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                      {formatCurrency(Number(ligne.prixUnitaire))}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                      {ligne.remise > 0 ? `${ligne.remise}%` : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
-                      {formatCurrency(Number(ligne.total))}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Totaux */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="max-w-md ml-auto space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Montant HT</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {formatCurrency(Number(devis.montantHT))}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">TVA (20%)</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {formatCurrency(Number(devis.montantTVA))}
-              </span>
-            </div>
-            <div className="flex justify-between text-lg font-semibold pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-gray-900 dark:text-white">Total TTC</span>
-              <span className="text-orange-600 dark:text-orange-400">
-                {formatCurrency(Number(devis.montantTTC))}
-              </span>
+        {/* Modal de conversion */}
+        {showConvertModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className={`px-6 py-4 ${
+                devis.typeDevis === 'DEVIS'
+                  ? 'bg-gradient-to-r from-green-600 to-green-700'
+                  : 'bg-gradient-to-r from-purple-600 to-purple-700'
+              }`}>
+                <h3 className="text-lg font-semibold text-white">
+                  {devis.typeDevis === 'DEVIS' 
+                    ? '📄 Convertir en commande' 
+                    : '📋 Convertir l\'avenant'}
+                </h3>
+              </div>
+              <div className="p-6">
+                {devis.typeDevis === 'DEVIS' ? (
+                  <>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Sélectionnez le chantier auquel associer cette commande :
+                    </p>
+                    <select
+                      value={selectedChantierId}
+                      onChange={(e) => setSelectedChantierId(e.target.value)}
+                      className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 mb-6 transition-all"
+                    >
+                      <option value="">Choisir un chantier...</option>
+                      {chantiers.map((chantier) => (
+                        <option key={chantier.id} value={chantier.id}>
+                          {chantier.nomChantier} {chantier.adresse && `- ${chantier.adresse}`}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Cet avenant sera ajouté comme ligne dans l'état d'avancement du chantier :
+                    </p>
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-6 border border-purple-200 dark:border-purple-700">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">🏗️</span>
+                        <span className="font-bold text-purple-900 dark:text-purple-300">
+                          {devis.chantier?.nomChantier || 'Chantier'}
+                        </span>
+                      </div>
+                      {devis.chantier?.adresse && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 ml-8">
+                          {devis.chantier.adresse}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                      Une ligne avenant sera créée dans l'état d'avancement "Brouillon" avec la description "{devis.numeroDevis}{devis.reference ? ` - ${devis.reference}` : ''}" et le montant HT. Le PDF sera sauvegardé dans les documents du chantier.
+                    </p>
+                  </>
+                )}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowConvertModal(false)}
+                    disabled={converting}
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-all"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleConvert}
+                    disabled={converting || (devis.typeDevis === 'DEVIS' && !selectedChantierId)}
+                    className={`px-4 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all ${
+                      devis.typeDevis === 'DEVIS'
+                        ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
+                        : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
+                    }`}
+                  >
+                    {converting ? 'Conversion...' : 'Convertir'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
-
-      {/* Conditions générales */}
-      {devis.conditionsGenerales && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Conditions générales de vente</h2>
-          <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
-            {devis.conditionsGenerales}
-          </pre>
-        </div>
-      )}
-
-      {/* Modal de conversion */}
-      {showConvertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Convertir en commande
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Sélectionnez le chantier auquel associer cette commande :
-            </p>
-            <select
-              value={selectedChantierId}
-              onChange={(e) => setSelectedChantierId(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 mb-6"
-            >
-              <option value="">Choisir un chantier...</option>
-              {chantiers.map((chantier) => (
-                <option key={chantier.id} value={chantier.id}>
-                  {chantier.nomChantier} {chantier.adresse && `- ${chantier.adresse}`}
-                </option>
-              ))}
-            </select>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowConvertModal(false)}
-                disabled={converting}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleConvert}
-                disabled={converting || !selectedChantierId}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {converting ? 'Conversion...' : 'Convertir'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -592,18 +769,18 @@ export default function DevisDetailPage() {
 // Composant de badge de statut
 function StatusBadge({ statut }: { statut: string }) {
   const config: Record<string, { label: string; color: string }> = {
-    BROUILLON: { label: 'Brouillon', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' },
-    EN_ATTENTE: { label: 'En attente', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-    ACCEPTE: { label: 'Accepté', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
-    REFUSE: { label: 'Refusé', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-    CONVERTI: { label: 'Converti', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
-    EXPIRE: { label: 'Expiré', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' }
+    BROUILLON: { label: 'Brouillon', color: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-700 dark:to-gray-600 dark:text-gray-200 ring-2 ring-gray-300/50 dark:ring-gray-500/50' },
+    EN_ATTENTE: { label: 'En attente', color: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900/50 dark:to-blue-800/50 dark:text-blue-300 ring-2 ring-blue-300/50 dark:ring-blue-500/50' },
+    ACCEPTE: { label: 'Accepté', color: 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/50 dark:to-green-800/50 dark:text-green-300 ring-2 ring-green-300/50 dark:ring-green-500/50' },
+    REFUSE: { label: 'Refusé', color: 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/50 dark:to-red-800/50 dark:text-red-300 ring-2 ring-red-300/50 dark:ring-red-500/50' },
+    CONVERTI: { label: 'Converti', color: 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 dark:from-purple-900/50 dark:to-purple-800/50 dark:text-purple-300 ring-2 ring-purple-300/50 dark:ring-purple-500/50' },
+    EXPIRE: { label: 'Expiré', color: 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 dark:from-orange-900/50 dark:to-orange-800/50 dark:text-orange-300 ring-2 ring-orange-300/50 dark:ring-orange-500/50' }
   }
 
   const { label, color } = config[statut] || { label: statut, color: 'bg-gray-100 text-gray-800' }
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${color}`}>
       {label}
     </span>
   )

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import { PDFGenerator } from '@/lib/pdf/pdf-generator'
+import { generateDevisHTML } from '@/lib/pdf/templates/devis-template'
 
-// POST /api/devis/[devisId]/convert - Convertir un devis en commande
+// POST /api/devis/[devisId]/convert - Convertir un devis ou avenant
 export async function POST(
   request: NextRequest,
   props: { params: Promise<{ devisId: string }> }
@@ -18,21 +20,29 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { chantierId } = body
-
-    if (!chantierId) {
-      return NextResponse.json(
-        { error: 'Le chantier est obligatoire pour la conversion' },
-        { status: 400 }
-      )
-    }
+    const { chantierId } = body // Pour les DEVIS, chantier à créer ou sélectionné
 
     const devis = await prisma.devis.findUnique({
       where: { id: devisId },
       include: {
+        client: true,
+        chantier: {
+          select: {
+            chantierId: true,
+            nomChantier: true,
+            adresseChantier: true
+          }
+        },
         lignes: {
           orderBy: {
             ordre: 'asc'
+          }
+        },
+        createur: {
+          select: {
+            id: true,
+            name: true,
+            email: true
           }
         }
       }
@@ -48,118 +58,479 @@ export async function POST(
     // Vérifier le statut
     if (devis.statut === 'CONVERTI') {
       return NextResponse.json(
-        { error: 'Ce devis a déjà été converti en commande' },
+        { error: 'Ce document a déjà été converti' },
         { status: 400 }
       )
     }
 
     if (devis.statut !== 'ACCEPTE') {
       return NextResponse.json(
-        { error: 'Seuls les devis acceptés peuvent être convertis en commande' },
+        { error: 'Seuls les documents acceptés peuvent être convertis' },
         { status: 400 }
       )
     }
 
-    // Vérifier que le chantier existe et appartient au même client
-    const chantier = await prisma.chantier.findUnique({
-      where: { id: chantierId }
-    })
-
-    if (!chantier) {
-      return NextResponse.json(
-        { error: 'Chantier introuvable' },
-        { status: 404 }
-      )
-    }
-
-    if (chantier.clientId !== devis.clientId) {
-      return NextResponse.json(
-        { error: 'Le chantier doit appartenir au même client que le devis' },
-        { status: 400 }
-      )
-    }
-
-    // Générer le numéro de commande
-    const year = new Date().getFullYear()
-    const lastCommande = await prisma.commande.findFirst({
-      where: {
-        numeroCommande: {
-          startsWith: `CMD-${year}-`
-        }
-      },
-      orderBy: {
-        numeroCommande: 'desc'
+    // ========================================
+    // CAS 1 : DEVIS → Commande + Chantier
+    // ========================================
+    if (devis.typeDevis === 'DEVIS') {
+      if (!chantierId) {
+        return NextResponse.json(
+          { error: 'Le chantier est obligatoire pour la conversion d\'un devis' },
+          { status: 400 }
+        )
       }
-    })
 
-    let nextNumber = 1
-    if (lastCommande) {
-      const lastNumber = parseInt(lastCommande.numeroCommande.split('-')[2])
-      nextNumber = lastNumber + 1
-    }
+      // Vérifier que le chantier existe et appartient au même client
+      const chantier = await prisma.chantier.findUnique({
+        where: { chantierId }
+      })
 
-    const numeroCommande = `CMD-${year}-${nextNumber.toString().padStart(4, '0')}`
+      if (!chantier) {
+        return NextResponse.json(
+          { error: 'Chantier introuvable' },
+          { status: 404 }
+        )
+      }
 
-    // Créer la commande
-    const commande = await prisma.commande.create({
-      data: {
-        numeroCommande,
-        chantierId,
-        type: 'CLIENT',
-        statut: 'VALIDEE',
-        dateCommande: new Date(),
-        montantHT: devis.montantHT,
-        tauxTVA: 20, // Valeur par défaut, à ajuster si nécessaire
-        montantTTC: devis.montantTTC,
-        observations: devis.observations,
-        lignes: {
-          create: devis.lignes.map((ligne) => ({
-            ordre: ligne.ordre,
-            type: ligne.type,
-            article: ligne.article,
-            description: ligne.description,
-            unite: ligne.unite,
-            quantite: ligne.quantite || 0,
-            prixUnitaire: ligne.prixUnitaire || 0,
-            total: ligne.total || 0,
-            estOption: false
-          }))
-        }
-      },
-      include: {
-        lignes: {
-          orderBy: {
-            ordre: 'asc'
+      if (chantier.clientId !== devis.clientId) {
+        return NextResponse.json(
+          { error: 'Le chantier doit appartenir au même client que le devis' },
+          { status: 400 }
+        )
+      }
+
+      // Générer le numéro de commande
+      const year = new Date().getFullYear()
+      const lastCommande = await prisma.commande.findFirst({
+        where: {
+          numeroCommande: {
+            startsWith: `CMD-${year}-`
           }
         },
-        chantier: {
-          include: {
-            client: true
+        orderBy: {
+          numeroCommande: 'desc'
+        }
+      })
+
+      let nextNumber = 1
+      if (lastCommande) {
+        const lastNumber = parseInt(lastCommande.numeroCommande.split('-')[2])
+        nextNumber = lastNumber + 1
+      }
+
+      const numeroCommande = `CMD-${year}-${nextNumber.toString().padStart(4, '0')}`
+
+      // Créer la commande
+      const commande = await prisma.commande.create({
+        data: {
+          numeroCommande,
+          chantierId,
+          type: 'CLIENT',
+          statut: 'VALIDEE',
+          dateCommande: new Date(),
+          montantHT: devis.montantHT,
+          tauxTVA: Number(devis.tauxTVA) || 21,
+          montantTTC: devis.montantTTC,
+          observations: devis.observations,
+          lignes: {
+            create: devis.lignes.map((ligne) => ({
+              ordre: ligne.ordre,
+              type: ligne.type,
+              article: ligne.article,
+              description: ligne.description,
+              unite: ligne.unite,
+              quantite: ligne.quantite || 0,
+              prixUnitaire: ligne.prixUnitaire || 0,
+              total: ligne.total || 0,
+              estOption: false
+            }))
+          }
+        },
+        include: {
+          lignes: {
+            orderBy: {
+              ordre: 'asc'
+            }
+          },
+          chantier: {
+            include: {
+              client: true
+            }
           }
         }
-      }
-    })
+      })
 
-    // Marquer le devis comme converti
-    await prisma.devis.update({
-      where: { id: params.devisId },
-      data: {
-        statut: 'CONVERTI',
-        convertedToCommandeId: commande.id
-      }
-    })
+      // Générer et sauvegarder le PDF dans les documents du chantier
+      try {
+        const html = generateDevisHTML({
+          devis: {
+            numeroDevis: devis.numeroDevis,
+            dateCreation: devis.dateCreation,
+            dateValidite: devis.dateValidite,
+            clientNom: devis.client.nom,
+            clientEmail: devis.client.email || '',
+            clientTelephone: devis.client.telephone || undefined,
+            clientAdresse: devis.client.adresse || undefined,
+            observations: devis.observations || undefined,
+            tauxTVA: Number(devis.tauxTVA),
+            remiseGlobale: Number(devis.remiseGlobale),
+            montantHT: Number(devis.montantHT),
+            montantTVA: Number(devis.montantTVA),
+            montantTTC: Number(devis.montantTTC),
+            lignes: devis.lignes.map((l) => ({
+              id: l.id,
+              ordre: l.ordre,
+              type: l.type,
+              article: l.article,
+              description: l.description,
+              unite: l.unite,
+              quantite: Number(l.quantite) || 0,
+              prixUnitaire: Number(l.prixUnitaire) || 0,
+              remise: Number(l.remise) || 0,
+              total: Number(l.total) || 0
+            }))
+          },
+          entreprise: {
+            name: process.env.COMPANY_NAME || 'Nom de l\'entreprise',
+            address: process.env.COMPANY_ADDRESS || 'Adresse de l\'entreprise',
+            zipCode: process.env.COMPANY_ZIPCODE || 'Code postal',
+            city: process.env.COMPANY_CITY || 'Ville',
+            phone: process.env.COMPANY_PHONE || 'Téléphone',
+            email: process.env.COMPANY_EMAIL || 'email@entreprise.com',
+            siret: process.env.COMPANY_SIRET,
+            tva: process.env.COMPANY_TVA
+          }
+        })
 
-    return NextResponse.json({
-      success: true,
-      commande,
-      message: 'Devis converti en commande avec succès'
-    })
+        const pdfBuffer = await PDFGenerator.generatePDF(html, {
+          format: 'A4',
+          margins: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' }
+        })
+
+        // Sauvegarder le PDF dans les documents du chantier
+        const pdfUrl = `/api/documents/devis-${devisId}.pdf`
+        
+        await prisma.document.create({
+          data: {
+            nom: `Devis ${devis.numeroDevis}${devis.reference ? ` - ${devis.reference}` : ''}.pdf`,
+            type: 'PDF',
+            url: pdfUrl,
+            taille: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            chantierId,
+            createdBy: session.user.id,
+            updatedAt: new Date()
+          }
+        })
+      } catch (pdfError) {
+        console.error('Erreur lors de la génération du PDF:', pdfError)
+        // On ne bloque pas la conversion si le PDF échoue
+      }
+
+      // Marquer le devis comme converti
+      await prisma.devis.update({
+        where: { id: devisId },
+        data: {
+          statut: 'CONVERTI',
+          convertedToCommandeId: commande.id
+        }
+      })
+
+      return NextResponse.json({
+        success: true,
+        type: 'DEVIS',
+        commande,
+        message: 'Devis converti en commande avec succès'
+      })
+    } 
+    
+    // ========================================
+    // CAS 2 : AVENANT → Ligne dans état d'avancement
+    // ========================================
+    else if (devis.typeDevis === 'AVENANT') {
+      if (!devis.chantierId) {
+        return NextResponse.json(
+          { error: 'Aucun chantier associé à cet avenant' },
+          { status: 400 }
+        )
+      }
+
+      console.log('🔍 Recherche du chantier avec chantierId (identifiant métier):', devis.chantierId)
+
+      const chantier = await prisma.chantier.findUnique({
+        where: { chantierId: devis.chantierId }
+      })
+
+      console.log('🏗️ Chantier trouvé:', chantier ? `${chantier.id} (${chantier.chantierId}) - ${chantier.nomChantier}` : 'AUCUN')
+
+      if (!chantier) {
+        return NextResponse.json(
+          { error: `Chantier introuvable avec l'id métier: ${devis.chantierId}` },
+          { status: 404 }
+        )
+      }
+
+      // Chercher un état d'avancement non finalisé (brouillon)
+      // IMPORTANT: EtatAvancement.chantierId référence Chantier.id (clé primaire)
+      let etatAvancement = await prisma.etatAvancement.findFirst({
+        where: {
+          chantierId: chantier.id, // ← Utiliser chantier.id, pas devis.chantierId
+          estFinalise: false
+        },
+        include: {
+          avenants: true
+        }
+      })
+
+      console.log('📋 État d\'avancement trouvé:', etatAvancement ? `#${etatAvancement.numero}` : 'AUCUN')
+
+      // Si aucun état d'avancement brouillon, en créer un
+      if (!etatAvancement) {
+        const year = new Date().getFullYear()
+        const month = (new Date().getMonth() + 1).toString().padStart(2, '0')
+        
+        // Compter les états existants
+        const existingEtatsCount = await prisma.etatAvancement.count({
+          where: { chantierId: chantier.id }
+        })
+
+        const lastEtat = await prisma.etatAvancement.findFirst({
+          where: { chantierId: chantier.id },
+          orderBy: { numero: 'desc' },
+          include: {
+            lignes: {
+              orderBy: {
+                ligneCommandeId: 'asc'
+              }
+            }
+          }
+        })
+
+        const nextNumero = lastEtat ? lastEtat.numero + 1 : 1
+
+        etatAvancement = await prisma.etatAvancement.create({
+          data: {
+            chantierId: chantier.id,
+            numero: nextNumero,
+            mois: `${year}-${month}`,
+            date: new Date(),
+            estFinalise: false,
+            commentaires: 'État d\'avancement créé automatiquement pour avenant',
+            createdBy: session.user.id
+          },
+          include: {
+            avenants: true,
+            lignes: true
+          }
+        })
+
+        console.log('✨ Nouvel état d\'avancement créé:', etatAvancement.numero)
+
+        // Si c'est le premier état, charger les lignes de la commande
+        if (existingEtatsCount === 0) {
+          console.log('📦 Premier état, chargement de la commande de base...')
+          const commande = await prisma.commande.findFirst({
+            where: {
+              chantierId: chantier.id,
+              statut: 'VALIDEE'
+            },
+            include: {
+              lignes: true
+            }
+          })
+
+          if (commande && commande.lignes.length > 0) {
+            console.log(`📝 Création de ${commande.lignes.length} lignes à partir de la commande...`)
+            await Promise.all(commande.lignes.map(ligne =>
+              prisma.ligneEtatAvancement.create({
+                data: {
+                  etatAvancementId: etatAvancement.id,
+                  ligneCommandeId: ligne.id,
+                  article: ligne.article,
+                  description: ligne.description,
+                  type: ligne.type,
+                  unite: ligne.unite,
+                  prixUnitaire: Number(ligne.prixUnitaire) || 0,
+                  quantite: Number(ligne.quantite) || 0,
+                  quantitePrecedente: 0,
+                  quantiteActuelle: 0,
+                  quantiteTotale: 0,
+                  montantPrecedent: 0,
+                  montantActuel: 0,
+                  montantTotal: 0
+                }
+              })
+            ))
+            console.log('✅ Lignes de commande créées avec succès')
+          } else {
+            console.log('⚠️ Aucune commande validée ou commande sans lignes')
+          }
+        } else if (lastEtat && lastEtat.lignes.length > 0) {
+          // Si ce n'est pas le premier état, copier les lignes du dernier état
+          console.log(`📋 Copie de ${lastEtat.lignes.length} lignes du dernier état...`)
+          await Promise.all(lastEtat.lignes.map(ligne =>
+            prisma.ligneEtatAvancement.create({
+              data: {
+                etatAvancementId: etatAvancement.id,
+                ligneCommandeId: ligne.ligneCommandeId,
+                article: ligne.article,
+                description: ligne.description,
+                type: ligne.type,
+                unite: ligne.unite,
+                prixUnitaire: ligne.prixUnitaire,
+                quantite: ligne.quantite,
+                quantitePrecedente: ligne.quantiteTotale,
+                quantiteActuelle: 0,
+                quantiteTotale: ligne.quantiteTotale,
+                montantPrecedent: ligne.montantTotal,
+                montantActuel: 0,
+                montantTotal: ligne.montantTotal
+              }
+            })
+          ))
+          console.log('✅ Lignes copiées avec succès')
+        }
+      }
+
+      // Calculer les montants
+      const montantHT = Number(devis.montantHT)
+
+      // Créer la description de l'avenant
+      const description = `${devis.numeroDevis}${devis.reference ? ` - ${devis.reference}` : ''}`
+
+      // Ajouter l'avenant à l'état d'avancement
+      await prisma.avenantEtatAvancement.create({
+        data: {
+          etatAvancementId: etatAvancement.id,
+          article: 'AVENANT',
+          description,
+          type: 'AVENANT',
+          unite: 'Forfait',
+          prixUnitaire: montantHT,
+          quantite: 1,
+          quantitePrecedente: 0,
+          quantiteActuelle: 1,
+          quantiteTotale: 1,
+          montantPrecedent: 0,
+          montantActuel: montantHT,
+          montantTotal: montantHT
+        }
+      })
+
+      console.log('💰 Avenant ajouté à l\'état d\'avancement')
+
+      // Recalculer les totaux de l'état d'avancement
+      const allAvenants = await prisma.avenantEtatAvancement.findMany({
+        where: { etatAvancementId: etatAvancement.id }
+      })
+
+      const allLignes = await prisma.ligneEtatAvancement.findMany({
+        where: { etatAvancementId: etatAvancement.id }
+      })
+
+      const totalAvenants = allAvenants.reduce((sum, a) => sum + Number(a.montantActuel || 0), 0)
+      const totalLignes = allLignes.reduce((sum, l) => sum + Number(l.montantActuel || 0), 0)
+
+      console.log('📊 Totaux recalculés - Avenants:', totalAvenants, 'Lignes:', totalLignes)
+
+      // Générer et sauvegarder le PDF dans les documents du chantier
+      try {
+        const html = generateDevisHTML({
+          devis: {
+            numeroDevis: devis.numeroDevis,
+            dateCreation: devis.dateCreation,
+            dateValidite: devis.dateValidite,
+            clientNom: devis.client.nom,
+            clientEmail: devis.client.email || '',
+            clientTelephone: devis.client.telephone || undefined,
+            clientAdresse: devis.client.adresse || undefined,
+            observations: devis.observations || undefined,
+            tauxTVA: Number(devis.tauxTVA),
+            remiseGlobale: Number(devis.remiseGlobale),
+            montantHT: Number(devis.montantHT),
+            montantTVA: Number(devis.montantTVA),
+            montantTTC: Number(devis.montantTTC),
+            lignes: devis.lignes.map((l) => ({
+              id: l.id,
+              ordre: l.ordre,
+              type: l.type,
+              article: l.article,
+              description: l.description,
+              unite: l.unite,
+              quantite: Number(l.quantite) || 0,
+              prixUnitaire: Number(l.prixUnitaire) || 0,
+              remise: Number(l.remise) || 0,
+              total: Number(l.total) || 0
+            }))
+          },
+          entreprise: {
+            name: process.env.COMPANY_NAME || 'Nom de l\'entreprise',
+            address: process.env.COMPANY_ADDRESS || 'Adresse de l\'entreprise',
+            zipCode: process.env.COMPANY_ZIPCODE || 'Code postal',
+            city: process.env.COMPANY_CITY || 'Ville',
+            phone: process.env.COMPANY_PHONE || 'Téléphone',
+            email: process.env.COMPANY_EMAIL || 'email@entreprise.com',
+            siret: process.env.COMPANY_SIRET,
+            tva: process.env.COMPANY_TVA
+          }
+        })
+
+        const pdfBuffer = await PDFGenerator.generatePDF(html, {
+          format: 'A4',
+          margins: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' }
+        })
+
+        // Sauvegarder le PDF dans les documents du chantier
+        const pdfUrl = `/api/documents/avenant-${devisId}.pdf`
+        
+        await prisma.document.create({
+          data: {
+            nom: `Avenant ${devis.numeroDevis}${devis.reference ? ` - ${devis.reference}` : ''}.pdf`,
+            type: 'PDF',
+            url: pdfUrl,
+            taille: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            chantierId: devis.chantierId,
+            createdBy: session.user.id,
+            updatedAt: new Date()
+          }
+        })
+      } catch (pdfError) {
+        console.error('Erreur lors de la génération du PDF:', pdfError)
+        // On ne bloque pas la conversion si le PDF échoue
+      }
+
+      // Marquer l'avenant comme converti
+      await prisma.devis.update({
+        where: { id: devisId },
+        data: {
+          statut: 'CONVERTI',
+          convertedToEtatId: String(etatAvancement.id)
+        }
+      })
+
+      return NextResponse.json({
+        success: true,
+        type: 'AVENANT',
+        etatAvancement: {
+          id: etatAvancement.id,
+          numero: etatAvancement.numero,
+          chantierId: devis.chantierId
+        },
+        message: 'Avenant ajouté à l\'état d\'avancement avec succès'
+      })
+    } else {
+      return NextResponse.json(
+        { error: 'Type de devis invalide' },
+        { status: 400 }
+      )
+    }
   } catch (error) {
-    console.error('Erreur lors de la conversion du devis:', error)
+    console.error('Erreur lors de la conversion:', error)
     return NextResponse.json(
-      { error: 'Erreur lors de la conversion du devis' },
+      { error: 'Erreur lors de la conversion' },
       { status: 500 }
     )
   }
 }
-

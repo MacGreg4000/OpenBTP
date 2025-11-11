@@ -21,6 +21,7 @@ export async function GET(
       where: { id: devisId },
       include: {
         client: true,
+        chantier: true,
         createur: {
           select: {
             id: true,
@@ -88,9 +89,12 @@ export async function PATCH(
 
     const body = await request.json()
     const { 
-      clientId, 
+      typeDevis,
+      reference,
+      clientId,
+      chantierId,
       observations, 
-      conditionsGenerales, 
+      tauxTVA,
       remiseGlobale,
       montantHT,
       montantTVA,
@@ -128,9 +132,12 @@ export async function PATCH(
     const updatedDevis = await prisma.devis.update({
       where: { id: devisId },
       data: {
+        ...(typeDevis && { typeDevis }),
+        ...(reference !== undefined && { reference }),
         ...(clientId && { clientId }),
+        ...(chantierId !== undefined && { chantierId }),
         ...(observations !== undefined && { observations }),
-        ...(conditionsGenerales !== undefined && { conditionsGenerales }),
+        ...(tauxTVA !== undefined && { tauxTVA }),
         ...(remiseGlobale !== undefined && { remiseGlobale }),
         ...(montantHT !== undefined && { montantHT }),
         ...(montantTVA !== undefined && { montantTVA }),
@@ -138,6 +145,7 @@ export async function PATCH(
       },
       include: {
         client: true,
+        chantier: true,
         lignes: {
           orderBy: {
             ordre: 'asc'

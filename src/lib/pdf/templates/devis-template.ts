@@ -8,7 +8,7 @@ export interface DevisData {
     clientTelephone?: string
     clientAdresse?: string
     observations?: string
-    conditionsGenerales?: string
+    tauxTVA: number
     remiseGlobale: number
     montantHT: number
     montantTVA: number
@@ -521,7 +521,7 @@ export function generateDevisHTML(data: DevisData): string {
                 <span class="value">${devis.montantHT.toFixed(2)} €</span>
             </div>
             <div class="totaux-row">
-                <span class="label">TVA (20%)</span>
+                <span class="label">TVA (${devis.tauxTVA}%)</span>
                 <span class="value">${devis.montantTVA.toFixed(2)} €</span>
             </div>
             <div class="totaux-row total">
@@ -542,13 +542,8 @@ export function generateDevisHTML(data: DevisData): string {
             ${entreprise.tva ? ` - TVA: ${entreprise.tva}` : ''}
         </div>
         
-        <!-- Conditions générales (nouvelle page) -->
-        ${devis.conditionsGenerales ? `
-        <div class="conditions">
-            <div class="conditions-title">CONDITIONS GÉNÉRALES DE VENTE</div>
-            <div class="conditions-content">${devis.conditionsGenerales}</div>
-        </div>
-        ` : ''}
+        <!-- Note : Les conditions générales doivent être ajoutées via le système de templates de contrats -->
+        <!-- TODO: Intégrer le template CGV depuis /admin/templates-contrats -->
     </div>
 </body>
 </html>

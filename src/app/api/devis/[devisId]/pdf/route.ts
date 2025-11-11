@@ -80,7 +80,7 @@ export async function GET(
         clientTelephone: devis.client.telephone || undefined,
         clientAdresse: devis.client.adresse || undefined,
         observations: devis.observations || undefined,
-        conditionsGenerales: devis.conditionsGenerales || undefined,
+        tauxTVA: Number(devis.tauxTVA),
         remiseGlobale: Number(devis.remiseGlobale),
         montantHT: Number(devis.montantHT),
         montantTVA: Number(devis.montantTVA),

@@ -542,6 +542,7 @@ model Chantier {
   metresChantier       MetreChantier[]
   etatsAvancement      EtatAvancement[]
   receptionsChantier   ReceptionChantier[]
+  devis                Devis[]            // Devis et avenants liés au chantier
   // Planning ressources
   tasks                Task[]
   
@@ -1944,31 +1945,38 @@ model FeatureModule {
 }
 
 // Système de devis
-model Devis {
-  id                    String      @id @default(uuid())
-  numeroDevis           String      @unique // Format: DEV-YYYY-XXXX
-  clientId              String
-  dateCreation          DateTime    @default(now())
-  dateValidite          DateTime    // dateCreation + 30 jours par défaut
-  statut                StatutDevis @default(BROUILLON)
-  observations          String?     @db.Text
-  conditionsGenerales   String?     @db.Text
-  remiseGlobale         Decimal     @default(0) @db.Decimal(5, 2) // Pourcentage
-  montantHT             Decimal     @default(0) @db.Decimal(10, 2)
-  montantTVA            Decimal     @default(0) @db.Decimal(10, 2)
-  montantTTC            Decimal     @default(0) @db.Decimal(10, 2)
-  createdBy             String
-  convertedToCommandeId String?     @unique // Si converti en commande
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  model Devis {
+    id                    String      @id @default(uuid())
+    numeroDevis           String      @unique // Format: DEV-YYYY-XXXX
+    typeDevis             TypeDevis   @default(DEVIS) // DEVIS ou AVENANT
+    reference             String?     // Référence libre pour identifier le devis/avenant
+    clientId              String
+    chantierId            String?     // Pour les avenants uniquement
+    dateCreation          DateTime    @default(now())
+    dateValidite          DateTime    // dateCreation + 30 jours par défaut
+    statut                StatutDevis @default(BROUILLON)
+    observations          String?     @db.Text
+    tauxTVA               Decimal     @default(21) @db.Decimal(5, 2) // 0%, 6%, ou 21%
+    remiseGlobale         Decimal     @default(0) @db.Decimal(5, 2) // Pourcentage
+    montantHT             Decimal     @default(0) @db.Decimal(10, 2)
+    montantTVA            Decimal     @default(0) @db.Decimal(10, 2)
+    montantTTC            Decimal     @default(0) @db.Decimal(10, 2)
+    createdBy             String
+    convertedToCommandeId Int?        @unique // Si converti en commande (pour DEVIS ou AVENANT)
+    convertedToEtatId     String?     // Deprecated - utilisé uniquement pour historique
+    createdAt             DateTime    @default(now())
+    updatedAt             DateTime    @updatedAt
   
   // Relations
   client                Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  chantier              Chantier?   @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
   createur              User        @relation(fields: [createdBy], references: [id])
   lignes                LigneDevis[]
   
   @@index([clientId])
+  @@index([chantierId])
   @@index([statut])
+  @@index([typeDevis])
   @@index([dateCreation])
   @@index([createdBy])
   @@map("devis")
@@ -1995,6 +2003,11 @@ model LigneDevis {
   @@index([devisId])
   @@index([ordre])
   @@map("ligne_devis")
+}
+
+enum TypeDevis {
+  DEVIS
+  AVENANT
 }
 
 enum StatutDevis {

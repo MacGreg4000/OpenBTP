@@ -37,6 +37,12 @@ export async function GET(request: NextRequest) {
             telephone: true
           }
         },
+        chantier: {
+          select: {
+            chantierId: true,
+            nomChantier: true
+          }
+        },
         createur: {
           select: {
             id: true,
@@ -75,11 +81,31 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { clientId, observations, conditionsGenerales, lignes = [] } = body
+    const { 
+      typeDevis = 'DEVIS',
+      reference,
+      clientId, 
+      chantierId,
+      observations, 
+      tauxTVA = 21, 
+      remiseGlobale = 0, 
+      montantHT = 0, 
+      montantTVA = 0, 
+      montantTTC = 0, 
+      lignes = [] 
+    } = body
 
     if (!clientId) {
       return NextResponse.json(
         { error: 'Le client est obligatoire' },
+        { status: 400 }
+      )
+    }
+
+    // Validation selon le type
+    if (typeDevis === 'AVENANT' && !chantierId) {
+      return NextResponse.json(
+        { error: 'Le chantier est obligatoire pour un avenant' },
         { status: 400 }
       )
     }
@@ -113,10 +139,17 @@ export async function POST(request: NextRequest) {
     const devis = await prisma.devis.create({
       data: {
         numeroDevis,
+        typeDevis,
+        reference: reference || null,
         clientId,
+        chantierId: chantierId || null,
         dateValidite,
         observations,
-        conditionsGenerales,
+        tauxTVA,
+        remiseGlobale,
+        montantHT,
+        montantTVA,
+        montantTTC,
         createdBy: session.user.id,
         lignes: {
           create: lignes.map((ligne: any, index: number) => ({
@@ -136,6 +169,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         client: true,
+        chantier: true,
         lignes: {
           orderBy: {
             ordre: 'asc'
