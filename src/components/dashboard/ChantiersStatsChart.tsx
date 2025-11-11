@@ -1,443 +1,280 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Doughnut, Bar, Line } from 'react-chartjs-2'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Line } from 'react-chartjs-2'
 import type { ChartData, ChartOptions, TooltipItem } from 'chart.js'
-//
-import { 
-  Chart as ChartJS, 
-  ArcElement, 
-  Tooltip, 
-  Legend, 
+import {
+  Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
-  LineElement,
   PointElement,
-  Title
+  LineElement,
+  Tooltip,
+  Legend,
+  Filler
 } from 'chart.js'
-import { EyeIcon, ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline'
 
-// Enregistrement des composants Chart.js nécessaires
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
-interface ChantiersByCategoryProps {
-  data: {
-    enPreparation: number;
-    enCours: number;
-    termines: number;
-  } | null;
-  loading?: boolean;
+interface EvolutionResponse {
+  labels: string[]
+  datasets: Array<{
+    label: string
+    data: number[]
+  }>
 }
 
-export default function ChantiersStatsChart({ 
-  data, 
-  loading = false 
-}: ChantiersByCategoryProps) {
-  const [chartData, setChartData] = useState<
-    ChartData<'doughnut', number[], string> | ChartData<'bar', number[], string> | ChartData<'line', number[], string> | null
-  >(null)
-  const [viewMode, setViewMode] = useState<'doughnut' | 'bar' | 'line'>('doughnut')
-  const [animationDuration, setAnimationDuration] = useState(1000)
-  const [selectedSegment, setSelectedSegment] = useState<string | null>(null)
+const formatCurrency = (value: number = 0) =>
+  new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0
+  }).format(Math.round(value))
+
+export default function ChantiersStatsChart() {
+  const [chartData, setChartData] = useState<ChartData<'line'>>()
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+  const [totals, setTotals] = useState<{ total: number; lastMonth: number; trend: number }>({
+    total: 0,
+    lastMonth: 0,
+    trend: 0
+  })
+
+  const fetchEvolution = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch('/api/dashboard/evolution', { cache: 'no-store' })
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des données')
+      }
+
+      const data: EvolutionResponse = await response.json()
+      if (!Array.isArray(data.labels) || data.labels.length === 0) {
+        throw new Error('Aucune donnée disponible')
+      }
+
+      const datasetCA =
+        data.datasets?.find((dataset) =>
+          dataset.label?.toLowerCase().includes("chiffre d'affaires")
+        ) || data.datasets?.[0]
+
+      if (!datasetCA) {
+        throw new Error('Aucune donnée de montant disponible')
+      }
+
+      const amounts = (datasetCA.data || []).map((value) => {
+        const numeric = Number(value ?? 0)
+        return Number.isFinite(numeric) ? numeric : 0
+      })
+
+      const labels = data.labels
+      setChartData({
+        labels,
+        datasets: [
+          {
+            label: "Montants validés",
+            data: amounts,
+            borderColor: 'rgba(249, 115, 22, 1)',
+            backgroundColor: 'rgba(249, 115, 22, 0.15)',
+            pointBackgroundColor: 'rgba(249, 115, 22, 1)',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            tension: 0.35,
+            fill: true,
+            borderWidth: 3
+          }
+        ]
+      })
+
+      const total = amounts.reduce((sum, value) => sum + value, 0)
+      const lastMonth = amounts[amounts.length - 1] ?? 0
+      const previousMonth = amounts.length > 1 ? amounts[amounts.length - 2] : 0
+
+      let trend = 0
+      if (previousMonth === 0) {
+        trend = lastMonth > 0 ? 100 : 0
+      } else {
+        trend = ((lastMonth - previousMonth) / Math.abs(previousMonth)) * 100
+      }
+
+      setTotals({
+        total,
+        lastMonth,
+        trend: Number.isFinite(trend) ? trend : 0
+      })
+    } catch (err) {
+      console.error("Erreur de chargement du graphique évolution EA:", err)
+      setError("Impossible de charger les données d'évolution")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    if (data) {
-      const colors = {
-        enPreparation: {
-          bg: 'rgba(251, 191, 36, 0.8)', // Yellow
-          border: 'rgba(251, 191, 36, 1)',
-          hover: 'rgba(251, 191, 36, 0.9)'
-        },
-        enCours: {
-          bg: 'rgba(59, 130, 246, 0.8)', // Blue
-          border: 'rgba(59, 130, 246, 1)',
-          hover: 'rgba(59, 130, 246, 0.9)'
-        },
-        termines: {
-          bg: 'rgba(34, 197, 94, 0.8)', // Green
-          border: 'rgba(34, 197, 94, 1)',
-          hover: 'rgba(34, 197, 94, 0.9)'
-        }
-      }
+    fetchEvolution()
+  }, [fetchEvolution])
 
-      // Génération de données temporelles sur 6 mois
-      const now = new Date()
-      const months = []
-      const evolutionData = []
-      
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        months.push(date.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }))
-        
-        // Simulation d'évolution temporelle basée sur les données actuelles
-        const factor = 0.7 + (Math.random() * 0.6) // Entre 70% et 130% des données actuelles
-        const totalActuel = data.enPreparation + data.enCours + data.termines
-        evolutionData.push(Math.round(totalActuel * factor))
-      }
-
-      const commonLabels = viewMode === 'line' ? months : ['En préparation', 'En cours', 'Terminés']
-      const datasetsForView: (
-        | ChartData<'line', number[], string>['datasets']
-        | ChartData<'doughnut', number[], string>['datasets']
-        | ChartData<'bar', number[], string>['datasets']
-      ) = (viewMode === 'line'
-        ? [
-            {
-              label: 'Évolution des chantiers',
-              data: evolutionData,
-              borderColor: 'rgba(59, 130, 246, 1)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              borderWidth: 3,
-              fill: true,
-              tension: 0.4,
-              pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-              pointBorderColor: '#ffffff',
-              pointBorderWidth: 2,
-              pointRadius: 6,
-              pointHoverRadius: 8,
-            },
-          ]
-        : [
-            {
-              data: [data.enPreparation, data.enCours, data.termines],
-              backgroundColor: [
-                colors.enPreparation.bg,
-                colors.enCours.bg,
-                colors.termines.bg,
-              ],
-              borderColor: [
-                colors.enPreparation.border,
-                colors.enCours.border,
-                colors.termines.border,
-              ],
-              hoverBackgroundColor: [
-                colors.enPreparation.hover,
-                colors.enCours.hover,
-                colors.termines.hover,
-              ],
-              borderWidth: 2,
-              hoverBorderWidth: 3,
-            },
-          ]) as ChartData<'line', number[], string>['datasets']
-
-      setChartData({
-        labels: commonLabels,
-        datasets: datasetsForView,
-      })
-    }
-  }, [data, viewMode])
-
-  const doughnutOptions: ChartOptions<'doughnut'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          boxWidth: 15,
-          padding: 15,
-          font: {
-            size: 12
-          },
-          usePointStyle: true,
-          pointStyle: 'circle' as const
-        }
+  const lineOptions = useMemo<ChartOptions<'line'>>(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index'
       },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 1,
-        cornerRadius: 8,
-        displayColors: true,
-        callbacks: {
-          label: (ctx: TooltipItem<'doughnut'>) => {
-            const label = ctx.label ?? ''
-            const raw = ctx.raw as number | undefined
-            const value = raw ?? 0
-            const dataArr = (ctx.dataset?.data as number[]) || []
-            const total = dataArr.reduce((a, b) => a + b, 0)
-            const percentage = total > 0 ? Math.round((value / total) * 100) : 0
-            return [`${label}: ${value} chantiers`, `${percentage}% du total`]
-          }
-        }
-      }
-    },
-    cutout: '60%',
-    animation: {
-      animateRotate: true,
-      animateScale: true,
-      duration: animationDuration
-    },
-    interaction: {
-      intersect: false,
-      mode: 'nearest' as const
-    }
-  }
-
-  const barOptions: ChartOptions<'bar'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 1,
-        cornerRadius: 8,
-        callbacks: {
-          label: (ctx: TooltipItem<'bar'>) => {
-            const value = (ctx.raw as number) || 0
-            return `${value} chantiers`
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-          color: 'rgba(156, 163, 175, 0.8)'
-        },
-        grid: {
-          color: 'rgba(156, 163, 175, 0.2)'
-        }
-      },
-      x: {
-        ticks: {
-          color: 'rgba(156, 163, 175, 0.8)'
-        },
-        grid: {
+      plugins: {
+        legend: {
           display: false
-        }
-      }
-    },
-    animation: {
-      duration: animationDuration
-    }
-  }
-
-  const lineOptions: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top' as const,
-        labels: {
-          boxWidth: 12,
-          padding: 15,
-          font: {
-            size: 12
-          },
-          usePointStyle: true,
-          pointStyle: 'circle' as const
+        },
+        tooltip: {
+          backgroundColor: 'rgba(17, 24, 39, 0.9)',
+          borderColor: 'rgba(249, 115, 22, 0.4)',
+          borderWidth: 1,
+          cornerRadius: 10,
+          padding: 12,
+          callbacks: {
+            title: (items) => items[0]?.label ?? '',
+            label: (ctx: TooltipItem<'line'>) => {
+              const value = Number(ctx.raw ?? 0)
+              return `${ctx.dataset.label}: ${formatCurrency(value)}`
+            }
+          }
         }
       },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(59, 130, 246, 0.8)',
-        borderWidth: 1,
-        cornerRadius: 8,
-        displayColors: true,
-        callbacks: {
-          label: (ctx: TooltipItem<'line'>) => {
-            const value = (ctx.raw as number) || 0
-            return `${value} chantiers`
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(148, 163, 184, 0.15)'
+          },
+          ticks: {
+            color: 'rgba(100, 116, 139, 0.75)',
+            font: {
+              size: 11
+            },
+            callback: (value) => {
+              const numeric = typeof value === 'string' ? parseFloat(value) : (value as number)
+              return formatCurrency(numeric)
+            }
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: 'rgba(100, 116, 139, 0.75)',
+            font: {
+              size: 11
+            }
           }
         }
       }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-          color: 'rgba(156, 163, 175, 0.8)'
-        },
-        grid: {
-          color: 'rgba(156, 163, 175, 0.2)'
-        }
-      },
-      x: {
-        ticks: {
-          color: 'rgba(156, 163, 175, 0.8)'
-        },
-        grid: {
-          color: 'rgba(156, 163, 175, 0.1)'
-        }
-      }
-    },
-    animation: {
-      duration: animationDuration
-    },
-    interaction: {
-      intersect: false,
-      mode: 'index' as const
-    }
-  }
+    }),
+    []
+  )
 
-  const total = data ? data.enPreparation + data.enCours + data.termines : 0
+  const trendText =
+    totals.trend > 0
+      ? `+${totals.trend.toFixed(1)}%`
+      : totals.trend < 0
+      ? `${totals.trend.toFixed(1)}%`
+      : '0%'
 
-  const getSegmentDetails = () => {
-    if (!selectedSegment || !data) return null
-
-    const details = {
-      'En préparation': {
-        count: data.enPreparation,
-        description: 'Chantiers en phase de préparation',
-        icon: '🏗️'
-      },
-      'En cours': {
-        count: data.enCours,
-        description: 'Chantiers actuellement en cours',
-        icon: '⚡'
-      },
-      'Terminés': {
-        count: data.termines,
-        description: 'Chantiers terminés avec succès',
-        icon: '✅'
-      }
-    }
-
-    return details[selectedSegment as keyof typeof details]
-  }
-
-  const segmentDetails = getSegmentDetails()
+  const trendColor =
+    totals.trend > 0
+      ? 'text-emerald-500'
+      : totals.trend < 0
+      ? 'text-rose-500'
+      : 'text-gray-500'
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden h-full flex flex-col">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Répartition des chantiers
-          </h3>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => {
-                setViewMode('doughnut')
-                setAnimationDuration(800)
-                setTimeout(() => setAnimationDuration(1000), 100)
-              }}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'doughnut'
-                  ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              title="Vue circulaire"
-            >
-              <EyeIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => {
-                setViewMode('bar')
-                setAnimationDuration(800)
-                setTimeout(() => setAnimationDuration(1000), 100)
-              }}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'bar'
-                  ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              title="Vue en barres"
-            >
-              <ChartBarIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => {
-                setViewMode('line')
-                setAnimationDuration(800)
-                setTimeout(() => setAnimationDuration(1000), 100)
-              }}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'line'
-                  ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              title="Évolution temporelle"
-            >
-              <ArrowTrendingUpIcon className="h-4 w-4" />
-            </button>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200/60 dark:border-gray-700/60 h-full flex flex-col overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200/70 dark:border-gray-700/70 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <ChartBarIcon className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">
+              Évolution des états d'avancement
+            </h3>
+          </div>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-medium">
+            Montants validés sur les 12 derniers mois
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={fetchEvolution}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-500/10 to-amber-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 hover:from-orange-500/20 hover:to-amber-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Actualiser
+        </button>
+      </div>
+
+      <div className="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-gray-100 dark:border-gray-700/60 text-sm">
+        <div className="bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/20 rounded-xl px-4 py-3">
+          <div className="text-xs font-semibold text-orange-600 dark:text-orange-300 uppercase tracking-wide flex items-center gap-2">
+            <ArrowTrendingUpIcon className="h-4 w-4" />
+            Total 12 mois
+          </div>
+          <div className="text-lg font-black text-gray-900 dark:text-white mt-2">
+            {formatCurrency(totals.total)}
           </div>
         </div>
-        
-        {/* Statistiques rapides */}
-        <div className="mt-3 flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-medium">Total: {total}</span>
-          {total > 0 && (
-            <>
-              <span>•</span>
-              <span>Actifs: {data ? data.enPreparation + data.enCours : 0}</span>
-            </>
-          )}
+        <div className="bg-slate-100/80 dark:bg-slate-700/40 border border-slate-200/50 dark:border-slate-600/60 rounded-xl px-4 py-3">
+          <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+            Dernier mois
+          </div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+            {formatCurrency(totals.lastMonth)}
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
+          <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+            Variation mensuelle
+          </div>
+          <div className={`text-lg font-bold mt-2 ${trendColor}`}>{trendText}</div>
         </div>
       </div>
-      
-      <div className="p-4 flex-grow flex flex-col">
-        <div className="flex-grow flex items-center justify-center" style={{ minHeight: '150px' }}>
+
+      <div className="flex-1 px-4 py-6">
+        <div className="h-full">
           {loading ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-24 h-24 rounded-full border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 animate-spin"></div>
+            <div className="h-full flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full border-4 border-orange-200/80 dark:border-orange-500/30 border-t-orange-500 animate-spin"></div>
             </div>
-          ) : !chartData || total === 0 ? (
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              <ChartBarIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Aucun chantier à afficher</p>
+          ) : error ? (
+            <div className="h-full flex flex-col items-center justify-center text-center text-sm text-gray-500 dark:text-gray-400 gap-2">
+              <ChartBarIcon className="h-12 w-12 text-gray-400 dark:text-gray-600" />
+              <p>{error}</p>
+              <button
+                onClick={fetchEvolution}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md hover:shadow-lg transition-all"
+              >
+                <ArrowPathIcon className="h-4 w-4" />
+                Réessayer
+              </button>
             </div>
+          ) : chartData ? (
+            <Line data={chartData} options={lineOptions} />
           ) : (
-            <>
-              {viewMode === 'doughnut' ? (
-                <Doughnut data={chartData as ChartData<'doughnut', number[], string>} options={doughnutOptions} />
-              ) : viewMode === 'bar' ? (
-                <Bar data={chartData as ChartData<'bar', number[], string>} options={barOptions} />
-              ) : (
-                <Line data={chartData as ChartData<'line', number[], string>} options={lineOptions} />
-              )}
-            </>
+            <div className="h-full flex flex-col items-center justify-center text-center text-sm text-gray-500 dark:text-gray-400 gap-2">
+              <ChartBarIcon className="h-12 w-12 text-gray-400 dark:text-gray-600" />
+              <p>Aucune donnée disponible pour le moment</p>
+            </div>
           )}
         </div>
-
-        {/* Détails du segment sélectionné */}
-        {selectedSegment && segmentDetails && (
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">{segmentDetails.icon}</span>
-              <div>
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">
-                  {selectedSegment}: {segmentDetails.count}
-                </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  {segmentDetails.description}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setSelectedSegment(null)}
-              className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Fermer les détails
-            </button>
-          </div>
-        )}
-
-        {/* Instructions d'interaction */}
-        {viewMode === 'doughnut' && total > 0 && !selectedSegment && (
-          <div className="mt-3 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              💡 Cliquez sur un segment pour plus de détails
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )
-} 
+}

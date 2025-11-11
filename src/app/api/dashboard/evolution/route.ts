@@ -52,11 +52,14 @@ export async function GET() {
           
           // Calculer le montant total des états d'avancement
           const montantTotal = etatsAvancement.reduce((total, etat) => {
-            const montantEtat = etat.lignes.reduce((sum, ligne) => sum + ligne.montantActuel, 0)
+            const montantEtat = etat.lignes.reduce((sum, ligne) => {
+              const valeur = Number((ligne as { montantActuel?: number | null }).montantActuel ?? 0)
+              return sum + (isNaN(valeur) ? 0 : valeur)
+            }, 0)
             return total + montantEtat
           }, 0)
           
-          return montantTotal
+          return isNaN(montantTotal) ? 0 : montantTotal
         } catch (error) {
           console.error(`Erreur lors de la récupération des données pour ${mois.label}:`, error)
           return 0
@@ -80,7 +83,8 @@ export async function GET() {
             }
           })
           
-          return depensesMois._sum.montant || 0
+          const montant = Number(depensesMois._sum.montant ?? 0)
+          return isNaN(montant) ? 0 : montant
         } catch (error) {
           console.error(`Erreur lors de la récupération des dépenses pour ${mois.label}:`, error)
           return 0

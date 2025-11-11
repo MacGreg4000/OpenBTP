@@ -245,7 +245,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { kpis, chantiersByCategory, loading } = dashboardData
+  const { kpis } = dashboardData
 
   // Calculs des statistiques pour le planning
   // removed unused planningStats
@@ -652,7 +652,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h2 id="charts-title" className="text-xl font-black text-gray-900 dark:text-white">
-                      Graphiques & Statistiques
+                      Statistiques des états d'avancements
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Analyse visuelle de vos activités</p>
                   </div>
@@ -685,7 +685,7 @@ export default function DashboardPage() {
               {isGraphiquesOpen && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="dashboard-graphiques">
                 <div className="h-[28rem]">
-                  <ChantiersStatsChart data={chantiersByCategory} loading={loading} />
+                  <ChantiersStatsChart />
                 </div>
                 <div className="h-[28rem]">
                   <RecentEtatsList />
