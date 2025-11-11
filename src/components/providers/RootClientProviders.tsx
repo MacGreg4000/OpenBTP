@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { Toaster } from 'react-hot-toast'
 import AuthProvider from './AuthProvider'
 import ChatSystemProvider from './ChatProvider'
+import { FeaturesProvider } from '@/hooks/useFeatures'
 
 export default function RootClientProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/'
@@ -21,9 +22,11 @@ export default function RootClientProviders({ children }: { children: React.Reac
 
   return (
     <AuthProvider>
-      {children}
-      <ChatSystemProvider />
-      <Toaster position="top-right" />
+      <FeaturesProvider>
+        {children}
+        <ChatSystemProvider />
+        <Toaster position="top-right" />
+      </FeaturesProvider>
     </AuthProvider>
   )
 }

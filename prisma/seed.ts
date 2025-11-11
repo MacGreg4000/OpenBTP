@@ -217,14 +217,24 @@ async function seedFeatureModules() {
       ordre: 40
     },
     {
-      code: 'chat',
-      name: 'Assistant IA',
-      description: 'Chatbot intelligent avec RAG',
-      category: 'ia',
+      code: 'messagerie',
+      name: 'Messagerie',
+      description: 'Chat et messagerie entre utilisateurs',
+      category: 'communication',
       icon: 'ChatBubbleLeftRightIcon',
       isActive: true,
       isSystem: false,
       ordre: 50
+    },
+    {
+      code: 'chat',
+      name: 'Assistant IA',
+      description: 'Chatbot intelligent avec RAG',
+      category: 'ia',
+      icon: 'SparklesIcon',
+      isActive: true,
+      isSystem: false,
+      ordre: 51
     },
     {
       code: 'notifications',
@@ -234,7 +244,7 @@ async function seedFeatureModules() {
       icon: 'BellIcon',
       isActive: true,
       isSystem: false,
-      ordre: 51
+      ordre: 52
     }
   ]
 

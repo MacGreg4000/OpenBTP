@@ -11,6 +11,7 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import * as HeroIcons from '@heroicons/react/24/outline'
+import { useFeatures } from '@/hooks/useFeatures'
 
 interface FeatureModule {
   id: string
@@ -31,6 +32,7 @@ const categoryLabels: Record<string, string> = {
   logistique: 'Logistique',
   organisation: 'Organisation',
   administratif: 'Administratif',
+  communication: 'Communication',
   ia: 'Intelligence Artificielle',
   general: 'Général'
 }
@@ -41,6 +43,7 @@ const categoryColors: Record<string, string> = {
   logistique: 'from-orange-500 to-amber-600',
   organisation: 'from-purple-500 to-pink-600',
   administratif: 'from-gray-500 to-slate-600',
+  communication: 'from-violet-500 to-purple-600',
   ia: 'from-cyan-500 to-teal-600',
   general: 'from-indigo-500 to-blue-600'
 }
@@ -48,6 +51,7 @@ const categoryColors: Record<string, string> = {
 export default function ModulesAdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { refresh: refreshGlobalModules } = useFeatures()
   const [modules, setModules] = useState<FeatureModule[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -115,6 +119,9 @@ export default function ModulesAdminPage() {
       setModules(prev => prev.map(m => 
         m.code === code ? updatedModule : m
       ))
+      
+      // Rafraîchir les modules globaux pour mettre à jour la navbar
+      await refreshGlobalModules()
       
       setSuccessMessage(`Module ${updatedModule.name} ${updatedModule.isActive ? 'activé' : 'désactivé'}`)
       setTimeout(() => setSuccessMessage(null), 3000)

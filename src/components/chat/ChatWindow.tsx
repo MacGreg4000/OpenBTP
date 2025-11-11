@@ -4,13 +4,30 @@ import ConversationList from '../chat/ConversationList';
 import Conversation from '../chat/Conversation';
 import MessageInput from '../chat/MessageInput';
 import RAGBot from './RAGBot';
+import { useFeatures } from '@/hooks/useFeatures';
 
 const ChatWindow: React.FC = () => {
   const { isOpen, closeChat, activeChat, backToChatList } = useChat();
+  const { isEnabled } = useFeatures();
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [activeTab, setActiveTab] = useState<'chat' | 'rag'>('chat');
+  
+  // Vérifier si les modules sont activés
+  const isMessagerieEnabled = isEnabled('messagerie');
+  const isRagEnabled = isEnabled('chat');
+  
+  // Si le module RAG est désactivé et qu'on est sur l'onglet RAG, revenir au chat
+  // Si le module messagerie est désactivé et qu'on est sur l'onglet chat, aller vers RAG
+  useEffect(() => {
+    if (!isRagEnabled && activeTab === 'rag') {
+      setActiveTab('chat');
+    }
+    if (!isMessagerieEnabled && activeTab === 'chat' && isRagEnabled) {
+      setActiveTab('rag');
+    }
+  }, [isRagEnabled, isMessagerieEnabled, activeTab]);
   
   // Initialiser les dimensions en fonction de l'écran
   useEffect(() => {
@@ -174,36 +191,44 @@ const ChatWindow: React.FC = () => {
 
         {/* Onglets */}
         <div className={`flex ${isMobile ? 'pt-12' : ''}`}>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 px-4 py-4 text-sm font-medium transition-colors ${
-              activeTab === 'chat' 
-                ? 'bg-white/20 text-white' 
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <div className="flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-              </svg>
-              <span className="text-base">Chat</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('rag')}
-            className={`flex-1 px-4 py-4 text-sm font-medium transition-colors ${
-              activeTab === 'rag' 
-                ? 'bg-white/20 text-white' 
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <div className="flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" clipRule="evenodd" />
-              </svg>
-              <span className="text-base">IA Bot</span>
-            </div>
-          </button>
+          {isMessagerieEnabled && (
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`px-4 py-4 text-sm font-medium transition-colors ${
+                (isMessagerieEnabled && isRagEnabled) ? 'flex-1' : 'w-full'
+              } ${
+                activeTab === 'chat' 
+                  ? 'bg-white/20 text-white' 
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                </svg>
+                <span className="text-base">Chat</span>
+              </div>
+            </button>
+          )}
+          {isRagEnabled && (
+            <button
+              onClick={() => setActiveTab('rag')}
+              className={`px-4 py-4 text-sm font-medium transition-colors ${
+                (isMessagerieEnabled && isRagEnabled) ? 'flex-1' : 'w-full'
+              } ${
+                activeTab === 'rag' 
+                  ? 'bg-white/20 text-white' 
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" clipRule="evenodd" />
+                </svg>
+                <span className="text-base">IA Bot</span>
+              </div>
+            </button>
+          )}
         </div>
       </div>
       

@@ -30,10 +30,17 @@ export function useFeaturesProvider() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchModules = async () => {
+  const fetchModules = async (forceRefresh = false) => {
     try {
       setLoading(true)
       setError(null)
+      
+      // Si forceRefresh, vider le cache d'abord
+      if (forceRefresh && typeof window !== 'undefined') {
+        localStorage.removeItem('features_cache')
+        localStorage.removeItem('features_cache_time')
+      }
+      
       const response = await fetch('/api/modules?activeOnly=true', {
         cache: 'no-store'
       })
@@ -54,8 +61,8 @@ export function useFeaturesProvider() {
       console.error('Erreur lors du chargement des modules:', err)
       setError('Impossible de charger les modules')
       
-      // Fallback sur le cache si disponible
-      if (typeof window !== 'undefined') {
+      // Fallback sur le cache si disponible (sauf si forceRefresh)
+      if (!forceRefresh && typeof window !== 'undefined') {
         const cached = localStorage.getItem('features_cache')
         if (cached) {
           setModules(JSON.parse(cached))
@@ -67,7 +74,7 @@ export function useFeaturesProvider() {
   }
 
   const refresh = async () => {
-    await fetchModules()
+    await fetchModules(true) // Force le refresh en vidant le cache
   }
 
   const isEnabled = (code: string): boolean => {
