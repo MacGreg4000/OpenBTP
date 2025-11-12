@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast, { Toaster } from 'react-hot-toast'
 import TemplateVariablesHelp from '@/components/admin/TemplateVariablesHelp'
+import type { TemplateCategory } from '@/lib/templates/template-categories'
 
 interface ContractTemplate {
   id: string
@@ -12,6 +13,7 @@ interface ContractTemplate {
   description: string | null
   htmlContent: string
   isActive: boolean
+  category: TemplateCategory
 }
 
 export default function ModifierTemplatePage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,6 +26,20 @@ export default function ModifierTemplatePage({ params }: { params: Promise<{ id:
   const [htmlContent, setHtmlContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [category, setCategory] = useState<TemplateCategory>('CONTRAT')
+
+  const categories: Array<{ id: TemplateCategory; label: string; description: string }> = [
+    {
+      id: 'CONTRAT',
+      label: 'Contrat',
+      description: 'Modèle utilisé lors de la génération automatique des contrats de sous-traitance.'
+    },
+    {
+      id: 'CGV',
+      label: 'Conditions générales de vente',
+      description: 'Bloc CGV injecté automatiquement dans les PDF de devis et de commandes.'
+    }
+  ]
 
   useEffect(() => {
     if (status === 'loading') return
@@ -51,6 +67,7 @@ export default function ModifierTemplatePage({ params }: { params: Promise<{ id:
         setName(data.name)
         setDescription(data.description || '')
         setHtmlContent(data.htmlContent)
+        setCategory(data.category)
       } else {
         toast.error('Template non trouvé')
         router.push('/admin/templates-contrats')
@@ -81,7 +98,8 @@ export default function ModifierTemplatePage({ params }: { params: Promise<{ id:
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim() || null,
-          htmlContent: htmlContent.trim()
+          htmlContent: htmlContent.trim(),
+          category
         })
       })
 
@@ -134,6 +152,43 @@ export default function ModifierTemplatePage({ params }: { params: Promise<{ id:
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
+            <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Type de template *
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {categories.map((item) => {
+                const isActiveCategory = category === item.id
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setCategory(item.id)}
+                    className={`text-left border rounded-xl p-4 transition-colors ${
+                      isActiveCategory
+                        ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-300 shadow-sm'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-amber-300 hover:bg-amber-50/40 dark:hover:border-amber-400 dark:hover:bg-amber-500/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-amber-600 dark:text-amber-300 uppercase tracking-wide">
+                        {item.label}
+                      </span>
+                      {isActiveCategory && (
+                        <span className="text-[11px] font-medium text-amber-700 dark:text-amber-100">
+                          Sélectionné
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {item.description}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Nom du template *
             </label>
@@ -163,10 +218,16 @@ export default function ModifierTemplatePage({ params }: { params: Promise<{ id:
               Contenu HTML *
             </label>
             
-            {/* Aide sur les variables */}
-            <div className="mb-3">
-              <TemplateVariablesHelp />
-            </div>
+            {category === 'CONTRAT' && (
+              <div className="mb-3">
+                <TemplateVariablesHelp />
+              </div>
+            )}
+            {category === 'CGV' && (
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                Ce contenu sera inséré automatiquement à la fin des devis et commandes PDF. Utilisez du HTML simple (titres, paragraphes, listes).
+              </p>
+            )}
 
             <textarea
               value={htmlContent}

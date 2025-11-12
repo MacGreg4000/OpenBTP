@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline'
 import * as HeroIcons from '@heroicons/react/24/outline'
 import { useFeatures } from '@/hooks/useFeatures'
+import { PageHeader } from '@/components/PageHeader'
 
 interface FeatureModule {
   id: string
@@ -164,52 +165,46 @@ export default function ModulesAdminPage() {
     return null
   }
 
+  const actions = (
+    <button
+      onClick={fetchModules}
+      disabled={loading}
+      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:scale-[1.02] hover:shadow-xl disabled:opacity-50"
+    >
+      <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+      Actualiser
+    </button>
+  )
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Cog6ToothIcon className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-black text-gray-900 dark:text-white">
-                    Gestion des Modules
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Activez ou désactivez les fonctionnalités de l'application
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={fetchModules}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-            >
-              <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Actualiser
-            </button>
-          </div>
+      <PageHeader
+        title="Modules"
+        subtitle="Activez ou désactivez finement les fonctionnalités disponibles dans l'application."
+        icon={Cog6ToothIcon}
+        badgeColor="from-indigo-500 via-indigo-600 to-blue-600"
+        gradientColor="from-indigo-500/12 via-indigo-600/12 to-blue-600/12"
+        actions={actions}
+      />
 
-          {/* Messages */}
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
-              <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
-              <span className="text-sm text-red-800 dark:text-red-200">{error}</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        {error && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+            <div className="flex items-center gap-2">
+              <ExclamationTriangleIcon className="h-5 w-5" />
+              <span>{error}</span>
             </div>
-          )}
-          
-          {successMessage && (
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
-              <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm text-green-800 dark:text-green-200">{successMessage}</span>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-900/40 dark:bg-green-900/20 dark:text-green-200">
+            <div className="flex items-center gap-2">
+              <CheckCircleIcon className="h-5 w-5" />
+              <span>{successMessage}</span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Liste des modules par catégorie */}
         <div className="space-y-8">
@@ -295,8 +290,8 @@ export default function ModulesAdminPage() {
         </div>
 
         {/* Légende */}
-        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
+        <div className="mt-8 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
+          <p className="text-sm text-indigo-800 dark:text-indigo-200">
             <strong>ℹ️ Note :</strong> Les modules marqués "Système" sont essentiels au fonctionnement de l'application et ne peuvent pas être désactivés.
             La désactivation d'un module masquera ses fonctionnalités dans l'interface et bloquera l'accès à ses pages.
           </p>

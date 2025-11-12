@@ -1670,10 +1670,16 @@ model ContractTemplate {
   description String?
   htmlContent String   @db.LongText
   isActive    Boolean  @default(false)
+  category    TemplateCategory @default(CONTRAT)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("contract_templates")
+}
+
+enum TemplateCategory {
+  CONTRAT
+  CGV
 }
 
 // Photos envoyées par les utilisateurs externes (ouvriers et sous-traitants)

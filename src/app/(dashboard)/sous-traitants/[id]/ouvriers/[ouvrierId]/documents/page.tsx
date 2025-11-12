@@ -120,7 +120,7 @@ function UploadModal({ isOpen, onClose, onUpload, isUploading }: UploadModalProp
             <option value="attestation_onss">Attestation ONSS</option>
             <option value="permis_travail">Permis de travail</option>
             <option value="diplome">Diplôme</option>
-            <option value="certificat_medical">Certificat médical</option>
+            <option value="certificat_medical">Attestation Sécurité</option>
             <option value="autre">Autre document</option>
           </SelectField>
 
@@ -277,7 +277,7 @@ export default function DocumentsOuvrierPage(
       attestation_onss: "Attestation ONSS",
       permis_travail: "Permis de travail",
       diplome: "Diplôme",
-      certificat_medical: "Certificat médical",
+      certificat_medical: "Attestation Sécurité",
       autre: "Autre document"
     }
     return types[type] || type

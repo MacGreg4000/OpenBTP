@@ -31,10 +31,11 @@ export interface CommandeData {
   }
   chantierId: string
   logoBase64?: string
+  cgvHtml?: string
 }
 
 export function generateCommandeHTML(data: CommandeData): string {
-  const { commande, entreprise, chantierId, logoBase64 } = data
+  const { commande, entreprise, chantierId, logoBase64, cgvHtml } = data
   
   // Calculer les totaux
   const lignesCalculables = commande.lignes.filter(ligne => ligne.type !== 'TITRE' && ligne.type !== 'SOUS_TITRE')
@@ -392,6 +393,65 @@ export function generateCommandeHTML(data: CommandeData): string {
             border-left-color: #10b981;
         }
         
+        .cgv-section {
+            margin-top: 12px;
+            page-break-before: always;
+            padding-top: 6px;
+        }
+
+        .cgv-section h2 {
+            font-size: 12px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cgv-content {
+            font-size: 10px;
+            line-height: 1.5;
+            color: #1f2937;
+        }
+
+        .cgv-content * {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: inherit !important;
+            padding: 0 !important;
+            margin: 0 0 8px 0 !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+
+        .cgv-content strong {
+            font-weight: 600 !important;
+        }
+
+        .cgv-content em {
+            font-style: italic !important;
+        }
+
+        .cgv-content ul,
+        .cgv-content ol {
+            margin-left: 16px !important;
+        }
+
+        .cgv-content li {
+            margin-bottom: 4px !important;
+        }
+
+        .cgv-content h1,
+        .cgv-content h2,
+        .cgv-content h3,
+        .cgv-content h4,
+        .cgv-content h5,
+        .cgv-content h6 {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            margin-top: 12px !important;
+        }
+        
         /* Pied de page */
         .footer {
             margin-top: 30px;
@@ -568,6 +628,15 @@ export function generateCommandeHTML(data: CommandeData): string {
                 </div>
             </div>
         </div>
+        
+        ${cgvHtml ? `
+        <div class="cgv-section">
+            <h2>Conditions générales de vente</h2>
+            <div class="cgv-content">
+                ${cgvHtml}
+            </div>
+        </div>
+        ` : ''}
         
         <!-- Pied de page -->
         <div class="footer">

@@ -38,10 +38,11 @@ export interface DevisData {
     logo?: string
   }
   logoBase64?: string
+  cgvHtml?: string
 }
 
 export function generateDevisHTML(data: DevisData): string {
-  const { devis, entreprise, logoBase64 } = data
+  const { devis, entreprise, logoBase64, cgvHtml } = data
   
   // Calculer les totaux
   const lignesCalculables = devis.lignes.filter(ligne => ligne.type === 'QP')
@@ -371,25 +372,62 @@ export function generateDevisHTML(data: DevisData): string {
         
         /* Conditions générales */
         .conditions {
-            margin-top: 30px;
+            margin-top: 12px;
             page-break-before: always;
+            padding-top: 6px;
         }
         
         .conditions-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f97316;
+            font-size: 12px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .conditions-content {
-            font-size: 9px;
-            line-height: 1.6;
-            color: #475569;
-            white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #1f2937;
+        }
+
+        .conditions-content * {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: inherit !important;
+            padding: 0 !important;
+            margin: 0 0 8px 0 !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+
+        .conditions-content strong {
+            font-weight: 600 !important;
+        }
+
+        .conditions-content em {
+            font-style: italic !important;
+        }
+
+        .conditions-content ul,
+        .conditions-content ol {
+            margin-left: 16px !important;
+        }
+
+        .conditions-content li {
+            margin-bottom: 4px !important;
+        }
+
+        .conditions-content h1,
+        .conditions-content h2,
+        .conditions-content h3,
+        .conditions-content h4,
+        .conditions-content h5,
+        .conditions-content h6 {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            margin-top: 12px !important;
         }
         
         /* Pied de page */
@@ -542,8 +580,14 @@ export function generateDevisHTML(data: DevisData): string {
             ${entreprise.tva ? ` - TVA: ${entreprise.tva}` : ''}
         </div>
         
-        <!-- Note : Les conditions générales doivent être ajoutées via le système de templates de contrats -->
-        <!-- TODO: Intégrer le template CGV depuis /admin/templates-contrats -->
+        ${cgvHtml ? `
+        <div class="conditions">
+            <h2 class="conditions-title">Conditions générales de vente</h2>
+            <div class="conditions-content">
+                ${cgvHtml}
+            </div>
+        </div>
+        ` : ''}
     </div>
 </body>
 </html>

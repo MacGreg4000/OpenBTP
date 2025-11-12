@@ -15,6 +15,11 @@ export async function GET(
     }
 
     const { chantierId, etatId } = await context.params
+    const etatNumero = parseInt(etatId, 10)
+
+    if (Number.isNaN(etatNumero)) {
+      return NextResponse.json({ error: 'Identifiant d\'état invalide' }, { status: 400 })
+    }
 
     // Vérifier que le chantier existe et récupérer ses informations
     const chantier = await prisma.chantier.findUnique({
@@ -33,14 +38,21 @@ export async function GET(
       return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 404 })
     }
 
-    // Récupérer l'état d'avancement avec ses lignes
-    const etatAvancement = await prisma.etatAvancement.findFirst({
+    // Récupérer l'état d'avancement avec ses lignes et ses avenants
+    const etatAvancement = await prisma.etatAvancement.findUnique({
       where: {
-        id: parseInt(etatId),
-        chantierId: chantier.id
+        chantierId_numero: {
+          chantierId: chantier.id,
+          numero: etatNumero
+        }
       },
       include: {
         lignes: {
+          orderBy: {
+            id: 'asc'
+          }
+        },
+        avenants: {
           orderBy: {
             id: 'asc'
           }
@@ -61,8 +73,30 @@ export async function GET(
       return NextResponse.json({ error: 'État d\'avancement non trouvé' }, { status: 404 })
     }
 
-    // Calculer le total à partir des lignes
-    const totalCalculé = etatAvancement.lignes.reduce((sum, ligne) => sum + ligne.montantTotal, 0)
+    const lignesPrincipales = etatAvancement.lignes.map(ligne => ({
+      id: ligne.id,
+      poste: ligne.article || undefined,
+      description: ligne.description,
+      quantite: ligne.quantiteTotale,
+      prixUnitaire: ligne.prixUnitaire,
+      total: ligne.montantTotal,
+      unite: ligne.unite || undefined
+    }))
+
+    const lignesAvenants = etatAvancement.avenants.map((avenant, index) => ({
+      id: 1_000_000 + avenant.id,
+      poste: avenant.article || `Avenant ${index + 1}`,
+      description: avenant.description,
+      quantite: avenant.quantiteTotale || avenant.quantite || 0,
+      prixUnitaire: avenant.prixUnitaire || 0,
+      total: avenant.montantTotal || avenant.montantActuel,
+      unite: avenant.unite || undefined
+    }))
+
+    const lignesEtat = [...lignesPrincipales, ...lignesAvenants]
+
+    // Calculer le total à partir de toutes les lignes (y compris avenants)
+    const totalCalculé = lignesEtat.reduce((sum, ligne) => sum + ligne.total, 0)
 
     // Préparer les données pour l'export
     const exportOptions: ExportEtatOptions = {
@@ -82,15 +116,7 @@ export async function GET(
         description: etatAvancement.commentaires || undefined,
         soustraitantNom: etatAvancement.soustraitant_etat_avancement?.[0]?.soustraitant?.nom
       },
-      lignesEtat: etatAvancement.lignes.map(ligne => ({
-        id: ligne.id,
-        poste: ligne.article || undefined,
-        description: ligne.description,
-        quantite: ligne.quantiteTotale,
-        prixUnitaire: ligne.prixUnitaire,
-        total: ligne.montantTotal,
-        unite: ligne.unite || undefined
-      }))
+      lignesEtat
     }
 
     // Générer le fichier Excel

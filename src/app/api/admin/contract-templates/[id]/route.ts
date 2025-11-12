@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import { isTemplateCategory, type TemplateCategory } from '@/lib/templates/template-categories'
 
 export async function GET(
   request: Request,
@@ -91,7 +92,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, htmlContent, isActive } = await request.json()
+    const { name, description, htmlContent, isActive, category } = await request.json()
 
     if (!name || !htmlContent) {
       return NextResponse.json(
@@ -100,26 +101,38 @@ export async function PUT(
       )
     }
 
+    const template = await prisma.contractTemplate.findUnique({
+      where: { id }
+    })
+
+    if (!template) {
+      return NextResponse.json({ error: 'Template non trouvé' }, { status: 404 })
+    }
+
+    const parsedCategory: TemplateCategory =
+      category && isTemplateCategory(category) ? category : template.category
+
     // Si on active ce template, désactiver tous les autres
     if (isActive) {
       await prisma.contractTemplate.updateMany({
-        where: { isActive: true },
+        where: { isActive: true, category: parsedCategory },
         data: { isActive: false }
       })
     }
 
     // Mettre à jour le template
-    const template = await prisma.contractTemplate.update({
+    const updatedTemplate = await prisma.contractTemplate.update({
       where: { id },
       data: {
         name,
         description,
         htmlContent,
-        isActive: isActive || false
+        isActive: isActive || false,
+        category: parsedCategory
       }
     })
 
-    return NextResponse.json(template)
+    return NextResponse.json(updatedTemplate)
   } catch (error) {
     console.error('Erreur lors de la mise à jour du template:', error)
     return NextResponse.json(

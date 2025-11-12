@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { PDFGenerator } from '@/lib/pdf/pdf-generator'
 import { generateDevisHTML } from '@/lib/pdf/templates/devis-template'
+import { getActiveTemplateHtml } from '@/lib/templates/get-active-template'
 
 // POST /api/devis/[devisId]/convert - Convertir un devis ou avenant
 export async function POST(
@@ -54,6 +55,8 @@ export async function POST(
         { status: 404 }
       )
     }
+
+    const cgvHtml = await getActiveTemplateHtml('CGV')
 
     // Vérifier le statut
     if (devis.statut === 'CONVERTI') {
@@ -200,7 +203,8 @@ export async function POST(
             email: process.env.COMPANY_EMAIL || 'email@entreprise.com',
             siret: process.env.COMPANY_SIRET,
             tva: process.env.COMPANY_TVA
-          }
+          },
+          cgvHtml: cgvHtml || undefined
         })
 
         const pdfBuffer = await PDFGenerator.generatePDF(html, {
@@ -316,7 +320,7 @@ export async function POST(
             mois: `${year}-${month}`,
             date: new Date(),
             estFinalise: false,
-            commentaires: 'État d\'avancement créé automatiquement pour avenant',
+            commentaires: devis.observations || null,
             createdBy: session.user.id
           },
           include: {
@@ -473,7 +477,8 @@ export async function POST(
             email: process.env.COMPANY_EMAIL || 'email@entreprise.com',
             siret: process.env.COMPANY_SIRET,
             tva: process.env.COMPANY_TVA
-          }
+          },
+          cgvHtml: cgvHtml || undefined
         })
 
         const pdfBuffer = await PDFGenerator.generatePDF(html, {

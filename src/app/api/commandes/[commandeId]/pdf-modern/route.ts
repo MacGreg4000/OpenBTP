@@ -6,6 +6,7 @@ import { PDFGenerator } from '@/lib/pdf/pdf-generator'
 import { generateCommandeHTML, type CommandeData } from '@/lib/pdf/templates/commande-template'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { getActiveTemplateHtml } from '@/lib/templates/get-active-template'
 
 export const dynamic = 'force-dynamic'
 
@@ -77,6 +78,8 @@ export async function GET(
       }
     }
 
+    const cgvHtml = await getActiveTemplateHtml('CGV')
+
     // Préparer les données pour le template
     const commandeData: CommandeData = {
       commande: {
@@ -100,7 +103,8 @@ export async function GET(
       },
       entreprise,
       chantierId: commande.Chantier.chantierId,
-      logoBase64
+      logoBase64,
+      cgvHtml: cgvHtml || undefined
     }
 
     // Générer le HTML

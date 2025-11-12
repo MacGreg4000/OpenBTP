@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import { TemplateCategory } from '@/lib/templates/template-categories'
 
 export async function POST(
   request: Request,
@@ -16,9 +17,17 @@ export async function POST(
 
     const { id } = await params
 
-    // Désactiver tous les templates
+    const target = await prisma.contractTemplate.findUnique({ where: { id } })
+
+    if (!target) {
+      return NextResponse.json({ error: 'Template non trouvé' }, { status: 404 })
+    }
+
+    const category: TemplateCategory = target.category
+
+    // Désactiver les templates de la même catégorie
     await prisma.contractTemplate.updateMany({
-      where: { isActive: true },
+      where: { isActive: true, category },
       data: { isActive: false }
     })
 

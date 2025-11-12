@@ -22,7 +22,7 @@ interface Ouvrier {
   dateEntree: string
   poste: string
   _count?: {
-    documentOuvrier: number
+    DocumentOuvrier: number
   }
 }
 
@@ -243,7 +243,7 @@ export default function OuvriersPage(
                     {format(new Date(ouvrier.dateEntree), 'dd/MM/yyyy', { locale: fr })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ouvrier._count?.documentOuvrier || 0}
+                    {ouvrier._count?.DocumentOuvrier ?? 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">

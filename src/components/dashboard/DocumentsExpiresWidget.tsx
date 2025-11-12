@@ -60,7 +60,7 @@ export default function DocumentsExpiresWidget() {
       attestation_onss: "Attestation ONSS",
       permis_travail: "Permis de travail",
       diplome: "Diplôme",
-      certificat_medical: "Certificat médical",
+      certificat_medical: "Attestation Sécurité",
       autre: "Autre document"
     }
     return types[type] || type
