@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { PageHeader } from '@/components/PageHeader'
-import { CalendarDaysIcon, UserIcon, DocumentArrowDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { CalendarDaysIcon, UserIcon, DocumentArrowDownIcon, FunnelIcon, PencilSquareIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 type JournalEntry = {
   id: string
@@ -47,16 +47,26 @@ type GroupedEntry = {
   entries: JournalEntry[]
 }
 
+type Chantier = {
+  chantierId: string
+  nomChantier: string
+}
+
 export default function JournalPage() {
   const { data: session } = useSession()
   const [groupedEntries, setGroupedEntries] = useState<GroupedEntry[]>([])
   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([])
+  const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [loading, setLoading] = useState(true)
   const [availableYears, setAvailableYears] = useState<string[]>([])
   const [filters, setFilters] = useState({
     ouvrierId: '',
     mois: new Date().toISOString().slice(0, 7) // YYYY-MM
   })
+  const [showForm, setShowForm] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
+  const [entryToDelete, setEntryToDelete] = useState<JournalEntry | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const loadOuvriers = async () => {
     try {
@@ -67,6 +77,23 @@ export default function JournalPage() {
       }
     } catch (error) {
       console.error('Erreur lors du chargement des ouvriers:', error)
+    }
+  }
+
+  const loadChantiers = async () => {
+    try {
+      const response = await fetch('/api/chantiers?pageSize=500')
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des chantiers')
+      }
+      const data = await response.json()
+      if (Array.isArray(data)) {
+        setChantiers(data)
+      } else if (Array.isArray(data.chantiers)) {
+        setChantiers(data.chantiers)
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des chantiers:', error)
     }
   }
 
@@ -116,6 +143,7 @@ export default function JournalPage() {
   // Charger les ouvriers
   useEffect(() => {
     loadOuvriers()
+    loadChantiers()
   }, [])
 
   // Charger le journal
@@ -141,6 +169,37 @@ export default function JournalPage() {
       }
     } catch (error) {
       console.error('Erreur lors de l\'export:', error)
+    }
+  }
+
+  const openEditEntry = (entry: JournalEntry) => {
+    setEditingEntry(entry)
+    setShowForm(true)
+  }
+
+  const handleDeleteClick = (entry: JournalEntry) => {
+    setEntryToDelete(entry)
+  }
+
+  const handleDeleteEntry = async () => {
+    if (!entryToDelete) return
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/journal/ouvrier/${entryToDelete.id}`, {
+        method: 'DELETE'
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        alert(data?.error || 'Erreur lors de la suppression')
+      } else {
+        setEntryToDelete(null)
+        await loadJournal()
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      alert('Erreur lors de la suppression')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -330,6 +389,9 @@ export default function JournalPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Description
                     </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -366,6 +428,26 @@ export default function JournalPage() {
                             {entry.description}
                           </div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => openEditEntry(entry)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                              title="Modifier l'entrée"
+                            >
+                              <PencilSquareIcon className="h-4 w-4" />
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(entry)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:border-red-400 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                              title="Supprimer l'entrée"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                              Supprimer
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -374,6 +456,236 @@ export default function JournalPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {showForm && editingEntry && (
+        <JournalManagerForm
+          entry={editingEntry}
+          chantiers={chantiers}
+          onClose={() => {
+            setShowForm(false)
+            setEditingEntry(null)
+          }}
+          onSaved={() => {
+            setShowForm(false)
+            setEditingEntry(null)
+            loadJournal()
+          }}
+        />
+      )}
+
+      {entryToDelete && (
+        <DeleteEntryModal
+          entry={entryToDelete}
+          loading={deleting}
+          onCancel={() => setEntryToDelete(null)}
+          onConfirm={handleDeleteEntry}
+        />
+      )}
+    </div>
+  )
+}
+
+function JournalManagerForm({
+  entry,
+  chantiers,
+  onClose,
+  onSaved
+}: {
+  entry: JournalEntry
+  chantiers: Chantier[]
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [formData, setFormData] = useState({
+    date: entry.date ? new Date(entry.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    heureDebut: entry.heureDebut || '08:00',
+    heureFin: entry.heureFin || '17:00',
+    chantierId: entry.chantier?.chantierId || entry.chantierId || '',
+    lieuLibre: entry.lieuLibre || '',
+    description: entry.description || ''
+  })
+  const [saving, setSaving] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.chantierId && !formData.lieuLibre.trim()) {
+      alert('Veuillez sélectionner un chantier ou indiquer un lieu libre')
+      return
+    }
+    if (!formData.description.trim()) {
+      alert('Veuillez renseigner une description')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/journal/ouvrier/${entry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        alert(data?.error || 'Erreur lors de la mise à jour de l\'entrée')
+        return
+      }
+      onSaved()
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du journal:', error)
+      alert('Erreur lors de la mise à jour du journal')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Modifier l\'encodage</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:ring-emerald-500"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Début</label>
+                <input
+                  type="time"
+                  value={formData.heureDebut}
+                  onChange={(e) => setFormData({ ...formData, heureDebut: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fin</label>
+                <input
+                  type="time"
+                  value={formData.heureFin}
+                  onChange={(e) => setFormData({ ...formData, heureFin: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Chantier / Lieu</label>
+            <select
+              value={formData.chantierId || 'libre'}
+              onChange={(e) => {
+                if (e.target.value === 'libre') {
+                  setFormData({ ...formData, chantierId: '', lieuLibre: '' })
+                } else {
+                  setFormData({ ...formData, chantierId: e.target.value, lieuLibre: '' })
+                }
+              }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:ring-emerald-500"
+            >
+              <option value="">Sélectionner...</option>
+              <option value="libre">Lieu libre</option>
+              {chantiers.map((chantier) => (
+                <option key={chantier.chantierId} value={chantier.chantierId}>
+                  {chantier.nomChantier} ({chantier.chantierId})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(!formData.chantierId || formData.chantierId === '') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lieu libre</label>
+              <input
+                type="text"
+                value={formData.lieuLibre}
+                onChange={(e) => setFormData({ ...formData, lieuLibre: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:ring-emerald-500"
+                placeholder="Ex: Formation sécurité"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:ring-emerald-500"
+              rows={4}
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              disabled={saving}
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              disabled={saving}
+            >
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function DeleteEntryModal({
+  entry,
+  loading,
+  onCancel,
+  onConfirm
+}: {
+  entry: JournalEntry
+  loading: boolean
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-center gap-3 text-red-600 mb-4">
+          <ExclamationTriangleIcon className="h-6 w-6" />
+          <h3 className="text-lg font-semibold">Supprimer l'encodage</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Voulez-vous vraiment supprimer l'activité du {new Date(entry.date).toLocaleDateString('fr-FR')} pour {entry.ouvrier.prenom} {entry.ouvrier.nom} ?
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            disabled={loading}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? 'Suppression...' : 'Supprimer'}
+          </button>
+        </div>
       </div>
     </div>
   )

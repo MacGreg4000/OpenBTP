@@ -75,16 +75,21 @@ export async function PUT(
     }
 
     // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
+    const role = session.user.role
+    const isManagerOrAdmin = role === 'ADMIN' || role === 'MANAGER'
+    const isOwner = role === 'OUVRIER_INTERNE'
+
+    if (!isManagerOrAdmin && !isOwner) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
-    // Vérifier si l'entrée est encore modifiable (48h)
-    const maintenant = new Date()
-    if (maintenant > entree.modifiableJusquA) {
-      return NextResponse.json({ 
-        error: 'Cette entrée n\'est plus modifiable (délai de 48h dépassé)' 
-      }, { status: 400 })
+    if (!isManagerOrAdmin) {
+      const maintenant = new Date()
+      if (maintenant > entree.modifiableJusquA) {
+        return NextResponse.json({ 
+          error: 'Cette entrée n\'est plus modifiable (délai de 48h dépassé)' 
+        }, { status: 400 })
+      }
     }
 
     const body = await request.json()
@@ -161,16 +166,21 @@ export async function DELETE(
     }
 
     // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
+    const role = session.user.role
+    const isManagerOrAdmin = role === 'ADMIN' || role === 'MANAGER'
+    const isOwner = role === 'OUVRIER_INTERNE'
+
+    if (!isManagerOrAdmin && !isOwner) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
-    // Vérifier si l'entrée est encore modifiable (48h)
-    const maintenant = new Date()
-    if (maintenant > entree.modifiableJusquA) {
-      return NextResponse.json({ 
-        error: 'Cette entrée n\'est plus supprimable (délai de 48h dépassé)' 
-      }, { status: 400 })
+    if (!isManagerOrAdmin) {
+      const maintenant = new Date()
+      if (maintenant > entree.modifiableJusquA) {
+        return NextResponse.json({ 
+          error: 'Cette entrée n\'est plus supprimable (délai de 48h dépassé)' 
+        }, { status: 400 })
+      }
     }
 
     await prisma.journalOuvrier.delete({
