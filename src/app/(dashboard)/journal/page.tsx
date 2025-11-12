@@ -432,19 +432,17 @@ export default function JournalPage() {
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => openEditEntry(entry)}
-                              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                              className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                               title="Modifier l'entrée"
                             >
                               <PencilSquareIcon className="h-4 w-4" />
-                              Modifier
                             </button>
                             <button
                               onClick={() => handleDeleteClick(entry)}
-                              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:border-red-400 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                              className="rounded-lg border border-gray-200 p-2 text-red-500 hover:border-red-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/50"
                               title="Supprimer l'entrée"
                             >
                               <TrashIcon className="h-4 w-4" />
-                              Supprimer
                             </button>
                           </div>
                         </td>
