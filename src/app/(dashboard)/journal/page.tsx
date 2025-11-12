@@ -371,59 +371,65 @@ export default function JournalPage() {
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       Ouvrier
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       Heures
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       Lieu
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       Description
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
                   {groupedEntries.flatMap((group) => 
                     group.entries.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-gray-50">
+                      <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <UserIcon className="h-4 w-4 text-gray-400 mr-2"/>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                               {group.ouvrier.prenom} {group.ouvrier.nom}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(group.date).toLocaleDateString('fr-FR')}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {new Date(group.date).toLocaleDateString('fr-FR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'numeric',
+                            hour: 'numeric',
+                            minute: 'numeric'
+                          })}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {entry.heureDebut} - {entry.heureFin}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {entry.chantier ? (
                             <div className="flex items-center gap-1 text-sm">
-                              <span className="font-medium text-gray-900">{entry.chantier.nomChantier}</span>
-                              <span className="text-gray-400">•</span>
-                              <span className="text-gray-500">{entry.chantier.chantierId}</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">{entry.chantier.nomChantier}</span>
+                              <span className="text-gray-400 dark:text-gray-500">•</span>
+                              <span className="text-gray-500 dark:text-gray-400">{entry.chantier.chantierId}</span>
                             </div>
                           ) : (
-                            <span className="text-sm text-blue-600 font-medium">{entry.lieuLibre}</span>
+                            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{entry.lieuLibre}</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                           <div className="truncate max-w-md" title={entry.description}>
                             {entry.description}
                           </div>
@@ -432,14 +438,14 @@ export default function JournalPage() {
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => openEditEntry(entry)}
-                              className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                              className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:border-gray-700 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
                               title="Modifier l'entrée"
                             >
                               <PencilSquareIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(entry)}
-                              className="rounded-lg border border-gray-200 p-2 text-red-500 hover:border-red-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                              className="rounded-lg border border-gray-200 p-2 text-red-500 hover:border-red-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 dark:border-gray-700 dark:hover:border-red-500 dark:hover:text-red-400"
                               title="Supprimer l'entrée"
                             >
                               <TrashIcon className="h-4 w-4" />

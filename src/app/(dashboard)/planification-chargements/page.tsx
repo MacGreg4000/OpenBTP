@@ -424,36 +424,36 @@ export default function PlanificationChargementsPage() {
         {/* Modal ajouter pays */}
         {showAddPays && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96">
-              <h3 className="text-lg font-semibold mb-4">Ajouter un pays</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-96">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ajouter un pays</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
                   <input
                     type="text"
                     value={newPays.nom}
                     onChange={(e) => setNewPays({ ...newPays, nom: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
                     placeholder="Espagne"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
                   <input
                     type="text"
                     value={newPays.code}
                     onChange={(e) => setNewPays({ ...newPays, code: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
                     placeholder="ES"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Icône</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icône</label>
                   <input
                     type="text"
                     value={newPays.icone}
                     onChange={(e) => setNewPays({ ...newPays, icone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
                     placeholder="🇪🇸"
                   />
                 </div>
@@ -461,13 +461,13 @@ export default function PlanificationChargementsPage() {
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowAddPays(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddPays}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
                 >
                   Ajouter
                 </button>
@@ -477,24 +477,31 @@ export default function PlanificationChargementsPage() {
         )}
 
         {/* Liste des pays */}
-        <div className="space-y-4">
-          {pays.map((pays) => (
-            <div key={pays.id} className="bg-white rounded-lg shadow border border-gray-200">
-              {/* En-tête pays */}
-              <div 
-                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => togglePays(pays.id)}
-              >
-                <div className="flex items-center justify-between">
+        <div className="space-y-6">
+          {pays.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+              <TruckIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Aucun pays trouvé</h3>
+              <p className="text-gray-600 dark:text-gray-400">Ajoutez un nouveau pays pour commencer à gérer vos chargements.</p>
+            </div>
+          ) : (
+            pays.map((pays) => (
+              <div key={pays.id} className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                {/* En-tête pays */}
+                <div
+                  className="flex items-center justify-between px-6 py-4 cursor-pointer border-b border-gray-200 dark:border-gray-700"
+                  onClick={() => togglePays(pays.id)}
+                >
                   <div className="flex items-center gap-3">
                     {paysExpanded[pays.id] ? (
-                      <ChevronDownIcon className="h-5 w-5 text-gray-500"/>
+                      <ChevronDownIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     ) : (
-                      <ChevronRightIcon className="h-5 w-5 text-gray-500"/>
+                      <ChevronRightIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     )}
-                    <span className="text-2xl">{pays.icone}</span>
-                    <h2 className="text-xl font-semibold text-gray-900">{pays.nom}</h2>
-                    <span className="text-sm text-gray-500">({pays.code})</span>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{pays.nom}</h2>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Code : {pays.code}</p>
+                    </div>
                   </div>
                   <button
                     onClick={(e) => {
@@ -508,149 +515,149 @@ export default function PlanificationChargementsPage() {
                     Ajouter usine
                   </button>
                 </div>
-              </div>
 
-              {/* Contenu pays */}
-              {paysExpanded[pays.id] && (
-                <div className="border-t border-gray-200">
-                  <div className="p-4 space-y-4">
-                    {pays.usines.map((usine) => (
-                      <div key={usine.id} className="bg-gray-50 rounded-lg p-4">
-                        {/* En-tête usine */}
-                        <div 
-                          className="flex items-center justify-between mb-3 cursor-pointer"
-                          onClick={() => toggleUsine(usine.id)}
-                        >
-                          <div className="flex items-center gap-2">
-                            {usinesExpanded[usine.id] ? (
-                              <ChevronDownIcon className="h-4 w-4 text-gray-500"/>
-                            ) : (
-                              <ChevronRightIcon className="h-4 w-4 text-gray-500"/>
-                            )}
-                            <h3 className="font-medium text-gray-900">{usine.nom}</h3>
+                {/* Contenu pays */}
+                {paysExpanded[pays.id] && (
+                  <div className="border-t border-gray-200 dark:border-gray-700">
+                    <div className="p-4 space-y-4">
+                      {pays.usines.map((usine) => (
+                        <div key={usine.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                          {/* En-tête usine */}
+                          <div
+                            className="flex items-center justify-between mb-3 cursor-pointer"
+                            onClick={() => toggleUsine(usine.id)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {usinesExpanded[usine.id] ? (
+                                <ChevronDownIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              ) : (
+                                <ChevronRightIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              )}
+                              <h3 className="font-medium text-gray-900 dark:text-gray-100">{usine.nom}</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setNewChargement({ contenu: '', semaine: 1, usineId: usine.id })
+                                  setShowAddChargement(usine.id)
+                                }}
+                                className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-800/40"
+                              >
+                                <PlusIcon className="h-3 w-3 mr-1" />
+                                Ajouter
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleSupprimerUsine(usine.id)
+                                }}
+                                className="inline-flex items-center px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-800/40"
+                              >
+                                <TrashIcon className="h-3 w-3" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setNewChargement({ contenu: '', semaine: 1, usineId: usine.id })
-                                setShowAddChargement(usine.id)
-                              }}
-                              className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                            >
-                              <PlusIcon className="h-3 w-3 mr-1" />
-                              Ajouter
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleSupprimerUsine(usine.id)
-                              }}
-                              className="inline-flex items-center px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                            >
-                              <TrashIcon className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
 
-                        {/* Tableau des chargements */}
-                        {usinesExpanded[usine.id] && (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-gray-200">
-                                  <th className="text-left py-2 px-3 font-medium text-gray-700">Usine</th>
-                                  {semainesAnnee.slice(0, 4).map((semaine) => (
-                                    <th key={semaine.numero} className="text-center py-2 px-3 font-medium text-gray-700">
-                                      <div className="text-xs">{semaine.label}</div>
-                                    </th>
-                                  ))}
-                                  <th className="text-center py-2 px-3 font-medium text-gray-700">Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {Object.entries(usine.chargementsParSemaine).map(([semaine, chargements]) => {
-                                  const cumules = cumulerChargements(chargements)
-                                  return cumules.map((cumule, index) => (
-                                    <tr key={`${semaine}-${index}`} className="border-b border-gray-100">
-                                      <td className="py-2 px-3 text-gray-900">{usine.nom}</td>
-                                      {semainesAnnee.slice(0, 4).map((semaineAnnee) => (
-                                        <td key={semaineAnnee.numero} className="py-2 px-3 text-center">
-                                          {cumule.semaine === semaineAnnee.numero ? (
-                                            <div className="flex items-center justify-center gap-1">
-                                              {cumule.estCharge ? (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                                                  ✅ {cumule.contenu}
-                                                </span>
-                                              ) : (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-700">
-                                                  ⏳ {cumule.contenu}
-                                                </span>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            <span className="text-gray-300">-</span>
-                                          )}
+                          {/* Tableau des chargements */}
+                          {usinesExpanded[usine.id] && (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm text-gray-900 dark:text-gray-100">
+                                <thead className="bg-gray-50 dark:bg-gray-800">
+                                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                                    <th className="text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Usine</th>
+                                    {semainesAnnee.slice(0, 4).map((semaine) => (
+                                      <th key={semaine.numero} className="text-center py-2 px-3 font-medium text-gray-700 dark:text-gray-300">
+                                        <div className="text-xs">{semaine.label}</div>
+                                      </th>
+                                    ))}
+                                    <th className="text-center py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-900">
+                                  {Object.entries(usine.chargementsParSemaine).map(([semaine, chargements]) => {
+                                    const cumules = cumulerChargements(chargements)
+                                    return cumules.map((cumule, index) => (
+                                      <tr key={`${semaine}-${index}`} className="border-b border-gray-100 dark:border-gray-800">
+                                        <td className="py-2 px-3 text-gray-900 dark:text-gray-100">{usine.nom}</td>
+                                        {semainesAnnee.slice(0, 4).map((semaineAnnee) => (
+                                          <td key={semaineAnnee.numero} className="py-2 px-3 text-center">
+                                            {cumule.semaine === semaineAnnee.numero ? (
+                                              <div className="flex items-center justify-center gap-1">
+                                                {cumule.estCharge ? (
+                                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200">
+                                                    ✅ {cumule.contenu}
+                                                  </span>
+                                                ) : (
+                                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200">
+                                                    ⏳ {cumule.contenu}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-300 dark:text-gray-600">-</span>
+                                            )}
+                                          </td>
+                                        ))}
+                                        <td className="py-2 px-3 text-center">
+                                          <div className="flex items-center justify-center gap-1">
+                                            {!cumule.estCharge && (
+                                              <>
+                                                <button
+                                                  onClick={() => handleCharger(chargements[0].id)}
+                                                  className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors dark:bg-green-900/30 dark:text-green-200 dark:hover:bg-green-800/40"
+                                                  title="Marquer comme chargé"
+                                                >
+                                                  <CheckIcon className="h-3 w-3" />
+                                                </button>
+                                                <button
+                                                  onClick={() => handleReporter(chargements[0].id)}
+                                                  className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-800/40"
+                                                  title="Reporter à la semaine suivante"
+                                                >
+                                                  <ArrowRightIcon className="h-3 w-3" />
+                                                </button>
+                                              </>
+                                            )}
+                                            <button
+                                              onClick={() => handleSupprimer(chargements[0].id)}
+                                              className="inline-flex items-center px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-800/40"
+                                              title="Supprimer"
+                                            >
+                                              <TrashIcon className="h-3 w-3" />
+                                            </button>
+                                          </div>
                                         </td>
-                                      ))}
-                                      <td className="py-2 px-3 text-center">
-                                        <div className="flex items-center justify-center gap-1">
-                                          {!cumule.estCharge && (
-                                            <>
-                                              <button
-                                                onClick={() => handleCharger(chargements[0].id)}
-                                                className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-                                                title="Marquer comme chargé"
-                                              >
-                                                <CheckIcon className="h-3 w-3" />
-                                              </button>
-                                              <button
-                                                onClick={() => handleReporter(chargements[0].id)}
-                                                className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                                                title="Reporter à la semaine suivante"
-                                              >
-                                                <ArrowRightIcon className="h-3 w-3" />
-                                              </button>
-                                            </>
-                                          )}
-                                          <button
-                                            onClick={() => handleSupprimer(chargements[0].id)}
-                                            className="inline-flex items-center px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                                            title="Supprimer"
-                                          >
-                                            <TrashIcon className="h-3 w-3" />
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                                      </tr>
+                                    ))
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            ))
+          )}
         </div>
 
         {/* Modal ajouter usine */}
         {showAddUsine && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96">
-              <h3 className="text-lg font-semibold mb-4">Ajouter une usine</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-96">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ajouter une usine</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'usine</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'usine</label>
                   <input
                     type="text"
                     value={newUsine.nom}
                     onChange={(e) => setNewUsine({ ...newUsine, nom: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
                     placeholder="Tau"
                   />
                 </div>
@@ -658,13 +665,13 @@ export default function PlanificationChargementsPage() {
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowAddUsine(null)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddUsine}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
                 >
                   Ajouter
                 </button>
@@ -676,44 +683,41 @@ export default function PlanificationChargementsPage() {
         {/* Modal ajouter chargement */}
         {showAddChargement && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96">
-              <h3 className="text-lg font-semibold mb-4">Ajouter un chargement</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-96">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ajouter un chargement</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contenu</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contenu</label>
                   <input
                     type="text"
                     value={newChargement.contenu}
                     onChange={(e) => setNewChargement({ ...newChargement, contenu: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="10T ou CMD-1234 ou 5T CMD-56"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
+                    placeholder="Matériel"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Semaine</label>
-                  <select
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Semaine</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={52}
                     value={newChargement.semaine}
-                    onChange={(e) => setNewChargement({ ...newChargement, semaine: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {semainesAnnee.slice(0, 4).map((semaine) => (
-                      <option key={semaine.numero} value={semaine.numero}>
-                        {semaine.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(e) => setNewChargement({ ...newChargement, semaine: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowAddChargement(null)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddChargement}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
                 >
                   Ajouter
                 </button>
