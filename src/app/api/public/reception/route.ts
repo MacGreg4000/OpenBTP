@@ -289,6 +289,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
-
-// Note: La méthode PATCH a été déplacée vers /api/public/reception-remarque/route.ts pour éviter les conflits de routing 
+} 
