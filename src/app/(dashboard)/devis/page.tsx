@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { ComponentType, SVGProps } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader } from '@/components/PageHeader'
@@ -43,7 +44,9 @@ interface Devis {
   }
 }
 
-const statutLabels: Record<string, { label: string; color: string; icon: any }> = {
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
+
+const statutLabels: Record<string, { label: string; color: string; icon: IconComponent }> = {
   BROUILLON: { 
     label: 'Brouillon', 
     color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
@@ -129,7 +132,7 @@ export default function DevisPage() {
 
   // Créer la liste des clients uniques pour le filtre
   const clientOptions: SearchableSelectOption[] = devisList
-    .reduce((acc: any[], devis) => {
+    .reduce<SearchableSelectOption[]>((acc, devis) => {
       const existingClient = acc.find(c => c.value === devis.client.id)
       if (!existingClient) {
         acc.push({

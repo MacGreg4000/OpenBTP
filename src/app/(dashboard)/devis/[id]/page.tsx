@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { 
   ArrowLeftIcon,
@@ -80,18 +80,12 @@ export default function DevisDetailPage() {
   const [selectedChantierId, setSelectedChantierId] = useState('')
   const [converting, setConverting] = useState(false)
 
-  useEffect(() => {
-    if (devisId) {
-      loadDevis()
-    }
-  }, [devisId])
-
-  const loadDevis = async () => {
+  const loadDevis = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/devis/${devisId}`)
       if (response.ok) {
-        const data = await response.json()
+        const data = (await response.json()) as Devis
         setDevis(data)
       } else {
         router.push('/devis')
@@ -102,15 +96,22 @@ export default function DevisDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [devisId, router])
+
+  useEffect(() => {
+    if (devisId) {
+      void loadDevis()
+    }
+  }, [devisId, loadDevis])
 
   const loadChantiers = async () => {
     if (!devis) return
     try {
       const response = await fetch(`/api/chantiers?clientId=${devis.client.id}`)
       if (response.ok) {
-        const data = await response.json()
-        setChantiers(Array.isArray(data) ? data : data.chantiers || [])
+        const data = (await response.json()) as Chantier[] | { chantiers?: Chantier[] }
+        const chantiersData = Array.isArray(data) ? data : data.chantiers ?? []
+        setChantiers(chantiersData)
       }
     } catch (error) {
       console.error('Erreur lors du chargement des chantiers:', error)

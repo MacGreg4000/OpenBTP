@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import {
@@ -50,24 +50,7 @@ export default function TemplatesContratsPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>('CONTRAT')
 
-  useEffect(() => {
-    if (status === 'loading') return
-
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (session && session.user && session.user.role !== 'ADMIN') {
-      router.push('/')
-      return
-    }
-
-    fetchTemplates(selectedCategory)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, session, status, selectedCategory])
-
-  const fetchTemplates = async (category: TemplateCategory) => {
+  const fetchTemplates = useCallback(async (category: TemplateCategory) => {
     try {
       setLoading(true)
       const response = await fetch(`/api/admin/contract-templates?category=${category}`)
@@ -83,7 +66,23 @@ export default function TemplatesContratsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (status === 'unauthenticated') {
+      router.push('/login')
+      return
+    }
+
+    if (session && session.user && session.user.role !== 'ADMIN') {
+      router.push('/')
+      return
+    }
+
+    fetchTemplates(selectedCategory)
+  }, [router, session, status, selectedCategory, fetchTemplates])
 
   const activateTemplate = async (templateId: string) => {
     try {

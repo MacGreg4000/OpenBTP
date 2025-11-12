@@ -75,34 +75,23 @@ export class VectorStore {
         filter
       });
 
-      // Construire le where clause avec filtres
-      const whereClause: any = {
-        embedding: { not: null }
-      };
+      const metadataFilters: Array<{ metadata: { contains: string } }> = [];
 
-      // Appliquer les filtres si spécifiés
-      if (filter?.type || filter?.entityId) {
-        const metadataFilters: string[] = [];
-        if (filter.type) {
-          metadataFilters.push(`"type":"${filter.type}"`);
-        }
-        if (filter.entityId) {
-          metadataFilters.push(`"entityId":"${filter.entityId}"`);
-        }
-        
-        // Filtrer par métadonnées (optimisation préliminaire)
-        if (metadataFilters.length > 0) {
-          whereClause.OR = metadataFilters.map(f => ({
-            metadata: { contains: f }
-          }));
-        }
+      if (filter?.type) {
+        metadataFilters.push({ metadata: { contains: `"type":"${filter.type}"` } });
+      }
+      if (filter?.entityId) {
+        metadataFilters.push({ metadata: { contains: `"entityId":"${filter.entityId}"` } });
       }
 
       // Récupérer un ensemble optimisé de documents
       // On prend plus que nécessaire pour compenser les filtres
       const batchSize = Math.min(limit * 10, 100); // Max 100 docs pour éviter la surcharge
       const documents = await prisma.documentChunk.findMany({
-        where: whereClause,
+        where: {
+          embedding: { not: null },
+          ...(metadataFilters.length > 0 ? { OR: metadataFilters } : {}),
+        },
         orderBy: { updatedAt: 'desc' },
         take: batchSize,
       });

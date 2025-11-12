@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
+import type { Identifier } from 'dnd-core'
+import type { XYCoord } from 'react-dnd'
 import { 
   PlusIcon, 
   TrashIcon,
@@ -37,6 +39,37 @@ interface LigneDevis {
   total: number
 }
 
+type ClientsApiResponse = Client[] | { clients?: Client[] }
+
+type ChantierApiItem = {
+  chantierId?: string
+  nomChantier?: string
+  clientId?: string | null
+  clientNom?: string | null
+}
+
+interface DevisApiResponse {
+  statut: string
+  typeDevis?: 'DEVIS' | 'AVENANT'
+  reference?: string | null
+  clientId: string
+  chantierId?: string | null
+  observations?: string | null
+  tauxTVA?: number | string | null
+  remiseGlobale?: number | string | null
+  lignes?: Array<{
+    id: string
+    type: string
+    article?: string | null
+    description?: string | null
+    unite?: string | null
+    quantite?: number | string | null
+    prixUnitaire?: number | string | null
+    remise?: number | string | null
+    total?: number | string | null
+  }>
+}
+
 export default function EditDevisPage() {
   const router = useRouter()
   const params = useParams()
@@ -55,46 +88,39 @@ export default function EditDevisPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    loadClients()
-    loadChantiers()
-    if (devisId) {
-      loadDevis()
-    }
-  }, [devisId])
-
-  const loadClients = async () => {
+  const loadClients = useCallback(async () => {
     try {
       const response = await fetch('/api/clients')
       if (response.ok) {
-        const data = await response.json()
-        setClients(Array.isArray(data) ? data : data.clients || [])
+        const data = (await response.json()) as ClientsApiResponse
+        const clientsData = Array.isArray(data) ? data : data.clients ?? []
+        setClients(clientsData)
       }
     } catch (error) {
       console.error('Erreur lors du chargement des clients:', error)
     }
-  }
+  }, [])
 
-  const loadChantiers = async () => {
+  const loadChantiers = useCallback(async () => {
     try {
       // Demander tous les chantiers sans filtre de statut, avec pagination élevée
       const response = await fetch('/api/chantiers?etat=Tous les états&pageSize=1000')
       if (response.ok) {
-        const data = await response.json()
+        const data = (await response.json()) as { chantiers?: ChantierApiItem[] }
         // L'API retourne un objet { chantiers: [], meta: {} }
-        const chantiersList = data.chantiers || []
-        const chantiersData = chantiersList.map((c: any) => ({
-          chantierId: c.chantierId,
-          nomChantier: c.nomChantier,
-          clientId: c.clientId || '',
-          clientNom: c.clientNom || 'Client inconnu'
+        const chantiersList = data.chantiers ?? []
+        const chantiersData = chantiersList.map((c) => ({
+          chantierId: c.chantierId ?? '',
+          nomChantier: c.nomChantier ?? 'Chantier sans nom',
+          clientId: c.clientId ?? '',
+          clientNom: c.clientNom ?? 'Client inconnu'
         }))
         setChantiers(chantiersData)
       }
     } catch (error) {
       console.error('Erreur lors du chargement des chantiers:', error)
     }
-  }
+  }, [])
 
   const handleChantierChange = (chantierId: string) => {
     setSelectedChantierId(chantierId)
@@ -104,12 +130,12 @@ export default function EditDevisPage() {
     }
   }
 
-  const loadDevis = async () => {
+  const loadDevis = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/devis/${devisId}`)
       if (response.ok) {
-        const devis = await response.json()
+        const devis = (await response.json()) as DevisApiResponse
         
         // Vérifier que le devis est modifiable
         if (devis.statut !== 'BROUILLON') {
@@ -118,23 +144,25 @@ export default function EditDevisPage() {
           return
         }
 
-        setTypeDevis(devis.typeDevis || 'DEVIS')
-        setReference(devis.reference || '')
+        setTypeDevis(devis.typeDevis ?? 'DEVIS')
+        setReference(devis.reference ?? '')
         setSelectedClientId(devis.clientId)
-        setSelectedChantierId(devis.chantierId || '')
-        setObservations(devis.observations || '')
-        setTauxTVA(Number(devis.tauxTVA) || 21)
-        setRemiseGlobale(Number(devis.remiseGlobale) || 0)
-        setLignes(devis.lignes.map((l: any) => ({
+        setSelectedChantierId(devis.chantierId ?? '')
+        setObservations(devis.observations ?? '')
+        setTauxTVA(Number(devis.tauxTVA ?? 21))
+        setRemiseGlobale(Number(devis.remiseGlobale ?? 0))
+
+        const lignesData = Array.isArray(devis.lignes) ? devis.lignes : []
+        setLignes(lignesData.map((l) => ({
           id: l.id,
           type: l.type,
-          article: l.article || '',
-          description: l.description || '',
-          unite: l.unite || '',
-          quantite: Number(l.quantite) || 0,
-          prixUnitaire: Number(l.prixUnitaire) || 0,
-          remise: Number(l.remise) || 0,
-          total: Number(l.total) || 0
+          article: l.article ?? '',
+          description: l.description ?? '',
+          unite: l.unite ?? '',
+          quantite: Number(l.quantite ?? 0),
+          prixUnitaire: Number(l.prixUnitaire ?? 0),
+          remise: Number(l.remise ?? 0),
+          total: Number(l.total ?? 0)
         })))
       } else {
         alert('Erreur lors du chargement du devis')
@@ -147,7 +175,15 @@ export default function EditDevisPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [devisId, router])
+
+  useEffect(() => {
+    void loadClients()
+    void loadChantiers()
+    if (devisId) {
+      void loadDevis()
+    }
+  }, [devisId, loadClients, loadChantiers, loadDevis])
 
   const addLigne = () => {
     const newLigne: LigneDevis = {
@@ -179,20 +215,31 @@ export default function EditDevisPage() {
     setLignes([...lignes, newLigne])
   }
 
-  const updateLigne = (id: string, field: keyof LigneDevis, value: any) => {
+  const updateLigne = (id: string, field: keyof LigneDevis, value: LigneDevis[keyof LigneDevis]) => {
     setLignes(lignes.map(ligne => {
       if (ligne.id === id) {
         const updated = { ...ligne, [field]: value }
-        
-        // Recalculer le total pour les lignes QP
-        if (ligne.type === 'QP' && (field === 'quantite' || field === 'prixUnitaire' || field === 'remise')) {
-          const quantite = field === 'quantite' ? parseFloat(value) || 0 : ligne.quantite
-          const prix = field === 'prixUnitaire' ? parseFloat(value) || 0 : ligne.prixUnitaire
-          const remise = field === 'remise' ? parseFloat(value) || 0 : ligne.remise
+ 
+         // Recalculer le total pour les lignes QP
+         if (ligne.type === 'QP' && (field === 'quantite' || field === 'prixUnitaire' || field === 'remise')) {
+          const parseNumericValue = (input: LigneDevis[keyof LigneDevis]) => {
+            if (typeof input === 'number') {
+              return input
+            }
+            if (typeof input === 'string') {
+              const parsed = Number.parseFloat(input)
+              return Number.isNaN(parsed) ? 0 : parsed
+            }
+            return 0
+          }
+
+          const quantite = field === 'quantite' ? parseNumericValue(value) : ligne.quantite
+          const prix = field === 'prixUnitaire' ? parseNumericValue(value) : ligne.prixUnitaire
+          const remise = field === 'remise' ? parseNumericValue(value) : ligne.remise
           const sousTotal = quantite * prix
           updated.total = sousTotal - (sousTotal * remise / 100)
         }
-        
+ 
         return updated
       }
       return ligne
@@ -608,21 +655,21 @@ function LigneDevisRow({
 }: { 
   index: number
   ligne: LigneDevis
-  onUpdate: (id: string, field: keyof LigneDevis, value: any) => void
+  onUpdate: (id: string, field: keyof LigneDevis, value: LigneDevis[keyof LigneDevis]) => void
   onDelete: (id: string) => void
   moveLigne: (dragIndex: number, hoverIndex: number) => void
 }) {
   const ref = useRef<HTMLTableRowElement>(null)
   const isSectionHeader = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
 
-  const [{ handlerId }, drop] = useDrop({
+  type DragItem = { id: string; index: number; type: 'ligne-devis' }
+
+  const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: Identifier | null }>({
     accept: 'ligne-devis',
-    collect(monitor: any) {
-      return {
-        handlerId: monitor.getHandlerId(),
-      }
-    },
-    hover(item: any, monitor: any) {
+    collect: (monitor) => ({
+      handlerId: monitor.getHandlerId(),
+    }),
+    hover(item, monitor) {
       if (!ref.current) {
         return
       }
@@ -635,8 +682,11 @@ function LigneDevisRow({
 
       const hoverBoundingRect = ref.current?.getBoundingClientRect()
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
-      const clientOffset = monitor.getClientOffset()
-      const hoverClientY = clientOffset!.y - hoverBoundingRect.top
+      const clientOffset = monitor.getClientOffset() as XYCoord | null
+      if (!clientOffset) {
+        return
+      }
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top
 
       if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
         return
@@ -650,12 +700,12 @@ function LigneDevisRow({
     },
   })
 
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag] = useDrag<DragItem, void, { isDragging: boolean }>({
     type: 'ligne-devis',
     item: () => {
-      return { id: ligne.id, index }
+      return { id: ligne.id, index, type: 'ligne-devis' }
     },
-    collect: (monitor: any) => ({
+    collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   })
@@ -765,7 +815,7 @@ function LigneDevisRow({
           min="0"
           max="100"
           value={ligne.remise}
-          onChange={(e) => onUpdate(ligne.id, 'remise', e.target.value)}
+          onChange={(e) => onUpdate(ligne.id, 'remise', parseFloat(e.target.value) || 0)}
           className="w-20 px-2 py-1 text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-orange-500"
         />
       </td>

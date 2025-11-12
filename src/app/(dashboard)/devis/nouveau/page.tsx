@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
+import type { Identifier } from 'dnd-core'
+import type { XYCoord } from 'react-dnd'
 import { 
   PlusIcon, 
   TrashIcon,
@@ -66,8 +68,9 @@ export default function NouveauDevisPage() {
     try {
       const response = await fetch('/api/clients')
       if (response.ok) {
-        const data = await response.json()
-        setClients(Array.isArray(data) ? data : data.clients || [])
+        const data = (await response.json()) as Client[] | { clients?: Client[] }
+        const clientsData = Array.isArray(data) ? data : data.clients ?? []
+        setClients(clientsData)
       }
     } catch (error) {
       console.error('Erreur lors du chargement des clients:', error)
@@ -79,14 +82,21 @@ export default function NouveauDevisPage() {
       // Demander tous les chantiers sans filtre de statut, avec pagination élevée
       const response = await fetch('/api/chantiers?etat=Tous les états&pageSize=1000')
       if (response.ok) {
-        const data = await response.json()
+        const data = (await response.json()) as {
+          chantiers?: Array<{
+            chantierId?: string
+            nomChantier?: string
+            clientId?: string | null
+            clientNom?: string | null
+          }>
+        }
         // L'API retourne un objet { chantiers: [], meta: {} }
-        const chantiersList = data.chantiers || []
-        const chantiersData = chantiersList.map((c: any) => ({
-          chantierId: c.chantierId,
-          nomChantier: c.nomChantier,
-          clientId: c.clientId || '',
-          clientNom: c.clientNom || 'Client inconnu'
+        const chantiersList = data.chantiers ?? []
+        const chantiersData = chantiersList.map((c) => ({
+          chantierId: c.chantierId ?? '',
+          nomChantier: c.nomChantier ?? 'Chantier sans nom',
+          clientId: c.clientId ?? '',
+          clientNom: c.clientNom ?? 'Client inconnu'
         }))
         setChantiers(chantiersData)
       }
@@ -134,20 +144,31 @@ export default function NouveauDevisPage() {
     setLignes([...lignes, newLigne])
   }
 
-  const updateLigne = (id: string, field: keyof LigneDevis, value: any) => {
+  const updateLigne = (id: string, field: keyof LigneDevis, value: LigneDevis[keyof LigneDevis]) => {
     setLignes(lignes.map(ligne => {
       if (ligne.id === id) {
         const updated = { ...ligne, [field]: value }
-        
-        // Recalculer le total pour les lignes QP
-        if (ligne.type === 'QP' && (field === 'quantite' || field === 'prixUnitaire' || field === 'remise')) {
-          const quantite = field === 'quantite' ? parseFloat(value) || 0 : ligne.quantite
-          const prix = field === 'prixUnitaire' ? parseFloat(value) || 0 : ligne.prixUnitaire
-          const remise = field === 'remise' ? parseFloat(value) || 0 : ligne.remise
+ 
+         // Recalculer le total pour les lignes QP
+         if (ligne.type === 'QP' && (field === 'quantite' || field === 'prixUnitaire' || field === 'remise')) {
+          const parseNumericValue = (input: LigneDevis[keyof LigneDevis]) => {
+            if (typeof input === 'number') {
+              return input
+            }
+            if (typeof input === 'string') {
+              const parsed = Number.parseFloat(input)
+              return Number.isNaN(parsed) ? 0 : parsed
+            }
+            return 0
+          }
+
+          const quantite = field === 'quantite' ? parseNumericValue(value) : ligne.quantite
+          const prix = field === 'prixUnitaire' ? parseNumericValue(value) : ligne.prixUnitaire
+          const remise = field === 'remise' ? parseNumericValue(value) : ligne.remise
           const sousTotal = quantite * prix
           updated.total = sousTotal - (sousTotal * remise / 100)
         }
-        
+ 
         return updated
       }
       return ligne
@@ -581,21 +602,21 @@ function LigneDevisRow({
 }: { 
   index: number
   ligne: LigneDevis
-  onUpdate: (id: string, field: keyof LigneDevis, value: any) => void
+  onUpdate: (id: string, field: keyof LigneDevis, value: LigneDevis[keyof LigneDevis]) => void
   onDelete: (id: string) => void
   moveLigne: (dragIndex: number, hoverIndex: number) => void
 }) {
   const ref = useRef<HTMLTableRowElement>(null)
   const isSectionHeader = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
 
-  const [{ handlerId }, drop] = useDrop({
+  type DragItem = { id: string; index: number; type: 'ligne-devis' }
+
+  const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: Identifier | null}>({
     accept: 'ligne-devis',
-    collect(monitor: any) {
-      return {
-        handlerId: monitor.getHandlerId(),
-      }
-    },
-    hover(item: any, monitor: any) {
+    collect: (monitor) => ({
+      handlerId: monitor.getHandlerId(),
+    }),
+    hover(item, monitor) {
       if (!ref.current) {
         return
       }
@@ -608,8 +629,11 @@ function LigneDevisRow({
 
       const hoverBoundingRect = ref.current?.getBoundingClientRect()
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
-      const clientOffset = monitor.getClientOffset()
-      const hoverClientY = clientOffset!.y - hoverBoundingRect.top
+      const clientOffset = monitor.getClientOffset() as XYCoord | null
+      if (!clientOffset) {
+        return
+      }
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top
 
       if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
         return
@@ -623,12 +647,12 @@ function LigneDevisRow({
     },
   })
 
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag] = useDrag<DragItem, void, { isDragging: boolean }>({
     type: 'ligne-devis',
     item: () => {
-      return { id: ligne.id, index }
+      return { id: ligne.id, index, type: 'ligne-devis' }
     },
-    collect: (monitor: any) => ({
+    collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   })

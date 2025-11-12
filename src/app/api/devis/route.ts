@@ -3,6 +3,32 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 
+interface LignePayload {
+  id?: string
+  type?: string
+  article?: string | null
+  description?: string | null
+  unite?: string | null
+  quantite?: number
+  prixUnitaire?: number
+  remise?: number
+  total?: number
+}
+
+interface CreateDevisPayload {
+  typeDevis?: 'DEVIS' | 'AVENANT'
+  reference?: string | null
+  clientId: string
+  chantierId?: string | null
+  observations?: string | null
+  tauxTVA?: number
+  remiseGlobale?: number
+  montantHT?: number
+  montantTVA?: number
+  montantTTC?: number
+  lignes?: LignePayload[]
+}
+
 // GET /api/devis - Liste tous les devis
 export async function GET(request: NextRequest) {
   try {
@@ -16,18 +42,11 @@ export async function GET(request: NextRequest) {
     const clientId = searchParams.get('clientId')
     const statut = searchParams.get('statut')
 
-    const where: any = {}
-    
-    if (clientId) {
-      where.clientId = clientId
-    }
-    
-    if (statut) {
-      where.statut = statut
-    }
-
     const devis = await prisma.devis.findMany({
-      where,
+      where: {
+        ...(clientId ? { clientId } : {}),
+        ...(statut ? { statut } : {})
+      },
       include: {
         client: {
           select: {
@@ -80,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = (await request.json()) as CreateDevisPayload
     const { 
       typeDevis = 'DEVIS',
       reference,
@@ -152,19 +171,23 @@ export async function POST(request: NextRequest) {
         montantTTC,
         createdBy: session.user.id,
         lignes: {
-          create: lignes.map((ligne: any, index: number) => ({
-            ordre: index + 1,
-            type: ligne.type || 'QP',
-            article: ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE' 
-              ? (ligne.type === 'TITRE' ? 'ARTICLE_TITRE' : 'ARTICLE_SOUS_TITRE')
-              : ligne.article,
-            description: ligne.description,
-            unite: ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE' ? '' : ligne.unite,
-            quantite: ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE' ? 0 : ligne.quantite,
-            prixUnitaire: ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE' ? 0 : ligne.prixUnitaire,
-            remise: ligne.remise || 0,
-            total: ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE' ? 0 : ligne.total
-          }))
+          create: lignes.map((ligne, index) => {
+            const typeLigne = ligne.type ?? 'QP'
+            const isSection = typeLigne === 'TITRE' || typeLigne === 'SOUS_TITRE'
+            return {
+              ordre: index + 1,
+              type: typeLigne,
+              article: isSection
+                ? (typeLigne === 'TITRE' ? 'ARTICLE_TITRE' : 'ARTICLE_SOUS_TITRE')
+                : ligne.article ?? null,
+              description: ligne.description ?? null,
+              unite: isSection ? '' : ligne.unite ?? '',
+              quantite: isSection ? 0 : ligne.quantite ?? 0,
+              prixUnitaire: isSection ? 0 : ligne.prixUnitaire ?? 0,
+              remise: ligne.remise ?? 0,
+              total: isSection ? 0 : ligne.total ?? 0
+            }
+          })
         }
       },
       include: {
