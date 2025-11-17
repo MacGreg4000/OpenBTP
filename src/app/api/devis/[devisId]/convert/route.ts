@@ -116,19 +116,24 @@ export async function POST(
       const year = new Date().getFullYear()
       const lastCommande = await prisma.commande.findFirst({
         where: {
-          numeroCommande: {
+          reference: {
             startsWith: `CMD-${year}-`
           }
         },
         orderBy: {
-          numeroCommande: 'desc'
+          createdAt: 'desc'
         }
       })
 
       let nextNumber = 1
-      if (lastCommande) {
-        const lastNumber = parseInt(lastCommande.numeroCommande.split('-')[2])
-        nextNumber = lastNumber + 1
+      if (lastCommande && lastCommande.reference) {
+        const parts = lastCommande.reference.split('-')
+        if (parts.length >= 3) {
+          const lastNumber = parseInt(parts[2])
+          if (!isNaN(lastNumber)) {
+            nextNumber = lastNumber + 1
+          }
+        }
       }
 
       const numeroCommande = `CMD-${year}-${nextNumber.toString().padStart(4, '0')}`
@@ -136,35 +141,85 @@ export async function POST(
       console.log('📦 Création de la commande:', {
         numeroCommande,
         chantierId: chantier.id,
-        clientId: chantier.clientId,
-        montantHT: devis.montantHT,
+        clientId: devis.clientId,
+        sousTotal: devis.montantHT,
+        total: devis.montantTTC,
         nombreLignes: devis.lignes.length
       })
 
       // Créer la commande (utiliser l'ID primaire du chantier)
       const commande = await prisma.commande.create({
         data: {
-          numeroCommande,
+          reference: numeroCommande,
           chantierId: chantier.id,
-          type: 'CLIENT',
+          clientId: devis.clientId,
           statut: 'VALIDEE',
           dateCommande: new Date(),
-          montantHT: devis.montantHT,
+          sousTotal: Number(devis.montantHT) || 0,
           tauxTVA: Number(devis.tauxTVA) || 21,
-          montantTTC: devis.montantTTC,
-          observations: devis.observations,
+          tva: Number(devis.montantTVA) || 0,
+          total: Number(devis.montantTTC) || 0,
           lignes: {
-            create: devis.lignes.map((ligne) => ({
-              ordre: ligne.ordre,
-              type: ligne.type,
-              article: ligne.article,
-              description: ligne.description,
-              unite: ligne.unite,
-              quantite: ligne.quantite || 0,
-              prixUnitaire: ligne.prixUnitaire || 0,
-              total: ligne.total || 0,
-              estOption: false
-            }))
+            create: (() => {
+              // Étape 1 : Appliquer les remises de lignes et calculer le total HT après remises de lignes
+              const lignesAvecRemiseLigne = devis.lignes.map((ligne) => {
+                let prixUnitaireApresRemiseLigne = Number(ligne.prixUnitaire) || 0
+                let totalApresRemiseLigne = 0
+                
+                if (ligne.type === 'QP' && ligne.remise > 0 && ligne.remise < 100) {
+                  // Appliquer la remise de ligne au prix unitaire
+                  prixUnitaireApresRemiseLigne = prixUnitaireApresRemiseLigne * (1 - ligne.remise / 100)
+                  totalApresRemiseLigne = (Number(ligne.quantite) || 0) * prixUnitaireApresRemiseLigne
+                } else if (ligne.type === 'QP') {
+                  // Pas de remise de ligne, calculer normalement
+                  totalApresRemiseLigne = (Number(ligne.quantite) || 0) * prixUnitaireApresRemiseLigne
+                }
+                
+                return {
+                  ...ligne,
+                  prixUnitaireApresRemiseLigne,
+                  totalApresRemiseLigne
+                }
+              })
+              
+              // Étape 2 : Calculer le total HT après remises de lignes
+              const totalHTApresRemisesLignes = lignesAvecRemiseLigne.reduce(
+                (sum, l) => sum + l.totalApresRemiseLigne,
+                0
+              )
+              
+              // Étape 3 : Appliquer la remise globale proportionnellement à chaque ligne
+              const remiseGlobale = Number(devis.remiseGlobale) || 0
+              const montantRemiseGlobale = totalHTApresRemisesLignes * (remiseGlobale / 100)
+              
+              // Étape 4 : Créer les lignes avec prix unitaire final (remise ligne + remise globale)
+              return lignesAvecRemiseLigne.map((ligne) => {
+                let prixUnitaireFinal = ligne.prixUnitaireApresRemiseLigne
+                let totalFinal = ligne.totalApresRemiseLigne
+                
+                if (ligne.type === 'QP' && remiseGlobale > 0 && totalHTApresRemisesLignes > 0) {
+                  // Appliquer la remise globale proportionnellement
+                  const proportion = ligne.totalApresRemiseLigne / totalHTApresRemisesLignes
+                  const remiseGlobaleLigne = montantRemiseGlobale * proportion
+                  totalFinal = ligne.totalApresRemiseLigne - remiseGlobaleLigne
+                  // Recalculer le prix unitaire final
+                  const quantite = Number(ligne.quantite) || 0
+                  prixUnitaireFinal = quantite > 0 ? totalFinal / quantite : 0
+                }
+                
+                return {
+                  ordre: ligne.ordre,
+                  type: ligne.type,
+                  article: ligne.article,
+                  description: ligne.description,
+                  unite: ligne.unite,
+                  quantite: ligne.quantite || 0,
+                  prixUnitaire: prixUnitaireFinal,
+                  total: totalFinal,
+                  estOption: false
+                }
+              })
+            })()
           }
         },
         include: {
@@ -173,7 +228,7 @@ export async function POST(
               ordre: 'asc'
             }
           },
-          chantier: {
+          Chantier: {
             include: {
               client: true
             }
