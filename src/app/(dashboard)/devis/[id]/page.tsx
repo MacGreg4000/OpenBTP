@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { 
-  ArrowLeftIcon,
   PencilIcon,
   TrashIcon,
   DocumentDuplicateIcon,
@@ -11,8 +10,10 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   DocumentArrowDownIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
+import { PageHeader } from '@/components/PageHeader'
 
 interface Devis {
   id: string
@@ -323,148 +324,125 @@ export default function DevisDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header léger style backdrop-blur */}
-        <div className="mb-6">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            {/* Effet de fond subtil avec dégradé orange/red (couleur Devis) - opacité 60% */}
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/60 via-orange-700/60 to-red-800/60 dark:from-orange-600/30 dark:via-orange-700/30 dark:to-red-800/30"></div>
-            
-            <div className="relative z-10 p-4 sm:p-6">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => router.push('/devis')}
-                  className="p-2 bg-white/30 backdrop-blur-sm rounded-lg hover:bg-white/40 transition-all duration-200"
-                >
-                  <ArrowLeftIcon className="h-5 w-5 text-orange-900 dark:text-white" />
-                </button>
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Badge Type */}
-                  <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg ring-2 backdrop-blur-sm ${
-                    devis.typeDevis === 'DEVIS' 
-                      ? 'bg-blue-500/90 text-white ring-blue-300/50'
-                      : 'bg-purple-500/90 text-white ring-purple-300/50'
-                  }`}>
-                    {devis.typeDevis === 'DEVIS' ? '📄 Devis' : '📋 Avenant'}
-                  </span>
-                  
-                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                    <DocumentTextIcon className="w-6 h-6 mr-3 text-orange-900 dark:text-white" />
-                    <div>
-                      <h1 className="text-xl font-bold text-orange-900 dark:text-white">
-                        {devis.numeroDevis}
-                        {devis.reference && (
-                          <span className="ml-2 text-sm font-semibold">
-                            - {devis.reference}
-                          </span>
-                        )}
-                      </h1>
-                      <p className="text-xs text-orange-800 dark:text-orange-100">
-                        Créé le {formatDate(devis.dateCreation)} par {devis.createur.name}
-                      </p>
-                    </div>
-                  </div>
-                  {isExpired() && (
-                    <span className="inline-flex items-center px-3 py-2 rounded-full text-sm font-semibold bg-red-500/90 text-white shadow-lg ring-2 ring-red-300/50 backdrop-blur-sm">
-                      Expiré
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center space-x-3">
-                  <a
-                    href={`/api/devis/${devisId}/pdf`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
-                  >
-                    <DocumentArrowDownIcon className="h-5 w-5" />
-                    PDF
-                  </a>
-
-                  <button
-                    onClick={handleDuplicate}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
-                  >
-                    <DocumentDuplicateIcon className="h-5 w-5" />
-                    Dupliquer
-                  </button>
-
-                  {canEdit && (
-                    <button
-                      onClick={() => router.push(`/devis/${devis.id}/edit`)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                      Modifier
-                    </button>
-                  )}
-
-                  {canConvert && (
-                    <button
-                      onClick={() => {
-                        loadChantiers()
-                        setShowConvertModal(true)
-                      }}
-                      className={`inline-flex items-center gap-2 px-4 py-2 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg transition-all duration-200 text-white ring-2 ring-white/30 ${
-                        devis.typeDevis === 'DEVIS'
-                          ? 'bg-green-600/90 hover:bg-green-700'
-                          : 'bg-purple-600/90 hover:bg-purple-700'
-                      }`}
-                    >
-                      <ArrowPathIcon className="h-5 w-5" />
-                      {devis.typeDevis === 'DEVIS' ? 'Convertir en commande' : 'Ajouter comme avenant'}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={handleDelete}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-red-500/30 transition-all duration-200 text-red-900 dark:text-red-300"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
+      <PageHeader
+        title={`${devis.numeroDevis}${devis.reference ? ` - ${devis.reference}` : ''}`}
+        subtitle={`Créé le ${formatDate(devis.dateCreation)} par ${devis.createur.name}`}
+        icon={DocumentTextIcon}
+        badgeColor="from-orange-600 via-orange-700 to-red-700"
+        gradientColor="from-orange-600/10 via-orange-700/10 to-red-700/10"
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Badges à droite du titre */}
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold ${
+                devis.typeDevis === 'DEVIS' 
+                  ? 'bg-blue-500/90 text-white'
+                  : 'bg-orange-500/90 text-white'
+              }`}>
+                {devis.typeDevis === 'DEVIS' ? '📄 Devis' : '📋 Avenant'}
+              </span>
+              {isExpired() && (
+                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold bg-red-500/90 text-white">
+                  Expiré
+                </span>
+              )}
             </div>
+            
+            {/* Séparateur visuel */}
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            
+            {/* Boutons d'action */}
+            <a
+              href={`/api/devis/${devisId}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">PDF</span>
+            </a>
+
+            <button
+              onClick={handleDuplicate}
+              className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+            >
+              <DocumentDuplicateIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Dupliquer</span>
+            </button>
+
+            {canEdit && (
+              <button
+                onClick={() => router.push(`/devis/${devis.id}/edit`)}
+                className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+              >
+                <PencilIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Modifier</span>
+              </button>
+            )}
+
+            {canConvert && (
+              <button
+                onClick={() => {
+                  loadChantiers()
+                  setShowConvertModal(true)
+                }}
+                className="inline-flex items-center gap-2 px-3 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200"
+              >
+                <ArrowPathIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {devis.typeDevis === 'DEVIS' ? 'Convertir en commande' : 'Ajouter comme avenant'}
+                </span>
+                <span className="sm:hidden">Convertir</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-2 px-3 py-2 border border-red-300 dark:border-red-600 rounded-lg shadow-sm text-sm font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
           </div>
-        </div>
+        }
+      />
+
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Carte Chantier (si avenant) */}
         {devis.typeDevis === 'AVENANT' && devis.chantier && (
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-purple-200/50 dark:border-purple-700/50 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span className="text-2xl">🏗️</span>
-              <div>
-                <div>Chantier associé</div>
-                <div className="text-xs font-normal text-gray-600 dark:text-gray-400">Cet avenant sera ajouté à l'état d'avancement de ce chantier</div>
+          <div className="bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-orange-200/50 dark:border-orange-700/50 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🏗️</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span>Chantier associé</span>
+                    <span className="text-base font-bold text-orange-900 dark:text-orange-300">- {devis.chantier.nomChantier}</span>
+                    <a
+                      href={`/chantiers/${devis.chantier.chantierId}`}
+                      className="inline-flex items-center justify-center p-1 text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
+                      title="Voir le chantier"
+                    >
+                      <EyeIcon className="h-4 w-4" />
+                    </a>
+                  </div>
+                  <div className="text-xs font-normal text-gray-600 dark:text-gray-400">Cet avenant sera ajouté à l'état d'avancement de ce chantier</div>
+                </div>
               </div>
             </h2>
-            <div className="space-y-2">
+            {devis.chantier.adresse && (
               <div className="flex justify-between items-start">
-                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Nom du chantier</span>
-                <span className="text-sm font-bold text-purple-900 dark:text-purple-300 text-right">{devis.chantier.nomChantier}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Adresse</span>
+                <span className="text-sm text-gray-900 dark:text-white text-right max-w-xs">{devis.chantier.adresse}</span>
               </div>
-              {devis.chantier.adresse && (
-                <div className="flex justify-between items-start">
-                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Adresse</span>
-                  <span className="text-sm text-gray-900 dark:text-white text-right max-w-xs">{devis.chantier.adresse}</span>
-                </div>
-              )}
-              <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
-                <a
-                  href={`/chantiers/${devis.chantier.chantierId}`}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 transition-colors"
-                >
-                  Voir le chantier →
-                </a>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* Informations générales avec design moderne */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Client */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl transition-shadow duration-300">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
               Client
@@ -494,7 +472,7 @@ export default function DevisDetailPage() {
           </div>
 
           {/* Détails devis */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl transition-shadow duration-300">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
               Détails du devis
@@ -570,7 +548,7 @@ export default function DevisDetailPage() {
 
         {/* Observations */}
         {devis.observations && (
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
               Observations
@@ -582,7 +560,7 @@ export default function DevisDetailPage() {
         )}
 
         {/* Lignes du devis */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
             Lignes du devis
@@ -677,7 +655,7 @@ export default function DevisDetailPage() {
         </div>
 
         {/* Note sur les CGV */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/50 rounded-2xl p-5 backdrop-blur-sm">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/50 rounded-2xl p-5 backdrop-blur-sm shadow-xl">
           <p className="text-sm text-blue-800 dark:text-blue-300">
             <span className="font-medium">Note :</span> Les conditions générales de vente seront incluses dans le PDF généré, selon le template configuré dans les paramètres de l'entreprise.
           </p>
@@ -687,11 +665,7 @@ export default function DevisDetailPage() {
         {showConvertModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className={`px-6 py-4 ${
-                devis.typeDevis === 'DEVIS'
-                  ? 'bg-gradient-to-r from-green-600 to-green-700'
-                  : 'bg-gradient-to-r from-purple-600 to-purple-700'
-              }`}>
+              <div className="px-6 py-4 bg-gradient-to-r from-orange-600 to-orange-700">
                 <h3 className="text-lg font-semibold text-white">
                   {devis.typeDevis === 'DEVIS' 
                     ? '📄 Convertir en commande' 
@@ -722,10 +696,10 @@ export default function DevisDetailPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       Cet avenant sera ajouté comme ligne dans l'état d'avancement du chantier :
                     </p>
-                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-6 border border-purple-200 dark:border-purple-700">
+                    <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 mb-6 border border-orange-200 dark:border-orange-700">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-2xl">🏗️</span>
-                        <span className="font-bold text-purple-900 dark:text-purple-300">
+                        <span className="font-bold text-orange-900 dark:text-orange-300">
                           {devis.chantier?.nomChantier || 'Chantier'}
                         </span>
                       </div>
@@ -751,11 +725,7 @@ export default function DevisDetailPage() {
                   <button
                     onClick={handleConvert}
                     disabled={converting || (devis.typeDevis === 'DEVIS' && !selectedChantierId)}
-                    className={`px-4 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all ${
-                      devis.typeDevis === 'DEVIS'
-                        ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
-                        : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
-                    }`}
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
                   >
                     {converting ? 'Conversion...' : 'Convertir'}
                   </button>
@@ -776,7 +746,7 @@ function StatusBadge({ statut }: { statut: string }) {
     EN_ATTENTE: { label: 'En attente', color: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900/50 dark:to-blue-800/50 dark:text-blue-300 ring-2 ring-blue-300/50 dark:ring-blue-500/50' },
     ACCEPTE: { label: 'Accepté', color: 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/50 dark:to-green-800/50 dark:text-green-300 ring-2 ring-green-300/50 dark:ring-green-500/50' },
     REFUSE: { label: 'Refusé', color: 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/50 dark:to-red-800/50 dark:text-red-300 ring-2 ring-red-300/50 dark:ring-red-500/50' },
-    CONVERTI: { label: 'Converti', color: 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 dark:from-purple-900/50 dark:to-purple-800/50 dark:text-purple-300 ring-2 ring-purple-300/50 dark:ring-purple-500/50' },
+    CONVERTI: { label: 'Converti', color: 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 dark:from-orange-900/50 dark:to-orange-800/50 dark:text-orange-300 ring-2 ring-orange-300/50 dark:ring-orange-500/50' },
     EXPIRE: { label: 'Expiré', color: 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 dark:from-orange-900/50 dark:to-orange-800/50 dark:text-orange-300 ring-2 ring-orange-300/50 dark:ring-orange-500/50' }
   }
 

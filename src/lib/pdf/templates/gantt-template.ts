@@ -303,7 +303,7 @@ export function generateGanttHTML(data: GanttData): string {
           justify-content: space-around;
           margin: 20px 0;
           padding: 15px;
-          background: #f8fafc;
+          background: white;
           border-radius: 8px;
           border: 1px solid #e5e7eb;
         }
@@ -405,7 +405,7 @@ export function generateGanttHTML(data: GanttData): string {
           padding: 0 8px;
           position: relative;
           min-width: 50px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          box-shadow: none;
         }
         
         .bar-text {
@@ -420,7 +420,7 @@ export function generateGanttHTML(data: GanttData): string {
         .legend {
           margin-top: 30px;
           padding: 15px;
-          background: #f8fafc;
+          background: white;
           border-radius: 8px;
           border: 1px solid #e5e7eb;
         }

@@ -109,6 +109,7 @@ export function generateCommandeHTML(data: CommandeData): string {
             max-width: 100%;
             margin: 0 auto;
             padding: 12px;
+            background: white;
             /* Mode paysage - plus d'espace horizontal */
         }
         
@@ -195,7 +196,7 @@ export function generateCommandeHTML(data: CommandeData): string {
             gap: 20px;
             margin-bottom: 20px;
             padding: 15px;
-            background: #f8fafc;
+            background: white;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
         }
@@ -227,7 +228,7 @@ export function generateCommandeHTML(data: CommandeData): string {
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: none;
             /* Permettre les sauts de page dans les grands tableaux */
             page-break-inside: auto;
             break-inside: auto;
@@ -255,14 +256,22 @@ export function generateCommandeHTML(data: CommandeData): string {
             background: white;
         }
         
+        thead {
+            background: white;
+        }
+        
+        tbody {
+            background: white;
+        }
+        
         th {
-            background: #f1f5f9;
+            background: white;
             padding: 8px 6px;
             text-align: left;
             font-size: 8px;
             font-weight: bold;
             color: #374151;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 2px solid #e2e8f0;
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
@@ -273,16 +282,17 @@ export function generateCommandeHTML(data: CommandeData): string {
         td {
             padding: 6px;
             font-size: 8px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
             vertical-align: top;
+            background: white;
         }
         
         tr:nth-child(even) {
-            background: #fafbfc;
+            background: white;
         }
         
         tr:hover {
-            background: #f0f9ff;
+            background: white;
         }
         
         .montant {
@@ -291,7 +301,8 @@ export function generateCommandeHTML(data: CommandeData): string {
         }
         
         .quantite-actuelle {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            background: white;
+            border: 1px solid #3b82f6;
             font-weight: bold;
             color: #1e40af;
         }
@@ -312,7 +323,7 @@ export function generateCommandeHTML(data: CommandeData): string {
         }
         
         .option-no {
-            background: #f1f5f9;
+            background: #e2e8f0;
             color: #64748b;
         }
 
@@ -326,10 +337,12 @@ export function generateCommandeHTML(data: CommandeData): string {
         }
 
         .section-row.section-subtitle td {
-            background: #f1f5f9;
+            background: white;
             color: #1f2937;
             font-size: 9px;
             font-weight: 600;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .section-cell {
@@ -345,11 +358,11 @@ export function generateCommandeHTML(data: CommandeData): string {
         }
         
         .summary-card {
-            background: #ffffff;
+            background: white;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: none;
             position: relative;
             border-left: 3px solid #1e40af;
         }

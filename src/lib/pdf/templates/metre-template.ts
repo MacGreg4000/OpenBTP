@@ -94,6 +94,7 @@ export function generateMetreHTML(data: MetreData): string {
             max-width: 210mm;
             margin: 0 auto;
             padding: 0;
+            background: white;
         }
         
         /* En-tête */
@@ -160,11 +161,12 @@ export function generateMetreHTML(data: MetreData): string {
         
         /* Informations chantier */
         .chantier-info {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            background: white;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 25px;
             border-left: 4px solid #2563eb;
+            border: 1px solid #e2e8f0;
         }
         
         .chantier-info h2 {
@@ -229,7 +231,7 @@ export function generateMetreHTML(data: MetreData): string {
         }
         
         .categorie-content {
-            background: #f8fafc;
+            background: white;
             border: 1px solid #e2e8f0;
             border-top: none;
             border-radius: 0 0 8px 8px;
@@ -250,8 +252,16 @@ export function generateMetreHTML(data: MetreData): string {
             background: white;
         }
         
+        thead {
+            background: white;
+        }
+        
+        tbody {
+            background: white;
+        }
+        
         th {
-            background: #f1f5f9;
+            background: white;
             padding: 10px 8px;
             text-align: left;
             font-size: 9pt;
@@ -268,16 +278,17 @@ export function generateMetreHTML(data: MetreData): string {
         td {
             padding: 8px;
             font-size: 9pt;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
             vertical-align: top;
+            background: white;
         }
         
         tr:nth-child(even) {
-            background: #fafbfc;
+            background: white;
         }
         
         tfoot {
-            background: #f1f5f9;
+            background: white;
         }
         
         tfoot td {

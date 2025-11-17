@@ -117,7 +117,7 @@ export function generateBonRegieHTML(data: BonRegieData, companySettings: Compan
         }
         
         .work-section {
-            background: #f8fafc;
+            background: white;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 20px;

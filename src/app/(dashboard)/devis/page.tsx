@@ -69,7 +69,7 @@ const statutLabels: Record<string, { label: string; color: string; icon: IconCom
   },
   CONVERTI: { 
     label: 'Converti', 
-    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
     icon: ArrowPathIcon
   },
   EXPIRE: { 
@@ -199,7 +199,7 @@ export default function DevisPage() {
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
       {/* Filtres */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">Filtres</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Filtre par numéro de devis */}
@@ -244,7 +244,7 @@ export default function DevisPage() {
       </div>
 
       {/* Liste des devis */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20">
@@ -304,7 +304,7 @@ export default function DevisPage() {
                       <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold shadow-sm ${
                         devis.typeDevis === 'DEVIS' 
                           ? 'bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 text-blue-900 dark:text-blue-300 ring-2 ring-blue-300/50 dark:ring-blue-500/50'
-                          : 'bg-gradient-to-r from-purple-100 to-purple-200 dark:from-purple-900/50 dark:to-purple-800/50 text-purple-900 dark:text-purple-300 ring-2 ring-purple-300/50 dark:ring-purple-500/50'
+                          : 'bg-gradient-to-r from-orange-100 to-orange-200 dark:from-orange-900/50 dark:to-orange-800/50 text-orange-900 dark:text-orange-300 ring-2 ring-orange-300/50 dark:ring-orange-500/50'
                       }`}>
                         {devis.typeDevis === 'DEVIS' ? '📄 Devis' : '📋 Avenant'}
                       </span>
@@ -329,7 +329,7 @@ export default function DevisPage() {
                         {devis.client.nom}
                       </div>
                       {devis.chantier && (
-                        <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1">
+                        <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold mt-1">
                           🏗️ {devis.chantier.nomChantier}
                         </div>
                       )}
@@ -382,61 +382,6 @@ export default function DevisPage() {
         </table>
         </div>
       </div>
-
-      {/* Stats */}
-      {devisFiltres.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Total devis</div>
-                <div className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white">
-                  {devisFiltres.length}
-                </div>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl">
-                <DocumentTextIcon className="h-8 w-8 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-white to-orange-50 dark:from-gray-800 dark:to-orange-900/10 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-orange-200/50 dark:border-orange-700/50 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Montant total HT</div>
-                <div className="mt-2 text-3xl font-extrabold text-orange-700 dark:text-orange-400">
-                  {formatCurrency(devisFiltres.reduce((sum, d) => sum + Number(d.montantHT), 0))}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900/10 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-blue-200/50 dark:border-blue-700/50 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">En attente</div>
-                <div className="mt-2 text-3xl font-extrabold text-blue-600 dark:text-blue-400">
-                  {devisFiltres.filter(d => d.statut === 'EN_ATTENTE').length}
-                </div>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl">
-                <ClockIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-green-900/10 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-green-200/50 dark:border-green-700/50 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Acceptés</div>
-                <div className="mt-2 text-3xl font-extrabold text-green-600 dark:text-green-400">
-                  {devisFiltres.filter(d => d.statut === 'ACCEPTE').length}
-                </div>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-xl">
-                <CheckCircleIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </div>
     </div>
   )

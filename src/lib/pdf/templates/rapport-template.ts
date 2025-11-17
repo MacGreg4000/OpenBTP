@@ -76,6 +76,7 @@ export function generateRapportHTML(data: RapportData): string {
             max-width: 210mm;
             margin: 0 auto;
             padding: 10mm;
+            background: white;
         }
         
         /* En-tête moderne */
@@ -229,7 +230,7 @@ export function generateRapportHTML(data: RapportData): string {
         }
         
         .section-content {
-            background: #f8fafc;
+            background: white;
             border: 1px solid #e2e8f0;
             border-top: none;
             border-radius: 0 0 8px 8px;
@@ -330,7 +331,7 @@ export function generateRapportHTML(data: RapportData): string {
         .photo-image-container {
             width: 100%;
             text-align: center;
-            background: #f8fafc;
+            background: white;
             padding: 10px;
         }
         
@@ -530,7 +531,7 @@ export function generateRapportHTML(data: RapportData): string {
                         return `
                         <div class="photo-item">
                             <div class="photo-image-container">
-                                ${isBase64 ? `<img src="${photo.preview}" alt="Photo ${index + 1}" class="photo-image" onerror="this.style.display='none'" />` : `<div style="padding: 60px; text-align: center; color: #94a3b8; background: #f1f5f9; border-radius: 6px;">
+                                ${isBase64 ? `<img src="${photo.preview}" alt="Photo ${index + 1}" class="photo-image" onerror="this.style.display='none'" />` : `<div style="padding: 60px; text-align: center; color: #94a3b8; background: white; border: 1px solid #e2e8f0; border-radius: 6px;">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 60px; height: 60px; margin: 0 auto 10px;">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                                     </svg>

@@ -103,6 +103,7 @@ export function generateChoixClientHTML(data: ChoixClientData): string {
       width: 100%;
       max-width: 210mm;
       padding: 0;
+      background: white;
     }
 
     /* En-tête */
@@ -157,7 +158,8 @@ export function generateChoixClientHTML(data: ChoixClientData): string {
 
     /* Informations client */
     .client-info {
-      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      background: white;
+      border: 1px solid #e2e8f0;
       padding: 15px;
       border-radius: 8px;
       margin-bottom: 20px;
@@ -268,7 +270,7 @@ export function generateChoixClientHTML(data: ChoixClientData): string {
       height: 36px;
       border-radius: 50%;
       border: 3px solid #ffffff;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: none;
       flex-shrink: 0;
     }
 

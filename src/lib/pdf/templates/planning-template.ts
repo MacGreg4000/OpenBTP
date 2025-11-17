@@ -205,7 +205,7 @@ export function generatePlanningHTML(
     }
 
     .planning-table th {
-      background: #f8fafc;
+      background: white;
       border: 1px solid #d1d5db;
       padding: 8px 4px;
       text-align: center;
@@ -307,7 +307,7 @@ export function generatePlanningHTML(
     .legend {
       margin-top: 20px;
       padding: 10px;
-      background: #f8fafc;
+      background: white;
       border: 1px solid #e5e7eb;
       border-radius: 4px;
       font-size: 7px;
