@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon, LockClosedIcon, CalendarIcon, ClipboardDocumentListIcon, WrenchScrewdriverIcon, DocumentPlusIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, LockClosedIcon, CalendarIcon, ClipboardDocumentListIcon, WrenchScrewdriverIcon, DocumentPlusIcon, ArrowRightIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
 import { PortalI18nProvider, usePortalI18n } from '../../i18n'
 import Link from 'next/link'
 
@@ -223,6 +223,14 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
               <ArrowRightIcon className="h-4 w-4 text-gray-400 mt-1"/>
             </button>
           )}
+          {/* Consultation des chantiers */}
+          <button onClick={() => router.push(`/public/portail/${type}/${actorId}/chantiers`)} className="bg-white rounded-xl p-4 shadow flex flex-col items-center justify-center border border-gray-100 hover:shadow-md active:scale-[0.99] transition">
+            <div className="h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <BuildingOfficeIcon className="h-5 w-5"/>
+            </div>
+            <div className="mt-2 text-sm font-semibold text-gray-800">Chantiers</div>
+            <ArrowRightIcon className="h-4 w-4 text-gray-400 mt-1"/>
+          </button>
         </div>
 
         {/* Carte Upload Photos */}

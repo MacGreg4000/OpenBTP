@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { usePortalI18n } from '../../../../i18n'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { PortalI18nProvider, usePortalI18n } from '../../../../i18n'
 
 interface LigneInput {
   ligneCommandeId?: number
@@ -14,8 +15,7 @@ interface LigneInput {
   estSupplement?: boolean
 }
 
-export default function NouveauMetrePage() {
-  const params = useParams() as { type: 'ouvrier'|'soustraitant'; actorId: string }
+function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
   const router = useRouter()
   const { t } = usePortalI18n()
   const [chantierId, setChantierId] = useState<string>('')
@@ -155,7 +155,7 @@ export default function NouveauMetrePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4">
       {/* Overlay incitation paysage sur mobile portrait */}
       {isPortraitMobile && (
         <div className="fixed inset-0 z-50 bg-black/70 text-white flex flex-col items-center justify-center px-6 text-center">
@@ -167,99 +167,123 @@ export default function NouveauMetrePage() {
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-4 lg:p-6">
-        <h1 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4">{t('submit_metre')}</h1>
-
-        {/* Mode chantier libre */}
-        <div className="mb-4 flex items-center gap-3">
-          <input id="freeMode" type="checkbox" checked={freeMode} onChange={e=> setFreeMode(e.target.checked)} />
-          <label htmlFor="freeMode" className="text-sm">{t('create_free_metre')}</label>
-        </div>
-
-        {!freeMode ? (
-          <>
-            <label className="block text-sm font-medium mb-1">{t('chantier_label')}</label>
-            <select className="w-full border rounded p-2 mb-4" value={chantierId} onChange={e => setChantierId(e.target.value)}>
-              <option value="">{t('select_placeholder')}</option>
-              {chantiers.map(c => (
-                <option key={c.chantierId} value={c.chantierId}>{c.nomChantier}</option>
-              ))}
-            </select>
-          </>
-        ) : (
-          <>
-            <label className="block text-sm font-medium mb-1">{t('free_chantier_name')}</label>
-            <input className="w-full border rounded p-2 mb-4" value={freeChantierNom} onChange={e=> setFreeChantierNom(e.target.value)} placeholder="Ex: Intervention ponctuelle" />
-          </>
-        )}
-
-        {/* Lignes */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 text-left">{t('table_description')}</th>
-                <th className="p-2">{t('table_unit')}</th>
-                <th className="p-2">{t('table_unit_price')}</th>
-                <th className="p-2">{t('table_quantity')}</th>
-                <th className="p-2">{t('table_total')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lignes.map((l, idx) => (
-                <tr key={idx} className="border-t">
-                  <td className="p-2">
-                    <input className="w-full border rounded p-1" value={l.description} onChange={e => {
-                      const v = e.target.value; setLignes(prev => prev.map((x,i)=> i===idx?{...x, description:v}:x))
-                    }} />
-                  </td>
-                  <td className="p-2 w-24">
-                    <input className="w-full border rounded p-1 text-center" value={l.unite} onChange={e => {
-                      const v = e.target.value; setLignes(prev => prev.map((x,i)=> i===idx?{...x, unite:v}:x))
-                    }} />
-                  </td>
-                  <td className="p-2 w-28">
-                    <input type="number" className="w-full border rounded p-1 text-right" value={l.prixUnitaire} onChange={e => {
-                      const v = Number(e.target.value||0); setLignes(prev => prev.map((x,i)=> i===idx?{...x, prixUnitaire:v}:x))
-                    }} />
-                  </td>
-                  <td className="p-2 w-28">
-                    <input type="number" className="w-full border rounded p-1 text-right" value={l.quantite} onChange={e => {
-                      const v = Number(e.target.value||0); setLignes(prev => prev.map((x,i)=> i===idx?{...x, quantite:v}:x))
-                    }} />
-                  </td>
-                  <td className="p-2 w-28 text-right">{(l.prixUnitaire * (l.quantite||0)).toFixed(2)} €</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-3 flex gap-2">
-            <button onClick={addSupplement} className="px-3 py-1.5 text-sm rounded border">
-              {freeMode ? t('add_line') : t('add_supplement')}
+      <div className="max-w-md mx-auto space-y-4">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow text-white">
+          <div className="p-4 flex items-center gap-2">
+            <button 
+              onClick={() => router.back()}
+              className="inline-flex items-center text-white/90 hover:text-white"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-1"/>
+              {t('back')}
             </button>
+            <div className="ml-auto font-medium">{t('submit_metre')}</div>
           </div>
         </div>
 
-        {/* Commentaire */}
-        <label className="block text-sm font-medium mt-6 mb-1">{t('comment_label')}</label>
-        <textarea className="w-full border rounded p-2" rows={4} value={commentaire} onChange={e=>setCommentaire(e.target.value)} />
+        <div className="bg-white rounded-xl shadow border border-gray-100 p-4 lg:p-6">
 
-        {/* Pièces jointes */}
-        <label className="block text-sm font-medium mt-6 mb-1">{t('attach_photos')}</label>
-        <input type="file" accept="image/*" multiple onChange={handleFiles} />
+          {/* Mode chantier libre */}
+          <div className="mb-4 flex items-center gap-3">
+            <input id="freeMode" type="checkbox" checked={freeMode} onChange={e=> setFreeMode(e.target.checked)} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+            <label htmlFor="freeMode" className="text-sm text-gray-700">{t('create_free_metre')}</label>
+          </div>
 
-        {/* Total */}
-        <div className="mt-4 text-right font-semibold">{t('estimated_total')}: {total.toFixed(2)} €</div>
+          {!freeMode ? (
+            <>
+              <label className="block text-sm font-medium mb-1 text-gray-700">{t('chantier_label')}</label>
+              <select className="w-full border border-gray-300 rounded-lg p-2 mb-4 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={chantierId} onChange={e => setChantierId(e.target.value)}>
+                <option value="">{t('select_placeholder')}</option>
+                {chantiers.map(c => (
+                  <option key={c.chantierId} value={c.chantierId}>{c.nomChantier}</option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <>
+              <label className="block text-sm font-medium mb-1 text-gray-700">{t('free_chantier_name')}</label>
+              <input className="w-full border border-gray-300 rounded-lg p-2 mb-4 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={freeChantierNom} onChange={e=> setFreeChantierNom(e.target.value)} placeholder="Ex: Intervention ponctuelle" />
+            </>
+          )}
 
-        {error && <div className="mt-4 text-sm text-red-600">{t('submit_error')}</div>}
+          {/* Lignes */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border border-gray-200">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="p-2 text-left text-xs font-medium text-gray-700">{t('table_description')}</th>
+                  <th className="p-2 text-xs font-medium text-gray-700">{t('table_unit')}</th>
+                  <th className="p-2 text-xs font-medium text-gray-700">{t('table_unit_price')}</th>
+                  <th className="p-2 text-xs font-medium text-gray-700">{t('table_quantity')}</th>
+                  <th className="p-2 text-xs font-medium text-gray-700">{t('table_total')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lignes.map((l, idx) => (
+                  <tr key={idx} className="border-t border-gray-200">
+                    <td className="p-2">
+                      <input className="w-full border border-gray-300 rounded p-1.5 text-sm bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" value={l.description} onChange={e => {
+                        const v = e.target.value; setLignes(prev => prev.map((x,i)=> i===idx?{...x, description:v}:x))
+                      }} />
+                    </td>
+                    <td className="p-2 w-20">
+                      <input className="w-full border border-gray-300 rounded p-1.5 text-sm text-center bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" value={l.unite} onChange={e => {
+                        const v = e.target.value; setLignes(prev => prev.map((x,i)=> i===idx?{...x, unite:v}:x))
+                      }} />
+                    </td>
+                    <td className="p-2 w-24">
+                      <input type="number" className="w-full border border-gray-300 rounded p-1.5 text-sm text-right bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" value={l.prixUnitaire} onChange={e => {
+                        const v = Number(e.target.value||0); setLignes(prev => prev.map((x,i)=> i===idx?{...x, prixUnitaire:v}:x))
+                      }} />
+                    </td>
+                    <td className="p-2 w-24">
+                      <input type="number" className="w-full border border-gray-300 rounded p-1.5 text-sm text-right bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" value={l.quantite} onChange={e => {
+                        const v = Number(e.target.value||0); setLignes(prev => prev.map((x,i)=> i===idx?{...x, quantite:v}:x))
+                      }} />
+                    </td>
+                    <td className="p-2 w-24 text-right text-sm font-medium text-gray-900">{(l.prixUnitaire * (l.quantite||0)).toFixed(2)} €</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-3 flex gap-2">
+              <button onClick={addSupplement} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors">
+                {freeMode ? t('add_line') : t('add_supplement')}
+              </button>
+            </div>
+          </div>
 
-        <div className="mt-6 flex items-center gap-3">
-          <button disabled={(freeMode ? false : !chantierId) || loading || lignes.length===0} onClick={submit} className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50">
-            {loading? t('sending') : t('submit')}
-          </button>
-          <button onClick={()=>router.back()} className="px-4 py-2 rounded border">{t('cancel')}</button>
+          {/* Commentaire */}
+          <label className="block text-sm font-medium mt-6 mb-1 text-gray-700">{t('comment_label')}</label>
+          <textarea className="w-full border border-gray-300 rounded-lg p-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows={4} value={commentaire} onChange={e=>setCommentaire(e.target.value)} />
+
+          {/* Pièces jointes */}
+          <label className="block text-sm font-medium mt-6 mb-1 text-gray-700">{t('attach_photos')}</label>
+          <input type="file" accept="image/*" multiple onChange={handleFiles} className="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+
+          {/* Total */}
+          <div className="mt-4 text-right font-semibold text-gray-900">{t('estimated_total')}: {total.toFixed(2)} €</div>
+
+          {error && <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">{t('submit_error')}</div>}
+
+          <div className="mt-6 flex items-center gap-3">
+            <button disabled={(freeMode ? false : !chantierId) || loading || lignes.length===0} onClick={submit} className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50 hover:bg-blue-700 transition-colors">
+              {loading? t('sending') : t('submit')}
+            </button>
+            <button onClick={()=>router.back()} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors">{t('cancel')}</button>
+          </div>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NouveauMetrePageWrapper(props: { params: Promise<{ type: 'ouvrier'|'soustraitant'; actorId: string }> }) {
+  const p = React.use(props.params)
+  return (
+    <PortalI18nProvider>
+      <NouveauMetrePage params={p} />
+    </PortalI18nProvider>
   )
 }
