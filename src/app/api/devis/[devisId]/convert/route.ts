@@ -85,9 +85,17 @@ export async function POST(
       }
 
       // Vérifier que le chantier existe et appartient au même client
-      const chantier = await prisma.chantier.findUnique({
-        where: { chantierId }
+      // Le chantierId peut être soit l'ID primaire (id) soit l'ID métier (chantierId)
+      let chantier = await prisma.chantier.findUnique({
+        where: { id: chantierId }
       })
+
+      // Si pas trouvé avec l'ID primaire, essayer avec l'ID métier
+      if (!chantier) {
+        chantier = await prisma.chantier.findUnique({
+          where: { chantierId: chantierId }
+        })
+      }
 
       if (!chantier) {
         return NextResponse.json(
@@ -124,11 +132,11 @@ export async function POST(
 
       const numeroCommande = `CMD-${year}-${nextNumber.toString().padStart(4, '0')}`
 
-      // Créer la commande
+      // Créer la commande (utiliser l'ID primaire du chantier)
       const commande = await prisma.commande.create({
         data: {
           numeroCommande,
-          chantierId,
+          chantierId: chantier.id,
           type: 'CLIENT',
           statut: 'VALIDEE',
           dateCommande: new Date(),
@@ -213,6 +221,7 @@ export async function POST(
         })
 
         // Sauvegarder le PDF dans les documents du chantier
+        // Note: Document.chantierId référence Chantier.chantierId (ID métier), pas Chantier.id
         const pdfUrl = `/api/documents/devis-${devisId}.pdf`
         
         await prisma.document.create({
@@ -222,7 +231,7 @@ export async function POST(
             url: pdfUrl,
             taille: pdfBuffer.length,
             mimeType: 'application/pdf',
-            chantierId,
+            chantierId: chantier.chantierId,
             createdBy: session.user.id,
             updatedAt: new Date()
           }

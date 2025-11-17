@@ -36,10 +36,14 @@ export async function GET(request: Request) {
 
       // Construire le filtre de statut selon le paramètre fourni
       // Par défaut et "Tous les états" = actifs seulement (en préparation et en cours)
-      const whereClause: { statut?: { in: string[] } } = {
+      const whereClause: { statut?: { in: string[] }, clientId?: string } = {
         statut: {
           in: ['EN_PREPARATION', 'EN_COURS']
         }
+      }
+      const filterClientId = searchParams.get('clientId')
+      if (filterClientId) {
+        whereClause.clientId = filterClientId
       }
       
       if (filtreEtat && filtreEtat !== '' && filtreEtat !== 'Tous les états') {

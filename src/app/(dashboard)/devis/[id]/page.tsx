@@ -256,8 +256,10 @@ export default function DevisDetailPage() {
           await loadDevis()
           setShowConvertModal(false)
           // Rediriger vers la commande créée
+          // Utiliser l'ID métier du chantier (chantierId) pour la route, pas l'ID primaire
+          const chantierIdForRoute = result.commande?.chantier?.chantierId || chantierId
           if (result.commande?.id) {
-            router.push(`/chantiers/${chantierId}/commande?id=${result.commande.id}`)
+            router.push(`/chantiers/${chantierIdForRoute}/commande?id=${result.commande.id}`)
           }
         }
       } else {
