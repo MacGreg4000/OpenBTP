@@ -544,6 +544,31 @@ export default function NouveauDevisPage() {
             </DndProvider>
           </div>
 
+          {/* Boutons d'ajout en bas du tableau */}
+          <div className="relative px-6 py-4 bg-gradient-to-br from-orange-600/10 via-orange-700/10 to-red-800/10 dark:from-orange-600/5 dark:via-orange-700/5 dark:to-red-800/5 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-end space-x-2">
+              <button
+                onClick={() => addSectionLigne('TITRE')}
+                className="px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-md transition-colors"
+              >
+                Ajouter un titre
+              </button>
+              <button
+                onClick={() => addSectionLigne('SOUS_TITRE')}
+                className="px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-md transition-colors"
+              >
+                Ajouter un sous-titre
+              </button>
+              <button
+                onClick={addLigne}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700"
+              >
+                <PlusIcon className="h-4 w-4 mr-1" />
+                Ajouter une ligne
+              </button>
+            </div>
+          </div>
+
         {lignes.length === 0 && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <p>Aucune ligne ajoutée</p>
