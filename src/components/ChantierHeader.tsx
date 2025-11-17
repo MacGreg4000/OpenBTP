@@ -25,16 +25,34 @@ interface ChantierHeaderProps {
 export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
   const pathname = usePathname();
   const [isCompact, setIsCompact] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Détecter si on est sur mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+      // Forcer le mode compact sur mobile
+      if (window.innerWidth < 768) {
+        setIsCompact(true);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
     const handleScroll = () => {
-      // Active le mode compact après 100px de scroll
-      const scrollThreshold = 100;
-      setIsCompact(window.scrollY > scrollThreshold);
+      // Active le mode compact après 100px de scroll (seulement sur desktop)
+      if (window.innerWidth >= 768) {
+        const scrollThreshold = 100;
+        setIsCompact(window.scrollY > scrollThreshold);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
   
   // Calculer la taille de police en fonction de la longueur du titre
@@ -150,7 +168,8 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
         {/* Container flex pour titre + boutons sur la même ligne - effet flottant */}
         <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 ${isCompact ? 'p-2' : 'p-5 hover:-translate-y-1'}`}>
           
-          <div className="relative grid grid-cols-[auto_1fr_auto] items-center gap-3 w-full">
+          {/* Desktop: grille avec 3 colonnes */}
+          <div className="hidden md:grid relative grid-cols-[auto_1fr_auto] items-center gap-3 w-full">
             <div className={`flex items-center gap-3 ${isCompact ? 'gap-2' : ''}`}>
               <Link
                 href="/chantiers"
@@ -244,6 +263,77 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Mobile: disposition flexible avec icônes à côté du titre */}
+          <div className="md:hidden flex flex-col gap-3">
+            {/* Ligne 1: Bouton retour + Titre */}
+            <div className="flex items-start gap-2">
+              <Link
+                href="/chantiers"
+                className="group relative inline-flex items-center justify-center rounded-full border border-emerald-200/60 dark:border-emerald-900/40 bg-white/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-200 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all w-8 h-8 flex-shrink-0"
+              >
+                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-100/70 via-emerald-200/60 to-teal-200/60 dark:from-emerald-900/30 dark:via-emerald-800/20 dark:to-teal-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ChevronLeftIcon className="relative h-4 w-4" />
+              </Link>
+
+              <div className="flex-1 inline-flex items-center gap-3 border border-white/50 dark:border-emerald-900/40 bg-white/85 dark:bg-emerald-950/30 shadow-lg shadow-emerald-500/15 backdrop-blur-sm px-3 py-2 rounded-2xl min-w-0">
+                <div className="flex items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40 w-9 h-9 flex-shrink-0">
+                  <ChantierIcon className="h-4 w-4 drop-shadow-md" />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <h1
+                    className="text-base font-bold text-gray-900 dark:text-white transition-all duration-300 truncate"
+                    title={chantier.nomChantier}
+                  >
+                    {chantier.nomChantier}
+                  </h1>
+                  {chantier.numeroIdentification && (
+                    <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80 flex items-center gap-2 mt-1">
+                      <span className="inline-block w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                      ID : {chantier.numeroIdentification}
+                    </p>
+                  )}
+                  <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80 mt-1">
+                    Statut : {getStatutLabel(chantier.etatChantier)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ligne 2+: Navigation avec icônes compactes qui peuvent se mettre sur plusieurs lignes */}
+            <nav className="flex flex-wrap gap-2 justify-start">
+              {actions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    className={`group relative flex flex-col items-center justify-center rounded-xl transition-all duration-300 min-w-[44px] px-2 py-1.5 ${
+                      action.isActive 
+                        ? `bg-gradient-to-br ${action.gradient} text-white shadow-lg ${action.shadow} scale-105` 
+                        : `bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-lg`
+                    }`}
+                  >
+                    {/* Fond coloré transparent au hover */}
+                    <div 
+                      className={`absolute inset-0 rounded-xl transition-all duration-300 pointer-events-none ${action.isActive ? `bg-gradient-to-br ${action.gradient} opacity-100` : `bg-gradient-to-br ${action.glow} opacity-0 group-hover:opacity-20`}`}
+                    />
+                    
+                    {/* Badge actif - discret */}
+                    {action.isActive && (
+                      <div className="absolute -top-0.5 -right-0.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 shadow-md z-20 transition-all duration-300 w-2 h-2" />
+                    )}
+                    
+                    <div className="relative z-10 flex flex-col items-center gap-1">
+                      <div className={`rounded-lg transition-all duration-300 p-1 ${action.isActive ? 'bg-white/20 shadow-inner' : 'bg-gray-100 dark:bg-gray-700/50'}`}>
+                        <Icon className={`transition-all duration-300 h-4 w-4 ${action.isActive ? 'text-white drop-shadow-lg' : 'text-gray-600 dark:text-gray-300'}`} />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
         </div>
       </div>
