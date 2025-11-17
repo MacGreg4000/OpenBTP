@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
 import { BottomNav } from '@/components/mobile/BottomNav'
 import toast from 'react-hot-toast'
@@ -68,6 +68,8 @@ export default function MobileDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [capturingLocation, setCapturingLocation] = useState(false)
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+  const [isLongPressing, setIsLongPressing] = useState(false)
+  const longPressTriggeredRef = useRef(false)
   const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
 
   useEffect(() => {
@@ -190,7 +192,13 @@ export default function MobileDashboardPage() {
     }
   }
 
-  const handleShareLocation = () => {
+  const handleShareLocation = (e?: React.MouseEvent | React.TouchEvent) => {
+    // Empêcher le partage si un long press a été déclenché
+    if (longPressTriggeredRef.current) {
+      longPressTriggeredRef.current = false
+      return
+    }
+    
     if (!chantierDetails?.latitude || !chantierDetails?.longitude) return
 
     const { latitude, longitude } = chantierDetails
@@ -227,16 +235,27 @@ export default function MobileDashboardPage() {
   const handleLongPressStart = () => {
     if (!chantierDetails?.latitude || !chantierDetails?.longitude) return
 
+    setIsLongPressing(true)
+    longPressTriggeredRef.current = false
+
     const timer = setTimeout(() => {
       if (!selectedChantier) return
 
+      longPressTriggeredRef.current = true
+      setIsLongPressing(false)
+
       showConfirmation({
-        title: 'Supprimer la localisation',
-        message: 'Voulez-vous supprimer la localisation GPS enregistrée ?',
-        type: 'warning',
-        confirmText: 'Supprimer',
-        cancelText: 'Annuler',
+        title: 'Gérer la localisation',
+        message: 'Que souhaitez-vous faire avec la localisation GPS ?',
+        type: 'info',
+        confirmText: 'Modifier',
+        cancelText: 'Supprimer',
         onConfirm: async () => {
+          // Modifier : recapturer la localisation
+          handleCaptureLocation()
+        },
+        onCancel: async () => {
+          // Supprimer
           try {
             const response = await fetch(`/api/chantiers/${selectedChantier.chantierId}/geolocation`, {
               method: 'DELETE'
@@ -264,6 +283,7 @@ export default function MobileDashboardPage() {
       clearTimeout(longPressTimer)
       setLongPressTimer(null)
     }
+    setIsLongPressing(false)
   }
 
   if (loading) {
@@ -355,16 +375,47 @@ export default function MobileDashboardPage() {
                   <span className="text-xs text-gray-500">Localisation:</span>
                   {chantierDetails.latitude && chantierDetails.longitude ? (
                     <button
-                      onTouchStart={handleLongPressStart}
-                      onTouchEnd={handleLongPressEnd}
+                      onTouchStart={(e) => {
+                        e.preventDefault()
+                        handleLongPressStart()
+                      }}
+                      onTouchEnd={(e) => {
+                        e.preventDefault()
+                        const wasLongPressTriggered = longPressTriggeredRef.current
+                        handleLongPressEnd()
+                        // Ne partager que si le long press n'a pas été déclenché
+                        setTimeout(() => {
+                          if (!wasLongPressTriggered && !longPressTriggeredRef.current) {
+                            handleShareLocation(e)
+                          }
+                        }, 50)
+                      }}
                       onMouseDown={handleLongPressStart}
-                      onMouseUp={handleLongPressEnd}
+                      onMouseUp={(e) => {
+                        const wasLongPressTriggered = longPressTriggeredRef.current
+                        handleLongPressEnd()
+                        // Ne partager que si le long press n'a pas été déclenché
+                        setTimeout(() => {
+                          if (!wasLongPressTriggered && !longPressTriggeredRef.current) {
+                            handleShareLocation(e)
+                          }
+                        }, 50)
+                      }}
                       onMouseLeave={handleLongPressEnd}
-                      onClick={handleShareLocation}
-                      className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors"
-                      title="Partager la localisation (maintenir 2s pour supprimer)"
+                      className={`p-2 text-white rounded-lg transition-all relative ${
+                        isLongPressing 
+                          ? 'bg-orange-600 scale-110' 
+                          : 'bg-green-600 hover:bg-green-700 active:bg-green-800'
+                      }`}
+                      title="Partager la localisation (maintenir 2s pour modifier/supprimer)"
                     >
-                      <ArrowUpTrayIcon className="h-5 w-5" />
+                      {isLongPressing ? (
+                        <div className="flex items-center gap-1">
+                          <div className="animate-pulse">⏱</div>
+                        </div>
+                      ) : (
+                        <ArrowUpTrayIcon className="h-5 w-5" />
+                      )}
                     </button>
                   ) : (
                     <button
