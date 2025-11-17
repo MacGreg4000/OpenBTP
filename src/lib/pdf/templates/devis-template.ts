@@ -49,6 +49,12 @@ export function generateDevisHTML(data: DevisData): string {
   const totalHTBrut = lignesCalculables.reduce((sum, ligne) => sum + (Number(ligne.total) || 0), 0)
   const montantRemiseGlobale = totalHTBrut * (devis.remiseGlobale / 100)
   
+  // Vérifier si au moins une ligne a une remise > 0
+  const hasRemise = devis.lignes.some(ligne => ligne.remise > 0)
+  
+  // Nombre de colonnes selon la présence de remises
+  const colCount = hasRemise ? 8 : 7
+  
   let ligneCompteur = 0
   const lignesHTML = devis.lignes.map((ligne) => {
     const isSection = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
@@ -57,7 +63,7 @@ export function generateDevisHTML(data: DevisData): string {
       const sectionClass = ligne.type === 'TITRE' ? 'section-row section-title' : 'section-row section-subtitle'
       return `
                         <tr class="${sectionClass}">
-                            <td colspan="8" class="section-cell">
+                            <td colspan="${colCount}" class="section-cell">
                                 ${ligne.description || ligne.article}
                             </td>
                         </tr>
@@ -65,6 +71,8 @@ export function generateDevisHTML(data: DevisData): string {
     }
 
     ligneCompteur += 1
+
+    const remiseCell = hasRemise ? `<td class="text-right">${ligne.remise > 0 ? `${ligne.remise}%` : '-'}</td>` : ''
 
     return `
                         <tr>
@@ -74,7 +82,7 @@ export function generateDevisHTML(data: DevisData): string {
                             <td class="text-center">${ligne.unite || ''}</td>
                             <td class="text-right">${ligne.quantite || 0}</td>
                             <td class="text-right montant">${(ligne.prixUnitaire || 0).toFixed(2)} €</td>
-                            <td class="text-right">${ligne.remise > 0 ? `${ligne.remise}%` : '-'}</td>
+                            ${remiseCell}
                             <td class="text-right montant"><strong>${(ligne.total || 0).toFixed(2)} €</strong></td>
                         </tr>
     `
@@ -106,8 +114,8 @@ export function generateDevisHTML(data: DevisData): string {
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
-            line-height: 1.5;
+            font-size: 10px;
+            line-height: 1.4;
             color: #2d3748;
             background: white;
         }
@@ -123,9 +131,9 @@ export function generateDevisHTML(data: DevisData): string {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #f97316;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
         }
         
         .logo-section {
@@ -133,47 +141,60 @@ export function generateDevisHTML(data: DevisData): string {
         }
         
         .logo {
-            max-width: 150px;
-            max-height: 80px;
+            max-width: 120px;
+            max-height: 60px;
             object-fit: contain;
         }
         
         .company-info {
-            margin-top: 10px;
-            font-size: 9px;
+            margin-top: 8px;
+            font-size: 8px;
             color: #64748b;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         
         .document-title {
-            flex: 1.5;
+            flex: 2;
             text-align: center;
             padding: 0 20px;
         }
         
         .document-title h1 {
-            font-size: 28px;
+            font-size: 18px;
             font-weight: bold;
-            color: #f97316;
-            margin-bottom: 8px;
+            color: #1e40af;
+            margin-bottom: 5px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 0.5px;
         }
         
-        .document-title .devis-number {
-            font-size: 14px;
+        .document-subtitle {
+            font-size: 12px;
             color: #64748b;
-            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .devis-number {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+            color: white;
         }
         
         .client-info-header {
             flex: 1;
             text-align: right;
+            font-size: 9px;
         }
         
         .client-box {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 12px;
             display: inline-block;
@@ -182,64 +203,64 @@ export function generateDevisHTML(data: DevisData): string {
         }
         
         .client-box-title {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
-            color: #92400e;
+            color: #1e40af;
             margin-bottom: 8px;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
         .client-box-content {
-            font-size: 10px;
-            color: #78350f;
-            line-height: 1.6;
+            font-size: 9px;
+            color: #374151;
+            line-height: 1.5;
         }
         
         .client-box-content strong {
             display: block;
-            font-size: 11px;
+            font-size: 10px;
             margin-bottom: 4px;
-            color: #451a03;
-        }
-        
-        /* Informations devis */}
-        .devis-meta {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 25px;
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #f97316;
-        }
-        
-        .devis-meta-item {
-            flex: 1;
-        }
-        
-        .devis-meta-label {
-            font-size: 9px;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        
-        .devis-meta-value {
-            font-size: 11px;
-            font-weight: 600;
             color: #1e293b;
         }
         
-        .devis-meta-value.important {
-            color: #dc2626;
-            font-size: 12px;
+        /* Informations devis */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .info-section h3 {
+            font-size: 11px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .info-section p {
+            margin-bottom: 4px;
+            font-size: 9px;
+        }
+        
+        .info-section .label {
+            font-weight: 600;
+            color: #374151;
+            display: inline-block;
+            min-width: 100px;
         }
         
         /* Observations */
         .observations {
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
+            background: #f8fafc;
+            border-left: 3px solid #3b82f6;
             padding: 12px 15px;
             margin-bottom: 20px;
             border-radius: 4px;
@@ -248,136 +269,165 @@ export function generateDevisHTML(data: DevisData): string {
         .observations-title {
             font-size: 10px;
             font-weight: 600;
-            color: #92400e;
+            color: #1e40af;
             margin-bottom: 6px;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
         .observations-content {
-            font-size: 10px;
-            color: #78350f;
+            font-size: 9px;
+            color: #374151;
             line-height: 1.6;
             white-space: pre-wrap;
         }
         
-        /* Tableau */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            font-size: 10px;
+        /* Tableaux */
+        .table-container {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        thead {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        .table-title {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
             color: white;
-        }
-        
-        thead th {
-            padding: 10px 8px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 9px;
+            padding: 10px 15px;
+            font-size: 11px;
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
-        tbody tr {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th {
+            background: #f1f5f9;
+            padding: 8px 6px;
+            text-align: left;
+            font-size: 8px;
+            font-weight: bold;
+            color: #374151;
             border-bottom: 1px solid #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
-        tbody tr:hover {
-            background: #fef3c7;
+        th.text-center, td.text-center { text-align: center; }
+        th.text-right, td.text-right { text-align: right; }
+        
+        td {
+            padding: 6px;
+            font-size: 8px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
         }
         
-        tbody td {
-            padding: 10px 8px;
-            vertical-align: middle;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        .text-right {
-            text-align: right;
+        tr:nth-child(even) {
+            background: #fafbfc;
         }
         
         .montant {
-            font-weight: 500;
-            color: #1e293b;
-        }
-        
-        /* Sections (Titres et Sous-titres) */
-        .section-row {
-            background: #fef3c7 !important;
-        }
-        
-        .section-title .section-cell {
-            padding: 12px 15px !important;
-            font-size: 13px;
-            font-weight: bold;
-            color: #92400e;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-left: 4px solid #f59e0b;
-        }
-        
-        .section-subtitle .section-cell {
-            padding: 10px 15px 10px 25px !important;
-            font-size: 11px;
             font-weight: 600;
-            color: #78350f;
-            border-left: 4px solid #fbbf24;
+            color: #1e40af;
+        }
+        
+        /* Sections (Titres et Sous-titres) - Style discret */
+        .section-row.section-title td {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e3a8a;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .section-row.section-subtitle td {
+            background: #f1f5f9;
+            color: #1f2937;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .section-cell {
+            padding: 8px 6px;
         }
         
         /* Totaux */
-        .totaux {
-            width: 350px;
-            margin-left: auto;
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 15px;
-            border: 2px solid #e2e8f0;
+        .financial-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
         }
         
-        .totaux-row {
+        .summary-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+            border-left: 3px solid #1e40af;
+        }
+        
+        .summary-card h4 {
+            font-size: 12px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .summary-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
+            margin-bottom: 4px;
             font-size: 11px;
+            padding: 2px 0;
         }
         
-        .totaux-row.remise {
+        .summary-row.remise {
             color: #dc2626;
             font-weight: 500;
         }
         
-        .totaux-row.total {
-            border-top: 2px solid #cbd5e1;
-            margin-top: 8px;
-            padding-top: 12px;
-            font-size: 14px;
+        .summary-row.total {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 6px;
+            margin-top: 6px;
             font-weight: bold;
+            color: #1e40af;
+            font-size: 12px;
         }
         
-        .totaux-row.total .label {
-            color: #1e293b;
+        .summary-card:nth-child(1) {
+            border-left-color: #3b82f6;
         }
         
-        .totaux-row.total .value {
-            color: #f97316;
-            font-size: 16px;
+        .summary-card:nth-child(2) {
+            border-left-color: #64748b;
+        }
+        
+        .summary-card:nth-child(3) {
+            border-left-color: #1e40af;
         }
         
         /* Conditions générales */
-        .conditions {
+        .cgv-section {
             margin-top: 12px;
             page-break-before: always;
             padding-top: 6px;
         }
-        
-        .conditions-title {
+
+        .cgv-section h2 {
             font-size: 12px;
             font-weight: 700;
             color: #111827;
@@ -385,14 +435,14 @@ export function generateDevisHTML(data: DevisData): string {
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
-        .conditions-content {
+
+        .cgv-content {
             font-size: 10px;
             line-height: 1.5;
             color: #1f2937;
         }
 
-        .conditions-content * {
+        .cgv-content * {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -402,29 +452,29 @@ export function generateDevisHTML(data: DevisData): string {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         }
 
-        .conditions-content strong {
+        .cgv-content strong {
             font-weight: 600 !important;
         }
 
-        .conditions-content em {
+        .cgv-content em {
             font-style: italic !important;
         }
 
-        .conditions-content ul,
-        .conditions-content ol {
+        .cgv-content ul,
+        .cgv-content ol {
             margin-left: 16px !important;
         }
 
-        .conditions-content li {
+        .cgv-content li {
             margin-bottom: 4px !important;
         }
 
-        .conditions-content h1,
-        .conditions-content h2,
-        .conditions-content h3,
-        .conditions-content h4,
-        .conditions-content h5,
-        .conditions-content h6 {
+        .cgv-content h1,
+        .cgv-content h2,
+        .cgv-content h3,
+        .cgv-content h4,
+        .cgv-content h5,
+        .cgv-content h6 {
             font-size: 11px !important;
             font-weight: 600 !important;
             margin-top: 12px !important;
@@ -432,22 +482,33 @@ export function generateDevisHTML(data: DevisData): string {
         
         /* Pied de page */
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #e2e8f0;
-            font-size: 9px;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 8px;
             color: #64748b;
-            text-align: center;
-            line-height: 1.5;
+        }
+        
+        .footer-left {
+            flex: 1;
+        }
+        
+        .footer-right {
+            text-align: right;
         }
         
         .footer-highlight {
-            background: #fef3c7;
-            padding: 10px;
+            background: #eff6ff;
+            border-left: 3px solid #3b82f6;
+            padding: 10px 15px;
             border-radius: 4px;
             margin: 15px 0;
             font-weight: 500;
-            color: #92400e;
+            color: #1e40af;
+            font-size: 9px;
         }
         
         /* Impression */
@@ -457,9 +518,30 @@ export function generateDevisHTML(data: DevisData): string {
                 -webkit-print-color-adjust: exact;
             }
             
-            .conditions {
+            .cgv-section {
                 page-break-before: always;
             }
+        }
+        
+        /* Sauts de page intelligents */
+        .table-title {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+        
+        .summary-card {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        thead {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
     </style>
 </head>
@@ -468,19 +550,24 @@ export function generateDevisHTML(data: DevisData): string {
         <!-- En-tête -->
         <div class="header">
             <div class="logo-section">
-                ${logoBase64 ? `<img src="${logoBase64}" alt="${entreprise.name}" class="logo">` : `<h2 style="color: #f97316; font-size: 16px;">${entreprise.name}</h2>`}
+                ${logoBase64 ? `<img src="${logoBase64}" alt="${entreprise.name}" class="logo">` : `
+                    <div style="width: 120px; height: 60px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; margin-bottom: 8px;">
+                        ${entreprise.name.substring(0, 3).toUpperCase()}
+                    </div>
+                `}
                 <div class="company-info">
-                    ${entreprise.address}<br>
-                    ${entreprise.zipCode} ${entreprise.city}<br>
-                    Tél: ${entreprise.phone}<br>
-                    Email: ${entreprise.email}
-                    ${entreprise.siret ? `<br>SIRET: ${entreprise.siret}` : ''}
-                    ${entreprise.tva ? `<br>TVA: ${entreprise.tva}` : ''}
+                    <div><strong>${entreprise.name}</strong></div>
+                    <div>${entreprise.address}</div>
+                    <div>${entreprise.zipCode} ${entreprise.city}</div>
+                    <div>Tél: ${entreprise.phone} | Email: ${entreprise.email}</div>
+                    ${entreprise.siret ? `<div>SIRET: ${entreprise.siret}</div>` : ''}
+                    ${entreprise.tva ? `<div>TVA: ${entreprise.tva}</div>` : ''}
                 </div>
             </div>
             
             <div class="document-title">
                 <h1>DEVIS</h1>
+                <div class="document-subtitle">Document commercial</div>
                 <div class="devis-number">${devis.numeroDevis}</div>
             </div>
             
@@ -498,21 +585,27 @@ export function generateDevisHTML(data: DevisData): string {
         </div>
         
         <!-- Informations du devis -->
-        <div class="devis-meta">
-            <div class="devis-meta-item">
-                <div class="devis-meta-label">Date d'émission</div>
-                <div class="devis-meta-value">${formatDate(devis.dateCreation)}</div>
+        <div class="info-grid">
+            <div class="info-section">
+                <h3>Informations Entreprise</h3>
+                <p><span class="label">Raison sociale:</span> ${entreprise.name}</p>
+                <p><span class="label">Adresse:</span> ${entreprise.address}</p>
+                <p><span class="label">Ville:</span> ${entreprise.zipCode} ${entreprise.city}</p>
+                <p><span class="label">Téléphone:</span> ${entreprise.phone}</p>
+                <p><span class="label">Email:</span> ${entreprise.email}</p>
+                ${entreprise.siret ? `<p><span class="label">SIRET:</span> ${entreprise.siret}</p>` : ''}
+                ${entreprise.tva ? `<p><span class="label">TVA:</span> ${entreprise.tva}</p>` : ''}
             </div>
-            <div class="devis-meta-item">
-                <div class="devis-meta-label">Date de validité</div>
-                <div class="devis-meta-value important">${formatDate(devis.dateValidite)}</div>
+            
+            <div class="info-section">
+                <h3>Détails du Devis</h3>
+                <p><span class="label">Numéro:</span> ${devis.numeroDevis}</p>
+                <p><span class="label">Date d'émission:</span> ${formatDate(devis.dateCreation)}</p>
+                <p><span class="label">Date de validité:</span> ${formatDate(devis.dateValidite)}</p>
+                <p><span class="label">Client:</span> ${devis.clientNom}</p>
+                <p><span class="label">Taux TVA:</span> ${devis.tauxTVA}%</p>
+                ${devis.remiseGlobale > 0 ? `<p><span class="label">Remise globale:</span> ${devis.remiseGlobale}%</p>` : ''}
             </div>
-            ${devis.remiseGlobale > 0 ? `
-            <div class="devis-meta-item">
-                <div class="devis-meta-label">Remise globale</div>
-                <div class="devis-meta-value" style="color: #dc2626;">${devis.remiseGlobale}%</div>
-            </div>
-            ` : ''}
         </div>
         
         <!-- Observations -->
@@ -524,73 +617,88 @@ export function generateDevisHTML(data: DevisData): string {
         ` : ''}
         
         <!-- Tableau des lignes -->
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 30px;">#</th>
-                    <th style="width: 80px;">Article</th>
-                    <th>Description</th>
-                    <th style="width: 50px;">Unité</th>
-                    <th style="width: 60px; text-align: right;">Qté</th>
-                    <th style="width: 80px; text-align: right;">Prix U.</th>
-                    <th style="width: 60px; text-align: right;">Remise</th>
-                    <th style="width: 90px; text-align: right;">Total HT</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${lignesHTML}
-            </tbody>
-        </table>
-        
-        <!-- Totaux -->
-        <div class="totaux">
-            <div class="totaux-row">
-                <span class="label">Total HT (brut)</span>
-                <span class="value">${totalHTBrut.toFixed(2)} €</span>
-            </div>
-            ${devis.remiseGlobale > 0 ? `
-            <div class="totaux-row remise">
-                <span class="label">Remise globale (${devis.remiseGlobale}%)</span>
-                <span class="value">-${montantRemiseGlobale.toFixed(2)} €</span>
-            </div>
-            ` : ''}
-            <div class="totaux-row">
-                <span class="label">Total HT (net)</span>
-                <span class="value">${devis.montantHT.toFixed(2)} €</span>
-            </div>
-            <div class="totaux-row">
-                <span class="label">TVA (${devis.tauxTVA}%)</span>
-                <span class="value">${devis.montantTVA.toFixed(2)} €</span>
-            </div>
-            <div class="totaux-row total">
-                <span class="label">TOTAL TTC</span>
-                <span class="value">${devis.montantTTC.toFixed(2)} €</span>
-            </div>
+        <div class="table-container">
+            <div class="table-title">Articles du Devis</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 15%;">Article</th>
+                        <th style="width: 30%;">Description</th>
+                        <th style="width: 8%;">Unité</th>
+                        <th style="width: 8%;" class="text-right">Qté</th>
+                        <th style="width: 12%;" class="text-right">Prix U.</th>
+                        ${hasRemise ? '<th style="width: 8%;" class="text-right">Remise</th>' : ''}
+                        <th style="width: 12%;" class="text-right">Total HT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${lignesHTML}
+                </tbody>
+            </table>
         </div>
         
-        <!-- Pied de page première page -->
-        <div class="footer">
-            <div class="footer-highlight">
-                Ce devis est valable jusqu'au ${formatDate(devis.dateValidite)}.<br>
-                Merci de nous retourner ce devis signé avec la mention "Bon pour accord".
+        <!-- Résumé financier -->
+        <div class="financial-summary">
+            <div class="summary-card">
+                <h4>Total HT</h4>
+                <div class="summary-row">
+                    <span>Total HT (brut)</span>
+                    <span class="montant">${totalHTBrut.toFixed(2)} €</span>
+                </div>
+                ${devis.remiseGlobale > 0 ? `
+                <div class="summary-row remise">
+                    <span>Remise (${devis.remiseGlobale}%)</span>
+                    <span>-${montantRemiseGlobale.toFixed(2)} €</span>
+                </div>
+                ` : ''}
+                <div class="summary-row total">
+                    <span>Total HT (net)</span>
+                    <span class="montant">${devis.montantHT.toFixed(2)} €</span>
+                </div>
             </div>
-            ${entreprise.name} - ${entreprise.address}, ${entreprise.zipCode} ${entreprise.city}<br>
-            Tél: ${entreprise.phone} - Email: ${entreprise.email}
-            ${entreprise.siret ? ` - SIRET: ${entreprise.siret}` : ''}
-            ${entreprise.tva ? ` - TVA: ${entreprise.tva}` : ''}
+            
+            <div class="summary-card">
+                <h4>TVA</h4>
+                <div class="summary-row total">
+                    <span>TVA (${devis.tauxTVA}%)</span>
+                    <span class="montant">${devis.montantTVA.toFixed(2)} €</span>
+                </div>
+            </div>
+            
+            <div class="summary-card">
+                <h4>Total TTC</h4>
+                <div class="summary-row total">
+                    <span>Montant TTC</span>
+                    <span class="montant">${devis.montantTTC.toFixed(2)} €</span>
+                </div>
+            </div>
         </div>
         
         ${cgvHtml ? `
-        <div class="conditions">
-            <h2 class="conditions-title">Conditions générales de vente</h2>
-            <div class="conditions-content">
+        <div class="cgv-section">
+            <h2>Conditions générales de vente</h2>
+            <div class="cgv-content">
                 ${cgvHtml}
             </div>
         </div>
         ` : ''}
+        
+        <!-- Pied de page -->
+        <div class="footer">
+            <div class="footer-left">
+                <div class="footer-highlight">
+                    Ce devis est valable jusqu'au ${formatDate(devis.dateValidite)}.<br>
+                    Merci de nous retourner ce devis signé avec la mention "Bon pour accord".
+                </div>
+                <p>© ${entreprise.name} - Document généré automatiquement</p>
+            </div>
+            <div class="footer-right">
+                <p>Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+        </div>
     </div>
 </body>
 </html>
   `
 }
-
