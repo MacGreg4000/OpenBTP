@@ -13,6 +13,7 @@ export async function POST(
 ) {
   const params = await props.params
   const { devisId } = params
+  let devis: any = null
   try {
     const session = await getServerSession(authOptions)
     
@@ -23,7 +24,7 @@ export async function POST(
     const body = await request.json()
     const { chantierId } = body // Pour les DEVIS, chantier à créer ou sélectionné
 
-    const devis = await prisma.devis.findUnique({
+    devis = await prisma.devis.findUnique({
       where: { id: devisId },
       include: {
         client: true,
@@ -132,6 +133,14 @@ export async function POST(
 
       const numeroCommande = `CMD-${year}-${nextNumber.toString().padStart(4, '0')}`
 
+      console.log('📦 Création de la commande:', {
+        numeroCommande,
+        chantierId: chantier.id,
+        clientId: chantier.clientId,
+        montantHT: devis.montantHT,
+        nombreLignes: devis.lignes.length
+      })
+
       // Créer la commande (utiliser l'ID primaire du chantier)
       const commande = await prisma.commande.create({
         data: {
@@ -172,8 +181,11 @@ export async function POST(
         }
       })
 
+      console.log('✅ Commande créée avec succès:', commande.id)
+
       // Générer et sauvegarder le PDF dans les documents du chantier
       try {
+        console.log('📄 Génération du PDF du devis...')
         const html = generateDevisHTML({
           devis: {
             numeroDevis: devis.numeroDevis,
@@ -224,6 +236,7 @@ export async function POST(
         // Note: Document.chantierId référence Chantier.chantierId (ID métier), pas Chantier.id
         const pdfUrl = `/api/documents/devis-${devisId}.pdf`
         
+        console.log('💾 Sauvegarde du PDF dans les documents...')
         await prisma.document.create({
           data: {
             nom: `Devis ${devis.numeroDevis}${devis.reference ? ` - ${devis.reference}` : ''}.pdf`,
@@ -236,12 +249,14 @@ export async function POST(
             updatedAt: new Date()
           }
         })
+        console.log('✅ PDF sauvegardé avec succès')
       } catch (pdfError) {
-        console.error('Erreur lors de la génération du PDF:', pdfError)
+        console.error('❌ Erreur lors de la génération du PDF:', pdfError)
         // On ne bloque pas la conversion si le PDF échoue
       }
 
       // Marquer le devis comme converti
+      console.log('🔄 Mise à jour du statut du devis...')
       await prisma.devis.update({
         where: { id: devisId },
         data: {
@@ -250,6 +265,7 @@ export async function POST(
         }
       })
 
+      console.log('✅ Conversion terminée avec succès')
       return NextResponse.json({
         success: true,
         type: 'DEVIS',
@@ -542,8 +558,19 @@ export async function POST(
     }
   } catch (error) {
     console.error('Erreur lors de la conversion:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('Détails de l\'erreur:', {
+      message: errorMessage,
+      stack: errorStack,
+      devisId,
+      typeDevis: devis?.typeDevis
+    })
     return NextResponse.json(
-      { error: 'Erreur lors de la conversion' },
+      { 
+        error: 'Erreur lors de la conversion',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     )
   }
