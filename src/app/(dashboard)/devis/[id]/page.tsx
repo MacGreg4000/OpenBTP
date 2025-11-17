@@ -14,6 +14,7 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
+import { useConfirmation } from '@/components/modals/confirmation-modal'
 
 interface Devis {
   id: string
@@ -80,6 +81,7 @@ export default function DevisDetailPage() {
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [selectedChantierId, setSelectedChantierId] = useState('')
   const [converting, setConverting] = useState(false)
+  const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
 
   const loadDevis = useCallback(async () => {
     try {
@@ -122,103 +124,186 @@ export default function DevisDetailPage() {
   const handleChangeStatus = async (newStatus: string) => {
     if (!devis) return
     
-    if (!confirm(`Êtes-vous sûr de vouloir passer ce devis en "${getStatutLabel(newStatus)}" ?`)) {
-      return
-    }
+    showConfirmation({
+      title: 'Confirmer le changement de statut',
+      message: `Êtes-vous sûr de vouloir passer ce devis en "${getStatutLabel(newStatus)}" ?`,
+      type: 'warning',
+      confirmText: 'Confirmer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/devis/${devis.id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ statut: newStatus })
+          })
 
-    try {
-      const response = await fetch(`/api/devis/${devis.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ statut: newStatus })
-      })
-
-      if (response.ok) {
-        await loadDevis()
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Erreur lors du changement de statut')
+          if (response.ok) {
+            await loadDevis()
+          } else {
+            const error = await response.json()
+            showConfirmation({
+              title: 'Erreur',
+              message: error.error || 'Erreur lors du changement de statut',
+              type: 'error',
+              confirmText: 'OK',
+              showCancel: false,
+              onConfirm: () => {}
+            })
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+            showConfirmation({
+              title: 'Erreur',
+              message: 'Erreur lors du changement de statut',
+              type: 'error',
+              confirmText: 'OK',
+              showCancel: false,
+              onConfirm: () => {}
+            })
+        }
       }
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('Erreur lors du changement de statut')
-    }
+    })
   }
 
   const handleSendToClient = async () => {
     if (!devis) return
     
-    if (!confirm('Voulez-vous envoyer ce devis au client ? Il passera en statut "En attente".')) {
-      return
-    }
+    showConfirmation({
+      title: 'Envoyer le devis au client',
+      message: 'Voulez-vous envoyer ce devis au client ? Il passera en statut "En attente".',
+      type: 'info',
+      confirmText: 'Envoyer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/devis/${devis.id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ statut: 'EN_ATTENTE' })
+          })
 
-    try {
-      const response = await fetch(`/api/devis/${devis.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ statut: 'EN_ATTENTE' })
-      })
-
-      if (response.ok) {
-        await loadDevis()
-        alert('Le devis a été envoyé au client et est maintenant en attente de validation.')
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Erreur lors de l\'envoi du devis')
+          if (response.ok) {
+            await loadDevis()
+            showConfirmation({
+              title: 'Succès',
+              message: 'Le devis a été envoyé au client et est maintenant en attente de validation.',
+              type: 'success',
+              confirmText: 'OK',
+              showCancel: false,
+              onConfirm: () => {}
+            })
+          } else {
+            const error = await response.json()
+            showConfirmation({
+              title: 'Erreur',
+              message: error.error || 'Erreur lors de l\'envoi du devis',
+              type: 'error',
+              confirmText: 'OK',
+              showCancel: false,
+              onConfirm: () => {}
+            })
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+          showConfirmation({
+            title: 'Erreur',
+            message: 'Erreur lors de l\'envoi du devis',
+            type: 'error',
+            confirmText: 'OK',
+            showCancel: false,
+            onConfirm: () => {}
+          })
+        }
       }
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('Erreur lors de l\'envoi du devis')
-    }
+    })
   }
 
   const handleDuplicate = async () => {
     if (!devis) return
     
-    if (!confirm('Voulez-vous dupliquer ce devis ?')) {
-      return
-    }
+    showConfirmation({
+      title: 'Dupliquer le devis',
+      message: 'Voulez-vous dupliquer ce devis ?',
+      type: 'info',
+      confirmText: 'Dupliquer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/devis/${devis.id}/duplicate`, {
+            method: 'POST'
+          })
 
-    try {
-      const response = await fetch(`/api/devis/${devis.id}/duplicate`, {
-        method: 'POST'
-      })
-
-      if (response.ok) {
-        const newDevis = await response.json()
-        router.push(`/devis/${newDevis.id}`)
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Erreur lors de la duplication')
+          if (response.ok) {
+            const newDevis = await response.json()
+            router.push(`/devis/${newDevis.id}`)
+          } else {
+            const error = await response.json()
+            showConfirmation({
+              title: 'Erreur',
+              message: error.error || 'Erreur lors de la duplication',
+              type: 'error',
+              confirmText: 'OK',
+              showCancel: false,
+              onConfirm: () => {}
+            })
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+          showConfirmation({
+            title: 'Erreur',
+            message: 'Erreur lors de la duplication',
+            type: 'error',
+            confirmText: 'OK',
+            showCancel: false,
+            onConfirm: () => {}
+          })
+        }
       }
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('Erreur lors de la duplication')
-    }
+    })
   }
 
   const handleDelete = async () => {
     if (!devis) return
     
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce devis ? Cette action est irréversible.')) {
-      return
-    }
+    showConfirmation({
+      title: 'Supprimer le devis',
+      message: 'Êtes-vous sûr de vouloir supprimer ce devis ? Cette action est irréversible.',
+      type: 'warning',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/devis/${devis.id}`, {
+            method: 'DELETE'
+          })
 
-    try {
-      const response = await fetch(`/api/devis/${devis.id}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        router.push('/devis')
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Erreur lors de la suppression')
+          if (response.ok) {
+            router.push('/devis')
+          } else {
+            const error = await response.json()
+            showConfirmation({
+              title: 'Erreur',
+              message: error.error || 'Erreur lors de la suppression',
+              type: 'error',
+              confirmText: 'OK',
+              showCancel: false,
+              onConfirm: () => {}
+            })
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+          showConfirmation({
+            title: 'Erreur',
+            message: 'Erreur lors de la suppression',
+            type: 'error',
+            confirmText: 'OK',
+            showCancel: false,
+            onConfirm: () => {}
+          })
+        }
       }
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('Erreur lors de la suppression')
-    }
+    })
   }
 
   const handleConvert = async () => {
@@ -229,7 +314,14 @@ export default function DevisDetailPage() {
       : selectedChantierId
 
     if (!chantierId) {
-      alert('Veuillez sélectionner un chantier')
+      showConfirmation({
+        title: 'Chantier requis',
+        message: 'Veuillez sélectionner un chantier',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
       return
     }
 
@@ -245,31 +337,61 @@ export default function DevisDetailPage() {
         const result = await response.json()
         
         if (result.type === 'AVENANT') {
-          alert('L\'avenant a été ajouté avec succès à l\'état d\'avancement du chantier.')
+          showConfirmation({
+            title: 'Succès',
+            message: 'L\'avenant a été ajouté avec succès à l\'état d\'avancement du chantier.',
+            type: 'success',
+            confirmText: 'OK',
+            showCancel: false,
+            onConfirm: () => {
+              setShowConvertModal(false)
+              // Rediriger vers les états d'avancement du chantier
+              if (result.etatAvancement?.chantierId) {
+                router.push(`/chantiers/${result.etatAvancement.chantierId}/etats`)
+              }
+            }
+          })
           await loadDevis()
-          setShowConvertModal(false)
-          // Rediriger vers les états d'avancement du chantier
-          if (result.etatAvancement?.chantierId) {
-            router.push(`/chantiers/${result.etatAvancement.chantierId}/etats`)
-          }
         } else {
-          alert(result.message || 'Devis converti en commande avec succès')
+          showConfirmation({
+            title: 'Succès',
+            message: result.message || 'Devis converti en commande avec succès',
+            type: 'success',
+            confirmText: 'OK',
+            showCancel: false,
+            onConfirm: () => {
+              setShowConvertModal(false)
+              // Rediriger vers la commande créée
+              // Utiliser l'ID métier du chantier (chantierId) pour la route, pas l'ID primaire
+              const chantierIdForRoute = result.commande?.Chantier?.chantierId || chantierId
+              if (result.commande?.id) {
+                router.push(`/chantiers/${chantierIdForRoute}/commande?id=${result.commande.id}`)
+              }
+            }
+          })
           await loadDevis()
-          setShowConvertModal(false)
-          // Rediriger vers la commande créée
-          // Utiliser l'ID métier du chantier (chantierId) pour la route, pas l'ID primaire
-          const chantierIdForRoute = result.commande?.Chantier?.chantierId || chantierId
-          if (result.commande?.id) {
-            router.push(`/chantiers/${chantierIdForRoute}/commande?id=${result.commande.id}`)
-          }
         }
       } else {
         const error = await response.json()
-        alert(error.error || 'Erreur lors de la conversion')
+        showConfirmation({
+          title: 'Erreur',
+          message: error.error || 'Erreur lors de la conversion',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {}
+        })
       }
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de la conversion')
+      showConfirmation({
+        title: 'Erreur',
+        message: 'Erreur lors de la conversion',
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
     } finally {
       setConverting(false)
     }
@@ -735,6 +857,7 @@ export default function DevisDetailPage() {
           </div>
         )}
       </div>
+      {ConfirmationModalComponent}
     </div>
   )
 }

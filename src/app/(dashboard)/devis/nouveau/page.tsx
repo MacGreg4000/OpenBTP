@@ -15,6 +15,7 @@ import {
   ChevronUpIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
+import { useConfirmation } from '@/components/modals/confirmation-modal'
 
 interface Client {
   id: string
@@ -55,6 +56,7 @@ export default function NouveauDevisPage() {
   const [lignes, setLignes] = useState<LigneDevis[]>([])
   const [saving, setSaving] = useState(false)
   const [infosGeneralesExpanded, setInfosGeneralesExpanded] = useState(true)
+  const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
 
   useEffect(() => {
     loadClients()
@@ -210,17 +212,38 @@ export default function NouveauDevisPage() {
   const handleSave = async () => {
     // Validation selon le type
     if (typeDevis === 'DEVIS' && !selectedClientId) {
-      alert('Veuillez sélectionner un client')
+      showConfirmation({
+        title: 'Client requis',
+        message: 'Veuillez sélectionner un client',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
       return
     }
 
     if (typeDevis === 'AVENANT' && !selectedChantierId) {
-      alert('Veuillez sélectionner un chantier')
+      showConfirmation({
+        title: 'Chantier requis',
+        message: 'Veuillez sélectionner un chantier',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
       return
     }
 
     if (lignes.length === 0) {
-      alert('Veuillez ajouter au moins une ligne')
+      showConfirmation({
+        title: 'Lignes requises',
+        message: 'Veuillez ajouter au moins une ligne',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
       return
     }
 
@@ -254,11 +277,25 @@ export default function NouveauDevisPage() {
         router.push(`/devis/${devis.id}`)
       } else {
         const error = await response.json()
-        alert(error.error || 'Erreur lors de la création du devis')
+        showConfirmation({
+          title: 'Erreur',
+          message: error.error || 'Erreur lors de la création du devis',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {}
+        })
       }
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de la création du devis')
+      showConfirmation({
+        title: 'Erreur',
+        message: 'Erreur lors de la création du devis',
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
     } finally {
       setSaving(false)
     }
@@ -615,6 +652,7 @@ export default function NouveauDevisPage() {
         </div>
       )}
       </div>
+      {ConfirmationModalComponent}
     </div>
   )
 }

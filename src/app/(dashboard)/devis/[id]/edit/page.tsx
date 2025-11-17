@@ -13,6 +13,7 @@ import {
   BarsArrowUpIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
+import { useConfirmation } from '@/components/modals/confirmation-modal'
 
 interface Client {
   id: string
@@ -87,6 +88,7 @@ export default function EditDevisPage() {
   const [lignes, setLignes] = useState<LigneDevis[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
 
   const loadClients = useCallback(async () => {
     try {
@@ -139,8 +141,16 @@ export default function EditDevisPage() {
         
         // Vérifier que le devis est modifiable
         if (devis.statut !== 'BROUILLON') {
-          alert('Seuls les devis en brouillon peuvent être modifiés')
-          router.push(`/devis/${devisId}`)
+          showConfirmation({
+            title: 'Modification impossible',
+            message: 'Seuls les devis en brouillon peuvent être modifiés',
+            type: 'warning',
+            confirmText: 'OK',
+            showCancel: false,
+            onConfirm: () => {
+              router.push(`/devis/${devisId}`)
+            }
+          })
           return
         }
 
@@ -165,13 +175,29 @@ export default function EditDevisPage() {
           total: Number(l.total ?? 0)
         })))
       } else {
-        alert('Erreur lors du chargement du devis')
-        router.push('/devis')
+        showConfirmation({
+          title: 'Erreur',
+          message: 'Erreur lors du chargement du devis',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {
+            router.push('/devis')
+          }
+        })
       }
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors du chargement du devis')
-      router.push('/devis')
+      showConfirmation({
+        title: 'Erreur',
+        message: 'Erreur lors du chargement du devis',
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {
+          router.push('/devis')
+        }
+      })
     } finally {
       setLoading(false)
     }
@@ -278,17 +304,38 @@ export default function EditDevisPage() {
   const handleSave = async () => {
     // Validation selon le type
     if (typeDevis === 'DEVIS' && !selectedClientId) {
-      alert('Veuillez sélectionner un client')
+      showConfirmation({
+        title: 'Client requis',
+        message: 'Veuillez sélectionner un client',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
       return
     }
 
     if (typeDevis === 'AVENANT' && !selectedChantierId) {
-      alert('Veuillez sélectionner un chantier')
+      showConfirmation({
+        title: 'Chantier requis',
+        message: 'Veuillez sélectionner un chantier',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
       return
     }
 
     if (lignes.length === 0) {
-      alert('Veuillez ajouter au moins une ligne')
+      showConfirmation({
+        title: 'Lignes requises',
+        message: 'Veuillez ajouter au moins une ligne',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
       return
     }
 
@@ -321,11 +368,25 @@ export default function EditDevisPage() {
         router.push(`/devis/${devisId}`)
       } else {
         const error = await response.json()
-        alert(error.error || 'Erreur lors de la mise à jour du devis')
+        showConfirmation({
+          title: 'Erreur',
+          message: error.error || 'Erreur lors de la mise à jour du devis',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {}
+        })
       }
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de la mise à jour du devis')
+      showConfirmation({
+        title: 'Erreur',
+        message: 'Erreur lors de la mise à jour du devis',
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
     } finally {
       setSaving(false)
     }
@@ -666,6 +727,7 @@ export default function EditDevisPage() {
         </div>
       )}
       </div>
+      {ConfirmationModalComponent}
     </div>
   )
 }
