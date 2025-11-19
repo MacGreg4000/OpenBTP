@@ -1,10 +1,11 @@
 export interface DevisData {
   devis: {
     numeroDevis: string
+    reference?: string | null
     dateCreation: string
     dateValidite: string
     clientNom: string
-    clientEmail: string
+    clientEmail?: string
     clientTelephone?: string
     clientAdresse?: string
     observations?: string
@@ -611,9 +612,9 @@ export function generateDevisHTML(data: DevisData): string {
                     <div class="client-box-title">Client</div>
                     <div class="client-box-content">
                         <strong>${devis.clientNom}</strong>
-                        ${devis.clientEmail}<br>
+                        ${devis.clientEmail && devis.clientEmail !== 'null' ? `${devis.clientEmail}<br>` : ''}
                         ${devis.clientTelephone ? `Tél: ${devis.clientTelephone}<br>` : ''}
-                        ${devis.clientAdresse ? `${devis.clientAdresse}` : ''}
+                        ${devis.clientAdresse && devis.clientAdresse !== 'null' ? `${devis.clientAdresse}` : ''}
                     </div>
                 </div>
             </div>
@@ -627,6 +628,12 @@ export function generateDevisHTML(data: DevisData): string {
                     <span class="label">Numéro:</span>
                     <span class="value">${devis.numeroDevis}</span>
                 </div>
+                ${devis.reference ? `
+                <div class="info-item">
+                    <span class="label">Référence:</span>
+                    <span class="value">${devis.reference}</span>
+                </div>
+                ` : ''}
                 <div class="info-item">
                     <span class="label">Date d'émission:</span>
                     <span class="value">${formatDate(devis.dateCreation)}</span>

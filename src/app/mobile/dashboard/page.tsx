@@ -192,7 +192,7 @@ export default function MobileDashboardPage() {
     }
   }
 
-  const handleShareLocation = (e?: React.MouseEvent | React.TouchEvent) => {
+  const handleShareLocation = (_e?: React.MouseEvent | React.TouchEvent) => {
     // Empêcher le partage si un long press a été déclenché
     if (longPressTriggeredRef.current) {
       longPressTriggeredRef.current = false

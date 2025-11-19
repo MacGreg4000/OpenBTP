@@ -25,12 +25,10 @@ interface ChantierHeaderProps {
 export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
   const pathname = usePathname();
   const [isCompact, setIsCompact] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Détecter si on est sur mobile
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // md breakpoint
       // Forcer le mode compact sur mobile
       if (window.innerWidth < 768) {
         setIsCompact(true);

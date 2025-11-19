@@ -11,7 +11,8 @@ import {
   XCircleIcon,
   DocumentArrowDownIcon,
   DocumentTextIcon,
-  EyeIcon
+  EyeIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
 import { useConfirmation } from '@/components/modals/confirmation-modal'
@@ -452,6 +453,15 @@ export default function DevisDetailPage() {
         icon={DocumentTextIcon}
         badgeColor="from-orange-600 via-orange-700 to-red-700"
         gradientColor="from-orange-600/10 via-orange-700/10 to-red-700/10"
+        leftAction={
+          <button
+            onClick={() => router.push('/devis')}
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            title="Retour à la liste des devis"
+          >
+            <ArrowLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+        }
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             {/* Badges à droite du titre */}

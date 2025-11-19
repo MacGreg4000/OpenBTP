@@ -76,10 +76,11 @@ export async function GET(
     const devisData = {
       devis: {
         numeroDevis: devis.numeroDevis,
+        reference: devis.reference || undefined,
         dateCreation: devis.dateCreation.toISOString(),
         dateValidite: devis.dateValidite.toISOString(),
         clientNom: devis.client.nom,
-        clientEmail: devis.client.email,
+        clientEmail: devis.client.email || undefined,
         clientTelephone: devis.client.telephone || undefined,
         clientAdresse: devis.client.adresse || undefined,
         observations: devis.observations || undefined,

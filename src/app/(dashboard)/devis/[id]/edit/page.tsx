@@ -201,7 +201,7 @@ export default function EditDevisPage() {
     } finally {
       setLoading(false)
     }
-  }, [devisId, router])
+  }, [devisId, router, showConfirmation])
 
   useEffect(() => {
     void loadClients()

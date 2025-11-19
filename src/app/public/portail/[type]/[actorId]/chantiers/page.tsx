@@ -89,7 +89,7 @@ function InnerChantiersPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
     }
   }
 
-  const openMap = (latitude: number | null, longitude: number | null, nomChantier: string) => {
+  const openMap = (latitude: number | null, longitude: number | null, _nomChantier: string) => {
     if (latitude && longitude) {
       const url = `https://www.google.com/maps?q=${latitude},${longitude}`
       window.open(url, '_blank')

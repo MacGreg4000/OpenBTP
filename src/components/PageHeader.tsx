@@ -14,6 +14,7 @@ interface PageHeaderProps {
   actions?: ReactNode
   infoCard?: ReactNode
   compactThreshold?: number
+  leftAction?: ReactNode
 }
 
 export function PageHeader({
@@ -26,7 +27,8 @@ export function PageHeader({
   stats,
   actions,
   infoCard,
-  compactThreshold = 100
+  compactThreshold = 100,
+  leftAction
 }: PageHeaderProps) {
   const [isCompact, setIsCompact] = useState(false)
 
@@ -59,6 +61,12 @@ export function PageHeader({
             <div className={`flex flex-row items-center justify-between gap-2 sm:gap-4 transition-all duration-300`}>
               {/* Titre à gauche */}
               <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0 min-w-0 flex-1">
+                {/* Action gauche (bouton retour, etc.) */}
+                {leftAction && (
+                  <div className="flex-shrink-0">
+                    {leftAction}
+                  </div>
+                )}
                 {/* Badge icône */}
                 <div className={`bg-gradient-to-br ${badgeColor} rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center shadow-xl border-2 border-white/30 transition-all duration-300 ${isCompact ? 'w-6 h-6 sm:w-8 sm:h-8' : 'w-10 h-10 sm:w-14 sm:h-14'}`}>
                   <Icon className={`text-white transition-all duration-300 ${isCompact ? 'h-3 w-3 sm:h-4 sm:w-4' : 'h-5 w-5 sm:h-8 sm:w-8'}`} />

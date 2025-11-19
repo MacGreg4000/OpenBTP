@@ -13,7 +13,31 @@ export async function POST(
 ) {
   const params = await props.params
   const { devisId } = params
-  let devis: any = null
+  type DevisWithRelations = Awaited<ReturnType<typeof prisma.devis.findUnique<{
+    include: {
+      client: true
+      chantier: {
+        select: {
+          chantierId: true
+          nomChantier: true
+          adresseChantier: true
+        }
+      }
+      lignes: {
+        orderBy: {
+          ordre: 'asc'
+        }
+      }
+      createur: {
+        select: {
+          id: true
+          name: true
+          email: true
+        }
+      }
+    }
+  }>>>
+  let devis: DevisWithRelations | null = null
   try {
     const session = await getServerSession(authOptions)
     
