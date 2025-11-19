@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { 
   DocumentTextIcon, 
   BuildingOffice2Icon, 
+  UsersIcon,
   UserGroupIcon,
   CalendarIcon,
-  CogIcon,
-  ChartBarIcon
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline'
 
 interface QuickAction {
@@ -23,34 +23,34 @@ interface QuickAction {
 
 const quickActions: QuickAction[] = [
   {
+    id: 'devis',
+    title: 'Devis',
+    icon: DocumentTextIcon,
+    href: '/devis',
+    color: 'from-blue-500 to-indigo-600',
+    bgColor: 'from-blue-50 to-indigo-50',
+    hoverColor: 'shadow-blue-500/30',
+    shortcut: 'D'
+  },
+  {
     id: 'chantiers',
     title: 'Chantiers',
     icon: BuildingOffice2Icon,
     href: '/chantiers',
-    color: 'from-blue-500 to-indigo-600',
-    bgColor: 'from-blue-50 to-indigo-50',
-    hoverColor: 'shadow-blue-500/30',
-    shortcut: 'C'
-  },
-  {
-    id: 'bon-regie',
-    title: 'Bon de régie',
-    icon: DocumentTextIcon,
-    href: '/public/bon-regie',
     color: 'from-emerald-500 to-teal-600',
     bgColor: 'from-emerald-50 to-teal-50',
     hoverColor: 'shadow-emerald-500/30',
-    shortcut: 'B'
+    shortcut: 'C'
   },
   {
-    id: 'planning',
-    title: 'Planning',
-    icon: CalendarIcon,
-    href: '/planning',
+    id: 'clients',
+    title: 'Clients',
+    icon: UsersIcon,
+    href: '/clients',
     color: 'from-purple-500 to-pink-600',
     bgColor: 'from-purple-50 to-pink-50',
     hoverColor: 'shadow-purple-500/30',
-    shortcut: 'P'
+    shortcut: 'L'
   },
   {
     id: 'sous-traitants',
@@ -63,24 +63,24 @@ const quickActions: QuickAction[] = [
     shortcut: 'S'
   },
   {
-    id: 'rapports',
-    title: 'Rapports',
-    icon: ChartBarIcon,
-    href: '/rapports',
+    id: 'planning',
+    title: 'Planning',
+    icon: CalendarIcon,
+    href: '/planning',
     color: 'from-indigo-500 to-purple-600',
     bgColor: 'from-indigo-50 to-purple-50',
     hoverColor: 'shadow-indigo-500/30',
-    shortcut: 'R'
+    shortcut: 'P'
   },
   {
-    id: 'outillage',
-    title: 'Outillage',
-    icon: CogIcon,
-    href: '/outillage',
+    id: 'journal',
+    title: 'Journal',
+    icon: CalendarDaysIcon,
+    href: '/journal',
     color: 'from-gray-500 to-slate-600',
     bgColor: 'from-gray-50 to-slate-50',
     hoverColor: 'shadow-gray-500/30',
-    shortcut: 'O'
+    shortcut: 'J'
   }
 ]
 
