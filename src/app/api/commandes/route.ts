@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { generateAndStoreCommandePDF } from '@/lib/pdf/commande-pdf-storage'
 
 export async function POST(request: Request) {
   try {
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
     try {
       // Vérifier si c'est une mise à jour (ID fourni) ou une création
       let commande: { id: number };
+      let isNewValidation = false;
       
       if (commandeData.id) {
         // C'est une mise à jour
@@ -60,6 +62,9 @@ export async function POST(request: Request) {
         if (!existingCommande) {
           return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 });
         }
+        
+        // Vérifier si c'est une nouvelle validation (passage à VALIDEE)
+        isNewValidation = existingCommande.statut !== 'VALIDEE' && commandeData.statut === 'VALIDEE';
         
         // Préparer les données pour la mise à jour
         const commandeUpdateData = {
@@ -184,6 +189,21 @@ export async function POST(request: Request) {
         where: { id: commande.id },
         include: { lignes: true }
       });
+
+      // Générer et stocker le PDF si la commande est validée
+      if (commandeData.statut === 'VALIDEE') {
+        // Générer le PDF si c'est une nouvelle commande ou une nouvelle validation
+        const shouldGeneratePDF = !commandeData.id || isNewValidation;
+        
+        if (shouldGeneratePDF) {
+          console.log('📄 Génération automatique du PDF pour la commande validée...');
+          // Générer le PDF en arrière-plan (ne pas bloquer la réponse)
+          generateAndStoreCommandePDF(commande.id, session.user.id).catch((error) => {
+            console.error('❌ Erreur lors de la génération automatique du PDF:', error);
+            // Ne pas faire échouer la requête si la génération du PDF échoue
+          });
+        }
+      }
 
       return NextResponse.json(commandeWithLignes);
     } catch (dbError: unknown) {

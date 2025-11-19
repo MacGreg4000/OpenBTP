@@ -199,7 +199,7 @@ export default function DevisPage() {
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
       {/* Filtres */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+      <div className="relative z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">Filtres</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Filtre par numéro de devis */}

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { generateAndStoreCommandePDF } from '@/lib/pdf/commande-pdf-storage'
 
 export async function GET(request: Request, props: { params: Promise<{ commandeId: string }> }) {
   const params = await props.params;
@@ -59,8 +60,10 @@ export async function PUT(request: Request, props: { params: Promise<{ commandeI
       return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
     }
 
+    // Vérifier si c'est une nouvelle validation (passage à VALIDEE)
     const commandeData = await request.json()
     console.log('Données reçues pour mise à jour:', commandeData)
+    const isNewValidation = existingCommande.statut !== 'VALIDEE' && commandeData.statut === 'VALIDEE'
 
     const chantierPrimaryId: string | undefined = commandeData.chantierId
     const chantierSlug: string | undefined = commandeData.chantierSlug || commandeData.chantierId
@@ -175,6 +178,16 @@ export async function PUT(request: Request, props: { params: Promise<{ commandeI
       where: { id },
       include: { lignes: true }
     })
+
+    // Générer et stocker le PDF si la commande est validée
+    if (commandeData.statut === 'VALIDEE' && isNewValidation) {
+      console.log('📄 Génération automatique du PDF pour la commande validée...')
+      // Générer le PDF en arrière-plan (ne pas bloquer la réponse)
+      generateAndStoreCommandePDF(id, session.user.id).catch((error) => {
+        console.error('❌ Erreur lors de la génération automatique du PDF:', error)
+        // Ne pas faire échouer la requête si la génération du PDF échoue
+      })
+    }
 
     return NextResponse.json(commandeWithLignes)
   } catch (error) {

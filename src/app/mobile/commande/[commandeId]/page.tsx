@@ -19,10 +19,32 @@ export default function MobileCommandePDFPage() {
       return
     }
 
-    // Construire l'URL du PDF
-    const url = `/api/commandes/${commandeId}/pdf-modern`
-    setPdfUrl(url)
-    setLoading(false)
+    // D'abord, vérifier si un PDF stocké existe
+    const loadPDF = async () => {
+      try {
+        // Essayer de récupérer le PDF stocké
+        const storedResponse = await fetch(`/api/commandes/${commandeId}/pdf-stored`)
+        
+        if (storedResponse.ok) {
+          const data = await storedResponse.json()
+          // Utiliser le PDF stocké
+          setPdfUrl(data.url)
+          setLoading(false)
+        } else {
+          // Si aucun PDF stocké, générer à la volée
+          console.log('Aucun PDF stocké trouvé, génération à la volée...')
+          setPdfUrl(`/api/commandes/${commandeId}/pdf-modern`)
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('Erreur lors du chargement du PDF:', err)
+        // En cas d'erreur, essayer quand même la génération à la volée
+        setPdfUrl(`/api/commandes/${commandeId}/pdf-modern`)
+        setLoading(false)
+      }
+    }
+
+    loadPDF()
   }, [commandeId])
 
   const handleDownload = () => {

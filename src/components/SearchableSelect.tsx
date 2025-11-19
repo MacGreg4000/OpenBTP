@@ -140,7 +140,7 @@ export function SearchableSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-2xl max-h-80 flex flex-col overflow-hidden">
+        <div className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-2xl max-h-80 flex flex-col overflow-hidden">
           {/* Champ de recherche */}
           <div className="p-2 border-b-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
             <div className="relative">
