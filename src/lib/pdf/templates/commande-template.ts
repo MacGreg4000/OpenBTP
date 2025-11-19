@@ -34,8 +34,48 @@ export interface CommandeData {
   cgvHtml?: string
 }
 
+/**
+ * Extrait le contenu du body d'un HTML complet et nettoie les styles qui pourraient interférer
+ */
+function extractBodyContent(html: string): string {
+  // Si le HTML ne contient pas de balises html/head/body, le retourner tel quel
+  if (!html.includes('<html') && !html.includes('<head') && !html.includes('<body')) {
+    return html
+  }
+
+  // Extraire le contenu entre <body> et </body>
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  if (bodyMatch && bodyMatch[1]) {
+    let bodyContent = bodyMatch[1]
+    
+    // Supprimer les balises <style> qui pourraient contenir des styles @page ou globaux
+    bodyContent = bodyContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    
+    // Supprimer les balises <script>
+    bodyContent = bodyContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    
+    return bodyContent.trim()
+  }
+
+  // Si on ne trouve pas de body, essayer d'extraire juste le contenu sans les balises html/head
+  let cleaned = html
+  cleaned = cleaned.replace(/<!doctype[^>]*>/gi, '')
+  cleaned = cleaned.replace(/<html[^>]*>/gi, '')
+  cleaned = cleaned.replace(/<\/html>/gi, '')
+  cleaned = cleaned.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+  cleaned = cleaned.replace(/<body[^>]*>/gi, '')
+  cleaned = cleaned.replace(/<\/body>/gi, '')
+  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+  
+  return cleaned.trim()
+}
+
 export function generateCommandeHTML(data: CommandeData): string {
   const { commande, entreprise, chantierId, logoBase64, cgvHtml } = data
+  
+  // Nettoyer le HTML des CGV pour extraire uniquement le contenu du body
+  const cleanedCgvHtml = cgvHtml ? extractBodyContent(cgvHtml) : null
   
   // Calculer les totaux
   const lignesCalculables = commande.lignes.filter(ligne => ligne.type !== 'TITRE' && ligne.type !== 'SOUS_TITRE')
@@ -425,6 +465,13 @@ export function generateCommandeHTML(data: CommandeData): string {
             font-size: 10px;
             line-height: 1.5;
             color: #1f2937;
+            /* Neutraliser les styles qui pourraient affecter la page */
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            box-sizing: border-box !important;
         }
 
         .cgv-content * {
@@ -435,6 +482,20 @@ export function generateCommandeHTML(data: CommandeData): string {
             padding: 0 !important;
             margin: 0 0 8px 0 !important;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            /* Neutraliser les styles de page et de taille */
+            width: auto !important;
+            max-width: 100% !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Neutraliser spécifiquement les styles @page, html, body qui pourraient être dans le HTML des CGV */
+        .cgv-content html,
+        .cgv-content body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
         }
 
         .cgv-content strong {
@@ -642,11 +703,11 @@ export function generateCommandeHTML(data: CommandeData): string {
             </div>
         </div>
         
-        ${cgvHtml ? `
+        ${cleanedCgvHtml ? `
         <div class="cgv-section">
             <h2>Conditions générales de vente</h2>
             <div class="cgv-content">
-                ${cgvHtml}
+                ${cleanedCgvHtml}
             </div>
         </div>
         ` : ''}
