@@ -446,24 +446,30 @@ export function generateCommandeHTML(data: CommandeData): string {
             border-left-color: #10b981;
         }
         
+        /* Conditions générales - Optimisé pour tenir sur une seule page */
         .cgv-section {
-            margin-top: 12px;
+            margin-top: 8px;
             page-break-before: always;
-            padding-top: 6px;
+            padding-top: 4px;
+            /* Forcer le contenu à tenir sur une page */
+            max-height: calc(100vh - 40mm);
+            overflow: hidden;
         }
 
         .cgv-section h2 {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 700;
             color: #111827;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+            margin-top: 0;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            padding-bottom: 2px;
         }
 
         .cgv-content {
-            font-size: 10px;
-            line-height: 1.5;
+            font-size: 7px;
+            line-height: 1.2;
             color: #1f2937;
             /* Neutraliser les styles qui pourraient affecter la page */
             margin: 0 !important;
@@ -472,6 +478,10 @@ export function generateCommandeHTML(data: CommandeData): string {
             max-width: 100% !important;
             height: auto !important;
             box-sizing: border-box !important;
+            /* Optimisation pour tenir sur une page */
+            column-count: 2;
+            column-gap: 12px;
+            column-fill: auto;
         }
 
         .cgv-content * {
@@ -480,13 +490,16 @@ export function generateCommandeHTML(data: CommandeData): string {
             box-shadow: none !important;
             color: inherit !important;
             padding: 0 !important;
-            margin: 0 0 8px 0 !important;
+            margin: 0 0 3px 0 !important;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             /* Neutraliser les styles de page et de taille */
             width: auto !important;
             max-width: 100% !important;
             height: auto !important;
             box-sizing: border-box !important;
+            /* Empêcher les sauts de page dans les éléments */
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         /* Neutraliser spécifiquement les styles @page, html, body qui pourraient être dans le HTML des CGV */
@@ -500,6 +513,7 @@ export function generateCommandeHTML(data: CommandeData): string {
 
         .cgv-content strong {
             font-weight: 600 !important;
+            font-size: 7px !important;
         }
 
         .cgv-content em {
@@ -508,11 +522,23 @@ export function generateCommandeHTML(data: CommandeData): string {
 
         .cgv-content ul,
         .cgv-content ol {
-            margin-left: 16px !important;
+            margin-left: 12px !important;
+            margin-top: 2px !important;
+            margin-bottom: 2px !important;
+            padding-left: 0 !important;
         }
 
         .cgv-content li {
-            margin-bottom: 4px !important;
+            margin-bottom: 2px !important;
+            margin-top: 0 !important;
+            padding: 0 !important;
+        }
+
+        .cgv-content p {
+            margin-bottom: 3px !important;
+            margin-top: 0 !important;
+            padding: 0 !important;
+            line-height: 1.2 !important;
         }
 
         .cgv-content h1,
@@ -521,9 +547,42 @@ export function generateCommandeHTML(data: CommandeData): string {
         .cgv-content h4,
         .cgv-content h5,
         .cgv-content h6 {
-            font-size: 11px !important;
+            font-size: 8px !important;
             font-weight: 600 !important;
-            margin-top: 12px !important;
+            margin-top: 4px !important;
+            margin-bottom: 2px !important;
+            padding: 0 !important;
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+
+        .cgv-content section {
+            margin-bottom: 4px !important;
+            margin-top: 0 !important;
+            padding: 0 !important;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .cgv-content header {
+            margin-bottom: 4px !important;
+            padding: 0 !important;
+        }
+
+        .cgv-content footer {
+            margin-top: 4px !important;
+            padding: 0 !important;
+            font-size: 6px !important;
+        }
+
+        .cgv-content .cols {
+            column-count: 2 !important;
+            column-gap: 12px !important;
+        }
+
+        .cgv-content .doc {
+            margin: 0 !important;
+            padding: 0 !important;
         }
         
         /* Pied de page */
