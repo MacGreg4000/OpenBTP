@@ -757,11 +757,27 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                 const isPDF = mimeType === 'application/pdf' || fileExtension === 'pdf'
                 const isText = ['txt', 'md', 'csv'].includes(fileExtension)
 
+                // Fonction helper pour convertir l'URL en URL API si nécessaire
+                const getDocumentUrl = (url: string) => {
+                  // Si l'URL commence par /uploads/, la convertir pour utiliser l'API
+                  if (url.startsWith('/uploads/')) {
+                    // Enlever le préfixe /uploads/ et utiliser l'API
+                    const pathWithoutUploads = url.replace('/uploads/', '')
+                    return `/api/documents/serve/${pathWithoutUploads}`
+                  }
+                  // Si l'URL commence déjà par /api/, la retourner telle quelle
+                  if (url.startsWith('/api/')) {
+                    return url
+                  }
+                  // Sinon, retourner l'URL telle quelle
+                  return url
+                }
+
                 if (isImage) {
                   return (
                     <div className="flex justify-center">
                       <img
-                        src={previewDocument.url}
+                        src={getDocumentUrl(previewDocument.url)}
                         alt={previewDocument.nom}
                         className="max-w-full h-auto rounded-lg shadow-lg"
                         onError={(e) => {
@@ -777,19 +793,34 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                   )
                 }
                 if (isPDF) {
+                  const pdfUrl = getDocumentUrl(previewDocument.url)
                   return (
-                    <div className="w-full h-[calc(90vh-8rem)]">
+                    <div className="w-full h-[calc(90vh-8rem)] relative">
                       <iframe
-                        src={`${previewDocument.url}#toolbar=0`}
-                        className="w-full h-full rounded-lg shadow-lg"
+                        src={`${pdfUrl}#toolbar=0`}
+                        className="w-full h-full rounded-lg shadow-lg border-0"
                         title={previewDocument.nom}
+                        style={{ minHeight: '600px' }}
+                        onLoad={(e) => {
+                          // Vérifier si l'iframe a chargé correctement
+                          const iframe = e.target as HTMLIFrameElement
+                          try {
+                            // Si on peut accéder au contenu, c'est bon
+                            if (iframe.contentDocument || iframe.contentWindow) {
+                              console.log('PDF chargé avec succès')
+                            }
+                          } catch (err) {
+                            // Erreur CORS normale, mais le PDF devrait quand même se charger
+                            console.log('PDF en cours de chargement (CORS normal)')
+                          }
+                        }}
                         onError={() => {
                           const iframe = document.querySelector('iframe[title="' + previewDocument.nom + '"]') as HTMLIFrameElement
                           if (iframe) {
                             iframe.style.display = 'none'
                             const parent = iframe.parentElement
                             if (parent) {
-                              parent.innerHTML = '<p class="text-gray-500 text-center p-4">Erreur lors du chargement du PDF. <a href="' + previewDocument.url + '" target="_blank" class="text-blue-600 hover:underline">Cliquez ici pour le télécharger</a></p>'
+                              parent.innerHTML = '<div class="p-4 text-center"><p class="text-gray-500 mb-4">Erreur lors du chargement du PDF.</p><a href="' + pdfUrl + '" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-2"><ArrowDownTrayIcon class="h-5 w-5" /> Cliquez ici pour le télécharger</a></div>'
                             }
                           }
                         }}
@@ -816,9 +847,18 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
             
             <div className="flex justify-end p-4 border-t-2 border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-50/50 to-blue-50/50 dark:from-blue-900/10 dark:to-blue-900/10">
               <a
-                href={previewDocument.url}
+                href={(() => {
+                  // Fonction helper pour convertir l'URL en URL API si nécessaire
+                  const url = previewDocument.url
+                  if (url.startsWith('/uploads/')) {
+                    const pathWithoutUploads = url.replace('/uploads/', '')
+                    return `/api/documents/serve/${pathWithoutUploads}`
+                  }
+                  return url
+                })()}
                 target="_blank"
                 rel="noopener noreferrer"
+                download={previewDocument.nom}
                 className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
               >
                 <ArrowDownTrayIcon className="h-5 w-5 mr-2" />

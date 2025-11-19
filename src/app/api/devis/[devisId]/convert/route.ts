@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma/client'
 import { PDFGenerator } from '@/lib/pdf/pdf-generator'
 import { generateDevisHTML } from '@/lib/pdf/templates/devis-template'
 import { getActiveTemplateHtml } from '@/lib/templates/get-active-template'
+import { generateAndStoreCommandePDF } from '@/lib/pdf/commande-pdf-storage'
 
 // POST /api/devis/[devisId]/convert - Convertir un devis ou avenant
 export async function POST(
@@ -286,6 +287,13 @@ export async function POST(
       })
 
       console.log('✅ Commande créée avec succès:', commande.id)
+
+      // Générer et stocker le PDF de la commande dans les documents du chantier
+      console.log('📄 Génération automatique du PDF de la commande...')
+      generateAndStoreCommandePDF(commande.id, session.user.id).catch((error) => {
+        console.error('❌ Erreur lors de la génération automatique du PDF de la commande:', error)
+        // Ne pas faire échouer la conversion si la génération du PDF échoue
+      })
 
       // Générer et sauvegarder le PDF dans les documents du chantier
       try {

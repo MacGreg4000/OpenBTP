@@ -76,6 +76,9 @@ export async function GET(
         'Content-Type': mimeType,
         'Content-Length': stats.size.toString(),
         'Cache-Control': 'public, max-age=31536000', // Cache pendant 1 an
+        'X-Content-Type-Options': 'nosniff',
+        // Headers pour permettre l'affichage dans iframe
+        'Content-Disposition': `inline; filename="${path.basename(fullPath)}"`,
       },
     });
   } catch (error) {
