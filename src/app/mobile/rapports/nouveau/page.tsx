@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
+import { compressImages } from '@/lib/utils/image-compression'
 import {
   ArrowLeftIcon,
   CameraIcon,
@@ -55,6 +56,7 @@ export default function MobileNouveauRapportPage() {
   const [tagsMenuOpen, setTagsMenuOpen] = useState(false)
   const [personnesSectionOpen, setPersonnesSectionOpen] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [compressing, setCompressing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -126,23 +128,48 @@ export default function MobileNouveauRapportPage() {
     }
   }
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
 
-    Array.from(files).forEach((file) => {
-      const photo: Photo = {
-        id: Math.random().toString(36).substring(2, 9),
-        file,
-        preview: URL.createObjectURL(file),
-        annotation: '',
-        tags: ['Rapport'],
+    try {
+      setCompressing(true)
+      
+      // Convertir FileList en tableau
+      const fileArray = Array.from(files)
+      
+      // Compresser les images (max 1920px, qualité 0.8)
+      const compressedFiles = await compressImages(fileArray, 1920, 1920, 0.8)
+      
+      // Créer les photos avec les fichiers compressés
+      compressedFiles.forEach((file) => {
+        const photo: Photo = {
+          id: Math.random().toString(36).substring(2, 9),
+          file,
+          preview: URL.createObjectURL(file),
+          annotation: '',
+          tags: ['Rapport'],
+        }
+        setPhotos((prev) => [...prev, photo])
+      })
+    } catch (error) {
+      console.error('Erreur lors de la compression:', error)
+      // En cas d'erreur, utiliser les fichiers originaux
+      Array.from(files).forEach((file) => {
+        const photo: Photo = {
+          id: Math.random().toString(36).substring(2, 9),
+          file,
+          preview: URL.createObjectURL(file),
+          annotation: '',
+          tags: ['Rapport'],
+        }
+        setPhotos((prev) => [...prev, photo])
+      })
+    } finally {
+      setCompressing(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
       }
-      setPhotos((prev) => [...prev, photo])
-    })
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
     }
   }
 
@@ -629,10 +656,20 @@ export default function MobileNouveauRapportPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100"
+              disabled={compressing}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 disabled:opacity-50"
             >
-              <CameraIcon className="h-5 w-5" />
-              <span>Ajouter des photos</span>
+              {compressing ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  <span>Compression...</span>
+                </>
+              ) : (
+                <>
+                  <CameraIcon className="h-5 w-5" />
+                  <span>Ajouter des photos</span>
+                </>
+              )}
             </button>
 
             {photos.length > 0 && (

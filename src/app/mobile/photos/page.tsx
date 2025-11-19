@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
 import { BottomNav } from '@/components/mobile/BottomNav'
+import { compressImages } from '@/lib/utils/image-compression'
 import {
   CameraIcon,
   ArrowLeftIcon,
@@ -24,6 +25,7 @@ export default function MobilePhotosPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [compressing, setCompressing] = useState(false)
   const [selectedPhotos, setSelectedPhotos] = useState<Array<{ id: string; file: File; preview: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -74,24 +76,46 @@ export default function MobilePhotosPage() {
     }
   }
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || !selectedChantier) return
 
-    // Ajouter tous les fichiers sélectionnés
-    const newPhotos: Array<{ id: string; file: File; preview: string }> = []
-    
-    Array.from(files).forEach((file) => {
-      const id = Math.random().toString(36).substring(2, 9)
-      const preview = URL.createObjectURL(file)
-      newPhotos.push({ id, file, preview })
-    })
+    try {
+      setCompressing(true)
+      
+      // Convertir FileList en tableau
+      const fileArray = Array.from(files)
+      
+      // Compresser les images (max 1920px, qualité 0.8)
+      const compressedFiles = await compressImages(fileArray, 1920, 1920, 0.8)
+      
+      // Créer les prévisualisations avec les fichiers compressés
+      const newPhotos: Array<{ id: string; file: File; preview: string }> = []
+      
+      compressedFiles.forEach((file) => {
+        const id = Math.random().toString(36).substring(2, 9)
+        const preview = URL.createObjectURL(file)
+        newPhotos.push({ id, file, preview })
+      })
 
-    setSelectedPhotos((prev) => [...prev, ...newPhotos])
+      setSelectedPhotos((prev) => [...prev, ...newPhotos])
 
-    // Réinitialiser l'input pour permettre de sélectionner à nouveau
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      // Réinitialiser l'input pour permettre de sélectionner à nouveau
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } catch (error) {
+      console.error('Erreur lors de la compression:', error)
+      // En cas d'erreur, utiliser les fichiers originaux
+      const newPhotos: Array<{ id: string; file: File; preview: string }> = []
+      Array.from(files).forEach((file) => {
+        const id = Math.random().toString(36).substring(2, 9)
+        const preview = URL.createObjectURL(file)
+        newPhotos.push({ id, file, preview })
+      })
+      setSelectedPhotos((prev) => [...prev, ...newPhotos])
+    } finally {
+      setCompressing(false)
     }
   }
 
@@ -111,30 +135,39 @@ export default function MobilePhotosPage() {
     try {
       setUploading(true)
 
-      // Uploader toutes les photos en parallèle
-      const uploadPromises = selectedPhotos.map(async (photo) => {
-        const formData = new FormData()
-        formData.append('file', photo.file)
-        formData.append('type', 'photo-chantier')
-        formData.append('tagsJsonString', JSON.stringify(['Interne']))
-        formData.append('metadata', JSON.stringify({ source: 'photo-interne' }))
+      // Uploader les photos par batch de 3 pour éviter de surcharger la connexion
+      const BATCH_SIZE = 3
+      const batches: Array<Array<{ id: string; file: File; preview: string }>> = []
+      
+      for (let i = 0; i < selectedPhotos.length; i += BATCH_SIZE) {
+        batches.push(selectedPhotos.slice(i, i + BATCH_SIZE))
+      }
 
-        const response = await fetch(
-          `/api/chantiers/${selectedChantier.chantierId}/documents`,
-          {
-            method: 'POST',
-            body: formData,
+      for (const batch of batches) {
+        const uploadPromises = batch.map(async (photo) => {
+          const formData = new FormData()
+          formData.append('file', photo.file)
+          formData.append('type', 'photo-chantier')
+          formData.append('tagsJsonString', JSON.stringify(['Interne']))
+          formData.append('metadata', JSON.stringify({ source: 'photo-interne' }))
+
+          const response = await fetch(
+            `/api/chantiers/${selectedChantier.chantierId}/documents`,
+            {
+              method: 'POST',
+              body: formData,
+            }
+          )
+
+          if (!response.ok) {
+            throw new Error(`Erreur lors de l'upload de ${photo.file.name}`)
           }
-        )
 
-        if (!response.ok) {
-          throw new Error(`Erreur lors de l'upload de ${photo.file.name}`)
-        }
+          return response.json()
+        })
 
-        return response.json()
-      })
-
-      await Promise.all(uploadPromises)
+        await Promise.all(uploadPromises)
+      }
 
       // Nettoyer les URLs des prévisualisations
       selectedPhotos.forEach((photo) => {
@@ -205,10 +238,20 @@ export default function MobilePhotosPage() {
           {selectedPhotos.length === 0 ? (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-colors"
+              disabled={compressing}
+              className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-colors disabled:opacity-50"
             >
-              <CameraIcon className="h-6 w-6" />
-              <span>Ajouter des photos</span>
+              {compressing ? (
+                <>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  <span>Compression...</span>
+                </>
+              ) : (
+                <>
+                  <CameraIcon className="h-6 w-6" />
+                  <span>Ajouter des photos</span>
+                </>
+              )}
             </button>
           ) : (
             <div className="space-y-3">
@@ -234,10 +277,20 @@ export default function MobilePhotosPage() {
               {/* Bouton pour ajouter plus de photos */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 transition-colors"
+                disabled={compressing}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 transition-colors disabled:opacity-50"
               >
-                <CameraIcon className="h-5 w-5" />
-                <span>Ajouter d'autres photos</span>
+                {compressing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span>Compression...</span>
+                  </>
+                ) : (
+                  <>
+                    <CameraIcon className="h-5 w-5" />
+                    <span>Ajouter d'autres photos</span>
+                  </>
+                )}
               </button>
 
               {/* Boutons d'action */}
@@ -283,6 +336,8 @@ export default function MobilePhotosPage() {
                   src={photo.url}
                   alt={photo.nom}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.src = '/placeholder-image.png'
