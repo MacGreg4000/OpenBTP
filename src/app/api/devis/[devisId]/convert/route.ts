@@ -13,30 +13,55 @@ export async function POST(
 ) {
   const params = await props.params
   const { devisId } = params
-  type DevisWithRelations = Awaited<ReturnType<typeof prisma.devis.findUnique<{
-    include: {
-      client: true
-      chantier: {
-        select: {
-          chantierId: true
-          nomChantier: true
-          adresseChantier: true
-        }
-      }
-      lignes: {
-        orderBy: {
-          ordre: 'asc'
-        }
-      }
-      createur: {
-        select: {
-          id: true
-          name: true
-          email: true
-        }
-      }
+  
+  // Type pour le devis avec ses relations
+  type DevisWithRelations = {
+    id: string
+    numeroDevis: string
+    typeDevis: string
+    reference: string | null
+    dateCreation: Date
+    dateValidite: Date
+    statut: string
+    observations: string | null
+    tauxTVA: number
+    remiseGlobale: number
+    montantHT: number
+    montantTVA: number
+    montantTTC: number
+    clientId: string
+    chantierId: string | null
+    client: {
+      id: string
+      nom: string
+      email: string
+      telephone: string | null
+      adresse: string | null
     }
-  }>>>
+    chantier: {
+      chantierId: string
+      nomChantier: string
+      adresseChantier: string | null
+    } | null
+    lignes: Array<{
+      id: string
+      ordre: number
+      type: string
+      article: string | null
+      description: string | null
+      unite: string | null
+      quantite: number | null
+      prixUnitaire: number | null
+      remise: number
+      total: number | null
+    }>
+    createur: {
+      id: string
+      name: string
+      email: string
+    }
+  }
+  
   let devis: DevisWithRelations | null = null
   try {
     const session = await getServerSession(authOptions)
@@ -268,8 +293,8 @@ export async function POST(
         const html = generateDevisHTML({
           devis: {
             numeroDevis: devis.numeroDevis,
-            dateCreation: devis.dateCreation,
-            dateValidite: devis.dateValidite,
+            dateCreation: devis.dateCreation.toISOString(),
+            dateValidite: devis.dateValidite.toISOString(),
             clientNom: devis.client.nom,
             clientEmail: devis.client.email || '',
             clientTelephone: devis.client.telephone || undefined,
@@ -547,8 +572,8 @@ export async function POST(
         const html = generateDevisHTML({
           devis: {
             numeroDevis: devis.numeroDevis,
-            dateCreation: devis.dateCreation,
-            dateValidite: devis.dateValidite,
+            dateCreation: devis.dateCreation.toISOString(),
+            dateValidite: devis.dateValidite.toISOString(),
             clientNom: devis.client.nom,
             clientEmail: devis.client.email || '',
             clientTelephone: devis.client.telephone || undefined,
