@@ -809,7 +809,7 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                             if (iframe.contentDocument || iframe.contentWindow) {
                               console.log('PDF chargé avec succès')
                             }
-                          } catch (err) {
+                          } catch (_err) {
                             // Erreur CORS normale, mais le PDF devrait quand même se charger
                             console.log('PDF en cours de chargement (CORS normal)')
                           }
