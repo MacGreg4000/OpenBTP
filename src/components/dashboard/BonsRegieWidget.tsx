@@ -103,7 +103,7 @@ export default function BonsRegieWidget() {
                 key={bon.id} 
                 className="border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200 group"
               >
-                <Link href={`/bons-regie/${bon.id}`} className="block">
+                <Link href={`/bon-regie/${bon.id}`} className="block">
                   <h3 className="font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {bon.description}
                   </h3>
