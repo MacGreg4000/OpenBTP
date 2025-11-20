@@ -74,7 +74,7 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
     fetchRapports()
   }, [params.chantierId])
 
-  const handleDeleteRapport = async (id: number, deleteVariantes: boolean = false) => {
+  const handleDeleteRapport = async (id: number) => {
     const rapport = rapports.find(r => r.id === id)
     const isRapportGeneral = rapport?.type === 'rapport-visite-general'
     const variantesIds = rapport?.metadata?.rapportVariantesIds || []
