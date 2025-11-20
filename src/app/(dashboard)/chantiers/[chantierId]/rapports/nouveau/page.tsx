@@ -135,8 +135,6 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
   
   // Filtre de tags
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('Tous')
-  // Tag sélectionné pour l'export d'un rapport filtré
-  const [exportTagFilter, setExportTagFilter] = useState<string>('Tous')
 
   // Champs temporaires pour l'ajout de personnes
   const [nouveauNom, setNouveauNom] = useState<string>('')
@@ -657,6 +655,23 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
     }
   };
 
+  // Fonction pour extraire tous les tags uniques des notes et photos
+  const getAllUniqueTags = (): string[] => {
+    const tagsSet = new Set<string>()
+    
+    // Ajouter les tags des notes individuelles
+    notesIndividuelles.forEach(note => {
+      note.tags.forEach(tag => tagsSet.add(tag))
+    })
+    
+    // Ajouter les tags des photos
+    photos.forEach(photo => {
+      photo.tags.forEach(tag => tagsSet.add(tag))
+    })
+    
+    return Array.from(tagsSet).filter(tag => tag && tag.trim() !== '')
+  }
+
   const generatePDF = async (tagFilter?: string) => {
     if (!chantier) return null;
     
@@ -740,47 +755,6 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
     }
   }
 
-  const handleDownloadFilteredPDF = async () => {
-    if (exportTagFilter === 'Tous') {
-      return handleDownloadPDF();
-    }
-    
-    setSaving(true)
-    setError(null)
-    
-    try {
-      console.log(`Début de la génération du PDF filtré pour: ${exportTagFilter}`)
-      // Générer le PDF avec le filtre sélectionné
-      const pdfBlob = await generatePDF(exportTagFilter)
-      if (!pdfBlob || !chantier) {
-        throw new Error('Impossible de générer le PDF')
-      }
-      
-      console.log('PDF filtré généré avec succès')
-      console.log('Taille du PDF généré:', Math.round(pdfBlob.size / 1024), 'KB')
-      
-      // Créer un nom de fichier pour le PDF incluant le tag
-      const dateStr = format(new Date(date), 'yyyy-MM-dd')
-      const safeTag = exportTagFilter.replace(/\s+/g, '-');
-      const fileName = `rapport-${safeTag}-${chantier.nomChantier.replace(/\s+/g, '-')}-${dateStr}.pdf`
-      
-      // Télécharger le PDF localement
-      const url = URL.createObjectURL(pdfBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-      
-    } catch (error) {
-      console.error('Erreur lors de la génération du PDF filtré:', error)
-      setError(`Une erreur est survenue lors de la génération du rapport filtré`)
-    } finally {
-      setSaving(false)
-    }
-  }
 
   // Fonction pour filtrer les photos par tag
   const filteredPhotos = selectedTagFilter === 'Tous' 
@@ -945,32 +919,43 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
       }
       const existingDoc = await docResponse.json();
       
-      // Générer un nouveau PDF
+      // Récupérer les IDs des variantes filtrées si elles existent
+      const rapportVariantesIds: number[] = existingDoc.metadata?.rapportVariantesIds || []
+      
+      // Supprimer les anciens documents (principal + variantes)
+      const idsToDelete = [parseInt(documentId), ...rapportVariantesIds]
+      for (const id of idsToDelete) {
+        try {
+          await fetch(`/api/chantiers/${params.chantierId}/documents/${id}`, {
+            method: 'DELETE'
+          })
+        } catch (error) {
+          console.warn(`Impossible de supprimer le document ${id}:`, error)
+        }
+      }
+      
+      // Générer le PDF général
       const pdfBlob = await generatePDF();
       if (!pdfBlob) {
         throw new Error('Impossible de générer le PDF');
       }
       console.log('Taille du PDF généré:', Math.round(pdfBlob.size / 1024), 'KB');
       
-      // Utiliser le même nom de fichier que le document existant
-      const fileName = existingDoc.nom;
+      // Extraire tous les tags uniques
+      const allTags = getAllUniqueTags()
+      console.log('📋 Tags uniques trouvés pour la mise à jour:', allTags)
       
-      // Créer un objet FormData pour l'upload
+      const dateStr = format(new Date(date), 'yyyy-MM-dd');
+      const fileName = `rapport-visite-${chantier.nomChantier.replace(/\s+/g, '-')}-${dateStr}.pdf`;
+      
+      // Créer le rapport général
       const formData = new FormData();
       formData.append('file', pdfBlob, fileName);
-      formData.append('type', 'rapport-visite');
+      formData.append('type', 'rapport-visite-general');
       formData.append('notes', notes);
+      formData.append('personnesPresentes', JSON.stringify(personnes));
+      formData.append('tags', JSON.stringify(Array.from(tagsDisponibles)));
       
-      // Supprimer l'ancien document
-      const deleteResponse = await fetch(`/api/chantiers/${params.chantierId}/documents/${documentId}`, {
-        method: 'DELETE'
-      });
-      
-      if (!deleteResponse.ok) {
-        console.warn('Impossible de supprimer l\'ancien document, création d\'une nouvelle version');
-      }
-      
-      // Envoyer le PDF mis à jour au serveur
       const response = await fetch(`/api/chantiers/${params.chantierId}/documents`, {
         method: 'POST',
         body: formData
@@ -981,9 +966,65 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
       }
       
       const newDocument = await response.json();
+      const rapportGeneralId = newDocument.id
       
       // Sauvegarder les métadonnées du nouveau rapport
-      await saveRapportMetadata(newDocument.id);
+      await saveRapportMetadata(rapportGeneralId);
+      
+      // Générer et sauvegarder un PDF pour chaque tag unique
+      const nouvellesVariantesIds: number[] = []
+      for (const tag of allTags) {
+        try {
+          console.log(`📄 Génération du PDF filtré pour le tag: ${tag}`)
+          const pdfBlobFiltre = await generatePDF(tag)
+          
+          if (pdfBlobFiltre) {
+            const formDataFiltre = new FormData()
+            const safeTag = tag.replace(/\s+/g, '-')
+            const fileNameFiltre = `rapport-visite-${safeTag}-${chantier.nomChantier.replace(/\s+/g, '-')}-${dateStr}.pdf`
+            formDataFiltre.append('file', pdfBlobFiltre, fileNameFiltre)
+            formDataFiltre.append('type', `rapport-visite-tag-${safeTag}`)
+            
+            const metadataFiltre = {
+              rapportPrincipalId: rapportGeneralId,
+              tag: tag,
+              date: dateStr
+            }
+            formDataFiltre.append('metadata', JSON.stringify(metadataFiltre))
+            
+            const responseFiltre = await fetch(`/api/chantiers/${params.chantierId}/documents`, {
+              method: 'POST',
+              body: formDataFiltre
+            })
+            
+            if (responseFiltre.ok) {
+              const dataFiltre = await responseFiltre.json()
+              nouvellesVariantesIds.push(dataFiltre.id)
+              console.log(`✅ PDF filtré pour "${tag}" sauvegardé avec succès`)
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Erreur lors de la génération du PDF filtré pour "${tag}":`, error)
+        }
+      }
+      
+      // Mettre à jour les métadonnées du rapport principal
+      if (nouvellesVariantesIds.length > 0) {
+        try {
+          await fetch(`/api/chantiers/${params.chantierId}/documents/${rapportGeneralId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              metadata: {
+                rapportVariantesIds: nouvellesVariantesIds,
+                tagsGeneres: allTags
+              }
+            })
+          })
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour des métadonnées:', error)
+        }
+      }
       
       // Rediriger vers la liste des rapports
       router.push(`/chantiers/${params.chantierId}/rapports`);
@@ -1008,7 +1049,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
         return
       }
 
-      // Générer le PDF
+      // Générer le PDF général (sans filtre)
       const pdfBlob = await generatePDF()
       if (!pdfBlob || !chantier) {
         throw new Error("Échec de la génération du PDF")
@@ -1020,19 +1061,23 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
         return
       }
 
-      // Créer un objet FormData pour l'upload
+      // Extraire tous les tags uniques des notes et photos
+      const allTags = getAllUniqueTags()
+      console.log('📋 Tags uniques trouvés:', allTags)
+
+      // Créer un objet FormData pour l'upload du rapport général
       const formData = new FormData()
       const dateStr = format(new Date(date), 'yyyy-MM-dd')
       const fileName = `rapport-visite-${chantier.nomChantier.replace(/\s+/g, '-')}-${dateStr}.pdf`
       formData.append('file', pdfBlob, fileName)
-      formData.append('type', 'rapport-visite')
+      formData.append('type', 'rapport-visite-general')
 
       // Ajouter les personnes présentes et les tags aux données
       formData.append('personnesPresentes', JSON.stringify(personnes))
       formData.append('tags', JSON.stringify(Array.from(tagsDisponibles)))
       formData.append('notes', notes)
 
-      // Envoyer le rapport au serveur
+      // Envoyer le rapport général au serveur
       const response = await fetch(`/api/chantiers/${params.chantierId}/documents`, {
         method: 'POST',
         body: formData
@@ -1043,11 +1088,71 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
       }
 
       const responseData = await response.json()
-      console.log("Rapport envoyé avec succès:", responseData)
+      console.log("Rapport général envoyé avec succès:", responseData)
+      const rapportGeneralId = responseData.id
 
-      // Sauvegarde des métadonnées du rapport dans la base de données
-      if (responseData && responseData.id) {
-        await saveRapportMetadata(responseData.id)
+      // Sauvegarde des métadonnées du rapport général dans la base de données
+      if (rapportGeneralId) {
+        await saveRapportMetadata(rapportGeneralId)
+      }
+
+      // Générer et sauvegarder un PDF pour chaque tag unique
+      const rapportVariantesIds: number[] = []
+      for (const tag of allTags) {
+        try {
+          console.log(`📄 Génération du PDF filtré pour le tag: ${tag}`)
+          const pdfBlobFiltre = await generatePDF(tag)
+          
+          if (pdfBlobFiltre) {
+            const formDataFiltre = new FormData()
+            const safeTag = tag.replace(/\s+/g, '-')
+            const fileNameFiltre = `rapport-visite-${safeTag}-${chantier.nomChantier.replace(/\s+/g, '-')}-${dateStr}.pdf`
+            formDataFiltre.append('file', pdfBlobFiltre, fileNameFiltre)
+            formDataFiltre.append('type', `rapport-visite-tag-${safeTag}`)
+            
+            // Ajouter les métadonnées pour lier au rapport principal
+            const metadataFiltre = {
+              rapportPrincipalId: rapportGeneralId,
+              tag: tag,
+              date: dateStr
+            }
+            formDataFiltre.append('metadata', JSON.stringify(metadataFiltre))
+            
+            const responseFiltre = await fetch(`/api/chantiers/${params.chantierId}/documents`, {
+              method: 'POST',
+              body: formDataFiltre
+            })
+            
+            if (responseFiltre.ok) {
+              const dataFiltre = await responseFiltre.json()
+              rapportVariantesIds.push(dataFiltre.id)
+              console.log(`✅ PDF filtré pour "${tag}" sauvegardé avec succès`)
+            } else {
+              console.warn(`⚠️ Échec de la sauvegarde du PDF filtré pour "${tag}"`)
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Erreur lors de la génération du PDF filtré pour "${tag}":`, error)
+          // Continuer avec les autres tags même si un échoue
+        }
+      }
+
+      // Mettre à jour les métadonnées du rapport général pour inclure les IDs des variantes
+      if (rapportGeneralId && rapportVariantesIds.length > 0) {
+        try {
+          await fetch(`/api/chantiers/${params.chantierId}/documents/${rapportGeneralId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              metadata: {
+                rapportVariantesIds,
+                tagsGeneres: allTags
+              }
+            })
+          })
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour des métadonnées du rapport principal:', error)
+        }
       }
 
       // Ajouter les photos comme documents séparés seulement si elles ont des annotations ou des tags
@@ -1389,37 +1494,6 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
                 </p>
               </div>
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Générer un rapport filtré par tag
-                </h3>
-                <div className="flex items-center space-x-4">
-                  <div className="flex-grow">
-                    <select
-                      value={exportTagFilter}
-                      onChange={(e) => setExportTagFilter(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option value="Tous">Rapport complet (tous les tags)</option>
-                      {tagsDisponibles.map(tag => (
-                        <option key={tag} value={tag}>Rapport pour: {tag}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleDownloadFilteredPDF}
-                    disabled={saving}
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center"
-                  >
-                    <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
-                    Générer rapport filtré
-                  </button>
-                </div>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  Cette option vous permet de générer des rapports PDF séparés pour chaque corps de métier ou catégorie de remarques.
-                </p>
-              </div>
             </CollapsibleSection>
 
             {/* Section Notes */}
