@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import type { ComponentType, SVGProps } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader } from '@/components/PageHeader'
 import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
@@ -80,7 +79,6 @@ const statutLabels: Record<string, { label: string; color: string; icon: IconCom
 }
 
 export default function DevisPage() {
-  const router = useRouter()
   const [devisList, setDevisList] = useState<Devis[]>([])
   const [loading, setLoading] = useState(true)
   const [numeroFilter, setNumeroFilter] = useState<string | number | null>(null)
@@ -296,8 +294,7 @@ export default function DevisPage() {
                 return (
                   <tr
                     key={devis.id}
-                    onClick={() => router.push(`/devis/${devis.id}`)}
-                    className="hover:bg-orange-50/50 dark:hover:bg-orange-900/10 cursor-pointer transition-all duration-200 group"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     {/* Colonne Type */}
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -363,16 +360,13 @@ export default function DevisPage() {
                       {formatCurrency(Number(devis.montantTTC))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/devis/${devis.id}`)
-                        }}
-                        className="inline-flex items-center justify-center p-2 rounded-lg text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition-all duration-200 group-hover:scale-110"
+                      <Link
+                        href={`/devis/${devis.id}`}
+                        className="inline-flex items-center justify-center p-2 rounded-lg text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition-all duration-200"
                         title="Voir le devis"
                       >
                         <EyeIcon className="h-5 w-5" />
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 )

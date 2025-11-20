@@ -89,6 +89,12 @@ export default function EditDevisPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
+  const showConfirmationRef = useRef(showConfirmation)
+  
+  // Mettre à jour la référence à chaque rendu
+  useEffect(() => {
+    showConfirmationRef.current = showConfirmation
+  }, [showConfirmation])
 
   const loadClients = useCallback(async () => {
     try {
@@ -141,7 +147,7 @@ export default function EditDevisPage() {
         
         // Vérifier que le devis est modifiable
         if (devis.statut !== 'BROUILLON') {
-          showConfirmation({
+          showConfirmationRef.current({
             title: 'Modification impossible',
             message: 'Seuls les devis en brouillon peuvent être modifiés',
             type: 'warning',
@@ -151,6 +157,7 @@ export default function EditDevisPage() {
               router.push(`/devis/${devisId}`)
             }
           })
+          setLoading(false)
           return
         }
 
@@ -175,7 +182,7 @@ export default function EditDevisPage() {
           total: Number(l.total ?? 0)
         })))
       } else {
-        showConfirmation({
+        showConfirmationRef.current({
           title: 'Erreur',
           message: 'Erreur lors du chargement du devis',
           type: 'error',
@@ -188,7 +195,7 @@ export default function EditDevisPage() {
       }
     } catch (error) {
       console.error('Erreur:', error)
-      showConfirmation({
+      showConfirmationRef.current({
         title: 'Erreur',
         message: 'Erreur lors du chargement du devis',
         type: 'error',
@@ -201,7 +208,7 @@ export default function EditDevisPage() {
     } finally {
       setLoading(false)
     }
-  }, [devisId, router, showConfirmation])
+  }, [devisId, router])
 
   useEffect(() => {
     void loadClients()
@@ -659,25 +666,29 @@ export default function EditDevisPage() {
           </div>
 
           {/* Boutons d'ajout en bas du tableau */}
-          <div className="relative px-6 py-4 bg-gradient-to-br from-orange-600/10 via-orange-700/10 to-red-800/10 dark:from-orange-600/5 dark:via-orange-700/5 dark:to-red-800/5 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-end space-x-2">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-br from-orange-600/10 via-orange-700/10 to-red-800/10 dark:from-orange-600/5 dark:via-orange-700/5 dark:to-red-800/5">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => addSectionLigne('TITRE')}
-                className="px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-md transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-orange-900 dark:text-white bg-white/70 dark:bg-white/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200 shadow-md"
               >
+                <span className="text-lg leading-none">T</span>
                 Ajouter un titre
               </button>
               <button
                 onClick={() => addSectionLigne('SOUS_TITRE')}
-                className="px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-md transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-orange-900 dark:text-white bg-white/60 dark:bg-white/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200 shadow-md"
               >
+                <span className="text-lg leading-none">t</span>
                 Ajouter un sous-titre
               </button>
               <button
                 onClick={addLigne}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-orange-600 to-red-700 hover:from-orange-700 hover:to-red-800 dark:from-orange-700 dark:to-red-800 dark:hover:from-orange-600 dark:hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                <PlusIcon className="h-4 w-4 mr-1" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
                 Ajouter une ligne
               </button>
             </div>

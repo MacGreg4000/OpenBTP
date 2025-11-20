@@ -526,13 +526,13 @@ export default function ChantiersPage() {
         title="Gestion des Chantiers"
         subtitle="Gérez et suivez tous vos projets de construction"
         icon={BuildingOffice2Icon}
-        badgeColor="from-amber-600 via-orange-600 to-red-700"
-        gradientColor="from-amber-600/10 via-orange-600/10 to-red-700/10"
+        badgeColor="from-red-600 via-red-700 to-red-800"
+        gradientColor="from-red-600/10 via-red-700/10 to-red-800/10"
         stats={statsCards}
         actions={
           <Link
             href="/chantiers/nouveau"
-            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
           >
             <PlusIcon className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">Nouveau chantier</span>
@@ -768,7 +768,7 @@ export default function ChantiersPage() {
                 onClick={() => setViewMode('table')}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   viewMode === 'table' 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-red-600 text-white hover:bg-red-700' 
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
