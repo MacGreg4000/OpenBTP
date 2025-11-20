@@ -11,10 +11,27 @@ export default function MobileDocumentPDFPage() {
   const { selectedChantier } = useSelectedChantier()
   const documentId = params?.documentId as string
   const [documentUrl, setDocumentUrl] = useState<string | null>(null)
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null)
   const [documentName, setDocumentName] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isPDF, setIsPDF] = useState(false)
+
+  // Fonction helper pour convertir l'URL en URL API si nécessaire
+  const getDocumentUrl = (url: string) => {
+    // Si l'URL commence par /uploads/, la convertir pour utiliser l'API
+    if (url.startsWith('/uploads/')) {
+      // Enlever le préfixe /uploads/ et utiliser l'API
+      const pathWithoutUploads = url.replace('/uploads/', '')
+      return `/api/documents/serve/${pathWithoutUploads}`
+    }
+    // Si l'URL commence déjà par /api/, la retourner telle quelle
+    if (url.startsWith('/api/')) {
+      return url
+    }
+    // Sinon, retourner l'URL telle quelle
+    return url
+  }
 
   useEffect(() => {
     if (!selectedChantier || !documentId) {
@@ -32,7 +49,10 @@ export default function MobileDocumentPDFPage() {
           throw new Error('Document non trouvé')
         }
         const doc = await response.json()
-        setDocumentUrl(doc.url)
+        // Stocker l'URL originale pour le téléchargement
+        setOriginalUrl(doc.url)
+        // Convertir l'URL pour utiliser l'endpoint API si nécessaire (pour l'affichage)
+        setDocumentUrl(getDocumentUrl(doc.url))
         setDocumentName(doc.nom)
         setIsPDF(doc.type === 'photo-chantier' ? false : doc.nom.toLowerCase().endsWith('.pdf'))
         setLoading(false)
@@ -46,10 +66,13 @@ export default function MobileDocumentPDFPage() {
   }, [selectedChantier, documentId])
 
   const handleDownload = () => {
-    if (documentUrl) {
+    // Utiliser l'URL originale pour le téléchargement, ou l'URL convertie si pas d'originale
+    const urlToUse = originalUrl || documentUrl
+    if (urlToUse) {
       const link = document.createElement('a')
-      link.href = documentUrl
+      link.href = urlToUse
       link.download = documentName
+      link.target = '_blank'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

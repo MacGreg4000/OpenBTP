@@ -9,8 +9,25 @@ export default function MobileCommandePDFPage() {
   const params = useParams()
   const commandeId = params?.commandeId as string
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [originalPdfUrl, setOriginalPdfUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Fonction helper pour convertir l'URL en URL API si nécessaire
+  const getDocumentUrl = (url: string) => {
+    // Si l'URL commence par /uploads/, la convertir pour utiliser l'API
+    if (url.startsWith('/uploads/')) {
+      // Enlever le préfixe /uploads/ et utiliser l'API
+      const pathWithoutUploads = url.replace('/uploads/', '')
+      return `/api/documents/serve/${pathWithoutUploads}`
+    }
+    // Si l'URL commence déjà par /api/, la retourner telle quelle
+    if (url.startsWith('/api/')) {
+      return url
+    }
+    // Sinon, retourner l'URL telle quelle
+    return url
+  }
 
   useEffect(() => {
     if (!commandeId) {
@@ -27,19 +44,25 @@ export default function MobileCommandePDFPage() {
         
         if (storedResponse.ok) {
           const data = await storedResponse.json()
-          // Utiliser le PDF stocké
-          setPdfUrl(data.url)
+          // Stocker l'URL originale pour le téléchargement
+          setOriginalPdfUrl(data.url)
+          // Convertir l'URL pour utiliser l'endpoint API si nécessaire (pour l'affichage)
+          setPdfUrl(getDocumentUrl(data.url))
           setLoading(false)
         } else {
           // Si aucun PDF stocké, générer à la volée
           console.log('Aucun PDF stocké trouvé, génération à la volée...')
-          setPdfUrl(`/api/commandes/${commandeId}/pdf-modern`)
+          const generatedUrl = `/api/commandes/${commandeId}/pdf-modern`
+          setOriginalPdfUrl(generatedUrl)
+          setPdfUrl(generatedUrl)
           setLoading(false)
         }
       } catch (err) {
         console.error('Erreur lors du chargement du PDF:', err)
         // En cas d'erreur, essayer quand même la génération à la volée
-        setPdfUrl(`/api/commandes/${commandeId}/pdf-modern`)
+        const generatedUrl = `/api/commandes/${commandeId}/pdf-modern`
+        setOriginalPdfUrl(generatedUrl)
+        setPdfUrl(generatedUrl)
         setLoading(false)
       }
     }
@@ -48,10 +71,13 @@ export default function MobileCommandePDFPage() {
   }, [commandeId])
 
   const handleDownload = () => {
-    if (pdfUrl) {
+    // Utiliser l'URL originale pour le téléchargement, ou l'URL convertie si pas d'originale
+    const urlToUse = originalPdfUrl || pdfUrl
+    if (urlToUse) {
       const link = document.createElement('a')
-      link.href = pdfUrl
+      link.href = urlToUse
       link.download = `commande-${commandeId}.pdf`
+      link.target = '_blank'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
