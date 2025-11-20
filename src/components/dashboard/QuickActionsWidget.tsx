@@ -18,6 +18,7 @@ interface QuickAction {
   color: string
   bgColor: string
   hoverColor: string
+  hoverTextColor: string
   shortcut?: string
 }
 
@@ -27,9 +28,10 @@ const quickActions: QuickAction[] = [
     title: 'Devis',
     icon: DocumentTextIcon,
     href: '/devis',
-    color: 'from-blue-500 to-indigo-600',
-    bgColor: 'from-blue-50 to-indigo-50',
-    hoverColor: 'shadow-blue-500/30',
+    color: 'from-orange-500 to-red-600',
+    bgColor: 'from-orange-50 to-red-50',
+    hoverColor: 'shadow-orange-500/30',
+    hoverTextColor: 'group-hover:text-orange-600 dark:group-hover:text-orange-400',
     shortcut: 'D'
   },
   {
@@ -37,9 +39,10 @@ const quickActions: QuickAction[] = [
     title: 'Chantiers',
     icon: BuildingOffice2Icon,
     href: '/chantiers',
-    color: 'from-emerald-500 to-teal-600',
-    bgColor: 'from-emerald-50 to-teal-50',
-    hoverColor: 'shadow-emerald-500/30',
+    color: 'from-amber-500 to-orange-600',
+    bgColor: 'from-amber-50 to-orange-50',
+    hoverColor: 'shadow-amber-500/30',
+    hoverTextColor: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
     shortcut: 'C'
   },
   {
@@ -47,9 +50,10 @@ const quickActions: QuickAction[] = [
     title: 'Clients',
     icon: UsersIcon,
     href: '/clients',
-    color: 'from-purple-500 to-pink-600',
-    bgColor: 'from-purple-50 to-pink-50',
-    hoverColor: 'shadow-purple-500/30',
+    color: 'from-indigo-500 to-pink-600',
+    bgColor: 'from-indigo-50 to-pink-50',
+    hoverColor: 'shadow-indigo-500/30',
+    hoverTextColor: 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400',
     shortcut: 'L'
   },
   {
@@ -57,9 +61,10 @@ const quickActions: QuickAction[] = [
     title: 'Sous-traitants',
     icon: UserGroupIcon,
     href: '/sous-traitants',
-    color: 'from-orange-500 to-red-600',
-    bgColor: 'from-orange-50 to-red-50',
-    hoverColor: 'shadow-orange-500/30',
+    color: 'from-blue-500 to-purple-600',
+    bgColor: 'from-blue-50 to-purple-50',
+    hoverColor: 'shadow-blue-500/30',
+    hoverTextColor: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
     shortcut: 'S'
   },
   {
@@ -67,9 +72,10 @@ const quickActions: QuickAction[] = [
     title: 'Planning',
     icon: CalendarIcon,
     href: '/planning',
-    color: 'from-indigo-500 to-purple-600',
-    bgColor: 'from-indigo-50 to-purple-50',
-    hoverColor: 'shadow-indigo-500/30',
+    color: 'from-blue-500 to-purple-600',
+    bgColor: 'from-blue-50 to-purple-50',
+    hoverColor: 'shadow-blue-500/30',
+    hoverTextColor: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
     shortcut: 'P'
   },
   {
@@ -77,9 +83,10 @@ const quickActions: QuickAction[] = [
     title: 'Journal',
     icon: CalendarDaysIcon,
     href: '/journal',
-    color: 'from-gray-500 to-slate-600',
-    bgColor: 'from-gray-50 to-slate-50',
-    hoverColor: 'shadow-gray-500/30',
+    color: 'from-green-500 to-teal-600',
+    bgColor: 'from-green-50 to-teal-50',
+    hoverColor: 'shadow-green-500/30',
+    hoverTextColor: 'group-hover:text-green-600 dark:group-hover:text-green-400',
     shortcut: 'J'
   }
 ]
@@ -122,7 +129,7 @@ export default function QuickActionsWidget() {
                 <action.icon className="h-5 w-5 text-white" />
               </div>
               
-              <h4 className="font-bold text-gray-900 dark:text-white text-xs group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <h4 className={`font-bold text-gray-900 dark:text-white text-xs ${action.hoverTextColor} transition-colors`}>
                 {action.title}
               </h4>
 
