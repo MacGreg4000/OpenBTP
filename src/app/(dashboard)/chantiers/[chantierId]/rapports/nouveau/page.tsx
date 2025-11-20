@@ -1244,8 +1244,8 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
               title="Informations générales"
               icon={<DocumentTextIcon className="h-6 w-6 text-white" />}
               defaultOpen={true}
-              gradientFrom="from-blue-600"
-              gradientTo="to-indigo-700"
+              gradientFrom="from-slate-600"
+              gradientTo="to-slate-700"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormInput
@@ -1275,8 +1275,8 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
               title="Personnes présentes"
               icon={<UserGroupIcon className="h-6 w-6 text-white" />}
               defaultOpen={false}
-              gradientFrom="from-green-600"
-              gradientTo="to-emerald-700"
+              gradientFrom="from-teal-600"
+              gradientTo="to-teal-700"
             >
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormInput
@@ -1300,7 +1300,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
                     type="button"
                     onClick={handleAddPersonne}
                     disabled={!nouveauNom.trim()}
-                    className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    className="w-full bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                   >
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Ajouter
@@ -1336,8 +1336,8 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
               title="Gestion des tags"
               icon={<TagIcon className="h-6 w-6 text-white" />}
               defaultOpen={false}
-              gradientFrom="from-purple-600"
-              gradientTo="to-pink-700"
+              gradientFrom="from-indigo-600"
+              gradientTo="to-indigo-700"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormInput
@@ -1353,7 +1353,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
                     type="button"
                     onClick={handleAddGlobalTag}
                     disabled={!nouveauTag.trim()}
-                    className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    className="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                   >
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Ajouter un tag
@@ -1369,14 +1369,14 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
                   {tagsDisponibles.map(tag => (
                     <span 
                       key={tag}
-                      className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 border border-purple-200 dark:border-purple-700"
+                      className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700"
                     >
                       {tag}
                       {!TAGS_PAR_DEFAUT.includes(tag) && (
                         <button
                           type="button"
                           onClick={() => handleRemoveGlobalTag(tag)}
-                          className="ml-2 p-1 text-purple-600 hover:text-purple-800 dark:text-purple-300 dark:hover:text-purple-100"
+                          className="ml-2 p-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-100"
                         >
                           <XMarkIcon className="h-3 w-3" />
                         </button>
@@ -1398,7 +1398,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
                     <select
                       value={exportTagFilter}
                       onChange={(e) => setExportTagFilter(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="Tous">Rapport complet (tous les tags)</option>
                       {tagsDisponibles.map(tag => (
@@ -1427,8 +1427,8 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
               title="Notes et observations"
               icon={<DocumentTextIcon className="h-6 w-6 text-white" />}
               defaultOpen={false}
-              gradientFrom="from-orange-600"
-              gradientTo="to-red-700"
+              gradientFrom="from-amber-600"
+              gradientTo="to-amber-700"
             >
               <div className="space-y-4">
                 <FormTextarea
@@ -1546,8 +1546,8 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
               title="Photos du chantier"
               icon={<PhotoIcon className="h-6 w-6 text-white" />}
               defaultOpen={false}
-              gradientFrom="from-cyan-600"
-              gradientTo="to-blue-700"
+              gradientFrom="from-sky-600"
+              gradientTo="to-sky-700"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
