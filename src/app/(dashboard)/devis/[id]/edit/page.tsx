@@ -13,6 +13,7 @@ import {
   BarsArrowUpIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
+import { PageHeader } from '@/components/PageHeader'
 import { useConfirmation } from '@/components/modals/confirmation-modal'
 
 interface Client {
@@ -411,63 +412,56 @@ export default function EditDevisPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header léger style backdrop-blur */}
-        <div className="mb-6">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            {/* Effet de fond subtil avec dégradé orange/red (couleur Devis) - opacité 60% */}
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/60 via-orange-700/60 to-red-800/60 dark:from-orange-600/30 dark:via-orange-700/30 dark:to-red-800/30"></div>
-            
-            <div className="relative z-10 p-4 sm:p-6">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => router.push(`/devis/${devisId}`)}
-                  className="p-2 bg-white/30 backdrop-blur-sm rounded-lg hover:bg-white/40 transition-all duration-200"
-                >
-                  <ArrowLeftIcon className="h-5 w-5 text-orange-900 dark:text-white" />
-                </button>
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                    <DocumentTextIcon className="w-6 h-6 mr-3 text-orange-900 dark:text-white" />
-                    <h1 className="text-xl font-bold text-orange-900 dark:text-white">
-                      Modifier le devis
-                    </h1>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => router.push(`/devis/${devisId}`)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-orange-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-900 dark:border-white"></div>
-                        Enregistrement...
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                        </svg>
-                        Enregistrer
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
+      <PageHeader
+        title="Modifier le devis"
+        subtitle="Modifiez les informations du devis"
+        icon={DocumentTextIcon}
+        badgeColor="from-orange-600 via-orange-700 to-red-700"
+        gradientColor="from-orange-600/10 via-orange-700/10 to-red-700/10"
+        leftAction={
+          <button
+            onClick={() => router.push(`/devis/${devisId}`)}
+            className="p-2 bg-white/30 backdrop-blur-sm rounded-lg hover:bg-white/40 transition-all duration-200"
+          >
+            <ArrowLeftIcon className="h-5 w-5 text-orange-900 dark:text-white" />
+          </button>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push(`/devis/${devisId}`)}
+              className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-3 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span className="hidden sm:inline">Enregistrement...</span>
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  <span className="hidden sm:inline">Enregistrer</span>
+                  <span className="sm:hidden">Sauver</span>
+                </>
+              )}
+            </button>
           </div>
-        </div>
+        }
+      />
+
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Informations générales */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg rounded-2xl p-6 space-y-6 mb-6 border border-gray-200/50 dark:border-gray-700/50">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 space-y-6 mb-6 border border-gray-200/50 dark:border-gray-700/50">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-gradient-to-br from-orange-500 to-red-600"></div>
           Informations générales
@@ -603,7 +597,7 @@ export default function EditDevisPage() {
       </div>
 
         {/* Lignes du devis */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden mb-6">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden mb-6">
           <div className="relative px-6 py-4 bg-gradient-to-br from-orange-600/10 via-orange-700/10 to-red-800/10 dark:from-orange-600/5 dark:via-orange-700/5 dark:to-red-800/5 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -705,7 +699,7 @@ export default function EditDevisPage() {
       {/* Totaux */}
       {lignes.filter(l => l.type === 'QP').length > 0 && (
         <div className="flex justify-end">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 w-full max-w-md">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6 w-full max-w-md">
             <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Récapitulatif</h2>
             </div>

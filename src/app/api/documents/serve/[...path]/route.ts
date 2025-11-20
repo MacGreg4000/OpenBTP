@@ -71,7 +71,7 @@ export async function GET(
     const mimeType = getMimeType(fullPath);
     
     // Retourner le fichier en ligne (pas comme pièce jointe)
-    return new NextResponse(fileBuffer, {
+    const response = new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': mimeType,
         'Content-Length': stats.size.toString(),
@@ -79,9 +79,16 @@ export async function GET(
         'X-Content-Type-Options': 'nosniff',
         // Headers pour permettre l'affichage dans iframe
         'Content-Disposition': `inline; filename="${path.basename(fullPath)}"`,
-        'X-Frame-Options': 'SAMEORIGIN', // Permet l'affichage dans un iframe depuis la même origine
+        // Supprimer X-Frame-Options pour permettre l'affichage dans iframe
+        // Utiliser Content-Security-Policy à la place (plus moderne)
+        'Content-Security-Policy': "frame-ancestors 'self'",
       },
     });
+    
+    // Supprimer explicitement X-Frame-Options si défini par next.config.js
+    response.headers.delete('X-Frame-Options');
+    
+    return response;
   } catch (error) {
     console.error('Erreur lors de la lecture du fichier:', error);
     return NextResponse.json(

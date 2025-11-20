@@ -48,12 +48,17 @@ const nextConfig = {
   async headers() {
     return [
       // Exception pour les documents servis : permettre l'affichage dans iframe
+      // IMPORTANT: Cette règle doit être AVANT la règle générale
       {
         source: '/api/documents/serve/:path*',
         headers: [
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self'",
           },
         ],
       },
