@@ -677,6 +677,7 @@ export default function EtatAvancementSoustraitant({
                           <option value="M3">M³</option>
                           <option value="Heures">Heures</option>
                           <option value="Pièces">Pièces</option>
+                          <option value="Fft">Forfait</option>
                         </select>
                       ) : (
                         <span className="text-gray-700 dark:text-gray-300">{avenant.unite}</span>

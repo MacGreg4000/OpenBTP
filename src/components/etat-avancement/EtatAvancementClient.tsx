@@ -697,6 +697,7 @@ export default function EtatAvancementClient({
                           <option value="M3">M³</option>
                           <option value="Heures">Heures</option>
                           <option value="Pièces">Pièces</option>
+                          <option value="Fft">Forfait</option>
                         </select>
                       ) : (
                         avenant.unite
