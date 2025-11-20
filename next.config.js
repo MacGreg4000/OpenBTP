@@ -47,6 +47,16 @@ const nextConfig = {
   // Headers de sécurité pour PWA
   async headers() {
     return [
+      // Exception pour les documents servis : permettre l'affichage dans iframe
+      {
+        source: '/api/documents/serve/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

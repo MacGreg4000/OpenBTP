@@ -79,6 +79,7 @@ export async function GET(
         'X-Content-Type-Options': 'nosniff',
         // Headers pour permettre l'affichage dans iframe
         'Content-Disposition': `inline; filename="${path.basename(fullPath)}"`,
+        'X-Frame-Options': 'SAMEORIGIN', // Permet l'affichage dans un iframe depuis la même origine
       },
     });
   } catch (error) {
