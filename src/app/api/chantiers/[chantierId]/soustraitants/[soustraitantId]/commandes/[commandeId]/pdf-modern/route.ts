@@ -141,14 +141,21 @@ export async function GET(
     // Nom du fichier
     const fileName = `commande-soustraitant-${commande.Chantier.chantierId}-${commande.soustraitant.nom.replace(/[^a-zA-Z0-9]/g, '_')}-${commande.reference || commande.id}.pdf`
 
-    // Retourner le PDF
-    return new Response(pdfBuffer, {
+    // Retourner le PDF avec headers pour permettre l'affichage dans iframe
+    const response = new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Content-Length': pdfBuffer.length.toString()
+        'Content-Disposition': `inline; filename="${fileName}"`,
+        'Content-Length': pdfBuffer.length.toString(),
+        // Headers pour permettre l'affichage dans iframe
+        'Content-Security-Policy': "frame-ancestors 'self'",
       }
     })
+    
+    // Supprimer explicitement X-Frame-Options si défini par next.config.js
+    response.headers.delete('X-Frame-Options')
+    
+    return response
 
   } catch (error) {
     console.error('❌ Erreur génération PDF commande sous-traitant:', error)

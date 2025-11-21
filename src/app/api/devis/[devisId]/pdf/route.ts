@@ -121,13 +121,20 @@ export async function GET(
       }
     })
 
-    // Retourner le PDF
-    return new NextResponse(pdfBuffer, {
+    // Retourner le PDF avec headers pour permettre l'affichage dans iframe
+    const response = new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="Devis_${devis.numeroDevis}.pdf"`
+        'Content-Disposition': `inline; filename="Devis_${devis.numeroDevis}.pdf"`,
+        // Headers pour permettre l'affichage dans iframe
+        'Content-Security-Policy': "frame-ancestors 'self'",
       }
     })
+    
+    // Supprimer explicitement X-Frame-Options si défini par next.config.js
+    response.headers.delete('X-Frame-Options')
+    
+    return response
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error)
     return NextResponse.json(

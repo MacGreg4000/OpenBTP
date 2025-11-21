@@ -125,12 +125,19 @@ export async function GET(
 
     console.log('✅ PDF généré avec succès')
 
-    return new NextResponse(pdfBuffer, {
+    const response = new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="commande-${commandeData.commande.reference}.pdf"`
+        'Content-Disposition': `inline; filename="commande-${commandeData.commande.reference}.pdf"`,
+        // Headers pour permettre l'affichage dans iframe
+        'Content-Security-Policy': "frame-ancestors 'self'",
       }
     })
+    
+    // Supprimer explicitement X-Frame-Options si défini par next.config.js
+    response.headers.delete('X-Frame-Options')
+    
+    return response
 
   } catch (error) {
     console.error('❌ Erreur lors de la génération du PDF de commande:', error)
