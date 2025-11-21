@@ -28,6 +28,7 @@ export default function MobilePhotosPage() {
   const [compressing, setCompressing] = useState(false)
   const [selectedPhotos, setSelectedPhotos] = useState<Array<{ id: string; file: File; preview: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!selectedChantier) {
@@ -104,6 +105,9 @@ export default function MobilePhotosPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = ''
+      }
     } catch (error) {
       console.error('Erreur lors de la compression:', error)
       // En cas d'erreur, utiliser les fichiers originaux
@@ -179,6 +183,9 @@ export default function MobilePhotosPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = ''
+      }
       await loadPhotos()
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error)
@@ -196,6 +203,9 @@ export default function MobilePhotosPage() {
     setSelectedPhotos([])
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = ''
     }
   }
 
@@ -226,6 +236,7 @@ export default function MobilePhotosPage() {
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Bouton d'upload */}
         <div className="mb-6">
+          {/* Input pour la photothèque (multiple) */}
           <input
             ref={fileInputRef}
             type="file"
@@ -234,25 +245,54 @@ export default function MobilePhotosPage() {
             onChange={handleFileSelect}
             className="hidden"
           />
+          
+          {/* Input pour l'appareil photo (sans multiple) */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
 
           {selectedPhotos.length === 0 ? (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={compressing}
-              className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-colors disabled:opacity-50"
-            >
-              {compressing ? (
-                <>
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                  <span>Compression...</span>
-                </>
-              ) : (
-                <>
-                  <CameraIcon className="h-6 w-6" />
-                  <span>Ajouter des photos</span>
-                </>
-              )}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={compressing}
+                className="flex-1 flex items-center justify-center gap-2 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {compressing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span className="text-sm">Compression...</span>
+                  </>
+                ) : (
+                  <>
+                    <CameraIcon className="h-5 w-5" />
+                    <span className="text-sm">Prendre une photo</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={compressing}
+                className="flex-1 flex items-center justify-center gap-2 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 transition-colors disabled:opacity-50"
+              >
+                {compressing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-sm">Compression...</span>
+                  </>
+                ) : (
+                  <>
+                    <PhotoIcon className="h-5 w-5" />
+                    <span className="text-sm">Photothèque</span>
+                  </>
+                )}
+              </button>
+            </div>
           ) : (
             <div className="space-y-3">
               {/* Grille de prévisualisations */}
@@ -274,24 +314,43 @@ export default function MobilePhotosPage() {
                 ))}
               </div>
               
-              {/* Bouton pour ajouter plus de photos */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={compressing}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 transition-colors disabled:opacity-50"
-              >
-                {compressing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                    <span>Compression...</span>
-                  </>
-                ) : (
-                  <>
-                    <CameraIcon className="h-5 w-5" />
-                    <span>Ajouter d'autres photos</span>
-                  </>
-                )}
-              </button>
+              {/* Boutons pour ajouter plus de photos */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={compressing}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-colors disabled:opacity-50"
+                >
+                  {compressing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span className="text-sm">Compression...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CameraIcon className="h-5 w-5" />
+                      <span className="text-sm">Prendre une photo</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={compressing}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 transition-colors disabled:opacity-50"
+                >
+                  {compressing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      <span className="text-sm">Compression...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PhotoIcon className="h-5 w-5" />
+                      <span className="text-sm">Photothèque</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               {/* Boutons d'action */}
               <div className="flex gap-3">

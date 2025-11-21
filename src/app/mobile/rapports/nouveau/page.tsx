@@ -58,6 +58,7 @@ export default function MobileNouveauRapportPage() {
   const [saving, setSaving] = useState(false)
   const [compressing, setCompressing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!selectedChantier) {
@@ -169,6 +170,9 @@ export default function MobileNouveauRapportPage() {
       setCompressing(false)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = ''
       }
     }
   }
@@ -644,6 +648,7 @@ export default function MobileNouveauRapportPage() {
               <h3 className="font-semibold text-gray-900">Photos</h3>
             </div>
 
+            {/* Input pour la photothèque (multiple) */}
             <input
               ref={fileInputRef}
               type="file"
@@ -652,25 +657,55 @@ export default function MobileNouveauRapportPage() {
               onChange={handlePhotoSelect}
               className="hidden"
             />
+            
+            {/* Input pour l'appareil photo (sans multiple) */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
 
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={compressing}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 disabled:opacity-50"
-            >
-              {compressing ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  <span>Compression...</span>
-                </>
-              ) : (
-                <>
-                  <CameraIcon className="h-5 w-5" />
-                  <span>Ajouter des photos</span>
-                </>
-              )}
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={compressing}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {compressing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span className="text-sm">Compression...</span>
+                  </>
+                ) : (
+                  <>
+                    <CameraIcon className="h-5 w-5" />
+                    <span className="text-sm">Prendre une photo</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={compressing}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-blue-600 font-medium hover:bg-blue-100 disabled:opacity-50"
+              >
+                {compressing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-sm">Compression...</span>
+                  </>
+                ) : (
+                  <>
+                    <CameraIcon className="h-5 w-5" />
+                    <span className="text-sm">Photothèque</span>
+                  </>
+                )}
+              </button>
+            </div>
 
             {photos.length > 0 && (
               <div className="grid grid-cols-2 gap-3 mt-4">
