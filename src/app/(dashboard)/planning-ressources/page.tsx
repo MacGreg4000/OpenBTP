@@ -381,13 +381,11 @@ export default function PlanningRessourcesPage() {
       {/* Container du planning */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          <div className="p-6">
-            <ResourceScheduler
-              onAddTask={handleAddTask}
-              onEditTask={handleEditTask}
-              onDeleteTask={handleDeleteTask}
-            />
-          </div>
+          <ResourceScheduler
+            onAddTask={handleAddTask}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+          />
         </div>
       </div>
 

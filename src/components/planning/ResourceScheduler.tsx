@@ -531,7 +531,7 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div className="w-full overflow-hidden">
       {/* Contrôles de navigation */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
         <div className="flex items-center gap-2">
@@ -564,8 +564,8 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
       </div>
 
       {/* Container avec scroll synchronisé */}
-      <div className="overflow-x-auto">
-        <div className="min-w-fit">
+      <div className="overflow-x-auto w-full">
+        <div className="min-w-fit" style={{ width: 'max-content' }}>
           {/* En-tête */}
           <div className="flex border-b border-gray-200 dark:border-gray-700">
                 <div className="w-48 p-2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-shrink-0" style={{ width: '156px' }}>
