@@ -232,10 +232,10 @@ function TimeSlot({ slot, tasks, onAddTask, onEditTask, onDeleteTask, chantierCo
   chantierColorMap: Map<string, number>;
 }) {
   return (
-    <div className={`border-r border-gray-200 dark:border-gray-700 flex-shrink-0 ${
+    <div className={`border-r border-gray-200 dark:border-gray-700 flex-1 ${
       slot.isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''
     } ${slot.dayName === 'dim.' ? 'bg-gray-100 dark:bg-gray-800' : slot.dayName === 'sam.' ? 'bg-gray-50 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}
-    style={{ width: '140px' }}>
+    style={{ minWidth: '140px' }}>
       {/* Zone de tâches */}
       <div className="min-h-[120px] p-2">
         <div className="space-y-1 mb-2">
@@ -274,7 +274,7 @@ function ResourceRow({ resource, timeSlots, tasksByDate, onAddTask, onEditTask, 
   chantierColorMap: Map<string, number>;
 }) {
   return (
-    <div className="flex border-b border-gray-200 dark:border-gray-700">
+    <div className="flex border-b border-gray-200 dark:border-gray-700 w-full">
       {/* Colonne ressource */}
       <div className="p-2 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex items-center flex-shrink-0" style={{ width: '156px' }}>
         <div className="flex items-center gap-2">
@@ -565,10 +565,10 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
 
       {/* Container avec scroll synchronisé */}
       <div className="overflow-x-auto w-full">
-        <div className="min-w-fit" style={{ width: 'max-content' }}>
+        <div className="w-full min-w-fit">
           {/* En-tête */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
-                <div className="w-48 p-2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-shrink-0" style={{ width: '156px' }}>
+          <div className="flex border-b border-gray-200 dark:border-gray-700 w-full">
+                <div className="p-2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-shrink-0" style={{ width: '156px', minWidth: '156px' }}>
               <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                 Ressources
               </h3>
@@ -576,13 +576,13 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
             {timeSlots.map(slot => (
               <div
                 key={slot.date}
-                  className={`p-2 text-center border-r border-gray-200 dark:border-gray-700 flex-shrink-0 ${
+                  className={`p-2 text-center border-r border-gray-200 dark:border-gray-700 flex-1 ${
                   slot.isToday ? 'bg-blue-100 dark:bg-blue-900/30' : 
                   slot.dayName === 'dim.' ? 'bg-gray-200 dark:bg-gray-800' : 
                   slot.dayName === 'sam.' ? 'bg-gray-100 dark:bg-gray-700' : 
                   'bg-gray-100 dark:bg-gray-900'
                 }`}
-                style={{ width: '140px' }}
+                style={{ minWidth: '140px' }}
               >
                 <div className="text-xs font-medium text-gray-900 dark:text-white">
                   {slot.dayName}
