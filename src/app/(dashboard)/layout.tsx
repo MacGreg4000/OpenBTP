@@ -2,7 +2,7 @@
 
 import { Navbar } from '@/components/Navbar'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function DashboardLayout({
@@ -12,6 +12,10 @@ export default function DashboardLayout({
 }) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
+  
+  // Ne pas afficher la navbar pour la page fullscreen des fiches techniques
+  const isFullscreenPage = pathname?.includes('/fiches-techniques/fullscreen')
 
   useEffect(() => {
     if (status === 'loading') return // Encore en train de charger
@@ -53,6 +57,11 @@ export default function DashboardLayout({
         </div>
       </div>
     )
+  }
+
+  // Si c'est la page fullscreen, ne pas afficher la navbar ni le padding
+  if (isFullscreenPage) {
+    return <>{children}</>
   }
 
   return (

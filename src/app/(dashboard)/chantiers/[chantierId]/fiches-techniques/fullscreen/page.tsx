@@ -1,12 +1,13 @@
 'use client'
+
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { 
   DocumentTextIcon, 
   FolderIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   ArrowDownTrayIcon,
-  ArrowsPointingOutIcon,
   XMarkIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
@@ -29,11 +30,10 @@ interface Dossier {
   isExpanded?: boolean
 }
 
-interface FichesTechniquesTabContentProps {
-  chantierId: string
-}
+export default function FichesTechniquesFullscreenPage() {
+  const params = useParams()
+  const chantierId = params?.chantierId as string
 
-export default function FichesTechniquesTabContent({ chantierId }: FichesTechniquesTabContentProps) {
   const [structure, setStructure] = useState<Dossier[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedFiches, setSelectedFiches] = useState<Set<string>>(new Set())
@@ -41,6 +41,44 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
   const [generating, setGenerating] = useState(false)
   const [includeTableOfContents, setIncludeTableOfContents] = useState(true)
   const [searchFilter, setSearchFilter] = useState('')
+
+  // Charger l'état depuis localStorage au montage
+  useEffect(() => {
+    if (!chantierId) return
+
+    const storageKey = `fiches-techniques-${chantierId}`
+    const savedState = localStorage.getItem(storageKey)
+    
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState)
+        if (parsed.selectedFiches) {
+          setSelectedFiches(new Set(parsed.selectedFiches))
+        }
+        if (parsed.ficheReferences) {
+          setFicheReferences(new Map(Object.entries(parsed.ficheReferences)))
+        }
+        if (parsed.includeTableOfContents !== undefined) {
+          setIncludeTableOfContents(parsed.includeTableOfContents)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'état:', error)
+      }
+    }
+  }, [chantierId])
+
+  // Sauvegarder l'état dans localStorage à chaque changement
+  useEffect(() => {
+    if (!chantierId) return
+
+    const storageKey = `fiches-techniques-${chantierId}`
+    const stateToSave = {
+      selectedFiches: Array.from(selectedFiches),
+      ficheReferences: Object.fromEntries(ficheReferences),
+      includeTableOfContents
+    }
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave))
+  }, [selectedFiches, ficheReferences, includeTableOfContents, chantierId])
 
   // Charger la structure des fiches techniques
   useEffect(() => {
@@ -83,71 +121,6 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     }
     setStructure(prev => updateDossiers(prev))
   }
-
-  // Charger l'état depuis localStorage au montage
-  useEffect(() => {
-    if (!chantierId) return
-
-    const storageKey = `fiches-techniques-${chantierId}`
-    const savedState = localStorage.getItem(storageKey)
-    
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState)
-        if (parsed.selectedFiches) {
-          setSelectedFiches(new Set(parsed.selectedFiches))
-        }
-        if (parsed.ficheReferences) {
-          setFicheReferences(new Map(Object.entries(parsed.ficheReferences)))
-        }
-        if (parsed.includeTableOfContents !== undefined) {
-          setIncludeTableOfContents(parsed.includeTableOfContents)
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement de l\'état:', error)
-      }
-    }
-  }, [chantierId])
-
-  // Sauvegarder l'état dans localStorage à chaque changement
-  useEffect(() => {
-    if (!chantierId) return
-
-    const storageKey = `fiches-techniques-${chantierId}`
-    const stateToSave = {
-      selectedFiches: Array.from(selectedFiches),
-      ficheReferences: Object.fromEntries(ficheReferences),
-      includeTableOfContents
-    }
-    localStorage.setItem(storageKey, JSON.stringify(stateToSave))
-  }, [selectedFiches, ficheReferences, includeTableOfContents, chantierId])
-
-  // Écouter les messages de l'onglet fullscreen
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'fiches-techniques-generated') {
-        // Recharger l'état depuis localStorage après génération
-        const storageKey = `fiches-techniques-${chantierId}`
-        const savedState = localStorage.getItem(storageKey)
-        if (savedState) {
-          try {
-            const parsed = JSON.parse(savedState)
-            if (parsed.selectedFiches) {
-              setSelectedFiches(new Set(parsed.selectedFiches))
-            }
-            if (parsed.ficheReferences) {
-              setFicheReferences(new Map(Object.entries(parsed.ficheReferences)))
-            }
-          } catch (error) {
-            console.error('Erreur lors du chargement de l\'état:', error)
-          }
-        }
-      }
-    }
-
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [chantierId])
 
   // Toggle la sélection d'une fiche
   const toggleFiche = (ficheId: string) => {
@@ -199,7 +172,7 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     })
   }
 
-  // Générer le PDF
+  // Générer le PDF et fermer l'onglet
   const handleGeneratePDF = async () => {
     if (selectedFiches.size === 0) {
       alert('Veuillez sélectionner au moins une fiche technique')
@@ -243,10 +216,19 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
+
+      // Fermer l'onglet et revenir à l'onglet précédent
+      if (window.opener) {
+        // Notifier l'onglet parent que la génération est terminée
+        window.opener.postMessage({ type: 'fiches-techniques-generated', chantierId }, '*')
+        window.close()
+      } else {
+        // Si pas d'opener, rediriger vers la page du chantier
+        window.location.href = `/chantiers/${chantierId}`
+      }
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error)
       alert('Erreur lors de la génération du PDF')
-    } finally {
       setGenerating(false)
     }
   }
@@ -394,18 +376,86 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600 dark:text-gray-300">Chargement des fiches techniques...</span>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+          <span className="text-gray-600 dark:text-gray-300">Chargement des fiches techniques...</span>
+        </div>
       </div>
     )
   }
 
-  // Contenu de l'arborescence
-  const renderArborescence = () => (
-    <>
+  return (
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
+      {/* Header plein écran */}
+      <div className="relative px-6 py-4 bg-gradient-to-br from-emerald-600/10 via-teal-700/10 to-cyan-800/10 dark:from-emerald-600/10 dark:via-teal-700/10 dark:to-cyan-800/10 text-emerald-900 dark:text-white border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-cyan-800/20"></div>
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <DocumentTextIcon className="w-6 h-6 text-emerald-900 dark:text-white" />
+            <span className="font-bold text-xl text-emerald-900 dark:text-white">📋 Sélection des Fiches Techniques</span>
+          </div>
+          <button
+            onClick={() => {
+              if (window.opener) {
+                window.close()
+              } else {
+                window.location.href = `/chantiers/${chantierId}`
+              }
+            }}
+            className="inline-flex items-center px-3 py-2 bg-white/20 backdrop-blur-sm rounded-lg shadow-md ring-1 ring-white/30 hover:bg-white/30 transition-all duration-200"
+            title="Fermer"
+          >
+            <XMarkIcon className="w-5 h-5 text-emerald-900 dark:text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Options de génération */}
+      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={includeTableOfContents}
+              onChange={(e) => setIncludeTableOfContents(e.target.checked)}
+              className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Inclure la table des matières
+            </span>
+          </label>
+
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {selectedFiches.size} fiche{selectedFiches.size > 1 ? 's' : ''} sélectionnée{selectedFiches.size > 1 ? 's' : ''}
+            </span>
+            <button
+              onClick={handleGeneratePDF}
+              disabled={selectedFiches.size === 0 || generating}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              {generating ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Génération...
+                </>
+              ) : (
+                <>
+                  <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                  Générer le dossier PDF
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Champ de recherche */}
-      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
+      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
@@ -426,8 +476,8 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
         </div>
       </div>
 
-      {/* Arborescence */}
-      <div className="p-6 max-h-[600px] overflow-y-auto">
+      {/* Arborescence plein écran */}
+      <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-gray-900 min-h-0">
         {structure.length === 0 ? (
           <div className="text-center py-12">
             <FolderIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" />
@@ -451,91 +501,7 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
           </div>
         )}
       </div>
-    </>
-  )
-
-  return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="relative px-6 py-6 bg-gradient-to-br from-emerald-600/10 via-teal-700/10 to-cyan-800/10 dark:from-emerald-600/10 dark:via-teal-700/10 dark:to-cyan-800/10 text-emerald-900 dark:text-white overflow-hidden rounded-t-lg backdrop-blur-sm">
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-cyan-800/20"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-16 -translate-y-16"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-300/20 rounded-full blur-xl transform -translate-x-8 translate-y-8"></div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
-                  <DocumentTextIcon className="w-6 h-6 mr-3 text-emerald-900 dark:text-white" />
-                  <span className="font-bold text-xl text-emerald-900 dark:text-white">📋 Sélection des Fiches Techniques</span>
-                </div>
-                <button
-                  onClick={() => {
-                    // Ouvrir dans un nouvel onglet
-                    const url = `/chantiers/${chantierId}/fiches-techniques/fullscreen`
-                    window.open(url, '_blank', 'noopener,noreferrer')
-                  }}
-                  className="inline-flex items-center px-3 py-2 bg-white/20 backdrop-blur-sm rounded-lg shadow-md ring-1 ring-white/30 hover:bg-white/30 transition-all duration-200"
-                  title="Ouvrir en mode plein écran (nouvel onglet)"
-                >
-                  <ArrowsPointingOutIcon className="w-5 h-5 text-emerald-900 dark:text-white" />
-                </button>
-              </div>
-            </div>
-
-            <p className="text-sm text-emerald-800 dark:text-white/90">
-              Sélectionnez les fiches techniques à inclure dans votre dossier. Un PDF sera généré avec une page de garde et une table des matières.
-            </p>
-          </div>
-        </div>
-
-        {/* Options de génération */}
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
-          <div className="flex items-center justify-between">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={includeTableOfContents}
-                onChange={(e) => setIncludeTableOfContents(e.target.checked)}
-                className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Inclure la table des matières
-              </span>
-            </label>
-
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {selectedFiches.size} fiche{selectedFiches.size > 1 ? 's' : ''} sélectionnée{selectedFiches.size > 1 ? 's' : ''}
-              </span>
-              <button
-                onClick={handleGeneratePDF}
-                disabled={selectedFiches.size === 0 || generating}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              >
-                {generating ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Génération...
-                  </>
-                ) : (
-                  <>
-                    <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                    Générer le dossier PDF
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Arborescence */}
-        {renderArborescence()}
-      </div>
     </div>
   )
 }
+

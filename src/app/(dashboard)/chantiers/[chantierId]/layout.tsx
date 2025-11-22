@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from 'react';
 import { ChantierHeader } from '@/components/ChantierHeader'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 export default function ChantierLayout(
   props: {
@@ -19,6 +19,10 @@ export default function ChantierLayout(
 
   const { status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
+  
+  // Ne pas appliquer le layout du chantier pour la page fullscreen
+  const isFullscreenPage = pathname?.includes('/fiches-techniques/fullscreen')
   const [chantier, setChantier] = useState<{ nomChantier?: string; etatChantier?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -72,6 +76,11 @@ export default function ChantierLayout(
         <div className="text-gray-700 dark:text-gray-300 text-xl">Chantier non trouvé</div>
       </div>
     )
+  }
+
+  // Si c'est la page fullscreen, retourner les children directement sans header
+  if (isFullscreenPage) {
+    return <>{children}</>
   }
 
   return (
