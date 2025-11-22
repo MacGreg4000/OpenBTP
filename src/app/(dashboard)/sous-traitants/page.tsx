@@ -19,8 +19,7 @@ import {
   KeyIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  ChevronUpDownIcon,
-  EyeIcon
+  ChevronUpDownIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
 // import { useRouter } from 'next/navigation'
@@ -980,7 +979,7 @@ export default function SousTraitantsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                     {(() => {
-                      let sortedOuvriers = [...ouvriersInternes]
+                      const sortedOuvriers = [...ouvriersInternes]
                       if (ouvrierSortField) {
                         sortedOuvriers.sort((a, b) => {
                           let aValue: string = ''
