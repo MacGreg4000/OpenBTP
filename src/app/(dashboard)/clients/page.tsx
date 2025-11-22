@@ -16,7 +16,10 @@ import {
   BuildingStorefrontIcon,
   EnvelopeIcon,
   PhoneIcon,
-  MapPinIcon
+  MapPinIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ChevronUpDownIcon
 } from '@heroicons/react/24/outline'
 
 interface Client {
@@ -39,6 +42,46 @@ interface Client {
   }>
 }
 
+// Composant pour les en-têtes triables
+type SortField = 'nom' | 'email' | 'telephone' | 'chantiers' | 'montant'
+
+function SortableHeader({ 
+  field, 
+  label, 
+  currentSortField, 
+  sortDirection, 
+  onSort 
+}: { 
+  field: SortField
+  label: string
+  currentSortField: SortField | null
+  sortDirection: 'asc' | 'desc'
+  onSort: (field: SortField) => void
+}) {
+  const isActive = currentSortField === field
+  
+  return (
+    <th 
+      scope="col" 
+      className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        <span>{label}</span>
+        {isActive ? (
+          sortDirection === 'asc' ? (
+            <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          ) : (
+            <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          )
+        ) : (
+          <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+        )}
+      </div>
+    </th>
+  )
+}
+
 export default function ClientsPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -46,6 +89,9 @@ export default function ClientsPage() {
   const [filtreNom, setFiltreNom] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
     if (!session) return
@@ -75,9 +121,74 @@ export default function ClientsPage() {
   }, [session])
 
   // Filtrage des clients par nom
-  const clientsFiltres = clients.filter(client =>
+  let clientsFiltres = clients.filter(client =>
     client.nom.toLowerCase().includes(filtreNom.toLowerCase())
   )
+
+  // Fonction de tri
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  // Application du tri
+  if (sortField) {
+    clientsFiltres = [...clientsFiltres].sort((a, b) => {
+      let aValue: string | number = ''
+      let bValue: string | number = ''
+
+      switch (sortField) {
+        case 'nom':
+          aValue = a.nom.toLowerCase()
+          bValue = b.nom.toLowerCase()
+          break
+        case 'email':
+          aValue = (a.email || '').toLowerCase()
+          bValue = (b.email || '').toLowerCase()
+          break
+        case 'telephone':
+          aValue = (a.telephone || '').toLowerCase()
+          bValue = (b.telephone || '').toLowerCase()
+          break
+        case 'chantiers':
+          aValue = a.Chantier?.length || 0
+          bValue = b.Chantier?.length || 0
+          break
+        case 'montant':
+          aValue = a.Chantier?.reduce((sum, chantier) => {
+            const chantiersValides = chantier.statut === 'EN_COURS' || chantier.statut === 'EN_PREPARATION'
+            if (!chantiersValides) return sum
+            const montantCommandes = chantier.commandes
+              .filter(commande => commande.statut !== 'BROUILLON')
+              .reduce((total, commande) => total + (commande.total || 0), 0)
+            return sum + (montantCommandes > 0 ? montantCommandes : (chantier.budget || 0))
+          }, 0) || 0
+          bValue = b.Chantier?.reduce((sum, chantier) => {
+            const chantiersValides = chantier.statut === 'EN_COURS' || chantier.statut === 'EN_PREPARATION'
+            if (!chantiersValides) return sum
+            const montantCommandes = chantier.commandes
+              .filter(commande => commande.statut !== 'BROUILLON')
+              .reduce((total, commande) => total + (commande.total || 0), 0)
+            return sum + (montantCommandes > 0 ? montantCommandes : (chantier.budget || 0))
+          }, 0) || 0
+          break
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue)
+      } else {
+        return sortDirection === 'asc'
+          ? (aValue as number) - (bValue as number)
+          : (bValue as number) - (aValue as number)
+      }
+    })
+  }
 
   // Fonction pour créer un nouveau chantier à partir d'un client
   const handleCreateChantier = (clientId: string, clientNom: string) => {
@@ -206,15 +317,39 @@ export default function ClientsPage() {
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Barre de recherche */}
-        <div className="mb-8">
-          <SearchInput
-            id="search"
-            placeholder="Rechercher un client..."
-            value={filtreNom}
-            onChange={(e) => setFiltreNom(e.target.value)}
-            className="max-w-md"
-          />
+        {/* Barre de recherche et vue */}
+        <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex-1 max-w-md">
+            <SearchInput
+              id="search"
+              placeholder="Rechercher un client..."
+              value={filtreNom}
+              onChange={(e) => setFiltreNom(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === 'cards' 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Cartes
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === 'table' 
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Tableau
+            </button>
+          </div>
         </div>
 
         {/* Affichage des erreurs */}
@@ -233,7 +368,7 @@ export default function ClientsPage() {
           </div>
         )}
 
-        {/* Grille de cartes */}
+        {/* Affichage des clients */}
         {clientsFiltres.length === 0 ? (
           <div className="text-center py-12">
             <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -256,8 +391,10 @@ export default function ClientsPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {clientsFiltres.map((client) => (
+          <>
+            {viewMode === 'cards' ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {clientsFiltres.map((client) => (
               <div key={client.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 overflow-hidden">
                 {/* En-tête de la carte */}
                 <div className="p-6 pb-4">
@@ -351,7 +488,131 @@ export default function ClientsPage() {
                 </div>
               </div>
             ))}
-          </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <SortableHeader
+                          field="nom"
+                          label="Nom"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="email"
+                          label="Email"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="telephone"
+                          label="Téléphone"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
+                          Adresse
+                        </th>
+                        <SortableHeader
+                          field="chantiers"
+                          label="Chantiers"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="montant"
+                          label="Montant"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-200 pr-4 sm:pr-6">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                      {clientsFiltres.map((client) => {
+                        const montantTotal = client.Chantier?.reduce((sum, chantier) => {
+                          const chantiersValides = chantier.statut === 'EN_COURS' || chantier.statut === 'EN_PREPARATION'
+                          if (!chantiersValides) return sum
+                          const montantCommandes = chantier.commandes
+                            .filter(commande => commande.statut !== 'BROUILLON')
+                            .reduce((total, commande) => total + (commande.total || 0), 0)
+                          return sum + (montantCommandes > 0 ? montantCommandes : (chantier.budget || 0))
+                        }, 0) || 0
+
+                        return (
+                          <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-200 sm:pl-6">
+                              {client.nom}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              {client.email || '-'}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              {client.telephone || '-'}
+                            </td>
+                            <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                              {client.adresse || '-'}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              <Link 
+                                href={`/chantiers?clientId=${client.id}`}
+                                className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium hover:underline"
+                              >
+                                {client.Chantier?.length || 0}
+                              </Link>
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              {montantTotal > 0 
+                                ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(montantTotal)
+                                : '-'
+                              }
+                            </td>
+                            <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                              <div className="flex space-x-1 justify-end">
+                                <Link 
+                                  href={`/clients/${client.id}`} 
+                                  className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors" 
+                                  title="Consulter"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <EyeIcon className="h-4 w-4" />
+                                </Link>
+                                <Link 
+                                  href={`/clients/${client.id}/edit`} 
+                                  className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors" 
+                                  title="Modifier"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <PencilSquareIcon className="h-4 w-4" />
+                                </Link>
+                                <button
+                                  onClick={() => handleCreateChantier(client.id, client.nom)}
+                                  className="p-2 text-green-600 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900 rounded transition-colors"
+                                  title="Créer un chantier"
+                                >
+                                  <BuildingOfficeIcon className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

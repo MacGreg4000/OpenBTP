@@ -16,7 +16,11 @@ import {
   MapPinIcon,
   UsersIcon,
   GlobeAltIcon,
-  KeyIcon
+  KeyIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ChevronUpDownIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
 // import { useRouter } from 'next/navigation'
@@ -38,6 +42,47 @@ interface SousTraitant {
     estSigne: boolean
     dateGeneration: string
   }[]
+}
+
+// Composant pour les en-têtes triables
+type SortField = 'nom' | 'email' | 'telephone' | 'ouvriers' | 'actif'
+type OuvrierSortField = 'prenom' | 'nom' | 'poste' | 'email' | 'telephone'
+
+function SortableHeader({ 
+  field, 
+  label, 
+  currentSortField, 
+  sortDirection, 
+  onSort 
+}: { 
+  field: SortField
+  label: string
+  currentSortField: SortField | null
+  sortDirection: 'asc' | 'desc'
+  onSort: (field: SortField) => void
+}) {
+  const isActive = currentSortField === field
+  
+  return (
+    <th 
+      scope="col" 
+      className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        <span>{label}</span>
+        {isActive ? (
+          sortDirection === 'asc' ? (
+            <ChevronUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          ) : (
+            <ChevronDownIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          )
+        ) : (
+          <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+        )}
+      </div>
+    </th>
+  )
 }
 
 interface DeleteModalProps {
@@ -100,6 +145,11 @@ export default function SousTraitantsPage() {
   const [sendingContract, setSendingContract] = useState<string | null>(null)
   const [ouvriersInternes, setOuvriersInternes] = useState<Array<{id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string}>>([])
   const [newOuvrier, setNewOuvrier] = useState({ prenom:'', nom:'', email:'', telephone:'', poste:'', actif:true })
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [ouvrierSortField, setOuvrierSortField] = useState<OuvrierSortField | null>(null)
+  const [ouvrierSortDirection, setOuvrierSortDirection] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
     if (session) {
@@ -201,9 +251,64 @@ export default function SousTraitantsPage() {
   }
 
   // Filtrer les sous-traitants par nom
-  const sousTraitantsFiltres = Array.isArray(sousTraitants)
+  let sousTraitantsFiltres = Array.isArray(sousTraitants)
     ? sousTraitants.filter(st => st.nom.toLowerCase().includes(filtreNom.toLowerCase()))
     : []
+
+  // Fonction de tri
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  // Application du tri
+  if (sortField) {
+    sousTraitantsFiltres = [...sousTraitantsFiltres].sort((a, b) => {
+      let aValue: string | number | boolean = ''
+      let bValue: string | number | boolean = ''
+
+      switch (sortField) {
+        case 'nom':
+          aValue = a.nom.toLowerCase()
+          bValue = b.nom.toLowerCase()
+          break
+        case 'email':
+          aValue = (a.email || '').toLowerCase()
+          bValue = (b.email || '').toLowerCase()
+          break
+        case 'telephone':
+          aValue = (a.telephone || '').toLowerCase()
+          bValue = (b.telephone || '').toLowerCase()
+          break
+        case 'ouvriers':
+          aValue = a._count?.ouvriers || 0
+          bValue = b._count?.ouvriers || 0
+          break
+        case 'actif':
+          aValue = a.actif ?? true
+          bValue = b.actif ?? true
+          break
+      }
+
+      if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+        return sortDirection === 'asc' 
+          ? (aValue === bValue ? 0 : aValue ? 1 : -1)
+          : (aValue === bValue ? 0 : aValue ? -1 : 1)
+      } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue)
+      } else {
+        return sortDirection === 'asc'
+          ? (aValue as number) - (bValue as number)
+          : (bValue as number) - (aValue as number)
+      }
+    })
+  }
 
   // Calculs pour les statistiques
   const totalSousTraitants = sousTraitants.length
@@ -299,18 +404,42 @@ export default function SousTraitantsPage() {
 
       {/* Contenu principal */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Barre de recherche */}
-        <div className="mb-8">
-        <SearchInput
-          id="search"
-          placeholder="Rechercher un sous-traitant..."
-          value={filtreNom}
-          onChange={(e) => setFiltreNom(e.target.value)}
-            className="max-w-md"
-        />
-      </div>
+        {/* Barre de recherche et vue */}
+        <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex-1 max-w-md">
+            <SearchInput
+              id="search"
+              placeholder="Rechercher un sous-traitant..."
+              value={filtreNom}
+              onChange={(e) => setFiltreNom(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === 'cards' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Cartes
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === 'table' 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Tableau
+            </button>
+          </div>
+        </div>
 
-        {/* Grille de cartes */}
+        {/* Affichage des sous-traitants */}
         {sousTraitantsFiltres.length === 0 ? (
           <div className="text-center py-12">
             <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -333,8 +462,10 @@ export default function SousTraitantsPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sousTraitantsFiltres.map((st) => (
+          <>
+            {viewMode === 'cards' ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {sousTraitantsFiltres.map((st) => (
               <div key={st.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 overflow-hidden">
                 {/* En-tête de la carte */}
                 <div className="p-6 pb-4">
@@ -525,17 +656,166 @@ export default function SousTraitantsPage() {
                       </>
                           )}
                         </div>
-                </div>
+                        </div>
                         </div>
                   ))}
-          </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <SortableHeader
+                          field="nom"
+                          label="Nom"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="email"
+                          label="Email"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="telephone"
+                          label="Téléphone"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
+                          Adresse
+                        </th>
+                        <SortableHeader
+                          field="ouvriers"
+                          label="Ouvriers"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <SortableHeader
+                          field="actif"
+                          label="Statut"
+                          currentSortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                        <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
+                          Contrat
+                        </th>
+                        <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-200 pr-4 sm:pr-6">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                      {sousTraitantsFiltres.map((st) => (
+                        <tr key={st.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-200 sm:pl-6">
+                            {st.nom}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {st.email || '-'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {st.telephone || '-'}
+                          </td>
+                          <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                            {st.adresse || '-'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            <Link 
+                              href={`/sous-traitants/${st.id}/ouvriers`}
+                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline"
+                            >
+                              {st._count?.ouvriers || 0}
+                            </Link>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm">
+                            {st.actif ?? true ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                Actif
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                Inactif
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm">
+                            {st.contrats && st.contrats.length > 0 && st.contrats[0].estSigne ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                Signé
+                              </span>
+                            ) : st.contrats && st.contrats.length > 0 ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100">
+                                <ClockIcon className="h-3 w-3 mr-1" />
+                                En attente
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                <DocumentTextIcon className="h-3 w-3 mr-1" />
+                                Aucun
+                              </span>
+                            )}
+                          </td>
+                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <div className="flex space-x-1 justify-end">
+                              <Link 
+                                href={`/sous-traitants/${st.id}/edit`} 
+                                className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors" 
+                                title="Modifier"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <PencilSquareIcon className="h-4 w-4" />
+                              </Link>
+                              <a
+                                href={`/public/portail/soustraitant/${st.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
+                                title="Portail public"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <GlobeAltIcon className="h-4 w-4" />
+                              </a>
+                              <button
+                                onClick={() => setDeleteModal({
+                                  isOpen: true,
+                                  sousTraitant: st,
+                                  onClose: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
+                                  onConfirm: handleDelete,
+                                  isDeleting: false
+                                })}
+                                className="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900 rounded transition-colors"
+                                title="Supprimer"
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Ouvriers internes */}
         <div className="mt-12">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Ouvriers internes</h2>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <form className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-3" onSubmit={async(e)=>{
+          
+          {/* Formulaire d'ajout */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+            <form className="grid grid-cols-1 md:grid-cols-5 gap-2" onSubmit={async(e)=>{
               e.preventDefault()
               const res = await fetch('/api/ouvriers-internes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newOuvrier) })
               if (res.ok) {
@@ -550,44 +830,245 @@ export default function SousTraitantsPage() {
               <input className="p-2 border rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:ring-blue-400 dark:focus:border-blue-400" placeholder="Téléphone" value={newOuvrier.telephone} onChange={e=>setNewOuvrier(prev=>({...prev, telephone:e.target.value}))} />
               <input className="p-2 border rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:ring-blue-400 dark:focus:border-blue-400" placeholder="Poste" value={newOuvrier.poste} onChange={e=>setNewOuvrier(prev=>({...prev, poste:e.target.value}))} />
               <div className="md:col-span-5 flex items-center gap-3 mt-2">
-                <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={newOuvrier.actif} onChange={e=>setNewOuvrier(prev=>({...prev, actif:e.target.checked}))} /> Actif</label>
-                <button className="px-3 py-2 bg-blue-600 text-white rounded">Ajouter</button>
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"><input type="checkbox" checked={newOuvrier.actif} onChange={e=>setNewOuvrier(prev=>({...prev, actif:e.target.checked}))} /> Actif</label>
+                <button className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">Ajouter</button>
               </div>
             </form>
-            <div className="divide-y">
-              {ouvriersInternes.map((o)=> (
-                <div key={o.id} className="py-2 flex items-center justify-between">
-                  <div className="text-sm flex items-center gap-2">
-                    {o.prenom} {o.nom} {o.poste?`• ${o.poste}`:''}
-                    <a
-                      href={`/public/portail/ouvrier/${o.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Portail public ouvrier"
-                      className="inline-flex items-center text-gray-400 hover:text-blue-600"
-                    >
-                      <GlobeAltIcon className="h-4 w-4" />
-                    </a>
-                    <button
-                      type="button"
-                      title="Définir le PIN"
-                      className="inline-flex items-center text-gray-400 hover:text-amber-600"
-                      onClick={async ()=>{
-                        const pin = prompt('Nouveau PIN (au moins 4 chiffres)') || ''
-                        if (pin && pin.replace(/\D/g,'').length>=4) {
-                          await fetch(`/api/ouvriers-internes/${o.id}/pin`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pin: pin.replace(/\D/g,'') }) })
-                          alert('PIN enregistré')
-                        }
-                      }}
-                    >
-                      <KeyIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="text-xs text-gray-500">{o.email || ''} {o.telephone?`• ${o.telephone}`:''}</div>
-                </div>
-              ))}
-            </div>
           </div>
+
+          {/* Tableau des ouvriers internes */}
+          {ouvriersInternes.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
+              <UsersIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Aucun ouvrier interne</p>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th 
+                        scope="col" 
+                        className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+                        onClick={() => {
+                          if (ouvrierSortField === 'prenom') {
+                            setOuvrierSortDirection(ouvrierSortDirection === 'asc' ? 'desc' : 'asc')
+                          } else {
+                            setOuvrierSortField('prenom')
+                            setOuvrierSortDirection('asc')
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Prénom</span>
+                          {ouvrierSortField === 'prenom' ? (
+                            ouvrierSortDirection === 'asc' ? (
+                              <ChevronUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            )
+                          ) : (
+                            <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+                        onClick={() => {
+                          if (ouvrierSortField === 'nom') {
+                            setOuvrierSortDirection(ouvrierSortDirection === 'asc' ? 'desc' : 'asc')
+                          } else {
+                            setOuvrierSortField('nom')
+                            setOuvrierSortDirection('asc')
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Nom</span>
+                          {ouvrierSortField === 'nom' ? (
+                            ouvrierSortDirection === 'asc' ? (
+                              <ChevronUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            )
+                          ) : (
+                            <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+                        onClick={() => {
+                          if (ouvrierSortField === 'poste') {
+                            setOuvrierSortDirection(ouvrierSortDirection === 'asc' ? 'desc' : 'asc')
+                          } else {
+                            setOuvrierSortField('poste')
+                            setOuvrierSortDirection('asc')
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Poste</span>
+                          {ouvrierSortField === 'poste' ? (
+                            ouvrierSortDirection === 'asc' ? (
+                              <ChevronUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            )
+                          ) : (
+                            <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+                        onClick={() => {
+                          if (ouvrierSortField === 'email') {
+                            setOuvrierSortDirection(ouvrierSortDirection === 'asc' ? 'desc' : 'asc')
+                          } else {
+                            setOuvrierSortField('email')
+                            setOuvrierSortDirection('asc')
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Email</span>
+                          {ouvrierSortField === 'email' ? (
+                            ouvrierSortDirection === 'asc' ? (
+                              <ChevronUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            )
+                          ) : (
+                            <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none"
+                        onClick={() => {
+                          if (ouvrierSortField === 'telephone') {
+                            setOuvrierSortDirection(ouvrierSortDirection === 'asc' ? 'desc' : 'asc')
+                          } else {
+                            setOuvrierSortField('telephone')
+                            setOuvrierSortDirection('asc')
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Téléphone</span>
+                          {ouvrierSortField === 'telephone' ? (
+                            ouvrierSortDirection === 'asc' ? (
+                              <ChevronUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            )
+                          ) : (
+                            <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
+                          )}
+                        </div>
+                      </th>
+                      <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-200 pr-4 sm:pr-6">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                    {(() => {
+                      let sortedOuvriers = [...ouvriersInternes]
+                      if (ouvrierSortField) {
+                        sortedOuvriers.sort((a, b) => {
+                          let aValue: string = ''
+                          let bValue: string = ''
+
+                          switch (ouvrierSortField) {
+                            case 'prenom':
+                              aValue = (a.prenom || '').toLowerCase()
+                              bValue = (b.prenom || '').toLowerCase()
+                              break
+                            case 'nom':
+                              aValue = (a.nom || '').toLowerCase()
+                              bValue = (b.nom || '').toLowerCase()
+                              break
+                            case 'poste':
+                              aValue = (a.poste || '').toLowerCase()
+                              bValue = (b.poste || '').toLowerCase()
+                              break
+                            case 'email':
+                              aValue = (a.email || '').toLowerCase()
+                              bValue = (b.email || '').toLowerCase()
+                              break
+                            case 'telephone':
+                              aValue = (a.telephone || '').toLowerCase()
+                              bValue = (b.telephone || '').toLowerCase()
+                              break
+                          }
+
+                          return ouvrierSortDirection === 'asc' 
+                            ? aValue.localeCompare(bValue)
+                            : bValue.localeCompare(aValue)
+                        })
+                      }
+
+                      return sortedOuvriers.map((o) => (
+                        <tr key={o.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-200 sm:pl-6">
+                            {o.prenom || '-'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {o.nom || '-'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {o.poste || '-'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {o.email || '-'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {o.telephone || '-'}
+                          </td>
+                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <div className="flex space-x-1 justify-end">
+                              <a
+                                href={`/public/portail/ouvrier/${o.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
+                                title="Portail public"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <GlobeAltIcon className="h-4 w-4" />
+                              </a>
+                              <button
+                                type="button"
+                                className="p-2 text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900 rounded transition-colors"
+                                title="Définir le PIN"
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  const pin = prompt('Nouveau PIN (au moins 4 chiffres)') || ''
+                                  if (pin && pin.replace(/\D/g,'').length>=4) {
+                                    await fetch(`/api/ouvriers-internes/${o.id}/pin`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pin: pin.replace(/\D/g,'') }) })
+                                    alert('PIN enregistré')
+                                  }
+                                }}
+                              >
+                                <KeyIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
