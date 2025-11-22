@@ -72,6 +72,35 @@ interface DevisApiResponse {
   }>
 }
 
+// Fonction de normalisation des unités pour gérer les variations de casse
+function normalizeUnite(unite: string | null | undefined): string {
+  if (!unite) return ''
+  
+  const uniteLower = unite.toLowerCase().trim()
+  
+  // Mapping des variations vers les valeurs standardisées
+  const uniteMap: Record<string, string> = {
+    'mct': 'Mct',
+    'm²': 'M2',
+    'm2': 'M2',
+    'm³': 'M3',
+    'm3': 'M3',
+    'heures': 'Heures',
+    'heure': 'Heures',
+    'h': 'Heures',
+    'pièces': 'Pièces',
+    'piece': 'Pièces',
+    'pieces': 'Pièces',
+    'p': 'Pièces',
+    'u': 'Pièces',
+    'fft': 'Fft',
+    'forfait': 'Fft',
+    'f': 'Fft'
+  }
+  
+  return uniteMap[uniteLower] || unite
+}
+
 export default function EditDevisPage() {
   const router = useRouter()
   const params = useParams()
@@ -176,7 +205,7 @@ export default function EditDevisPage() {
           type: l.type,
           article: l.article ?? '',
           description: l.description ?? '',
-          unite: l.unite ?? '',
+          unite: normalizeUnite(l.unite),
           quantite: Number(l.quantite ?? 0),
           prixUnitaire: Number(l.prixUnitaire ?? 0),
           remise: Number(l.remise ?? 0),
@@ -225,7 +254,7 @@ export default function EditDevisPage() {
       type: 'QP',
       article: '',
       description: '',
-      unite: 'U',
+      unite: 'Pièces',
       quantite: 1,
       prixUnitaire: 0,
       remise: 0,
@@ -252,7 +281,11 @@ export default function EditDevisPage() {
   const updateLigne = (id: string, field: keyof LigneDevis, value: LigneDevis[keyof LigneDevis]) => {
     setLignes(lignes.map(ligne => {
       if (ligne.id === id) {
-        const updated = { ...ligne, [field]: value }
+        // Normaliser l'unité si c'est le champ qui est modifié
+        const normalizedValue = field === 'unite' && typeof value === 'string' 
+          ? normalizeUnite(value) 
+          : value
+        const updated = { ...ligne, [field]: normalizedValue }
  
          // Recalculer le total pour les lignes QP
          if (ligne.type === 'QP' && (field === 'quantite' || field === 'prixUnitaire' || field === 'remise')) {
@@ -367,6 +400,7 @@ export default function EditDevisPage() {
           montantTTC: totaux.totalTTC,
           lignes: lignes.map((ligne, index) => ({
             ...ligne,
+            unite: normalizeUnite(ligne.unite),
             ordre: index + 1
           }))
         })
@@ -871,7 +905,7 @@ function LigneDevisRow({
       </td>
       <td className="px-3 py-2">
         <select
-          value={ligne.unite}
+          value={normalizeUnite(ligne.unite) || 'Pièces'}
           onChange={(e) => onUpdate(ligne.id, 'unite', e.target.value)}
           className="w-full px-2 py-1.5 text-sm border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
         >
