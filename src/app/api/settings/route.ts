@@ -25,6 +25,7 @@ export async function GET() {
         iban: '',
         tva: '',
         logo: '',
+        logoSquare: '',
         signature: '',
         emailHost: '',
         emailPort: '',
@@ -84,6 +85,7 @@ export async function PUT(request: Request) {
       iban: data.iban || '',
       tva: data.tva || '',
       logo: data.logo || '',
+      logoSquare: data.logoSquare || '',
       signature: data.signature || '',
       updatedAt: new Date(),
       // Paramètres d'email

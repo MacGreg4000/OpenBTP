@@ -18,6 +18,7 @@ interface CompanySettings {
   iban: string
   tva: string
   logo: string // URL du logo stocké
+  logoSquare: string // URL du logo carré pour la navbar
   signature: string // URL de la signature stockée
   emailHost: string
   emailPort: string
@@ -44,6 +45,7 @@ export default function ConfigurationPage() {
     iban: '',
     tva: '',
     logo: '',
+    logoSquare: '',
     signature: '',
     emailHost: '',
     emailPort: '',
@@ -118,6 +120,28 @@ export default function ConfigurationPage() {
       }
     } catch (error) {
       console.error('Erreur upload logo:', error)
+    }
+  }
+
+  const handleLogoSquareChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('logo', file)
+
+    try {
+      const res = await fetch('/api/settings/logo', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (res.ok) {
+        const { url } = await res.json()
+        setSettings(prev => ({ ...prev, logoSquare: url }))
+      }
+    } catch (error) {
+      console.error('Erreur upload logo carré:', error)
     }
   }
 
@@ -290,7 +314,7 @@ export default function ConfigurationPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Logo
+              Logo (général)
             </label>
             <input
               type="file"
@@ -304,6 +328,28 @@ export default function ConfigurationPage() {
                 src={settings.logo} 
                 alt="Logo de l'entreprise" 
                 className="mt-2 h-20 object-contain"
+              />
+              </>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Logo carré (navbar) <span className="text-xs text-gray-500">(recommandé)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-1">Logo carré optimisé pour la barre de navigation. Si non défini, le favicon sera utilisé.</p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoSquareChange}
+              className="mt-1 block w-full"
+            />
+            {settings.logoSquare && (
+              <>
+              <img 
+                src={settings.logoSquare} 
+                alt="Logo carré de l'entreprise" 
+                className="mt-2 h-20 w-20 object-contain rounded-lg border border-gray-300 dark:border-gray-600"
               />
               </>
             )}

@@ -15,6 +15,7 @@ export async function GET() {
       tva: c.tva,
       iban: c.iban,
       logo: c.logo || null,
+      logoSquare: c.logoSquare || null,
     })
   } catch {
     return NextResponse.json({ error: 'Erreur récupération société' }, { status: 500 })

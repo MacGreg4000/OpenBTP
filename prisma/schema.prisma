@@ -262,6 +262,7 @@ model companysettings {
   email         String
   tva           String
   logo          String?
+  logoSquare    String?  // Logo carré pour la navbar (recommandé)
   signature     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime

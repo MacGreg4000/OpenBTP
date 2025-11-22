@@ -38,25 +38,32 @@ export function Navbar() {
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
   const [logoLoadStatus, setLogoLoadStatus] = useState<'loading' | 'loaded' | 'error' | 'none'>('loading')
 
-  // Charger le logo depuis les settings
+  // Charger le logo depuis les settings (priorité: logoSquare > favicon)
   useEffect(() => {
     const loadLogo = async () => {
       try {
         const response = await fetch('/api/company')
         if (response.ok) {
           const data = await response.json()
-          if (data.logo) {
-            setCompanyLogo(data.logo)
+          // Priorité: logoSquare > favicon
+          if (data.logoSquare) {
+            setCompanyLogo(data.logoSquare)
             setLogoLoadStatus('loaded')
           } else {
-            setLogoLoadStatus('none') // Pas de logo configuré
+            // Fallback sur le favicon
+            setCompanyLogo('/favicon.ico')
+            setLogoLoadStatus('loaded')
           }
         } else {
-          setLogoLoadStatus('none')
+          // Fallback sur le favicon en cas d'erreur
+          setCompanyLogo('/favicon.ico')
+          setLogoLoadStatus('loaded')
         }
       } catch (error) {
         console.error('Erreur lors du chargement du logo:', error)
-        setLogoLoadStatus('none') // En cas d'erreur, utiliser le logo par défaut
+        // Fallback sur le favicon en cas d'erreur
+        setCompanyLogo('/favicon.ico')
+        setLogoLoadStatus('loaded')
       }
     }
     loadLogo()
