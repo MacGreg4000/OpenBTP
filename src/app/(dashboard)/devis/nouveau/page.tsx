@@ -710,6 +710,7 @@ function LigneDevisRow({
   moveLigne: (dragIndex: number, hoverIndex: number) => void
 }) {
   const ref = useRef<HTMLTableRowElement>(null)
+  const dragRef = useRef<HTMLDivElement>(null)
   const isSectionHeader = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
 
   type DragItem = { id: string; index: number; type: 'ligne-devis' }
@@ -761,7 +762,8 @@ function LigneDevisRow({
   })
 
   const opacity = isDragging ? 0 : 1
-  drag(drop(ref))
+  drag(dragRef)
+  drop(ref)
 
   if (isSectionHeader) {
     return (
@@ -771,8 +773,10 @@ function LigneDevisRow({
         data-handler-id={handlerId}
         className={ligne.type === 'TITRE' ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}
       >
-        <td className="px-3 py-2 whitespace-nowrap cursor-move align-top">
-          <BarsArrowUpIcon className="h-5 w-5 text-orange-500 dark:text-orange-300" />
+        <td className="px-3 py-2 whitespace-nowrap align-top">
+          <div ref={dragRef} className="cursor-move inline-block">
+            <BarsArrowUpIcon className="h-5 w-5 text-orange-500 dark:text-orange-300" />
+          </div>
         </td>
         <td colSpan={7} className="px-3 py-2">
           <input
@@ -806,8 +810,10 @@ function LigneDevisRow({
       data-handler-id={handlerId}
       className="hover:bg-gray-50 dark:hover:bg-gray-700"
     >
-      <td className="px-3 py-2 whitespace-nowrap cursor-move align-top">
-        <BarsArrowUpIcon className="h-5 w-5 text-gray-400" />
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        <div ref={dragRef} className="cursor-move inline-block">
+          <BarsArrowUpIcon className="h-5 w-5 text-gray-400" />
+        </div>
       </td>
       <td className="px-3 py-2">
         <input
