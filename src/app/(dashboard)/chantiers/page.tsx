@@ -21,7 +21,8 @@ import {
   MagnifyingGlassIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  ChevronUpDownIcon
+  ChevronUpDownIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { Pagination } from '@/components/Pagination'
@@ -80,7 +81,21 @@ function SortableHeader({
   )
 }
 
-function ChantierCard({ chantier }: { chantier: Chantier }) {
+function ChantierCard({ 
+  chantier, 
+  statusMenuOpen, 
+  setStatusMenuOpen, 
+  handleStatusChange, 
+  updatingStatus,
+  statusOptions 
+}: { 
+  chantier: Chantier
+  statusMenuOpen: string | null
+  setStatusMenuOpen: (id: string | null) => void
+  handleStatusChange: (id: string, status: string) => Promise<void>
+  updatingStatus: string | null
+  statusOptions: Array<{ value: string; label: string }>
+}) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700 overflow-hidden group">
       <div className="p-6">
@@ -98,9 +113,56 @@ function ChantierCard({ chantier }: { chantier: Chantier }) {
               {chantier.clientNom || 'Client non défini'}
             </p>
           </div>
-          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getStatusStyle(chantier.etatChantier)}`}>
-            {chantier.etatChantier}
-          </span>
+          <div className="status-menu-container relative">
+            <button
+              type="button"
+              onClick={() => setStatusMenuOpen(statusMenuOpen === chantier.chantierId ? null : chantier.chantierId)}
+              disabled={updatingStatus === chantier.chantierId}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer hover:opacity-80 hover:shadow-md transition-all ${getStatusStyle(chantier.etatChantier)} ${
+                updatingStatus === chantier.chantierId ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              title="Cliquer pour changer le statut"
+            >
+              {updatingStatus === chantier.chantierId ? (
+                <span className="flex items-center gap-1">
+                  <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Mise à jour...
+                </span>
+              ) : (
+                <>
+                  <span>{chantier.etatChantier}</span>
+                  <ChevronDownIcon className="h-3 w-3 opacity-70" />
+                </>
+              )}
+            </button>
+            
+            {statusMenuOpen === chantier.chantierId && (
+              <div className="absolute z-50 right-0 mt-1 w-48 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+                <div className="py-1">
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleStatusChange(chantier.chantierId, option.value)}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center justify-between ${
+                        chantier.etatChantier === option.value
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                          : 'text-gray-900 dark:text-white'
+                      }`}
+                    >
+                      <span>{option.label}</span>
+                      {chantier.etatChantier === option.value && (
+                        <CheckIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -203,6 +265,10 @@ export default function ChantiersPage() {
   const [etatDropdownOpen, setEtatDropdownOpen] = useState(false)
   const [etatSearchTerm, setEtatSearchTerm] = useState('')
   
+  // État pour le menu de changement de statut d'un chantier spécifique
+  const [statusMenuOpen, setStatusMenuOpen] = useState<string | null>(null)
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+  
   // États pour le tri
   const [sortField, setSortField] = useState<SortField | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -235,13 +301,16 @@ export default function ChantiersPage() {
         setEtatDropdownOpen(false)
         setEtatSearchTerm('')
       }
+      if (!target.closest('.status-menu-container')) {
+        setStatusMenuOpen(null)
+      }
     }
     
-    if (clientDropdownOpen || chantierDropdownOpen || etatDropdownOpen) {
+    if (clientDropdownOpen || chantierDropdownOpen || etatDropdownOpen || statusMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [clientDropdownOpen, chantierDropdownOpen, etatDropdownOpen])
+  }, [clientDropdownOpen, chantierDropdownOpen, etatDropdownOpen, statusMenuOpen])
   
   // Filtrer les chantiers selon le terme de recherche dans le dropdown
   const filteredChantierOptions = chantiers.filter(chantier =>
@@ -261,6 +330,49 @@ export default function ChantiersPage() {
     { value: 'En cours', label: 'En cours' },
     { value: 'Terminé', label: 'Terminé' }
   ]
+  
+  // Options de statut pour le changement rapide (sans "Tous les états")
+  const statusOptions = [
+    { value: 'En préparation', label: 'En préparation' },
+    { value: 'En cours', label: 'En cours' },
+    { value: 'Terminé', label: 'Terminé' }
+  ]
+  
+  // Fonction pour mettre à jour le statut d'un chantier
+  const handleStatusChange = async (chantierId: string, newStatus: string) => {
+    setUpdatingStatus(chantierId)
+    try {
+      const response = await fetch(`/api/chantiers/${chantierId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          etatChantier: newStatus
+        }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour du statut')
+      }
+      
+      // Mettre à jour l'état local
+      setChantiers(prevChantiers =>
+        prevChantiers.map(chantier =>
+          chantier.chantierId === chantierId
+            ? { ...chantier, etatChantier: newStatus }
+            : chantier
+        )
+      )
+      
+      setStatusMenuOpen(null)
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error)
+      alert('Erreur lors de la mise à jour du statut. Veuillez réessayer.')
+    } finally {
+      setUpdatingStatus(null)
+    }
+  }
   
   // Filtrer les états selon le terme de recherche
   const filteredEtatOptions = etatOptions.filter(etat =>
@@ -802,7 +914,15 @@ export default function ChantiersPage() {
             {viewMode === 'cards' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {chantiersFiltrés.map((chantier) => (
-                  <ChantierCard key={chantier.chantierId} chantier={chantier} />
+                  <ChantierCard 
+                    key={chantier.chantierId} 
+                    chantier={chantier}
+                    statusMenuOpen={statusMenuOpen}
+                    setStatusMenuOpen={setStatusMenuOpen}
+                    handleStatusChange={handleStatusChange}
+                    updatingStatus={updatingStatus}
+                    statusOptions={statusOptions}
+                  />
                 ))}
               </div>
             ) : (
@@ -871,9 +991,56 @@ export default function ChantiersPage() {
                             {chantier.clientNom || '-'}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusStyle(chantier.etatChantier)}`}>
-                              {chantier.etatChantier}
-                            </span>
+                            <div className="status-menu-container relative inline-block">
+                              <button
+                                type="button"
+                                onClick={() => setStatusMenuOpen(statusMenuOpen === chantier.chantierId ? null : chantier.chantierId)}
+                                disabled={updatingStatus === chantier.chantierId}
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer hover:opacity-80 hover:shadow-md transition-all ${getStatusStyle(chantier.etatChantier)} ${
+                                  updatingStatus === chantier.chantierId ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                                title="Cliquer pour changer le statut"
+                              >
+                                {updatingStatus === chantier.chantierId ? (
+                                  <span className="flex items-center gap-1">
+                                    <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Mise à jour...
+                                  </span>
+                                ) : (
+                                  <>
+                                    <span>{chantier.etatChantier}</span>
+                                    <ChevronDownIcon className="h-3 w-3 opacity-70" />
+                                  </>
+                                )}
+                              </button>
+                              
+                              {statusMenuOpen === chantier.chantierId && (
+                                <div className="absolute z-50 mt-1 w-48 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+                                  <div className="py-1">
+                                    {statusOptions.map((option) => (
+                                      <button
+                                        key={option.value}
+                                        type="button"
+                                        onClick={() => handleStatusChange(chantier.chantierId, option.value)}
+                                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center justify-between ${
+                                          chantier.etatChantier === option.value
+                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                            : 'text-gray-900 dark:text-white'
+                                        }`}
+                                      >
+                                        <span>{option.label}</span>
+                                        {chantier.etatChantier === option.value && (
+                                          <CheckIcon className="h-4 w-4" />
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {chantier.budget ? `${chantier.budget.toLocaleString('fr-FR')} €` : '-'}
