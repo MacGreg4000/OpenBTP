@@ -33,7 +33,7 @@ import { useFeatures } from '@/hooks/useFeatures'
 export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const { isEnabled } = useFeatures()
+  const { isEnabled, error: modulesError } = useFeatures()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
   const [logoLoadStatus, setLogoLoadStatus] = useState<'loading' | 'loaded' | 'error' | 'none'>('loading')
@@ -132,8 +132,22 @@ export function Navbar() {
     <>
       {/* Navbar principale */}
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/30 dark:border-gray-700/30 shadow-sm">
+        {/* Message d'erreur pour les modules */}
+        {modulesError && (
+          <div className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 px-4 py-2">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <p className="text-sm text-red-800 dark:text-red-200">{modulesError}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 underline"
+              >
+                Actualiser
+              </button>
+            </div>
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className={`flex justify-between items-center ${modulesError ? 'h-14' : 'h-16'}`}>
             
             {/* Logo */}
             <div className="flex items-center space-x-4">

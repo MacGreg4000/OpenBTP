@@ -9,11 +9,10 @@ import {
   PlayIcon,
   CurrencyEuroIcon,
   PencilIcon,
-  CalendarIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 // Components
@@ -26,21 +25,11 @@ import ReceptionsEnCoursWidget from '@/components/dashboard/ReceptionsEnCoursWid
 import QuickActionsWidget from '@/components/dashboard/QuickActionsWidget'
 import RecentEtatsList from '@/components/dashboard/RecentEtatsList'
 import MetresEnAttenteWidget from '@/components/dashboard/MetresEnAttenteWidget'
+import RecentSAVWidget from '@/components/dashboard/RecentSAVWidget'
 
 // Types
 // (Types inutilisés supprimés)
 
-interface Chantier {
-  id: string
-  title: string
-  start: string
-  end: string | null
-  client: string
-  etat: string
-  adresse?: string
-  montant?: number
-  dureeEnJours?: number
-}
 
 // Fonctions utilitaires
 const formatEuros = (amount: number) => {
@@ -78,26 +67,6 @@ async function getDashboardData() {
   }
 }
 
-async function fetchChantiersPlanning() {
-  try {
-    console.log('🔄 Chargement du planning...')
-    const response = await fetch('/api/planning/chantiers')
-    console.log('📡 Réponse API planning:', response.status, response.statusText)
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ Erreur API planning:', response.status, errorText)
-      throw new Error(`Erreur ${response.status}: ${errorText}`)
-    }
-    
-    const data = await response.json()
-    console.log('✅ Données planning reçues:', data.length, 'chantiers')
-    return data
-  } catch (err) {
-    console.error('❌ Erreur fetchChantiersPlanning:', err)
-    return []
-  }
-}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -122,8 +91,6 @@ export default function DashboardPage() {
     loading: true
   })
 
-  const [chantiers, setChantiers] = useState<Chantier[]>([])
-  const [planningLoading, setPlanningLoading] = useState(true)
   // removed unused recentEtats state
 
   // Affichage replié/déplié du tableau blanc (préférence persistée)
@@ -142,21 +109,6 @@ export default function DashboardPage() {
     } catch {}
   }
 
-  // Affichage replié/déplié du planning (préférence persistée)
-  const [isPlanningOpen, setIsPlanningOpen] = useState<boolean>(true)
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('dashboard:planningOpen')
-      if (stored !== null) setIsPlanningOpen(stored === '1')
-    } catch {}
-  }, [])
-  const togglePlanning = () => {
-    const next = !isPlanningOpen
-    setIsPlanningOpen(next)
-    try {
-      localStorage.setItem('dashboard:planningOpen', next ? '1' : '0')
-    } catch {}
-  }
 
   // Affichage replié/déplié des suivis importants (préférence persistée)
   const [isSuivisOpen, setIsSuivisOpen] = useState<boolean>(true)
@@ -190,6 +142,22 @@ export default function DashboardPage() {
     } catch {}
   }
 
+  // Affichage replié/déplié de la section SAV (préférence persistée)
+  const [isSavOpen, setIsSavOpen] = useState<boolean>(true)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('dashboard:savOpen')
+      if (stored !== null) setIsSavOpen(stored === '1')
+    } catch {}
+  }, [])
+  const toggleSav = () => {
+    const next = !isSavOpen
+    setIsSavOpen(next)
+    try {
+      localStorage.setItem('dashboard:savOpen', next ? '1' : '0')
+    } catch {}
+  }
+
   // Gestion de l'authentification côté client
   useEffect(() => {
     if (status === 'loading') return // Attendre le chargement de la session
@@ -204,15 +172,6 @@ export default function DashboardPage() {
       console.log('✅ Utilisateur authentifié:', session.user.email)
       // Charger les données du dashboard
       getDashboardData().then(setDashboardData)
-      // Charger les données du planning
-      fetchChantiersPlanning().then(data => {
-        console.log('📅 Données du planning chargées:', data)
-        setChantiers(data)
-        setPlanningLoading(false)
-      }).catch(error => {
-        console.error('❌ Erreur lors du chargement du planning:', error)
-        setPlanningLoading(false)
-      })
 
       // Charger les 10-15 derniers états d'avancement
       fetch('/api/dashboard/evolution', { cache: 'no-store' })
@@ -373,32 +332,32 @@ export default function DashboardPage() {
               )}
             </section>
 
-            {/* Section: Aperçu et planning moderne */}
-            <section aria-labelledby="overview-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
+            {/* Section: Derniers SAV */}
+            <section aria-labelledby="sav-title" className="border-t-2 border-gray-200/50 dark:border-gray-700/50 pt-10">
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <CalendarIcon className="h-5 w-5 text-white"/>
+                  <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <WrenchScrewdriverIcon className="h-5 w-5 text-white"/>
                   </div>
                   <div>
-                    <h2 id="overview-title" className="text-xl font-black text-gray-900 dark:text-white">
-                      Aperçu & Planning
+                    <h2 id="sav-title" className="text-xl font-black text-gray-900 dark:text-white">
+                      Derniers SAV
                     </h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Visualisation des chantiers actifs</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">10 derniers tickets encodés</p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={togglePlanning}
+                  onClick={toggleSav}
                   className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold shadow-lg transition-all duration-200 hover:scale-105 ${
-                    isPlanningOpen
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
-                      : 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border-2 border-blue-200 dark:border-blue-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600 dark:hover:to-gray-600'
+                    isSavOpen
+                      ? 'bg-gradient-to-r from-red-500 to-orange-600 text-white'
+                      : 'bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-orange-50 dark:hover:from-gray-600 dark:hover:to-gray-600'
                   }`}
-                  aria-expanded={isPlanningOpen}
-                  aria-controls="dashboard-planning"
+                  aria-expanded={isSavOpen}
+                  aria-controls="dashboard-sav"
                 >
-                  {isPlanningOpen ? (
+                  {isSavOpen ? (
                     <>
                       <ChevronUpIcon className="h-4 w-4" />
                       Masquer
@@ -412,234 +371,10 @@ export default function DashboardPage() {
                 </button>
               </div>
               
-              {/* Planning plein largeur moderne */}
-              {isPlanningOpen && (
-              <div className="grid grid-cols-1 gap-6" id="dashboard-planning">
-                <div className="col-span-1">
-                  <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 h-[48rem] flex flex-col overflow-hidden">
-                    <div className="px-6 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0 flex items-center justify-end">
-                      <Link 
-                        href="/planning" 
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-semibold text-sm transition-all duration-200"
-                      >
-                        Planning complet
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </Link>
-                    </div>
-                    
-                    <div className="p-6 flex-1 overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
-                      {planningLoading ? (
-                        <div className="flex flex-col items-center justify-center h-full">
-                          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl mb-4 animate-pulse">
-                            <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
-                          </div>
-                          <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Chargement du planning...</span>
-                        </div>
-                      ) : chantiers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full">
-                          <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center shadow-xl mb-4">
-                            <CalendarIcon className="h-10 w-10 text-gray-400" />
-                          </div>
-                          <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Aucun chantier planifié</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Commencez par créer votre premier chantier</p>
-                          <Link
-                            href="/chantiers/nouveau"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-semibold transition-all duration-200"
-                          >
-                            <BuildingOfficeIcon className="w-5 h-5" />
-                            Créer un chantier
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="h-full flex flex-col">
-                          {/* Légende moderne avec badges */}
-                          <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
-                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
-                              <div className="w-3 h-3 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full shadow-lg"></div>
-                              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">En préparation</span>
-                            </div>
-                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border border-blue-200 dark:border-blue-800/50">
-                              <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg"></div>
-                              <span className="text-xs font-bold text-blue-800 dark:text-blue-300">En cours</span>
-                            </div>
-                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
-                              <div className="w-3 h-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg"></div>
-                              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Terminé</span>
-                            </div>
-                            <div className="ml-auto px-4 py-2 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600">
-                              <span className="text-sm font-bold text-gray-900 dark:text-white">{chantiers.length} chantier{chantiers.length > 1 ? 's' : ''}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Mini-Gantt basé sur les dates réelles, centré sur aujourd'hui */}
-                          <div className="space-y-3 flex-1 overflow-y-auto">
-                            {(() => {
-                              // Filtrer les chantiers actifs (En préparation + En cours) et prendre les 10 premiers
-                              const chantiersActifs = chantiers.filter(chantier => 
-                                chantier.etat === 'En préparation' || chantier.etat === 'En cours'
-                              ).slice(0, 10)
-                              
-                              if (chantiersActifs.length === 0) {
-                                return (
-                                  <div className="flex flex-col items-center justify-center py-12">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center shadow-xl mb-4">
-                                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                      </svg>
-                                    </div>
-                                    <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">Aucun chantier actif</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Tous les chantiers sont terminés</p>
-                                  </div>
-                                )
-                              }
-                              
-                              // Échelle temporelle dynamique
-                              const parsed = chantiersActifs.map(c => ({
-                                ...c,
-                                _start: new Date(c.start),
-                                _end: c.end ? new Date(c.end) : new Date(new Date(c.start).getTime() + (45 * 24 * 60 * 60 * 1000))
-                              }))
-                              const minStart = new Date(Math.min(...parsed.map(c => c._start.getTime())))
-                              const maxEnd = new Date(Math.max(...parsed.map(c => c._end.getTime())))
-                              const totalMs = Math.max(1, maxEnd.getTime() - minStart.getTime())
-                              const today = new Date()
-                              const toPercent = (d: Date) => {
-                                const p = ((d.getTime() - minStart.getTime()) / totalMs) * 100
-                                return Math.max(0, Math.min(100, p))
-                              }
-                              const todayLeft = toPercent(today)
-
-                              // Mapping pour garder "aujourd'hui" au centre (50%)
-                              const mapToViewport = (percent: number) => Math.max(0, Math.min(100, percent - todayLeft + 50))
-
-                              const getBarColor = (etat: string) => {
-                                switch (etat) {
-                                  case 'En cours': return 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-600 shadow-lg shadow-blue-500/30'
-                                  case 'En préparation': return 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 shadow-lg shadow-amber-500/30'
-                                  case 'Terminé': return 'bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-600 shadow-lg shadow-emerald-500/30'
-                                  default: return 'bg-gradient-to-r from-gray-400 to-gray-500 shadow-lg'
-                                }
-                              }
-                              
-                              const getStatusIcon = (etat: string) => {
-                                switch (etat) {
-                                  case 'En cours': return '🚧'
-                                  case 'En préparation': return '⏳'
-                                  case 'Terminé': return '✅'
-                                  default: return '❓'
-                                }
-                              }
-
-                              return parsed.map((chantier, idx) => {
-                                const leftAbs = toPercent(chantier._start)
-                                const rightAbs = toPercent(chantier._end)
-                                const left = mapToViewport(leftAbs)
-                                const right = mapToViewport(rightAbs)
-                                const width = Math.max(1, right - left)
-
-                                return (
-                                  <div 
-                                    key={chantier.id} 
-                                    className={`group p-3 rounded-xl transition-all duration-200 hover:shadow-lg ${
-                                      idx % 2 === 0 ? 'bg-white/50 dark:bg-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-850/50'
-                                    } hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-transparent dark:hover:from-blue-900/10`}
-                                  >
-                                    <div className="flex items-center gap-4">
-                                      {/* Badge de statut + Info chantier */}
-                                      <div className="w-56 flex-shrink-0 flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-lg ${getBarColor(chantier.etat)} group-hover:scale-110 transition-transform duration-200`}>
-                                          {getStatusIcon(chantier.etat)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <Link 
-                                            href={`/chantiers/${chantier.id}`}
-                                            className="text-sm font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate block transition-colors"
-                                            title={chantier.title}
-                                          >
-                                            {chantier.title}
-                                          </Link>
-                                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate font-medium">
-                                            {chantier.client}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {/* Barre Gantt moderne */}
-                                      <div className="flex-1 relative h-10 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-xl shadow-inner overflow-hidden">
-                                        {/* Ligne date actuelle positionnée au centre avec style moderne */}
-                                        <div className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-red-400 via-red-600 to-red-400 z-10 shadow-lg" style={{ left: '50%', transform: 'translateX(-50%)' }}>
-                                          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse"></div>
-                                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse"></div>
-                                        </div>
-
-                                        {/* Barre chantier moderne + tooltip */}
-                                        <div className="group/bar relative h-full">
-                                          <div
-                                            className={`absolute top-1 bottom-1 rounded-xl ${getBarColor(chantier.etat)} hover:scale-105 cursor-pointer transition-all duration-300 z-20 overflow-hidden`}
-                                            style={{ left: `${left}%`, width: `${width}%` }}
-                                          >
-                                            {/* Effet brillant */}
-                                            <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"></div>
-                                            {/* Bordure animée */}
-                                            <div className="absolute inset-0 rounded-xl border-2 border-white/0 group-hover/bar:border-white/50 transition-all duration-300"></div>
-                                          </div>
-                                          {/* Tooltip moderne */}
-                                          <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 hidden group-hover/bar:block z-30 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                            <div className="bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-xl text-white text-xs rounded-xl px-4 py-3 whitespace-nowrap shadow-2xl border border-gray-700">
-                                              <div className="font-bold mb-1">{chantier.title}</div>
-                                              <div className="text-gray-300">{chantier.client}</div>
-                                              <div className="text-gray-400 mt-1 text-xs">
-                                                {chantier._start.toLocaleDateString('fr-FR')} → {chantier._end.toLocaleDateString('fr-FR')}
-                                              </div>
-                                              {/* Flèche */}
-                                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900/95 dark:bg-gray-800/95 rotate-45"></div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* Dates avec style moderne */}
-                                      <div className="w-32 flex-shrink-0 text-right">
-                                        <div className="inline-flex flex-col gap-1 bg-white dark:bg-gray-700 rounded-xl px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-600">
-                                          <div className="text-xs font-bold text-gray-900 dark:text-white">
-                                            {chantier._start.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
-                                          </div>
-                                          <div className="text-xs text-gray-500 dark:text-gray-400">→</div>
-                                          <div className="text-xs font-bold text-gray-900 dark:text-white">
-                                            {chantier._end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )
-                              })
-                            })()}
-                            
-                            {chantiers.length > 10 && (
-                              <div className="text-center pt-4 mt-4 border-t-2 border-gray-200 dark:border-gray-700">
-                                <Link 
-                                  href="/planning" 
-                                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 font-bold text-sm transition-all duration-200"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  Voir les {chantiers.length - 10} autres chantiers
-                                </Link>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              {isSavOpen && (
+                <div className="grid grid-cols-1 gap-6" id="dashboard-sav">
+                  <RecentSAVWidget />
                 </div>
-                
-              </div>
               )}
             </section>
 

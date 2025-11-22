@@ -6,6 +6,15 @@ import { prisma } from '@/lib/prisma/client'
 // GET /api/modules - Liste tous les modules
 export async function GET(request: NextRequest) {
   try {
+    // Vérifier que NEXTAUTH_SECRET est défini
+    if (!process.env.NEXTAUTH_SECRET) {
+      console.error('❌ NEXTAUTH_SECRET n\'est pas défini dans les variables d\'environnement')
+      return NextResponse.json(
+        { error: 'Configuration d\'authentification manquante. Veuillez définir NEXTAUTH_SECRET dans votre fichier .env' },
+        { status: 500 }
+      )
+    }
+
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {

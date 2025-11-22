@@ -46,6 +46,30 @@ export function useFeaturesProvider() {
       })
       
       if (!response.ok) {
+        // Si erreur 401 (non autorisé), c'est probablement un problème de session JWT
+        if (response.status === 401) {
+          const errorData = await response.json().catch(() => ({}))
+          console.error('❌ Erreur d\'authentification lors du chargement des modules:', errorData.error)
+          // Ne pas throw pour éviter de bloquer l'interface, mais afficher l'erreur
+          setError('Session expirée. Veuillez vous reconnecter.')
+          // Forcer la déconnexion en vidant les cookies de session
+          if (typeof window !== 'undefined') {
+            // Déclencher une déconnexion via NextAuth
+            window.location.href = '/api/auth/signout?callbackUrl=/login'
+          }
+          return
+        }
+        
+        // Si erreur 500 avec message spécifique sur NEXTAUTH_SECRET
+        if (response.status === 500) {
+          const errorData = await response.json().catch(() => ({}))
+          if (errorData.error?.includes('NEXTAUTH_SECRET')) {
+            setError('Configuration d\'authentification manquante. Contactez l\'administrateur.')
+            console.error('❌', errorData.error)
+            return
+          }
+        }
+        
         throw new Error('Erreur lors du chargement des modules')
       }
       
