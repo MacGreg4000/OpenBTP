@@ -34,7 +34,7 @@ export default function OutillagePage() {
   const [loading, setLoading] = useState(true)
   const [machineToDelete, setMachineToDelete] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [searchTerm, setSearchTerm] = useState('')
 
   // Vérifier si l'utilisateur est administrateur
