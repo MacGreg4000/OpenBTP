@@ -6,7 +6,9 @@ import {
   UserIcon, 
   BuildingOfficeIcon,
   TrashIcon,
-  PencilIcon
+  PencilIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 // Types
@@ -323,6 +325,7 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
   const [tasksByResourceAndDate, setTasksByResourceAndDate] = useState<Record<string, Record<string, Task[]>>>({});
   const [chantierColorMap, setChantierColorMap] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [weekOffset, setWeekOffset] = useState(0); // 0 = semaine courante, 1 = semaine suivante, etc.
 
   // Générer les créneaux horaires (7 jours complets : lundi à dimanche)
   useEffect(() => {
@@ -335,6 +338,9 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
       const dayOfWeek = today.getDay(); // 0 = dimanche, 1 = lundi, ..., 6 = samedi
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Si dimanche, 6 jours en arrière
       monday.setDate(today.getDate() - daysFromMonday);
+      
+      // Ajouter l'offset de semaine (en jours)
+      monday.setDate(monday.getDate() + (weekOffset * 7));
       
       // Générer 7 jours à partir du lundi
       for (let i = 0; i < 7; i++) {
@@ -354,7 +360,7 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
     };
 
     generateTimeSlots();
-  }, []);
+  }, [weekOffset]);
 
   // Charger les ressources et tâches
   useEffect(() => {
@@ -497,8 +503,66 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
     );
   }
 
+  // Calculer la période affichée
+  const getWeekRange = () => {
+    if (timeSlots.length === 0) return '';
+    const firstDay = timeSlots[0];
+    const lastDay = timeSlots[timeSlots.length - 1];
+    const firstDate = new Date(firstDay.date);
+    const lastDate = new Date(lastDay.date);
+    
+    const formatDate = (date: Date) => {
+      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    };
+    
+    return `${formatDate(firstDate)} - ${formatDate(lastDate)}`;
+  };
+
+  const handlePreviousWeek = () => {
+    setWeekOffset(prev => Math.max(prev - 1, -2)); // Permet 2 semaines dans le passé
+  };
+
+  const handleNextWeek = () => {
+    setWeekOffset(prev => Math.min(prev + 1, 3)); // Limite à 3 semaines dans le futur
+  };
+
+  const handleToday = () => {
+    setWeekOffset(0);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+      {/* Contrôles de navigation */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePreviousWeek}
+            disabled={weekOffset <= -2}
+            className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Semaine précédente"
+          >
+            <ChevronLeftIcon className="h-5 w-5" />
+          </button>
+          <button
+            onClick={handleToday}
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+          >
+            Aujourd'hui
+          </button>
+          <button
+            onClick={handleNextWeek}
+            disabled={weekOffset >= 3}
+            className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Semaine suivante"
+          >
+            <ChevronRightIcon className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {getWeekRange()}
+        </div>
+      </div>
+
       {/* Container avec scroll synchronisé */}
       <div className="overflow-x-auto">
         <div className="min-w-fit">
