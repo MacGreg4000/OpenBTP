@@ -73,6 +73,7 @@ model soustraitant {
   contact                      String?
   adresse                      String?
   telephone                    String?
+  logo                         String?
   createdAt                    DateTime                       @default(now())
   updatedAt                    DateTime
   tva                          String?
@@ -87,6 +88,8 @@ model soustraitant {
   ticketsSAVAssignes       TicketSAV[]      @relation("TicketsSAVSousTraitant")
   // Planning ressources
   taskAssignments          TaskSousTraitant[]
+  // Dossiers techniques
+  dossiersFiches           DossierFiche[]
 }
 
 model contrat {
@@ -526,6 +529,14 @@ model Chantier {
   villeChantier        String?
   latitude             Float?
   longitude            Float?
+  // Maitre d'ouvrage (peut être différent du client)
+  maitreOuvrageNom     String?
+  maitreOuvrageAdresse String?
+  maitreOuvrageLocalite String?
+  // Bureau d'architecture
+  bureauArchitectureNom     String?
+  bureauArchitectureAdresse String?
+  bureauArchitectureLocalite String?
   avenants             Avenant[]
   client               Client?                @relation(fields: [clientId], references: [id])
   contact              Contact?               @relation(fields: [contactId], references: [id])
@@ -561,6 +572,9 @@ model Chantier {
   
   // Gestionnaires du chantier
   gestionnaires            ChantierGestionnaire[]
+  
+  // Dossiers techniques
+  dossiersTechniques       DossierTechnique[]
 
   @@index([clientId])
   @@index([contactId])
@@ -619,6 +633,56 @@ model Document {
   @@index([chantierId])
   @@index([createdBy])
   @@map("Document")
+}
+
+model DossierTechnique {
+  id                String            @id @default(uuid())
+  chantierId        String
+  nom               String
+  version           Int                @default(1)
+  statut            String             @default("BROUILLON") // BROUILLON, ENVOYE, REFUSE_PARTIELLEMENT, VALIDE
+  url               String
+  taille            Int
+  dateGeneration   DateTime           @default(now())
+  dateModification  DateTime           @updatedAt
+  createdBy         String
+  includeTableOfContents Boolean       @default(false)
+  chantier          Chantier          @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)
+  User              User               @relation(fields: [createdBy], references: [id])
+  fiches            DossierFiche[]
+
+  @@index([chantierId])
+  @@index([createdBy])
+  @@index([dateGeneration])
+  @@map("dossier_technique")
+}
+
+enum StatutFicheDossier {
+  VALIDEE
+  A_REMPLACER
+  NOUVELLE_PROPOSITION
+  BROUILLON
+}
+
+model DossierFiche {
+  id                  String            @id @default(uuid())
+  dossierId           String
+  ficheId             String            // ID de la fiche technique (nom du fichier)
+  ficheReference      String?           // Référence CSC
+  version             Int                @default(1) // Version de cette fiche dans ce dossier (V1, V2, V3...)
+  statut              StatutFicheDossier @default(BROUILLON)
+  ordre               Int                // Ordre d'affichage dans le dossier
+  ficheRemplaceeId    String?            // ID de la fiche remplacée (si version > 1)
+  soustraitantId      String?            // Sous-traitant concerné par cette fiche
+  remarques           String?            @db.Text // Remarques sur la fiche
+  dateAjout           DateTime           @default(now())
+  dossier             DossierTechnique   @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  soustraitant        soustraitant?      @relation(fields: [soustraitantId], references: [id])
+
+  @@index([dossierId])
+  @@index([ficheId])
+  @@index([soustraitantId])
+  @@map("dossier_fiche")
 }
 
 model DocumentOuvrier {
@@ -834,6 +898,9 @@ model User {
   
   // Devis
   devisCrees                Devis[]
+  
+  // Dossiers techniques
+  dossiersTechniques        DossierTechnique[]
 }
 
 model BonRegie {

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { 
   DocumentTextIcon, 
   FolderIcon,
@@ -10,6 +10,9 @@ import {
   XMarkIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
+import DossiersTechniquesManager from './DossiersTechniquesManager'
+import ModifierDossierModal from './ModifierDossierModal'
+import { useNotification } from '@/hooks/useNotification'
 
 interface FicheTechnique {
   id: string
@@ -34,13 +37,19 @@ interface FichesTechniquesTabContentProps {
 }
 
 export default function FichesTechniquesTabContent({ chantierId }: FichesTechniquesTabContentProps) {
+  const { showNotification, NotificationComponent } = useNotification()
   const [structure, setStructure] = useState<Dossier[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedFiches, setSelectedFiches] = useState<Set<string>>(new Set())
   const [ficheReferences, setFicheReferences] = useState<Map<string, string>>(new Map())
+  const [fichesSoustraitants, setFichesSoustraitants] = useState<Record<string, string>>({})
+  const [fichesRemarques, setFichesRemarques] = useState<Record<string, string>>({})
+  const [soustraitants, setSoustraitants] = useState<Array<{ id: string; nom: string }>>([])
   const [generating, setGenerating] = useState(false)
   const [includeTableOfContents, setIncludeTableOfContents] = useState(true)
   const [searchFilter, setSearchFilter] = useState('')
+  const [dossierAModifier, setDossierAModifier] = useState<any>(null)
+  const [showDossiers, setShowDossiers] = useState(false)
 
   // Charger la structure des fiches techniques
   useEffect(() => {
@@ -68,6 +77,25 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     fetchStructure()
   }, [])
 
+  // Charger les sous-traitants
+  useEffect(() => {
+    const fetchSoustraitants = async () => {
+      try {
+        const response = await fetch('/api/soustraitants/select?activeOnly=1')
+        if (response.ok) {
+          const data = await response.json()
+          setSoustraitants(data.map((st: { value: string; label: string }) => ({
+            id: st.value,
+            nom: st.label
+          })))
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des sous-traitants:', error)
+      }
+    }
+    fetchSoustraitants()
+  }, [])
+
   // Toggle l'expansion d'un dossier
   const toggleDossier = (chemin: string) => {
     const updateDossiers = (dossiers: Dossier[]): Dossier[] => {
@@ -84,63 +112,102 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     setStructure(prev => updateDossiers(prev))
   }
 
-  // Charger l'état depuis localStorage au montage
+  // Charger les préférences depuis la base de données au montage
   useEffect(() => {
     if (!chantierId) return
 
-    const storageKey = `fiches-techniques-${chantierId}`
-    const savedState = localStorage.getItem(storageKey)
-    
-    if (savedState) {
+    const loadPreferences = async () => {
       try {
-        const parsed = JSON.parse(savedState)
-        if (parsed.selectedFiches) {
-          setSelectedFiches(new Set(parsed.selectedFiches))
+        const response = await fetch(`/api/fiches-techniques/preferences?chantierId=${chantierId}`)
+        if (!response.ok) {
+          console.warn('⚠️ [FichesTechniques] Impossible de charger les préférences depuis la base de données')
+          return
         }
-        if (parsed.ficheReferences) {
-          setFicheReferences(new Map(Object.entries(parsed.ficheReferences)))
+
+        const data = await response.json()
+        console.log('📦 [FichesTechniques] Préférences chargées depuis la base de données:', {
+          ficheReferences: Object.keys(data.ficheReferences || {}).length,
+          fichesSoustraitants: Object.keys(data.fichesSoustraitants || {}).length,
+          fichesRemarques: Object.keys(data.fichesRemarques || {}).length,
+          fichesSoustraitantsData: data.fichesSoustraitants
+        })
+
+        // Charger les données dans l'état
+        if (data.ficheReferences) {
+          setFicheReferences(new Map(Object.entries(data.ficheReferences)))
         }
-        if (parsed.includeTableOfContents !== undefined) {
-          setIncludeTableOfContents(parsed.includeTableOfContents)
+        if (data.fichesSoustraitants) {
+          console.log('✅ [FichesTechniques] Restauration des sous-traitants depuis la base de données:', data.fichesSoustraitants)
+          setFichesSoustraitants(data.fichesSoustraitants)
+        }
+        if (data.fichesRemarques) {
+          setFichesRemarques(data.fichesRemarques)
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'état:', error)
+        console.error('❌ [FichesTechniques] Erreur lors du chargement des préférences:', error)
       }
+    }
+
+    loadPreferences()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chantierId])
+
+  // Fonction pour sauvegarder une préférence dans la base de données
+  const savePreference = useCallback(async (ficheId: string, type: 'soustraitant' | 'reference' | 'remarque', value: string | null) => {
+    if (!chantierId) return
+
+    try {
+      const body: any = {
+        chantierId,
+        ficheId
+      }
+
+      if (type === 'soustraitant') {
+        body.soustraitantId = value || null
+      } else if (type === 'reference') {
+        body.ficheReference = value || null
+      } else if (type === 'remarque') {
+        body.remarques = value || null
+      }
+
+      const response = await fetch('/api/fiches-techniques/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la sauvegarde')
+      }
+
+      console.log('💾 [FichesTechniques] Préférence sauvegardée dans la base de données:', { ficheId, type, value })
+    } catch (error) {
+      console.error('❌ [FichesTechniques] Erreur lors de la sauvegarde de la préférence:', error)
     }
   }, [chantierId])
 
-  // Sauvegarder l'état dans localStorage à chaque changement
-  useEffect(() => {
-    if (!chantierId) return
-
-    const storageKey = `fiches-techniques-${chantierId}`
-    const stateToSave = {
-      selectedFiches: Array.from(selectedFiches),
-      ficheReferences: Object.fromEntries(ficheReferences),
-      includeTableOfContents
-    }
-    localStorage.setItem(storageKey, JSON.stringify(stateToSave))
-  }, [selectedFiches, ficheReferences, includeTableOfContents, chantierId])
-
   // Écouter les messages de l'onglet fullscreen
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type === 'fiches-techniques-generated') {
-        // Recharger l'état depuis localStorage après génération
-        const storageKey = `fiches-techniques-${chantierId}`
-        const savedState = localStorage.getItem(storageKey)
-        if (savedState) {
-          try {
-            const parsed = JSON.parse(savedState)
-            if (parsed.selectedFiches) {
-              setSelectedFiches(new Set(parsed.selectedFiches))
+        // Recharger les préférences depuis la base de données après génération
+        try {
+          const response = await fetch(`/api/fiches-techniques/preferences?chantierId=${chantierId}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.ficheReferences) {
+              setFicheReferences(new Map(Object.entries(data.ficheReferences)))
             }
-            if (parsed.ficheReferences) {
-              setFicheReferences(new Map(Object.entries(parsed.ficheReferences)))
+            if (data.fichesSoustraitants) {
+              console.log('✅ [FichesTechniques] Restauration des sous-traitants depuis la base de données:', data.fichesSoustraitants)
+              setFichesSoustraitants(data.fichesSoustraitants)
             }
-          } catch (error) {
-            console.error('Erreur lors du chargement de l\'état:', error)
+            if (data.fichesRemarques) {
+              setFichesRemarques(data.fichesRemarques)
+            }
           }
+        } catch (error) {
+          console.error('Erreur lors du chargement des préférences:', error)
         }
       }
     }
@@ -155,11 +222,23 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
       const newSet = new Set(prev)
       if (newSet.has(ficheId)) {
         newSet.delete(ficheId)
-        // Supprimer aussi la référence
+        // Supprimer seulement la référence et les remarques
+        // NE PAS supprimer le sous-traitant - il doit être préservé même si la fiche est désélectionnée
         setFicheReferences(prevRefs => {
           const newRefs = new Map(prevRefs)
           newRefs.delete(ficheId)
           return newRefs
+        })
+        // NE PAS supprimer le sous-traitant ici - il sera filtré lors de la génération si nécessaire
+        // setFichesSoustraitants(prev => {
+        //   const newData = { ...prev }
+        //   delete newData[ficheId]
+        //   return newData
+        // })
+        setFichesRemarques(prev => {
+          const newData = { ...prev }
+          delete newData[ficheId]
+          return newData
         })
       } else {
         newSet.add(ficheId)
@@ -175,6 +254,8 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
       newMap.set(ficheId, reference)
       return newMap
     })
+    // Sauvegarder dans la base de données
+    savePreference(ficheId, 'reference', reference || null)
   }
 
   // Sélectionner toutes les fiches d'un dossier
@@ -202,9 +283,11 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
   // Générer le PDF
   const handleGeneratePDF = async () => {
     if (selectedFiches.size === 0) {
-      alert('Veuillez sélectionner au moins une fiche technique')
+      showNotification('Attention', 'Veuillez sélectionner au moins une fiche technique', 'warning')
       return
     }
+
+    // Les données sont maintenant dans la base de données, pas besoin de sauvegarder dans localStorage
 
     setGenerating(true)
     try {
@@ -216,6 +299,43 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
         references[id] = ficheReferences.get(id) || ''
       })
       
+      // Créer un objet avec les statuts par défaut (BROUILLON)
+      const statuts: Record<string, string> = {}
+      ficheIds.forEach(id => {
+        statuts[id] = 'BROUILLON'
+      })
+
+      // Filtrer les sous-traitants et remarques pour ne garder que ceux des fiches sélectionnées
+      const soustraitantsFiltered: Record<string, string> = {}
+      const remarquesFiltered: Record<string, string> = {}
+      ficheIds.forEach(id => {
+        if (fichesSoustraitants[id]) {
+          soustraitantsFiltered[id] = fichesSoustraitants[id]
+        }
+        if (fichesRemarques[id]) {
+          remarquesFiltered[id] = fichesRemarques[id]
+        }
+      })
+
+      console.log('Données envoyées à l\'API:', {
+        ficheIds,
+        references,
+        statuts,
+        soustraitantsFiltered,
+        remarquesFiltered,
+        fichesSoustraitants,
+        fichesRemarques
+      })
+      
+      // Vérifier que les données sont bien présentes
+      if (Object.keys(soustraitantsFiltered).length === 0 && Object.keys(fichesSoustraitants).length > 0) {
+        console.warn('⚠️ ATTENTION: Les sous-traitants ne sont pas filtrés correctement!', {
+          fichesSoustraitants,
+          soustraitantsFiltered,
+          ficheIds
+        })
+      }
+
       const response = await fetch('/api/fiches-techniques/generer-dossier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -223,6 +343,9 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
           chantierId,
           ficheIds,
           ficheReferences: references,
+          fichesStatuts: statuts,
+          fichesSoustraitants: soustraitantsFiltered,
+          fichesRemarques: remarquesFiltered,
           options: {
             includeTableOfContents
           }
@@ -243,9 +366,27 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
+      
+      // Rafraîchir la liste des dossiers après génération
+      window.dispatchEvent(new CustomEvent('dossierGenerated'))
+      
+      // Recharger les préférences depuis la base de données pour s'assurer qu'elles sont à jour
+      const preferencesResponse = await fetch(`/api/fiches-techniques/preferences?chantierId=${chantierId}`)
+      if (preferencesResponse.ok) {
+        const preferencesData = await preferencesResponse.json()
+        if (preferencesData.fichesSoustraitants) {
+          setFichesSoustraitants(preferencesData.fichesSoustraitants)
+        }
+        if (preferencesData.ficheReferences) {
+          setFicheReferences(new Map(Object.entries(preferencesData.ficheReferences)))
+        }
+        if (preferencesData.fichesRemarques) {
+          setFichesRemarques(preferencesData.fichesRemarques)
+        }
+      }
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error)
-      alert('Erreur lors de la génération du PDF')
+      showNotification('Erreur', 'Erreur lors de la génération du PDF', 'error')
     } finally {
       setGenerating(false)
     }
@@ -383,6 +524,41 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
                       ({fiche.referenceCSC})
                     </span>
                   )}
+                  
+                  {/* Dropdown sous-traitant (visible seulement si sélectionné) - sur la même ligne */}
+                  {selectedFiches.has(fiche.id) && (
+                    <select
+                      value={fichesSoustraitants[fiche.id] || ''}
+                      onChange={(e) => {
+                        const newValue = e.target.value || ''
+                        console.log('🔄 [FichesTechniques] Changement sous-traitant:', {
+                          ficheId: fiche.id,
+                          ancienValeur: fichesSoustraitants[fiche.id],
+                          nouvelleValeur: newValue,
+                          étatAvant: { ...fichesSoustraitants }
+                        })
+                        setFichesSoustraitants(prev => {
+                          const nouveau = {
+                            ...prev,
+                            [fiche.id]: newValue
+                          }
+                          console.log('✅ [FichesTechniques] Nouvel état sous-traitants:', nouveau)
+                          
+                          // Sauvegarder IMMÉDIATEMENT dans la base de données
+                          savePreference(fiche.id, 'soustraitant', newValue || null)
+                          
+                          return nouveau
+                        })
+                      }}
+                      style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
+                      className="px-2 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ml-2"
+                    >
+                      <option value="">Sous-traitant</option>
+                      {soustraitants.map(st => (
+                        <option key={st.id} value={st.id}>{st.nom}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
             ))}
@@ -454,8 +630,39 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     </>
   )
 
+  const handleReopenDossier = (dossier: any) => {
+    setDossierAModifier(dossier)
+  }
+
+  const handleCloseModal = () => {
+    setDossierAModifier(null)
+  }
+
+  const handleRegenerate = () => {
+    // Rafraîchir la liste des dossiers sans recharger la page
+    window.dispatchEvent(new CustomEvent('dossierGenerated'))
+    // Ne pas changer d'onglet, rester sur "fiches-techniques"
+  }
+
   return (
     <div className="space-y-6">
+      {/* Section des dossiers existants */}
+      <DossiersTechniquesManager
+        chantierId={chantierId}
+        onReopenDossier={handleReopenDossier}
+      />
+
+      {/* Modal de modification */}
+      {dossierAModifier && (
+        <ModifierDossierModal
+          dossier={dossierAModifier}
+          chantierId={chantierId}
+          structure={structure}
+          onClose={handleCloseModal}
+          onRegenerate={handleRegenerate}
+        />
+      )}
+
       {/* En-tête */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="relative px-6 py-6 bg-gradient-to-br from-emerald-600/10 via-teal-700/10 to-cyan-800/10 dark:from-emerald-600/10 dark:via-teal-700/10 dark:to-cyan-800/10 text-emerald-900 dark:text-white overflow-hidden rounded-t-lg backdrop-blur-sm">
@@ -536,6 +743,7 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
         {/* Arborescence */}
         {renderArborescence()}
       </div>
+      <NotificationComponent />
     </div>
   )
 }

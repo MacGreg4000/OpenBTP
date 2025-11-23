@@ -114,7 +114,13 @@ export async function PUT(
         clientId: body.clientId || null,
         contactId: body.contactId || null,
         budget: body.budget ? parseFloat(body.budget) : null,
-        typeDuree: body.typeDuree || 'CALENDRIER'
+        typeDuree: body.typeDuree || 'CALENDRIER',
+        maitreOuvrageNom: body.maitreOuvrageNom || null,
+        maitreOuvrageAdresse: body.maitreOuvrageAdresse || null,
+        maitreOuvrageLocalite: body.maitreOuvrageLocalite || null,
+        bureauArchitectureNom: body.bureauArchitectureNom || null,
+        bureauArchitectureAdresse: body.bureauArchitectureAdresse || null,
+        bureauArchitectureLocalite: body.bureauArchitectureLocalite || null
       }
     })
 

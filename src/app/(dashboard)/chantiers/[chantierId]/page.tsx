@@ -35,6 +35,12 @@ interface ChantierData {
     email: string | null;
     telephone: string | null;
   } | null;
+  maitreOuvrageNom?: string | null;
+  maitreOuvrageAdresse?: string | null;
+  maitreOuvrageLocalite?: string | null;
+  bureauArchitectureNom?: string | null;
+  bureauArchitectureAdresse?: string | null;
+  bureauArchitectureLocalite?: string | null;
 }
 
 export default function ChantierConsultationPage(props: { params: Promise<{ chantierId: string }> }) {
@@ -238,6 +244,82 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Section Maître d'ouvrage */}
+                {(chantier.maitreOuvrageNom || chantier.maitreOuvrageAdresse || chantier.maitreOuvrageLocalite) && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      Maître d'ouvrage
+                    </label>
+                    <div className="space-y-2">
+                      {chantier.maitreOuvrageNom && (
+                        <div className="flex items-start gap-3">
+                          <UserIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nom</p>
+                            <p className="text-gray-900 dark:text-gray-100">{chantier.maitreOuvrageNom}</p>
+                          </div>
+                        </div>
+                      )}
+                      {chantier.maitreOuvrageAdresse && (
+                        <div className="flex items-start gap-3">
+                          <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Adresse</p>
+                            <p className="text-gray-900 dark:text-gray-100">{chantier.maitreOuvrageAdresse}</p>
+                          </div>
+                        </div>
+                      )}
+                      {chantier.maitreOuvrageLocalite && (
+                        <div className="flex items-start gap-3">
+                          <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Localité / Province</p>
+                            <p className="text-gray-900 dark:text-gray-100">{chantier.maitreOuvrageLocalite}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Section Bureau d'architecture */}
+                {(chantier.bureauArchitectureNom || chantier.bureauArchitectureAdresse || chantier.bureauArchitectureLocalite) && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      Bureau d'architecture
+                    </label>
+                    <div className="space-y-2">
+                      {chantier.bureauArchitectureNom && (
+                        <div className="flex items-start gap-3">
+                          <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nom</p>
+                            <p className="text-gray-900 dark:text-gray-100">{chantier.bureauArchitectureNom}</p>
+                          </div>
+                        </div>
+                      )}
+                      {chantier.bureauArchitectureAdresse && (
+                        <div className="flex items-start gap-3">
+                          <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Adresse</p>
+                            <p className="text-gray-900 dark:text-gray-100">{chantier.bureauArchitectureAdresse}</p>
+                          </div>
+                        </div>
+                      )}
+                      {chantier.bureauArchitectureLocalite && (
+                        <div className="flex items-start gap-3">
+                          <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Localité / Province</p>
+                            <p className="text-gray-900 dark:text-gray-100">{chantier.bureauArchitectureLocalite}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

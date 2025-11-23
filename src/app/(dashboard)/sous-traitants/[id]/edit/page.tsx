@@ -11,6 +11,7 @@ interface FormData {
   telephone: string
   adresse: string
   tva: string
+  logo?: string
 }
 
 export default function EditSousTraitantPage(
@@ -27,13 +28,16 @@ export default function EditSousTraitantPage(
     contact: '',
     telephone: '',
     adresse: '',
-    tva: ''
+    tva: '',
+    logo: ''
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [pin, setPin] = useState<string>('')
   const [savingPin, setSavingPin] = useState(false)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const portalLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/public/portail/soustraitant/${params.id}` 
     : `/public/portail/soustraitant/${params.id}`
@@ -49,8 +53,12 @@ export default function EditSousTraitantPage(
             contact: data.contact || '',
             telephone: data.telephone || '',
             adresse: data.adresse || '',
-            tva: data.tva || ''
+            tva: data.tva || '',
+            logo: data.logo || ''
           })
+          if (data.logo) {
+            setLogoPreview(data.logo)
+          }
           setLoading(false)
         })
         .then(async ()=>{
@@ -88,7 +96,8 @@ export default function EditSousTraitantPage(
         contact: formData.contact || null,
         telephone: formData.telephone || null,
         adresse: formData.adresse || null,
-        tva: formData.tva || null
+        tva: formData.tva || null,
+        logo: formData.logo || null
       };
       
       console.log('Données fusionnées pour mise à jour:', updatedData);
@@ -120,6 +129,39 @@ export default function EditSousTraitantPage(
       ...prev,
       [name]: value
     }))
+  }
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingLogo(true)
+    const formDataUpload = new FormData()
+    formDataUpload.append('logo', file)
+    
+    // Récupérer l'ID du sous-traitant depuis les params
+    const soustraitantId = (await props.params).id
+    formDataUpload.append('soustraitantId', soustraitantId)
+
+    try {
+      const res = await fetch('/api/uploads/soustraitant-logo', {
+        method: 'POST',
+        body: formDataUpload
+      })
+
+      if (res.ok) {
+        const { url } = await res.json()
+        setFormData(prev => ({ ...prev, logo: url }))
+        setLogoPreview(url)
+      } else {
+        throw new Error('Erreur lors de l\'upload du logo')
+      }
+    } catch (error) {
+      console.error('Erreur upload logo:', error)
+      setError('Erreur lors de l\'upload du logo')
+    } finally {
+      setUploadingLogo(false)
+    }
   }
 
   if (loading) return <div className="p-8">Chargement...</div>
@@ -202,6 +244,41 @@ export default function EditSousTraitantPage(
             value={formData.adresse}
             onChange={handleChange}
           />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Logo (optionnel)
+            </label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                disabled={uploadingLogo}
+                className="block w-full text-sm text-gray-500 dark:text-gray-400
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  dark:file:bg-blue-900 dark:file:text-blue-300
+                  dark:hover:file:bg-blue-800
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              {uploadingLogo && (
+                <span className="text-sm text-gray-500">Upload en cours...</span>
+              )}
+            </div>
+            {logoPreview && (
+              <div className="mt-2">
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="h-20 w-20 object-contain border border-gray-300 dark:border-gray-600 rounded"
+                />
+              </div>
+            )}
+          </div>
 
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Accès Portail (PIN)</h3>

@@ -103,6 +103,19 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
     fetchDocuments()
   }, [fetchDocuments])
 
+  // Écouter l'événement pour changer d'onglet vers "documents"
+  useEffect(() => {
+    const handleSwitchToDocumentsTab = () => {
+      setActiveTab('documents')
+    }
+    
+    window.addEventListener('switchToDocumentsTab', handleSwitchToDocumentsTab)
+    
+    return () => {
+      window.removeEventListener('switchToDocumentsTab', handleSwitchToDocumentsTab)
+    }
+  }, [])
+
   // Réinitialiser la sélection quand le filtre change
   useEffect(() => {
     setSelectedDocumentIds(new Set())

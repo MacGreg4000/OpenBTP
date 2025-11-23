@@ -11,6 +11,7 @@ import {
   XMarkIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
+import { useNotification } from '@/hooks/useNotification'
 
 interface FicheTechnique {
   id: string
@@ -33,11 +34,15 @@ interface Dossier {
 export default function FichesTechniquesFullscreenPage() {
   const params = useParams()
   const chantierId = params?.chantierId as string
+  const { showNotification, NotificationComponent } = useNotification()
 
   const [structure, setStructure] = useState<Dossier[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedFiches, setSelectedFiches] = useState<Set<string>>(new Set())
   const [ficheReferences, setFicheReferences] = useState<Map<string, string>>(new Map())
+  const [fichesSoustraitants, setFichesSoustraitants] = useState<Record<string, string>>({})
+  const [fichesRemarques, setFichesRemarques] = useState<Record<string, string>>({})
+  const [soustraitants, setSoustraitants] = useState<Array<{ id: string; nom: string }>>([])
   const [generating, setGenerating] = useState(false)
   const [includeTableOfContents, setIncludeTableOfContents] = useState(true)
   const [searchFilter, setSearchFilter] = useState('')
@@ -58,6 +63,12 @@ export default function FichesTechniquesFullscreenPage() {
         if (parsed.ficheReferences) {
           setFicheReferences(new Map(Object.entries(parsed.ficheReferences)))
         }
+        if (parsed.fichesSoustraitants) {
+          setFichesSoustraitants(parsed.fichesSoustraitants)
+        }
+        if (parsed.fichesRemarques) {
+          setFichesRemarques(parsed.fichesRemarques)
+        }
         if (parsed.includeTableOfContents !== undefined) {
           setIncludeTableOfContents(parsed.includeTableOfContents)
         }
@@ -75,10 +86,12 @@ export default function FichesTechniquesFullscreenPage() {
     const stateToSave = {
       selectedFiches: Array.from(selectedFiches),
       ficheReferences: Object.fromEntries(ficheReferences),
+      fichesSoustraitants,
+      fichesRemarques,
       includeTableOfContents
     }
     localStorage.setItem(storageKey, JSON.stringify(stateToSave))
-  }, [selectedFiches, ficheReferences, includeTableOfContents, chantierId])
+  }, [selectedFiches, ficheReferences, fichesSoustraitants, fichesRemarques, includeTableOfContents, chantierId])
 
   // Charger la structure des fiches techniques
   useEffect(() => {
@@ -106,6 +119,25 @@ export default function FichesTechniquesFullscreenPage() {
     fetchStructure()
   }, [])
 
+  // Charger les sous-traitants
+  useEffect(() => {
+    const fetchSoustraitants = async () => {
+      try {
+        const response = await fetch('/api/soustraitants/select?activeOnly=1')
+        if (response.ok) {
+          const data = await response.json()
+          setSoustraitants(data.map((st: { value: string; label: string }) => ({
+            id: st.value,
+            nom: st.label
+          })))
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des sous-traitants:', error)
+      }
+    }
+    fetchSoustraitants()
+  }, [])
+
   // Toggle l'expansion d'un dossier
   const toggleDossier = (chemin: string) => {
     const updateDossiers = (dossiers: Dossier[]): Dossier[] => {
@@ -128,14 +160,25 @@ export default function FichesTechniquesFullscreenPage() {
       const newSet = new Set(prev)
       if (newSet.has(ficheId)) {
         newSet.delete(ficheId)
-        // Supprimer aussi la référence
+        // Supprimer aussi la référence, le sous-traitant et les remarques
         setFicheReferences(prevRefs => {
           const newRefs = new Map(prevRefs)
           newRefs.delete(ficheId)
           return newRefs
         })
+        setFichesSoustraitants(prev => {
+          const newData = { ...prev }
+          delete newData[ficheId]
+          return newData
+        })
+        setFichesRemarques(prev => {
+          const newData = { ...prev }
+          delete newData[ficheId]
+          return newData
+        })
       } else {
         newSet.add(ficheId)
+        console.log('Fiche sélectionnée:', ficheId, 'Total sélectionnées:', newSet.size + 1)
       }
       return newSet
     })
@@ -175,9 +218,21 @@ export default function FichesTechniquesFullscreenPage() {
   // Générer le PDF et fermer l'onglet
   const handleGeneratePDF = async () => {
     if (selectedFiches.size === 0) {
-      alert('Veuillez sélectionner au moins une fiche technique')
+      showNotification('Attention', 'Veuillez sélectionner au moins une fiche technique', 'warning')
       return
     }
+
+    // Sauvegarder explicitement l'état AVANT la génération
+    const storageKey = `fiches-techniques-${chantierId}`
+    const stateToSave = {
+      selectedFiches: Array.from(selectedFiches),
+      ficheReferences: Object.fromEntries(ficheReferences),
+      fichesSoustraitants,
+      fichesRemarques,
+      includeTableOfContents
+    }
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave))
+    console.log('[Fullscreen] État sauvegardé AVANT génération:', stateToSave)
 
     setGenerating(true)
     try {
@@ -189,6 +244,27 @@ export default function FichesTechniquesFullscreenPage() {
         references[id] = ficheReferences.get(id) || ''
       })
       
+      // Filtrer les sous-traitants et remarques pour ne garder que ceux des fiches sélectionnées
+      const soustraitantsFiltered: Record<string, string> = {}
+      const remarquesFiltered: Record<string, string> = {}
+      ficheIds.forEach(id => {
+        if (fichesSoustraitants[id]) {
+          soustraitantsFiltered[id] = fichesSoustraitants[id]
+        }
+        if (fichesRemarques[id]) {
+          remarquesFiltered[id] = fichesRemarques[id]
+        }
+      })
+      
+      console.log('[Fullscreen] Données envoyées à l\'API:', {
+        ficheIds,
+        references,
+        soustraitantsFiltered,
+        remarquesFiltered,
+        fichesSoustraitants,
+        fichesRemarques
+      })
+      
       const response = await fetch('/api/fiches-techniques/generer-dossier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -196,6 +272,8 @@ export default function FichesTechniquesFullscreenPage() {
           chantierId,
           ficheIds,
           ficheReferences: references,
+          fichesSoustraitants: soustraitantsFiltered,
+          fichesRemarques: remarquesFiltered,
           options: {
             includeTableOfContents
           }
@@ -217,10 +295,28 @@ export default function FichesTechniquesFullscreenPage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
+      // Sauvegarder explicitement l'état APRÈS génération
+      const storageKey = `fiches-techniques-${chantierId}`
+      const stateToSaveAfter = {
+        selectedFiches: Array.from(selectedFiches),
+        ficheReferences: Object.fromEntries(ficheReferences),
+        fichesSoustraitants,
+        fichesRemarques,
+        includeTableOfContents
+      }
+      localStorage.setItem(storageKey, JSON.stringify(stateToSaveAfter))
+      console.log('[Fullscreen] État sauvegardé APRÈS génération:', {
+        selectedFiches: stateToSaveAfter.selectedFiches.length,
+        fichesSoustraitants: Object.keys(stateToSaveAfter.fichesSoustraitants).length,
+        fichesSoustraitantsData: stateToSaveAfter.fichesSoustraitants
+      })
+      
       // Fermer l'onglet et revenir à l'onglet précédent
       if (window.opener) {
         // Notifier l'onglet parent que la génération est terminée
         window.opener.postMessage({ type: 'fiches-techniques-generated', chantierId }, '*')
+        // Ne PAS changer d'onglet automatiquement - laisser l'utilisateur sur "fiches-techniques"
+        // window.opener.dispatchEvent(new CustomEvent('switchToDocumentsTab'))
         window.close()
       } else {
         // Si pas d'opener, rediriger vers la page du chantier
@@ -228,7 +324,7 @@ export default function FichesTechniquesFullscreenPage() {
       }
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error)
-      alert('Erreur lors de la génération du PDF')
+      showNotification('Erreur', 'Erreur lors de la génération du PDF', 'error')
       setGenerating(false)
     }
   }
@@ -364,6 +460,26 @@ export default function FichesTechniquesFullscreenPage() {
                     <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                       ({fiche.referenceCSC})
                     </span>
+                  )}
+                  
+                  {/* Dropdown sous-traitant (visible seulement si sélectionné) - sur la même ligne */}
+                  {selectedFiches.has(fiche.id) && (
+                    <select
+                      value={fichesSoustraitants[fiche.id] || ''}
+                      onChange={(e) => {
+                        setFichesSoustraitants(prev => ({
+                          ...prev,
+                          [fiche.id]: e.target.value || ''
+                        }))
+                      }}
+                      style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
+                      className="px-2 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ml-2"
+                    >
+                      <option value="">Sous-traitant</option>
+                      {soustraitants.map(st => (
+                        <option key={st.id} value={st.id}>{st.nom}</option>
+                      ))}
+                    </select>
                   )}
                 </div>
               </div>
@@ -501,6 +617,7 @@ export default function FichesTechniquesFullscreenPage() {
           </div>
         )}
       </div>
+      <NotificationComponent />
     </div>
   )
 }

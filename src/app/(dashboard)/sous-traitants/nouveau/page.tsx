@@ -12,6 +12,8 @@ interface FormData {
   telephone: string
   adresse: string
   tva: string
+  logo?: string
+  logoFile?: File
 }
 
 export default function NouveauSousTraitantPage() {
@@ -23,10 +25,13 @@ export default function NouveauSousTraitantPage() {
     contact: '',
     telephone: '',
     adresse: '',
-    tva: ''
+    tva: '',
+    logo: ''
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -36,12 +41,14 @@ export default function NouveauSousTraitantPage() {
     console.log('Envoi des données du sous-traitant:', formData)
 
     try {
+      // Créer le sous-traitant sans le logo d'abord
+      const { logo, ...formDataWithoutLogo } = formData
       const response = await fetch('/api/sous-traitants', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formDataWithoutLogo),
       })
 
       const data = await response.json()
@@ -52,6 +59,35 @@ export default function NouveauSousTraitantPage() {
       }
 
       console.log('Sous-traitant créé avec succès:', data)
+
+      // Si un logo a été sélectionné, l'uploader après la création
+      const logoFile = (formData as any).logoFile
+      if (logoFile) {
+        const soustraitantId = data.id || data.soustraitantId
+        if (soustraitantId) {
+          const formDataUpload = new FormData()
+          formDataUpload.append('logo', logoFile)
+          formDataUpload.append('soustraitantId', soustraitantId.toString())
+
+          const logoRes = await fetch('/api/uploads/soustraitant-logo', {
+            method: 'POST',
+            body: formDataUpload
+          })
+
+          if (logoRes.ok) {
+            const { url } = await logoRes.json()
+            // Mettre à jour le sous-traitant avec le chemin du logo
+            await fetch(`/api/sous-traitants/${soustraitantId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ logo: url }),
+            })
+          }
+        }
+      }
+
       router.push('/sous-traitants')
       router.refresh()
     } catch (error) {
@@ -71,6 +107,33 @@ export default function NouveauSousTraitantPage() {
     
     // Réinitialiser l'erreur lorsque l'utilisateur modifie le formulaire
     if (error) setError(null)
+  }
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingLogo(true)
+    
+    // Pour un nouveau sous-traitant, on stocke le fichier temporairement
+    // et on l'uploadera après la création
+    try {
+      // Créer une URL temporaire pour la prévisualisation
+      const tempUrl = URL.createObjectURL(file)
+      setLogoPreview(tempUrl)
+      
+      // Stocker le fichier dans le state pour l'uploader après la création
+      setFormData(prev => ({ 
+        ...prev, 
+        logo: tempUrl,
+        logoFile: file // Stocker le fichier pour l'upload ultérieur
+      } as any))
+    } catch (error) {
+      console.error('Erreur upload logo:', error)
+      setError('Erreur lors de la préparation du logo')
+    } finally {
+      setUploadingLogo(false)
+    }
   }
 
   return (
@@ -156,6 +219,41 @@ export default function NouveauSousTraitantPage() {
             value={formData.adresse}
             onChange={handleChange}
           />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Logo (optionnel)
+            </label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                disabled={uploadingLogo}
+                className="block w-full text-sm text-gray-500 dark:text-gray-400
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  dark:file:bg-blue-900 dark:file:text-blue-300
+                  dark:hover:file:bg-blue-800
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              {uploadingLogo && (
+                <span className="text-sm text-gray-500">Upload en cours...</span>
+              )}
+            </div>
+            {logoPreview && (
+              <div className="mt-2">
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="h-20 w-20 object-contain border border-gray-300 dark:border-gray-600 rounded"
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end space-x-3">

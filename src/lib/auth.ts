@@ -6,6 +6,10 @@ import bcrypt from 'bcryptjs'
 type User_role = 'ADMIN' | 'MANAGER' | 'USER' | 'OUVRIER' | 'SOUSTRAITANT'
 
 export const authOptions: AuthOptions = {
+  // Forcer l'utilisation de NEXTAUTH_URL en production
+  trustHost: true, // Important pour les reverse proxies (Synology)
+  // Forcer l'utilisation de NEXTAUTH_URL même si les headers suggèrent une autre URL
+  useSecureCookies: process.env.NODE_ENV === 'production',
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -53,17 +57,70 @@ export const authOptions: AuthOptions = {
       return session
     },
     redirect: async ({ url, baseUrl }) => {
-      // Utiliser NEXTAUTH_URL si disponible, sinon baseUrl
-      const finalBaseUrl = process.env.NEXTAUTH_URL || baseUrl
+      // TOUJOURS utiliser NEXTAUTH_URL en priorité, surtout en production
+      // Ignorer baseUrl qui peut être détecté incorrectement par les headers du reverse proxy
+      let finalBaseUrl = process.env.NEXTAUTH_URL
       
-      if (url.includes('callbackUrl=')) {
-        const callbackUrl = new URL(url).searchParams.get('callbackUrl')
-        if (callbackUrl && callbackUrl.startsWith('/')) {
-          return `${finalBaseUrl}${callbackUrl}`
+      // Si NEXTAUTH_URL n'est pas défini, utiliser baseUrl mais le nettoyer
+      if (!finalBaseUrl) {
+        finalBaseUrl = baseUrl
+        // En production, forcer HTTPS
+        if (process.env.NODE_ENV === 'production' && finalBaseUrl.startsWith('http://')) {
+          finalBaseUrl = finalBaseUrl.replace('http://', 'https://')
         }
       }
+      
+      // Forcer HTTPS en production si l'URL commence par http://
+      if (process.env.NODE_ENV === 'production' && finalBaseUrl.startsWith('http://')) {
+        finalBaseUrl = finalBaseUrl.replace('http://', 'https://')
+      }
+      
+      // S'assurer que finalBaseUrl utilise HTTPS en production
+      if (process.env.NODE_ENV === 'production' && !finalBaseUrl.startsWith('https://')) {
+        // Si on est en production mais que l'URL n'est pas HTTPS, essayer de la convertir
+        if (finalBaseUrl.includes('secotech.synology.me') || finalBaseUrl.includes('openbtp')) {
+          finalBaseUrl = finalBaseUrl.replace(/^http:\/\//, 'https://')
+        }
+      }
+      
+      // Nettoyer l'URL d'entrée pour s'assurer qu'elle utilise le bon protocole
+      if (url.startsWith('http://') && process.env.NODE_ENV === 'production') {
+        url = url.replace('http://', 'https://')
+      }
+      
+      // Nettoyer baseUrl s'il contient http:// en production
+      if (baseUrl.startsWith('http://') && process.env.NODE_ENV === 'production') {
+        baseUrl = baseUrl.replace('http://', 'https://')
+      }
+      
+      if (url.includes('callbackUrl=')) {
+        try {
+          const urlObj = new URL(url, finalBaseUrl)
+          const callbackUrl = urlObj.searchParams.get('callbackUrl')
+          if (callbackUrl && callbackUrl.startsWith('/')) {
+            return `${finalBaseUrl}${callbackUrl}`
+          }
+        } catch (e) {
+          // Si l'URL est relative, extraire le callbackUrl manuellement
+          const match = url.match(/callbackUrl=([^&]+)/)
+          if (match && match[1]) {
+            const decoded = decodeURIComponent(match[1])
+            if (decoded.startsWith('/')) {
+              return `${finalBaseUrl}${decoded}`
+            }
+          }
+        }
+      }
+      
       if (url.startsWith(finalBaseUrl)) return url
-      if (url.startsWith(baseUrl)) return url.replace(baseUrl, finalBaseUrl)
+      if (url.startsWith(baseUrl)) {
+        // Remplacer baseUrl par finalBaseUrl en forçant HTTPS si nécessaire
+        let cleanedUrl = url.replace(baseUrl, finalBaseUrl)
+        if (process.env.NODE_ENV === 'production' && cleanedUrl.startsWith('http://')) {
+          cleanedUrl = cleanedUrl.replace('http://', 'https://')
+        }
+        return cleanedUrl
+      }
       if (url.startsWith('/')) return `${finalBaseUrl}${url}`
       return `${finalBaseUrl}/dashboard`
     }

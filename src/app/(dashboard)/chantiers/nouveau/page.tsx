@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ArrowLeftIcon, BuildingOfficeIcon, MapPinIcon, CalendarIcon, ClockIcon, PlusIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, BuildingOfficeIcon, MapPinIcon, CalendarIcon, ClockIcon, PlusIcon, ExclamationCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { toast } from 'react-hot-toast'
 import { SearchableSelect } from '@/components/SearchableSelect'
@@ -33,6 +33,12 @@ interface FormData {
   typeDuree: string
   clientId: string
   contactId?: string
+  maitreOuvrageNom?: string
+  maitreOuvrageAdresse?: string
+  maitreOuvrageLocalite?: string
+  bureauArchitectureNom?: string
+  bureauArchitectureAdresse?: string
+  bureauArchitectureLocalite?: string
 }
 
 export default function NouveauChantierPage() {
@@ -57,7 +63,13 @@ export default function NouveauChantierPage() {
     dureeEnJours: '',
     typeDuree: 'CALENDRIER',
     clientId: clientIdFromUrl,
-    contactId: ''
+    contactId: '',
+    maitreOuvrageNom: '',
+    maitreOuvrageAdresse: '',
+    maitreOuvrageLocalite: '',
+    bureauArchitectureNom: '',
+    bureauArchitectureAdresse: '',
+    bureauArchitectureLocalite: ''
   })
   const [saving, setSaving] = useState(false)
 
@@ -329,6 +341,128 @@ export default function NouveauChantierPage() {
                   </div>
                 )}
 
+                {/* Section Maitre d'ouvrage */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+                    Maître d'ouvrage (optionnel)
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Nom
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.maitreOuvrageNom || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          maitreOuvrageNom: e.target.value
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                        placeholder="Nom du maître d'ouvrage"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Adresse
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.maitreOuvrageAdresse || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          maitreOuvrageAdresse: e.target.value
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                        placeholder="Adresse du maître d'ouvrage"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Localité / Province
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.maitreOuvrageLocalite || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          maitreOuvrageLocalite: e.target.value
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                        placeholder="Localité, Province"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section Bureau d'architecture */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+                    Bureau d'architecture (optionnel)
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Nom
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.bureauArchitectureNom || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          bureauArchitectureNom: e.target.value
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                        placeholder="Nom du bureau d'architecture"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Adresse
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.bureauArchitectureAdresse || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          bureauArchitectureAdresse: e.target.value
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                        placeholder="Adresse du bureau d'architecture"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Localité / Province
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.bureauArchitectureLocalite || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          bureauArchitectureLocalite: e.target.value
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                        placeholder="Localité, Province"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+              {/* Section Détail chantier */}
+              <div>
+                <div className="flex items-center mb-6">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                    <DocumentTextIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Détail chantier
+                  </h3>
+                </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Date de commencement *
@@ -344,7 +478,7 @@ export default function NouveauChantierPage() {
                         dateCommencement: e.target.value
                       }))}
                       required
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                      className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
                     />
                   </div>
                 </div>
@@ -360,7 +494,7 @@ export default function NouveauChantierPage() {
                       ...prev,
                       etatChantier: e.target.value
                     }))}
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
                   >
                     <option value="En préparation">En préparation</option>
                     <option value="En cours">En cours</option>
