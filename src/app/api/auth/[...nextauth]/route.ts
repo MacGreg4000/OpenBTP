@@ -1,11 +1,11 @@
 import NextAuth from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 
 const handler = NextAuth(authOptions)
 
 // Wrapper pour gérer les erreurs et logger les problèmes
-export async function GET(req: NextRequest, context: any) {
+export async function GET(req: NextRequest, context: { params: Promise<{ nextauth: string[] }> }) {
   try {
     return await handler(req, context)
   } catch (error) {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, context: any) {
   }
 }
 
-export async function POST(req: NextRequest, context: any) {
+export async function POST(req: NextRequest, context: { params: Promise<{ nextauth: string[] }> }) {
   try {
     return await handler(req, context)
   } catch (error) {

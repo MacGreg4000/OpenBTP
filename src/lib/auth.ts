@@ -151,7 +151,7 @@ export const authOptions: AuthOptions = {
   events: {
     signIn: async () => {},
     signOut: async () => {},
-    session: async ({ session, token }) => {
+    session: async ({ session }) => {
       // Vérifier que la session est valide
       if (!session?.user?.id || !session?.user?.email) {
         console.warn('⚠️ [NextAuth] Session invalide détectée')
@@ -166,11 +166,15 @@ export const authOptions: AuthOptions = {
       // Logger toutes les erreurs pour diagnostiquer le problème
       if (code === 'CLIENT_FETCH_ERROR') {
         console.error('❌ [NextAuth] Erreur de récupération de session - redirection vers login')
+        // Vérifier si metadata est un objet avec des propriétés ou une Error
+        const errorData = metadata && typeof metadata === 'object' && 'error' in metadata 
+          ? (metadata as { error?: unknown; url?: string; message?: string; client?: string })
+          : null
         console.error('❌ [NextAuth] Erreur:', code, {
-          error: metadata?.error || metadata,
-          url: metadata?.url || '/api/auth/session',
-          message: metadata?.message || 'Load failed',
-          client: metadata?.client || 'true'
+          error: errorData?.error || metadata,
+          url: errorData?.url || '/api/auth/session',
+          message: errorData?.message || 'Load failed',
+          client: errorData?.client || 'true'
         })
         // Ne pas propager l'erreur pour éviter la redirection vers reset-password
         return
@@ -178,11 +182,6 @@ export const authOptions: AuthOptions = {
       console.error('❌ [NextAuth] Erreur:', code, metadata)
     },
     warn(code) {
-      if (code === 'CLIENT_FETCH_ERROR') {
-        // Logger les warnings CLIENT_FETCH_ERROR pour diagnostiquer
-        console.warn('⚠️ [NextAuth] Warning:', code, '- Possible problème de connexion ou de configuration')
-        return
-      }
       console.warn('⚠️ [NextAuth] Avertissement:', code)
     },
     debug(code, metadata) {
