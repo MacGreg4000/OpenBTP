@@ -62,6 +62,28 @@ const nextConfig = {
           },
         ],
       },
+      // Exception pour les routes NextAuth : permettre l'accès
+      {
+        source: '/api/auth/:path*',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

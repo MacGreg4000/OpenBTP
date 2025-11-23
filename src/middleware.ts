@@ -13,6 +13,7 @@ export async function middleware(req: NextRequest) {
   if (
     pathname === '/login' ||
     pathname === '/logout' ||
+    pathname === '/reset-password' ||
     pathname === '/setup' ||
     pathname === '/clear-cache' ||
     pathname.startsWith('/api/auth/') ||

@@ -29,7 +29,8 @@ export const authOptions: AuthOptions = {
   ],
   pages: {
     signIn: '/login',
-    error: '/login' // Rediriger les erreurs vers la page de login
+    error: '/login', // Rediriger les erreurs vers la page de login (pas reset-password)
+    signOut: '/login' // Rediriger après déconnexion vers login
   },
   session: {
     strategy: 'jwt',
@@ -127,8 +128,31 @@ export const authOptions: AuthOptions = {
   events: {
     signIn: async () => {},
     signOut: async () => {},
-    session: async () => {},
+    session: async ({ session, token }) => {
+      // Vérifier que la session est valide
+      if (!session?.user?.id || !session?.user?.email) {
+        console.warn('⚠️ [NextAuth] Session invalide détectée')
+      }
+    },
   },
-  debug: false,
-  secret: process.env.NEXTAUTH_SECRET
+  debug: process.env.NODE_ENV === 'development',
+  secret: process.env.NEXTAUTH_SECRET,
+  // Gestion des erreurs
+  logger: {
+    error(code, metadata) {
+      console.error('❌ [NextAuth] Erreur:', code, metadata)
+      // Ne pas rediriger vers reset-password en cas d'erreur
+      if (code === 'CLIENT_FETCH_ERROR') {
+        console.error('❌ [NextAuth] Erreur de récupération de session - redirection vers login')
+      }
+    },
+    warn(code) {
+      console.warn('⚠️ [NextAuth] Avertissement:', code)
+    },
+    debug(code, metadata) {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('🔍 [NextAuth] Debug:', code, metadata)
+      }
+    }
+  }
 } 
