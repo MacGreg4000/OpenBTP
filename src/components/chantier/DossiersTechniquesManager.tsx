@@ -434,7 +434,6 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
         message="Êtes-vous sûr de vouloir supprimer ce dossier technique ? Cette action est irréversible."
         confirmText="Supprimer"
         cancelText="Annuler"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
 
       <NotificationComponent />

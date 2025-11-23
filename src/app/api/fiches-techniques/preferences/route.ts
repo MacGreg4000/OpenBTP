@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     }
 
     // Récupérer le dernier dossier technique (ou créer un dossier brouillon si aucun n'existe)
-    let dossier = await prisma.dossierTechnique.findFirst({
+    const dossier = await prisma.dossierTechnique.findFirst({
       where: { chantierId },
       orderBy: { dateGeneration: 'desc' },
       include: {

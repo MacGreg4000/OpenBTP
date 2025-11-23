@@ -7,9 +7,7 @@ type User_role = 'ADMIN' | 'MANAGER' | 'USER' | 'OUVRIER' | 'SOUSTRAITANT'
 
 export const authOptions: AuthOptions = {
   // Forcer l'utilisation de NEXTAUTH_URL en production
-  trustHost: true, // Important pour les reverse proxies (Synology)
-  // Forcer l'utilisation de NEXTAUTH_URL même si les headers suggèrent une autre URL
-  useSecureCookies: process.env.NODE_ENV === 'production',
+  // Note: trustHost n'est pas disponible dans NextAuth 4.24.11, mais le callback redirect gère cela
   providers: [
     CredentialsProvider({
       name: 'credentials',

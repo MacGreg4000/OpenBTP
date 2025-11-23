@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { PDFDocument, PDFTextField, PDFSignatureField, rgb } from 'pdf-lib'
+import { PDFDocument, rgb } from 'pdf-lib'
 import fs from 'fs'
 import path from 'path'
 import { prisma } from '@/lib/prisma/client'
@@ -581,7 +581,6 @@ export async function POST(request: Request) {
                 borderWidth: 1,
                 borderColor: rgb(0.89, 0.91, 0.94), // #e2e8f0
                 backgroundColor: rgb(1, 1, 1), // blanc
-                fontSize: 9,
               })
               
               // Champs de signature (4 champs côte à côte)
@@ -603,7 +602,6 @@ export async function POST(request: Request) {
                   borderWidth: 1,
                   borderColor: rgb(0.89, 0.91, 0.94),
                   backgroundColor: rgb(1, 1, 1),
-                  fontSize: 8,
                 })
               })
               
@@ -618,7 +616,6 @@ export async function POST(request: Request) {
                   borderWidth: 0.5,
                   borderColor: rgb(0.89, 0.91, 0.94),
                   backgroundColor: rgb(1, 1, 1),
-                  fontSize: 6,
                 })
               })
             } catch (formError) {
