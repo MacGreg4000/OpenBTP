@@ -27,8 +27,13 @@ nano /volume1/docker/openbtp/.env
 NEXTAUTH_URL="http://openbtp.secotech.synology.me"
 NEXTAUTH_URL="http://secotech.synology.me:3000"
 
-# ✅ CORRECT
+# ✅ CORRECT (avec reverse proxy - SANS PORT)
 NEXTAUTH_URL="https://openbtp.secotech.synology.me"
+# ou si vous utilisez directement le port 3000:
+# NEXTAUTH_URL="https://secotech.synology.me:3000"
+
+# ❌ INCORRECT - Ne pas mélanger les deux
+# NEXTAUTH_URL="https://openbtp.secotech.synology.me:3000"  # ❌ Si vous utilisez un reverse proxy
 ```
 
 ### 3. Configuration complète pour production

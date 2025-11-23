@@ -82,6 +82,12 @@ export const authOptions: AuthOptions = {
         }
       }
       
+      // EMPÊCHER toute redirection vers /reset-password
+      if (url.includes('/reset-password') || url.includes('reset-password')) {
+        console.warn('⚠️ [NextAuth] Tentative de redirection vers /reset-password bloquée, redirection vers /login')
+        return `${finalBaseUrl}/login`
+      }
+      
       // Nettoyer l'URL d'entrée pour s'assurer qu'elle utilise le bon protocole
       if (url.startsWith('http://') && process.env.NODE_ENV === 'production') {
         url = url.replace('http://', 'https://')
@@ -96,6 +102,11 @@ export const authOptions: AuthOptions = {
         try {
           const urlObj = new URL(url, finalBaseUrl)
           const callbackUrl = urlObj.searchParams.get('callbackUrl')
+          // EMPÊCHER callbackUrl vers /reset-password
+          if (callbackUrl && callbackUrl.includes('/reset-password')) {
+            console.warn('⚠️ [NextAuth] CallbackUrl vers /reset-password bloqué, redirection vers /login')
+            return `${finalBaseUrl}/login`
+          }
           if (callbackUrl && callbackUrl.startsWith('/')) {
             return `${finalBaseUrl}${callbackUrl}`
           }
@@ -104,6 +115,11 @@ export const authOptions: AuthOptions = {
           const match = url.match(/callbackUrl=([^&]+)/)
           if (match && match[1]) {
             const decoded = decodeURIComponent(match[1])
+            // EMPÊCHER callbackUrl vers /reset-password
+            if (decoded.includes('/reset-password')) {
+              console.warn('⚠️ [NextAuth] CallbackUrl décodé vers /reset-password bloqué, redirection vers /login')
+              return `${finalBaseUrl}/login`
+            }
             if (decoded.startsWith('/')) {
               return `${finalBaseUrl}${decoded}`
             }
@@ -120,7 +136,14 @@ export const authOptions: AuthOptions = {
         }
         return cleanedUrl
       }
-      if (url.startsWith('/')) return `${finalBaseUrl}${url}`
+      if (url.startsWith('/')) {
+        // EMPÊCHER redirection directe vers /reset-password
+        if (url === '/reset-password' || url.startsWith('/reset-password')) {
+          console.warn('⚠️ [NextAuth] Redirection vers /reset-password bloquée, redirection vers /login')
+          return `${finalBaseUrl}/login`
+        }
+        return `${finalBaseUrl}${url}`
+      }
       return `${finalBaseUrl}/dashboard`
     }
   },
@@ -140,13 +163,26 @@ export const authOptions: AuthOptions = {
   // Gestion des erreurs
   logger: {
     error(code, metadata) {
-      console.error('❌ [NextAuth] Erreur:', code, metadata)
-      // Ne pas rediriger vers reset-password en cas d'erreur
+      // Logger toutes les erreurs pour diagnostiquer le problème
       if (code === 'CLIENT_FETCH_ERROR') {
         console.error('❌ [NextAuth] Erreur de récupération de session - redirection vers login')
+        console.error('❌ [NextAuth] Erreur:', code, {
+          error: metadata?.error || metadata,
+          url: metadata?.url || '/api/auth/session',
+          message: metadata?.message || 'Load failed',
+          client: metadata?.client || 'true'
+        })
+        // Ne pas propager l'erreur pour éviter la redirection vers reset-password
+        return
       }
+      console.error('❌ [NextAuth] Erreur:', code, metadata)
     },
     warn(code) {
+      if (code === 'CLIENT_FETCH_ERROR') {
+        // Logger les warnings CLIENT_FETCH_ERROR pour diagnostiquer
+        console.warn('⚠️ [NextAuth] Warning:', code, '- Possible problème de connexion ou de configuration')
+        return
+      }
       console.warn('⚠️ [NextAuth] Avertissement:', code)
     },
     debug(code, metadata) {

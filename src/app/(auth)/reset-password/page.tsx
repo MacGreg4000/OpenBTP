@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
@@ -10,6 +10,15 @@ export default function ResetPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  // Rediriger automatiquement vers login si on arrive sur cette page par erreur
+  useEffect(() => {
+    console.log('⚠️ [ResetPassword] Page accédée, redirection immédiate vers /login')
+    // Rediriger immédiatement vers login
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+  }, [])
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
