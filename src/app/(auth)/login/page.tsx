@@ -1,5 +1,5 @@
 'use client'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui'
@@ -29,15 +29,10 @@ function LoginForm() {
   useEffect(() => {
     setMounted(true)
     
-    // Vérifier si déjà connecté
-    const checkSession = async () => {
-      const session = await getSession()
-      if (session) {
-        router.push(callbackUrl)
-      }
-    }
-    checkSession()
-  }, [router, callbackUrl])
+    // Ne pas vérifier la session ici - le middleware gère déjà la redirection
+    // Appeler getSession() peut créer une boucle infinie en cas d'erreur CLIENT_FETCH_ERROR
+    // Si l'utilisateur est déjà connecté, le middleware le redirigera automatiquement
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
