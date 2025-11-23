@@ -56,3 +56,4 @@ public/assets/images/logo.png
 *.tgz
 .next.zip
 prisma-client*.tgz
+prisma.zip
