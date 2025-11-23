@@ -1,12 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   DocumentTextIcon,
   PencilIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
   ArrowDownTrayIcon,
   TrashIcon,
   ChevronRightIcon,
@@ -49,26 +45,11 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
   const { data: session } = useSession()
   const { showNotification, NotificationComponent } = useNotification()
   const [dossierToDelete, setDossierToDelete] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState(false)
+  const [_deleting, setDeleting] = useState(false)
   
   const isAdmin = session?.user?.role === 'ADMIN'
 
-  useEffect(() => {
-    fetchDossiers()
-    
-    // Écouter l'événement de génération de dossier pour rafraîchir la liste
-    const handleDossierGenerated = () => {
-      fetchDossiers()
-    }
-    
-    window.addEventListener('dossierGenerated', handleDossierGenerated)
-    
-    return () => {
-      window.removeEventListener('dossierGenerated', handleDossierGenerated)
-    }
-  }, [chantierId])
-
-  const fetchDossiers = async () => {
+  const fetchDossiers = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/fiches-techniques/dossiers?chantierId=${chantierId}`)
@@ -86,7 +67,22 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
     } finally {
       setLoading(false)
     }
-  }
+  }, [chantierId])
+
+  useEffect(() => {
+    fetchDossiers()
+    
+    // Écouter l'événement de génération de dossier pour rafraîchir la liste
+    const handleDossierGenerated = () => {
+      fetchDossiers()
+    }
+    
+    window.addEventListener('dossierGenerated', handleDossierGenerated)
+    
+    return () => {
+      window.removeEventListener('dossierGenerated', handleDossierGenerated)
+    }
+  }, [fetchDossiers])
 
   const getStatutColor = (statut: string) => {
     switch (statut) {

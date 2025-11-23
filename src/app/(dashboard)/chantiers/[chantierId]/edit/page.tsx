@@ -17,6 +17,12 @@ interface ChantierData {
   typeDuree?: 'CALENDRIER' | 'OUVRABLE' | string | null;
   clientId?: string | null;
   contactId?: string | null;
+  maitreOuvrageNom?: string | null;
+  maitreOuvrageAdresse?: string | null;
+  maitreOuvrageLocalite?: string | null;
+  bureauArchitectureNom?: string | null;
+  bureauArchitectureAdresse?: string | null;
+  bureauArchitectureLocalite?: string | null;
 }
 
 interface Client {
@@ -154,12 +160,12 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
           typeDuree: chantierData.typeDuree || 'CALENDRIER',
           clientId: chantierData.clientId || '',
           contactId: chantierData.contactId || '',
-          maitreOuvrageNom: (chantierData as any).maitreOuvrageNom || '',
-          maitreOuvrageAdresse: (chantierData as any).maitreOuvrageAdresse || '',
-          maitreOuvrageLocalite: (chantierData as any).maitreOuvrageLocalite || '',
-          bureauArchitectureNom: (chantierData as any).bureauArchitectureNom || '',
-          bureauArchitectureAdresse: (chantierData as any).bureauArchitectureAdresse || '',
-          bureauArchitectureLocalite: (chantierData as any).bureauArchitectureLocalite || ''
+          maitreOuvrageNom: chantierData.maitreOuvrageNom || '',
+          maitreOuvrageAdresse: chantierData.maitreOuvrageAdresse || '',
+          maitreOuvrageLocalite: chantierData.maitreOuvrageLocalite || '',
+          bureauArchitectureNom: chantierData.bureauArchitectureNom || '',
+          bureauArchitectureAdresse: chantierData.bureauArchitectureAdresse || '',
+          bureauArchitectureLocalite: chantierData.bureauArchitectureLocalite || ''
         })
 
         if (chantierData.clientId) {

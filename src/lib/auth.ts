@@ -98,7 +98,7 @@ export const authOptions: AuthOptions = {
           if (callbackUrl && callbackUrl.startsWith('/')) {
             return `${finalBaseUrl}${callbackUrl}`
           }
-        } catch (e) {
+        } catch {
           // Si l'URL est relative, extraire le callbackUrl manuellement
           const match = url.match(/callbackUrl=([^&]+)/)
           if (match && match[1]) {

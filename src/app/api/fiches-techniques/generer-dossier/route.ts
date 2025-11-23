@@ -148,8 +148,8 @@ export async function POST(request: Request) {
 
     // ===== 1. GÉNÉRER LA PAGE DE GARDE DU DOSSIER =====
     const dateGeneration = new Date()
-    const fichesValidees = fichesStatuts ? Object.values(fichesStatuts).filter((s: any) => s === 'VALIDEE').length : 0
-    const fichesNouvelles = fichesStatuts ? Object.values(fichesStatuts).filter((s: any) => s === 'NOUVELLE_PROPOSITION').length : 0
+    const fichesValidees = fichesStatuts ? Object.values(fichesStatuts).filter((s: string) => s === 'VALIDEE').length : 0
+    const fichesNouvelles = fichesStatuts ? Object.values(fichesStatuts).filter((s: string) => s === 'NOUVELLE_PROPOSITION').length : 0
     
     const dossierCoverData: DossierTechniqueCoverData = {
       settings: {

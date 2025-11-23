@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react'
 import {
   XMarkIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   ArrowPathIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
@@ -22,6 +20,8 @@ interface DossierFiche {
   statut: 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
   ordre: number
   ficheRemplaceeId: string | null
+  soustraitantId?: string | null
+  remarques?: string | null
 }
 
 interface DossierTechnique {
@@ -61,22 +61,11 @@ interface ModifierDossierModalProps {
   onRegenerate: () => void
 }
 
-// Fonction pour trouver toutes les fiches dans la structure
-const getAllFiches = (dossiers: Dossier[]): FicheTechnique[] => {
-  let fiches: FicheTechnique[] = []
-  dossiers.forEach(dossier => {
-    fiches = [...fiches, ...dossier.fiches]
-    if (dossier.sousDossiers.length > 0) {
-      fiches = [...fiches, ...getAllFiches(dossier.sousDossiers)]
-    }
-  })
-  return fiches
-}
 
 export default function ModifierDossierModal({
   dossier,
   chantierId,
-  structure,
+  structure: _structure,
   onClose,
   onRegenerate
 }: ModifierDossierModalProps) {
@@ -92,7 +81,7 @@ export default function ModifierDossierModal({
   const [structureComplete, setStructureComplete] = useState<Dossier[]>([])
   const [loadingStructure, setLoadingStructure] = useState(false)
   const [searchFilterReplacement, setSearchFilterReplacement] = useState('')
-  const { data: session } = useSession()
+  const { data: _session } = useSession()
 
   useEffect(() => {
     if (dossier) {
@@ -101,11 +90,11 @@ export default function ModifierDossierModal({
       const remarquesData: Record<string, string> = {}
       dossier.fiches.forEach(fiche => {
         statuts[fiche.ficheId] = fiche.statut
-        if ((fiche as any).soustraitantId) {
-          soustraitantsData[fiche.ficheId] = (fiche as any).soustraitantId
+        if (fiche.soustraitantId) {
+          soustraitantsData[fiche.ficheId] = String(fiche.soustraitantId)
         }
-        if ((fiche as any).remarques) {
-          remarquesData[fiche.ficheId] = (fiche as any).remarques
+        if (fiche.remarques) {
+          remarquesData[fiche.ficheId] = fiche.remarques
         }
       })
       setFichesStatuts(statuts)

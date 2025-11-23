@@ -236,7 +236,7 @@ export async function PUT(request: Request) {
     }
 
     // Mettre à jour toutes les fiches
-    const updates = Object.entries(preferences).map(async ([ficheId, prefs]: [string, any]) => {
+    const updates = Object.entries(preferences).map(async ([ficheId, prefs]: [string, { soustraitantId?: string | number | null; ficheReference?: string | null; remarques?: string | null }]) => {
       // Convertir soustraitantId en string si fourni
       let soustraitantIdStr: string | null = null
       if (prefs.soustraitantId) {

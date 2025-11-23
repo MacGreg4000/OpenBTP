@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { 
   DocumentTextIcon, 
   FolderIcon,
@@ -32,6 +32,27 @@ interface Dossier {
   isExpanded?: boolean
 }
 
+interface DossierFiche {
+  id: string
+  ficheId: string
+  ficheReference: string | null
+  version: number
+  statut: 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
+  ordre: number
+  ficheRemplaceeId: string | null
+}
+
+interface DossierTechnique {
+  id: string
+  nom: string
+  version: number
+  statut: string
+  url: string
+  dateGeneration: string
+  dateModification: string
+  fiches: DossierFiche[]
+}
+
 interface FichesTechniquesTabContentProps {
   chantierId: string
 }
@@ -48,8 +69,7 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
   const [generating, setGenerating] = useState(false)
   const [includeTableOfContents, setIncludeTableOfContents] = useState(true)
   const [searchFilter, setSearchFilter] = useState('')
-  const [dossierAModifier, setDossierAModifier] = useState<any>(null)
-  const [showDossiers, setShowDossiers] = useState(false)
+  const [dossierAModifier, setDossierAModifier] = useState<DossierTechnique | null>(null)
 
   // Charger la structure des fiches techniques
   useEffect(() => {
@@ -149,7 +169,6 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     }
 
     loadPreferences()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chantierId])
 
   // Fonction pour sauvegarder une préférence dans la base de données
@@ -157,7 +176,7 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     if (!chantierId) return
 
     try {
-      const body: any = {
+      const body: Record<string, string> = {
         chantierId,
         ficheId
       }
@@ -630,7 +649,7 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     </>
   )
 
-  const handleReopenDossier = (dossier: any) => {
+  const handleReopenDossier = (dossier: DossierTechnique) => {
     setDossierAModifier(dossier)
   }
 

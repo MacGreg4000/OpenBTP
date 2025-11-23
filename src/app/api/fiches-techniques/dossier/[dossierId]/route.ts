@@ -144,7 +144,7 @@ export async function DELETE(
     
     for (const doc of documents) {
       if (doc.metadata && typeof doc.metadata === 'object' && 'dossierTechniqueId' in doc.metadata) {
-        if ((doc.metadata as any).dossierTechniqueId === dossierId) {
+        if (doc.metadata && typeof doc.metadata === 'object' && 'dossierTechniqueId' in doc.metadata && (doc.metadata as { dossierTechniqueId?: string }).dossierTechniqueId === dossierId) {
           await prisma.document.delete({
             where: { id: doc.id }
           })

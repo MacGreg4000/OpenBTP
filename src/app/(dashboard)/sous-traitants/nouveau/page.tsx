@@ -42,7 +42,7 @@ export default function NouveauSousTraitantPage() {
 
     try {
       // Créer le sous-traitant sans le logo d'abord
-      const { logo, ...formDataWithoutLogo } = formData
+      const { logo: _logo, ...formDataWithoutLogo } = formData
       const response = await fetch('/api/sous-traitants', {
         method: 'POST',
         headers: {
@@ -61,7 +61,7 @@ export default function NouveauSousTraitantPage() {
       console.log('Sous-traitant créé avec succès:', data)
 
       // Si un logo a été sélectionné, l'uploader après la création
-      const logoFile = (formData as any).logoFile
+      const logoFile = formData.logoFile
       if (logoFile) {
         const soustraitantId = data.id || data.soustraitantId
         if (soustraitantId) {
@@ -127,7 +127,7 @@ export default function NouveauSousTraitantPage() {
         ...prev, 
         logo: tempUrl,
         logoFile: file // Stocker le fichier pour l'upload ultérieur
-      } as any))
+      }))
     } catch (error) {
       console.error('Erreur upload logo:', error)
       setError('Erreur lors de la préparation du logo')

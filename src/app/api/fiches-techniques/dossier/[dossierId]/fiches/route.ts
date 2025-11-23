@@ -32,8 +32,15 @@ export async function PUT(
       for (const [ficheId, statut] of Object.entries(fichesStatuts)) {
         const fiche = dossier.fiches.find(f => f.ficheId === ficheId)
         if (fiche) {
-          const updateData: any = {
-            statut: statut as any
+          const updateData: {
+            statut: 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
+            soustraitantId?: number | null
+            remarques?: string | null
+            ficheReference?: string | null
+            version?: number
+            ficheRemplaceeId?: string | null
+          } = {
+            statut: statut as 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
           }
           
           // Ajouter soustraitantId si fourni
