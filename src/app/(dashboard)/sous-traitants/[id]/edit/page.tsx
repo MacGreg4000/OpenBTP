@@ -153,6 +153,25 @@ export default function EditSousTraitantPage(
         const { url } = await res.json()
         setFormData(prev => ({ ...prev, logo: url }))
         setLogoPreview(url)
+        
+        // Sauvegarder immédiatement le logo dans la base de données
+        try {
+          const saveResponse = await fetch(`/api/sous-traitants/${params.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              logo: url
+            }),
+          })
+          
+          if (!saveResponse.ok) {
+            console.error('Erreur lors de la sauvegarde du logo dans la base de données')
+          }
+        } catch (saveError) {
+          console.error('Erreur lors de la sauvegarde du logo:', saveError)
+        }
       } else {
         throw new Error('Erreur lors de l\'upload du logo')
       }

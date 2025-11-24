@@ -37,7 +37,7 @@ interface DossierFiche {
   ficheId: string
   ficheReference: string | null
   version: number
-  statut: 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
+  statut: 'VALIDEE' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
   ordre: number
   ficheRemplaceeId: string | null
 }

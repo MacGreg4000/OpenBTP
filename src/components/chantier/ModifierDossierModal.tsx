@@ -17,7 +17,7 @@ interface DossierFiche {
   ficheId: string
   ficheReference: string | null
   version: number
-  statut: 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
+  statut: 'VALIDEE' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
   ordre: number
   ficheRemplaceeId: string | null
   soustraitantId?: string | null
@@ -72,6 +72,7 @@ export default function ModifierDossierModal({
   const [fichesStatuts, setFichesStatuts] = useState<Record<string, string>>({})
   const [fichesRemplacees, setFichesRemplacees] = useState<Record<string, string>>({})
   const [fichesSoustraitants, setFichesSoustraitants] = useState<Record<string, string>>({})
+  const [fichesReferences, setFichesReferences] = useState<Record<string, string>>({})
   const [fichesRemarques, setFichesRemarques] = useState<Record<string, string>>({})
   const [soustraitants, setSoustraitants] = useState<Array<{ id: string; nom: string }>>([])
   const [replacementMode, setReplacementMode] = useState<string | null>(null)
@@ -87,11 +88,15 @@ export default function ModifierDossierModal({
     if (dossier) {
       const statuts: Record<string, string> = {}
       const soustraitantsData: Record<string, string> = {}
+      const referencesData: Record<string, string> = {}
       const remarquesData: Record<string, string> = {}
       dossier.fiches.forEach(fiche => {
         statuts[fiche.ficheId] = fiche.statut
         if (fiche.soustraitantId) {
           soustraitantsData[fiche.ficheId] = String(fiche.soustraitantId)
+        }
+        if (fiche.ficheReference) {
+          referencesData[fiche.ficheId] = fiche.ficheReference
         }
         if (fiche.remarques) {
           remarquesData[fiche.ficheId] = fiche.remarques
@@ -99,6 +104,7 @@ export default function ModifierDossierModal({
       })
       setFichesStatuts(statuts)
       setFichesSoustraitants(soustraitantsData)
+      setFichesReferences(referencesData)
       setFichesRemarques(remarquesData)
     }
   }, [dossier])
@@ -208,23 +214,14 @@ export default function ModifierDossierModal({
           fichesStatuts,
           fichesRemplacees,
           fichesSoustraitants,
+          fichesReferences,
           fichesRemarques
         })
       })
 
       if (!response.ok) throw new Error('Erreur lors de la sauvegarde')
 
-      // Mettre à jour le statut du dossier si nécessaire
-      const hasRejections = Object.values(fichesStatuts).some(s => s === 'A_REMPLACER')
-      if (hasRejections) {
-        await fetch(`/api/fiches-techniques/dossier/${dossier.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            statut: 'REFUSE_PARTIELLEMENT'
-          })
-        })
-      }
+      // Le statut du dossier sera géré automatiquement
 
       showNotification('Succès', 'Modifications enregistrées avec succès', 'success')
       onRegenerate()
@@ -253,7 +250,10 @@ export default function ModifierDossierModal({
         const nouvelleFicheId = fichesRemplacees[fiche.ficheId] || fiche.ficheId
         if (!ficheIds.includes(nouvelleFicheId)) {
           ficheIds.push(nouvelleFicheId)
-          if (fiche.ficheReference) {
+          // Utiliser la référence modifiée si disponible, sinon celle de la fiche
+          if (fichesReferences[fiche.ficheId]) {
+            ficheReferences[nouvelleFicheId] = fichesReferences[fiche.ficheId]
+          } else if (fiche.ficheReference) {
             ficheReferences[nouvelleFicheId] = fiche.ficheReference
           }
           finalStatuts[nouvelleFicheId] = fichesStatuts[fiche.ficheId] || fiche.statut
@@ -312,8 +312,6 @@ export default function ModifierDossierModal({
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
       case 'NOUVELLE_PROPOSITION':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-      case 'A_REMPLACER':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
       case 'BROUILLON':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
       default:
@@ -327,8 +325,6 @@ export default function ModifierDossierModal({
         return 'Validée'
       case 'NOUVELLE_PROPOSITION':
         return 'Nouvelle proposition'
-      case 'A_REMPLACER':
-        return 'À remplacer'
       case 'BROUILLON':
         return 'Brouillon'
       default:
@@ -461,8 +457,8 @@ export default function ModifierDossierModal({
 
   return (
     <div>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 pt-20 overflow-y-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] flex flex-col border border-gray-200 dark:border-gray-700 my-4">
           {/* En-tête */}
           <div className="relative px-6 py-4 bg-gradient-to-br from-emerald-600/10 via-teal-700/10 to-cyan-800/10 dark:from-emerald-600/10 dark:via-teal-700/10 dark:to-cyan-800/10 border-b border-gray-200 dark:border-gray-700 overflow-hidden rounded-t-lg">
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-cyan-800/20"></div>
@@ -489,8 +485,8 @@ export default function ModifierDossierModal({
           </div>
 
         {/* Contenu */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-3">
             {dossier.fiches.map((fiche) => {
               const currentStatut = fichesStatuts[fiche.ficheId] || fiche.statut
               const isReplaced = fichesRemplacees[fiche.ficheId]
@@ -498,12 +494,12 @@ export default function ModifierDossierModal({
               return (
                 <div
                   key={fiche.id}
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900 dark:text-white">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
                           {isReplaced ? (
                             <span className="line-through text-gray-400">{fiche.ficheId}</span>
                           ) : (
@@ -511,42 +507,42 @@ export default function ModifierDossierModal({
                           )}
                         </span>
                         {fiche.version > 1 && (
-                          <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
+                          <span className="text-xs font-medium text-orange-600 dark:text-orange-400 whitespace-nowrap">
                             V{fiche.version}
                           </span>
                         )}
                         {isReplaced && (
-                          <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                          <span className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
                             → {isReplaced}
                           </span>
                         )}
                       </div>
                       {fiche.ficheReference && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           Réf CSC: {fiche.ficheReference}
                         </p>
                       )}
                     </div>
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getStatutColor(currentStatut)}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ml-2 flex-shrink-0 ${getStatutColor(currentStatut)}`}>
                       {getStatutLabel(currentStatut)}
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-3 mt-3">
-                    <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                    {/* Statut et bouton remplacer */}
+                    <div className="md:col-span-2 flex items-center gap-2">
                       <select
                         value={currentStatut}
                         onChange={(e) => handleStatutChange(fiche.ficheId, e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       >
                         <option value="BROUILLON">Brouillon</option>
                         <option value="VALIDEE">Validée</option>
-                        <option value="A_REMPLACER">À remplacer</option>
                         <option value="NOUVELLE_PROPOSITION">Nouvelle proposition</option>
                       </select>
 
-                      {/* Afficher le bouton "Remplacer" uniquement si le statut est "À remplacer" */}
-                      {currentStatut === 'A_REMPLACER' && (
+                      {/* Afficher le bouton "Remplacer" uniquement si le statut est "Nouvelle proposition" */}
+                      {currentStatut === 'NOUVELLE_PROPOSITION' && (
                         <button
                           onClick={() => {
                             if (replacementMode === fiche.ficheId) {
@@ -555,7 +551,7 @@ export default function ModifierDossierModal({
                               setReplacementMode(fiche.ficheId)
                             }
                           }}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap shadow-sm ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shadow-sm flex-shrink-0 ${
                             replacementMode === fiche.ficheId
                               ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md'
                               : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
@@ -566,10 +562,10 @@ export default function ModifierDossierModal({
                       )}
                     </div>
 
-                    {/* Dropdown sous-traitant */}
+                    {/* Dropdown sous-traitant - réduit en largeur */}
                     <div>
                       <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Sous-traitant (optionnel)
+                        Sous-traitant
                       </label>
                       <select
                         value={fichesSoustraitants[fiche.ficheId] || ''}
@@ -579,7 +575,7 @@ export default function ModifierDossierModal({
                             [fiche.ficheId]: e.target.value || ''
                           }))
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       >
                         <option value="">Aucun</option>
                         {soustraitants.map(st => (
@@ -588,10 +584,30 @@ export default function ModifierDossierModal({
                       </select>
                     </div>
 
-                    {/* Champ remarques */}
+                    {/* Champ CSC */}
                     <div>
                       <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Remarques (optionnel)
+                        Référence CSC
+                      </label>
+                      <input
+                        type="text"
+                        value={fichesReferences[fiche.ficheId] || ''}
+                        onChange={(e) => {
+                          setFichesReferences(prev => ({
+                            ...prev,
+                            [fiche.ficheId]: e.target.value
+                          }))
+                        }}
+                        maxLength={20}
+                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="CSC"
+                      />
+                    </div>
+
+                    {/* Champ remarques - réduit en hauteur */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Remarques
                       </label>
                       <textarea
                         value={fichesRemarques[fiche.ficheId] || ''}
@@ -601,43 +617,43 @@ export default function ModifierDossierModal({
                             [fiche.ficheId]: e.target.value
                           }))
                         }}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                        placeholder="Ajouter des remarques sur cette fiche technique..."
+                        rows={2}
+                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                        placeholder="Remarques..."
                       />
                     </div>
 
                     {/* Arborescence de remplacement intégrée */}
                     {replacementMode === fiche.ficheId && (
-                      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                        <div className="mb-3">
+                      <div className="md:col-span-2 mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="mb-2">
                           <div className="relative">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
                             <input
                               type="text"
                               value={searchFilterReplacement}
                               onChange={(e) => setSearchFilterReplacement(e.target.value)}
-                              placeholder="Rechercher une fiche technique..."
-                              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                              placeholder="Rechercher une fiche..."
+                              className="w-full pl-8 pr-8 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                             />
                             {searchFilterReplacement && (
                               <button
                                 onClick={() => setSearchFilterReplacement('')}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                               >
-                                <XMarkIcon className="h-4 w-4" />
+                                <XMarkIcon className="h-3 w-3" />
                               </button>
                             )}
                           </div>
                         </div>
-                        <div className="max-h-64 overflow-y-auto">
+                        <div className="max-h-48 overflow-y-auto">
                           {loadingStructure ? (
-                            <div className="text-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-2"></div>
+                            <div className="text-center py-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600 mx-auto mb-2"></div>
                               <p className="text-xs text-gray-500">Chargement...</p>
                             </div>
                           ) : filteredStructureReplacement.length === 0 ? (
-                            <p className="text-sm text-gray-500 text-center py-4">Aucune fiche disponible</p>
+                            <p className="text-xs text-gray-500 text-center py-2">Aucune fiche disponible</p>
                           ) : (
                             <div>
                               {filteredStructureReplacement.map(d => renderDossierReplacement(d))}
@@ -654,10 +670,10 @@ export default function ModifierDossierModal({
         </div>
 
         {/* Pied de page */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
+            className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
           >
             Annuler
           </button>
@@ -665,18 +681,18 @@ export default function ModifierDossierModal({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm hover:shadow-md"
+              className="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm hover:shadow-md"
             >
-              {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
             </button>
             <button
               onClick={handleRegeneratePDF}
               disabled={generating}
-              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-sm hover:shadow-md"
+              className="px-3 py-1.5 text-sm bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-semibold shadow-sm hover:shadow-md"
             >
               {generating ? (
                 <>
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -684,8 +700,8 @@ export default function ModifierDossierModal({
                 </>
               ) : (
                 <>
-                  <ArrowPathIcon className="h-4 w-4" />
-                  Régénérer le PDF
+                  <ArrowPathIcon className="h-3 w-3" />
+                  Régénérer
                 </>
               )}
             </button>

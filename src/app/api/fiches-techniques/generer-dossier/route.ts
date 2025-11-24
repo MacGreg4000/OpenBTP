@@ -470,29 +470,26 @@ export async function POST(request: Request) {
             let soustraitant = null
             let soustraitantLogoBase64 = ''
             if (soustraitantIdRaw && soustraitantIdRaw.toString().trim() !== '') {
-              const parsedId = parseInt(soustraitantIdRaw.toString())
-              console.log(`  - parsedId:`, parsedId, 'isNaN:', isNaN(parsedId))
-              if (!isNaN(parsedId)) {
-                soustraitant = await prisma.soustraitant.findUnique({
-                  where: { id: parsedId }
-                })
-                console.log(`  - ✅ Sous-traitant récupéré:`, soustraitant ? { id: soustraitant.id, nom: soustraitant.nom, logo: soustraitant.logo } : 'null')
-                if (soustraitant?.logo) {
-                  try {
-                    const soustraitantLogoPath = path.join(process.cwd(), 'public', soustraitant.logo)
-                    if (fs.existsSync(soustraitantLogoPath)) {
-                      const soustraitantLogoBuffer = await readFile(soustraitantLogoPath)
-                      soustraitantLogoBase64 = soustraitantLogoBuffer.toString('base64')
-                      console.log('Logo du sous-traitant chargé avec succès')
-                    } else {
-                      console.warn('Logo du sous-traitant non trouvé:', soustraitantLogoPath)
-                    }
-                  } catch (error) {
-                    console.warn('Impossible de charger le logo du sous-traitant:', error)
+              const soustraitantId = soustraitantIdRaw.toString().trim()
+              soustraitant = await prisma.soustraitant.findUnique({
+                where: { id: soustraitantId }
+              })
+              console.log(`  - ✅ Sous-traitant récupéré:`, soustraitant ? { id: soustraitant.id, nom: soustraitant.nom, logo: soustraitant.logo } : 'null')
+              if (soustraitant?.logo) {
+                try {
+                  const soustraitantLogoPath = soustraitant.logo.startsWith('/')
+                    ? path.join(process.cwd(), 'public', soustraitant.logo)
+                    : path.join(process.cwd(), 'public', soustraitant.logo)
+                  if (fs.existsSync(soustraitantLogoPath)) {
+                    const soustraitantLogoBuffer = await readFile(soustraitantLogoPath)
+                    soustraitantLogoBase64 = soustraitantLogoBuffer.toString('base64')
+                    console.log('Logo du sous-traitant chargé avec succès')
+                  } else {
+                    console.warn('Logo du sous-traitant non trouvé:', soustraitantLogoPath)
                   }
+                } catch (error) {
+                  console.warn('Impossible de charger le logo du sous-traitant:', error)
                 }
-              } else {
-                console.warn('ID sous-traitant invalide:', soustraitantIdRaw)
               }
             } else {
               console.log('Aucun ID sous-traitant fourni pour la fiche:', ficheId)
@@ -558,30 +555,43 @@ export async function POST(request: Request) {
             const ficheCoverPdfDoc = await PDFDocument.load(ficheCoverPDF)
             
             // Ajouter les champs éditables (AcroForm) pour les remarques et signatures
-            const form = ficheCoverPdfDoc.getForm()
-            const pages = ficheCoverPdfDoc.getPages()
-            const coverPage = pages[0]
-            const { width, height } = coverPage.getSize()
+            // NOTE: Les champs sont désactivés par défaut car ils masquent le contenu HTML
+            // Pour les réactiver, changez ENABLE_FORM_FIELDS à true
+            // ATTENTION: Les champs peuvent masquer le contenu visuel du PDF même sans backgroundColor
+            const ENABLE_FORM_FIELDS = false // Mettre à true pour activer les champs éditables
             
-            // Calculer les positions approximatives basées sur le layout HTML
-            // Les marges sont de 10mm = ~28 points
-            // La zone de remarques est environ à 45% de la hauteur de la page
-            // Les signatures sont en bas, environ à 15% de la hauteur
-            
-            try {
+            if (ENABLE_FORM_FIELDS) {
+              const form = ficheCoverPdfDoc.getForm()
+              const pages = ficheCoverPdfDoc.getPages()
+              const coverPage = pages[0]
+              const { width, height } = coverPage.getSize()
+              
+              // Calculer les positions approximatives basées sur le layout HTML
+              // Les marges sont de 10mm = ~28 points
+              // La zone de remarques est environ à 45% de la hauteur de la page
+              // Les signatures sont en bas, environ à 15% de la hauteur
+              
+              try {
               // Champ de texte pour les remarques (position approximative)
               const remarquesY = height * 0.45 // Environ 45% du haut de la page
               const remarquesField = form.createTextField(`remarques_${ficheId}`)
               remarquesField.setText(remarques || '')
+              // Rendre le champ transparent pour ne pas masquer le contenu HTML
               remarquesField.addToPage(coverPage, {
                 x: 40, // marge gauche + padding
                 y: height - remarquesY - 50, // Ajuster selon la hauteur du champ
                 width: width - 80, // largeur page - marges
                 height: 50,
-                borderWidth: 1,
-                borderColor: rgb(0.89, 0.91, 0.94), // #e2e8f0
-                backgroundColor: rgb(1, 1, 1), // blanc
+                borderWidth: 0, // Pas de bordure visible
+                borderColor: rgb(0, 0, 0),
+                // Pas de backgroundColor pour laisser le contenu HTML visible
               })
+              // Essayer de rendre le champ transparent (si supporté)
+              try {
+                remarquesField.enableReadOnly()
+              } catch {
+                // Ignorer si non supporté
+              }
               
               // Champs de signature (4 champs côte à côte)
               // Note: pdf-lib ne supporte pas createSignatureField, on utilise des champs texte pour les signatures
@@ -599,9 +609,9 @@ export async function POST(request: Request) {
                   y: height - signatureY - signatureHeight,
                   width: signatureWidth,
                   height: signatureHeight,
-                  borderWidth: 1,
-                  borderColor: rgb(0.89, 0.91, 0.94),
-                  backgroundColor: rgb(1, 1, 1),
+                  borderWidth: 0, // Pas de bordure visible
+                  borderColor: rgb(0, 0, 0),
+                  // Pas de backgroundColor pour laisser le contenu HTML visible
                 })
               })
               
@@ -613,14 +623,15 @@ export async function POST(request: Request) {
                   y: height - signatureY - signatureHeight - 15,
                   width: signatureWidth,
                   height: 10,
-                  borderWidth: 0.5,
-                  borderColor: rgb(0.89, 0.91, 0.94),
-                  backgroundColor: rgb(1, 1, 1),
+                  borderWidth: 0, // Pas de bordure visible
+                  borderColor: rgb(0, 0, 0),
+                  // Pas de backgroundColor pour laisser le contenu HTML visible
                 })
               })
-            } catch (formError) {
-              console.warn('Erreur lors de l\'ajout des champs de formulaire:', formError)
-              // Continuer même si les champs de formulaire ne peuvent pas être ajoutés
+              } catch (formError) {
+                console.warn('Erreur lors de l\'ajout des champs de formulaire:', formError)
+                // Continuer même si les champs de formulaire ne peuvent pas être ajoutés
+              }
             }
             
             const ficheCoverPages = await finalPdfDoc.copyPages(ficheCoverPdfDoc, ficheCoverPdfDoc.getPageIndices())
@@ -714,10 +725,9 @@ export async function POST(request: Request) {
       const ficheReference = ficheReferences && ficheReferences[ficheId] ? ficheReferences[ficheId] : null
       const ficheStatut = fichesStatuts && fichesStatuts[ficheId] ? fichesStatuts[ficheId] : 'BROUILLON'
       const soustraitantIdRaw = fichesSoustraitants && fichesSoustraitants[ficheId] ? fichesSoustraitants[ficheId] : null
-      const soustraitantId = soustraitantIdRaw && soustraitantIdRaw.toString().trim() !== '' ? (() => {
-        const parsed = parseInt(soustraitantIdRaw.toString())
-        return !isNaN(parsed) ? parsed : null
-      })() : null
+      const soustraitantId = soustraitantIdRaw && soustraitantIdRaw.toString().trim() !== ''
+        ? soustraitantIdRaw.toString().trim()
+        : null
       const remarques = fichesRemarques && fichesRemarques[ficheId] ? fichesRemarques[ficheId] : null
 
       await prisma.dossierFiche.create({

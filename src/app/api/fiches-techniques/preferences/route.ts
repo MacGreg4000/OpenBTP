@@ -59,7 +59,8 @@ export async function GET(request: Request) {
         ficheReferences[fiche.ficheId] = fiche.ficheReference
       }
       if (fiche.soustraitantId) {
-        fichesSoustraitants[fiche.ficheId] = fiche.soustraitantId
+        // Convertir en string pour correspondre au format attendu par le frontend
+        fichesSoustraitants[fiche.ficheId] = String(fiche.soustraitantId)
       }
       if (fiche.remarques) {
         fichesRemarques[fiche.ficheId] = fiche.remarques
@@ -106,13 +107,7 @@ export async function POST(request: Request) {
     let soustraitantIdStr: string | null = null
     if (soustraitantId) {
       soustraitantIdStr = String(soustraitantId).trim() || null
-      // Vérifier que c'est un nombre valide (l'ID est un nombre dans la base)
-      if (soustraitantIdStr && isNaN(parseInt(soustraitantIdStr))) {
-        return NextResponse.json(
-          { error: 'soustraitantId invalide' },
-          { status: 400 }
-        )
-      }
+      // L'ID est une String dans la base de données, pas besoin de validation numérique
     }
 
     // Récupérer ou créer un dossier technique "brouillon" pour ce chantier
@@ -241,10 +236,7 @@ export async function PUT(request: Request) {
       let soustraitantIdStr: string | null = null
       if (prefs.soustraitantId) {
         soustraitantIdStr = String(prefs.soustraitantId).trim() || null
-        if (soustraitantIdStr && isNaN(parseInt(soustraitantIdStr))) {
-          console.warn(`soustraitantId invalide pour fiche ${ficheId}: ${prefs.soustraitantId}`)
-          soustraitantIdStr = null
-        }
+        // L'ID est une String dans la base de données, pas besoin de validation numérique
       }
 
       const existingFiche = await prisma.dossierFiche.findFirst({

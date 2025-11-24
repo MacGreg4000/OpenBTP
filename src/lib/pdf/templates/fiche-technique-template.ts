@@ -49,21 +49,48 @@ export function generateFicheTechniqueCoverHTML(data: FicheTechniqueCoverData): 
   
   const ficheNumero = fiche.id.split('/').pop()?.replace('.pdf', '') || '1'
   const ficheNumeroDisplay = ficheNumero.match(/\d+/)?.[0] || '1'
-  
-  // Badge de statut
-  let badgeHTML = ''
-  let badgeClass = ''
-  if (fiche.statut === 'VALIDEE') {
-    badgeHTML = 'VALIDEE'
-    badgeClass = 'status-validee'
-  } else if (fiche.statut === 'NOUVELLE_PROPOSITION') {
-    badgeHTML = `V${fiche.version}`
-    badgeClass = 'status-nouvelle'
-  } else if (fiche.statut === 'A_REMPLACER') {
-    badgeHTML = 'A REMPLACER'
-    badgeClass = 'status-remplacer'
-  }
+  const formattedDate = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const hasSoustraitant = Boolean(soustraitant?.nom)
 
+  const badgeClass =
+    fiche.statut === 'VALIDEE'
+      ? 'status-validee'
+      : fiche.statut === 'NOUVELLE_PROPOSITION'
+        ? 'status-nouvelle'
+        : ''
+  const badgeHTML =
+    fiche.statut === 'VALIDEE'
+      ? 'VALIDÉE'
+      : fiche.statut === 'NOUVELLE_PROPOSITION'
+        ? `NOUVELLE PROPOSITION — V${fiche.version}`
+        : ''
+
+  const cscRow = fiche.reference
+    ? `
+        <tr>
+            <td class="info-label">Article CSC</td>
+            <td class="info-value">${fiche.reference}</td>
+        </tr>
+      `
+    : ''
+
+  const soustraitantBlock = hasSoustraitant
+    ? `
+        <div class="section">
+            <div class="section-title">Sous-traitant assigné</div>
+            <div class="soustraitant-wrapper">
+                <div class="soustraitant-details">
+                    <p class="soustraitant-name">${soustraitant!.nom}</p>
+                    <p class="soustraitant-meta">Entité chargée de l\'exécution</p>
+                </div>
+                ${soustraitantLogoBase64
+                  ? `<img src="data:image/png;base64,${soustraitantLogoBase64}" alt="Logo sous-traitant" class="soustraitant-logo" />`
+                  : `<div class="soustraitant-logo placeholder">${soustraitant!.nom.substring(0, 2).toUpperCase()}</div>`}
+            </div>
+        </div>
+      `
+    : ''
+  
   return `
 <!DOCTYPE html>
 <html lang="fr">
@@ -74,481 +101,396 @@ export function generateFicheTechniqueCoverHTML(data: FicheTechniqueCoverData): 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        * {
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+            outline: none !important;
+            border: none;
+        }
+        html, body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
         }
-        
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: #1f2937;
             font-size: 11px;
             line-height: 1.5;
-            color: #2d3748;
-            background: white;
-            width: 100%;
-            min-height: 100vh;
+            border: none;
+            outline: none;
         }
-        
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+        table, tr, td, th {
+            border: none;
+            outline: none;
+        }
         .container {
-            max-width: 100%;
+            max-width: 780px;
             margin: 0 auto;
-            padding: 20px;
-            background: white;
+            padding: 22px;
+            background: #fff;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            border: none;
+            outline: none;
         }
-        
-        /* En-tête */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e2e8f0;
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr 0.9fr;
+            gap: 16px;
+            margin-bottom: 20px;
+            border: none;
+            outline: none;
         }
-        
-        .logo-section {
-            flex: 1;
+        .header-grid > * {
+            border: none;
+            outline: none;
         }
-        
-        .logo {
-            max-width: 140px;
-            max-height: 70px;
+        .header-card {
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 12px;
+            height: 100%;
+        }
+        .company-logo {
+            width: 150px;
+            height: 70px;
             object-fit: contain;
+            display: block;
         }
-        
         .company-info {
-            margin-top: 10px;
+            margin-top: 8px;
             font-size: 9px;
-            color: #64748b;
+            color: #4b5563;
             line-height: 1.4;
         }
-        
-        .document-title {
-            flex: 2;
+        .title-card {
             text-align: center;
-            padding: 0 30px;
+            background: #f1f5f9;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+            outline: none;
+            box-shadow: none;
         }
-        
-        .document-title h1 {
+        .title-card h1 {
             font-size: 24px;
-            font-weight: bold;
-            color: #1e40af;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.2em;
+            margin-bottom: 6px;
+            color: #111827;
         }
-        
-        .document-subtitle {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 8px;
+        .title-card p {
+            font-size: 13px;
+            color: #4b5563;
+            letter-spacing: 0.08em;
         }
-        
-        .project-info {
-            flex: 1;
-            text-align: right;
+        .meta-card {
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 12px;
             font-size: 10px;
             position: relative;
         }
-        
-        .project-info .label {
-            font-weight: bold;
-            color: #374151;
+        .meta-card .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
         }
-        
-        .project-info .value {
-            color: #64748b;
-            margin-bottom: 3px;
-        }
-        
+        .meta-label { font-weight: 600; color: #111827; }
+        .meta-value { color: #4b5563; }
         .status-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 999px;
             font-size: 9px;
-            font-weight: bold;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.05em;
+            border: 1px solid #d1d5db;
+            margin-bottom: 12px;
         }
-        
-        .status-validee {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
+        .status-validee { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+        .status-nouvelle { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+        .section {
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            outline: none;
+            box-shadow: none;
+            background: #fff;
         }
-        
-        .status-nouvelle {
-            background: #fef3c7;
-            color: #92400e;
-            border: 1px solid #fde68a;
-        }
-        
-        .status-remplacer {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-        
-        /* Informations du projet */
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .info-section h3 {
-            font-size: 13px;
-            font-weight: bold;
-            color: #1e40af;
+        .section-title {
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: #111827;
             margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
         }
-        
-        .info-section p {
-            margin-bottom: 6px;
-            font-size: 10px;
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+            outline: none;
         }
-        
-        .info-section .label {
+        .info-table tr {
+            border: none;
+            outline: none;
+        }
+        .info-table tr:last-child td { border-bottom: none; }
+        .info-table td {
+            border: none;
+            outline: none;
+        }
+        .info-label {
+            width: 32%;
             font-weight: 600;
-            color: #374151;
-            display: inline-block;
-            min-width: 100px;
+            color: #111827;
+            padding: 8px 0;
         }
-        
-        /* Section Maître d'ouvrage et Bureau d'architecture */
-        .stakeholders-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .stakeholder-section h3 {
-            font-size: 12px;
-            font-weight: bold;
-            color: #1e40af;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        
-        .stakeholder-section p {
-            margin-bottom: 5px;
-            font-size: 9px;
-            color: #64748b;
-        }
-        
-        /* Section Remarques */
-        .remarques-section {
-            margin-bottom: 15px;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .remarques-section h3 {
-            font-size: 12px;
-            font-weight: bold;
-            color: #1e40af;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        
-        .remarques-box {
-            min-height: 50px;
-            max-height: 50px;
-            padding: 8px;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            background: white;
-            font-size: 9px;
-            line-height: 1.4;
-            white-space: pre-wrap;
-            overflow: hidden;
-        }
-        
-        .remarques-lines {
-            border-top: 1px solid #e2e8f0;
-            margin-top: 2px;
-            padding-top: 2px;
-        }
-        
-        .remarques-lines .line {
-            height: 8px;
+        .info-value {
+            color: #4b5563;
+            padding: 8px 0;
             border-bottom: 1px solid #f1f5f9;
-            margin-bottom: 1px;
         }
-        
-        /* Section Approbations */
-        .approbations-section {
-            margin-bottom: 15px;
-        }
-        
-        .approbations-section h3 {
-            font-size: 12px;
-            font-weight: bold;
-            color: #1e40af;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        
-        .approbations-grid {
+        .details-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            border: none;
+            outline: none;
         }
-        
-        .approbation-box {
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 8px;
-            background: white;
-            min-height: 70px;
+        .details-grid > * {
+            border: none;
+            outline: none;
         }
-        
-        .approbation-label {
-            font-size: 7px;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 6px;
-            text-align: center;
+        .card-muted {
+            background: #f8fafc;
+            border: 1px dashed #cbd5f5;
+            border-radius: 10px;
+            padding: 12px;
         }
-        
-        .approbation-signature {
-            height: 35px;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 4px;
+        .card-muted h4 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 8px;
+            color: #1d4ed8;
         }
-        
-        .approbation-date {
-            font-size: 6px;
-            color: #64748b;
-            margin-top: 3px;
+        .card-muted p {
+            font-size: 10px;
+            color: #475569;
+            margin-bottom: 2px;
         }
-        
-        .approbation-date-line {
-            border-top: 1px solid #e2e8f0;
-            margin-top: 2px;
-            padding-top: 2px;
-        }
-        
-        /* Section Sous-traitant */
-        .soustraitant-section {
+        .soustraitant-wrapper {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
         }
-        
-        .soustraitant-logo {
-            max-width: 80px;
-            max-height: 50px;
-            object-fit: contain;
-            flex-shrink: 0;
-        }
-        
-        .soustraitant-info {
+        .soustraitant-details {
             flex: 1;
         }
-        
-        .soustraitant-label {
-            font-size: 8px;
-            font-weight: bold;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-bottom: 4px;
+        .soustraitant-logo {
+            width: 80px;
+            height: 60px;
+            object-fit: contain;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fff;
+            flex-shrink: 0;
         }
-        
-        .soustraitant-name {
-            font-size: 11px;
+        .soustraitant-logo.placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: #1d4ed8;
+            background: #eff6ff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            flex-shrink: 0;
+            width: 80px;
+            height: 60px;
+        }
+        .soustraitant-name { font-size: 13px; font-weight: 600; color: #1d4ed8; }
+        .soustraitant-meta { font-size: 9px; color: #475569; text-transform: uppercase; letter-spacing: 0.15em; }
+        .remarques-box {
+            min-height: 75px;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 9px;
+            color: #1f2937;
+            white-space: pre-wrap;
+        }
+        .approbations-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            border: none;
+            outline: none;
+        }
+        .approbations-grid > * {
+            border: none;
+            outline: none;
+        }
+        .approbation-box {
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 12px;
+            min-height: 120px;
+            background: #fff;
+        }
+        .approbation-label {
+            font-size: 9px;
+            color: #111827;
+            text-align: center;
+            margin-bottom: 8px;
             font-weight: 600;
-            color: #1e40af;
         }
-        
-        /* Responsive pour impression */
+        .signature-line {
+            height: 60px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .date-line {
+            border-top: 1px solid #e5e7eb;
+            height: 14px;
+            margin-top: 6px;
+        }
+        footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 9px;
+            color: #94a3b8;
+            text-align: center;
+        }
         @media print {
-            body { font-size: 9px; }
-            .container { padding: 10px; }
+            body { background: #fff; }
+            .container { border: none; box-shadow: none; padding: 20px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- En-tête -->
-        <div class="header">
-            <div class="logo-section">
-                ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" alt="Logo" class="logo">` : `
-                    <div style="width: 120px; height: 60px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; margin-bottom: 8px;">
+        <div class="header-grid">
+            <div class="header-card">
+                ${logoBase64
+                  ? `<img src="data:image/png;base64,${logoBase64}" alt="Logo entreprise" class="company-logo" />`
+                  : `<div class="company-logo" style="background:#e0e7ff; border:1px solid #c7d2fe; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#312e81;">
                         ${settings.name.substring(0, 3).toUpperCase()}
-                    </div>
-                `}
+                     </div>`}
                 <div class="company-info">
-                    <div><strong>${settings.name}</strong></div>
-                    <div>${settings.address}</div>
-                    <div>${settings.zipCode} ${settings.city}</div>
-                    <div>Tél: ${settings.phone} | Email: ${settings.email}</div>
+                    <strong>${settings.name}</strong><br/>
+                    ${settings.address}<br/>
+                    ${settings.zipCode} ${settings.city}<br/>
+                    Tél : ${settings.phone}<br/>
+                    ${settings.email}
                 </div>
             </div>
-            
-            <div class="document-title">
-                <h1>FICHE TECHNIQUE</h1>
-                <div class="document-subtitle">N°${ficheNumeroDisplay}</div>
-            </div>
-            
-            <div class="project-info">
+
+            <div class="title-card">
                 ${badgeHTML ? `<span class="status-badge ${badgeClass}">${badgeHTML}</span>` : ''}
-                <div style="margin-top: ${badgeHTML ? '25px' : '0'};">
-                    <div class="label">Date</div>
-                    <div class="value">${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
-                    <div class="label">Chantier</div>
-                    <div class="value">${chantier.chantierId}</div>
+                <h1>FICHE TECHNIQUE</h1>
+                <p>DOCUMENT N°${ficheNumeroDisplay}</p>
+            </div>
+
+            <div class="meta-card">
+                <div class="row">
+                    <span class="meta-label">Date</span>
+                    <span class="meta-value">${formattedDate}</span>
+                </div>
+                <div class="row">
+                    <span class="meta-label">Chantier</span>
+                    <span class="meta-value">${chantier.chantierId}</span>
+                </div>
+                <div class="row">
+                    <span class="meta-label">Version</span>
+                    <span class="meta-value">${fiche.version}</span>
                 </div>
             </div>
         </div>
-        
-        ${(soustraitant && soustraitant.nom) ? `
-        <!-- Section Sous-traitant -->
-        <div class="soustraitant-section" style="margin-bottom: 25px;">
-            ${soustraitantLogoBase64 ? `<img src="data:image/png;base64,${soustraitantLogoBase64}" alt="Logo sous-traitant" class="soustraitant-logo">` : ''}
-            <div class="soustraitant-info">
-                <div class="soustraitant-label">Sous-traitant</div>
-                <div class="soustraitant-name">${soustraitant.nom}</div>
+
+        <div class="section">
+            <div class="section-title">Informations essentielles</div>
+            <div class="details-grid">
+                <div>
+                    <table class="info-table">
+                        <tr>
+                            <td class="info-label">Nom du chantier</td>
+                            <td class="info-value">${chantier.nomChantier}</td>
+                        </tr>
+                        ${chantier.client?.nom
+                          ? `<tr><td class="info-label">Client</td><td class="info-value">${chantier.client.nom}</td></tr>`
+                          : ''}
+                        ${cscRow}
+                        <tr>
+                            <td class="info-label">Objet / Matériel</td>
+                            <td class="info-value">${fiche.name}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card-muted">
+                    <h4>Références</h4>
+                    ${chantier.maitreOuvrageNom
+                      ? `<p><strong>Maître d'ouvrage :</strong> ${chantier.maitreOuvrageNom}</p>`
+                      : ''}
+                    ${chantier.maitreOuvrageAdresse ? `<p>${chantier.maitreOuvrageAdresse}</p>` : ''}
+                    ${chantier.maitreOuvrageLocalite ? `<p>${chantier.maitreOuvrageLocalite}</p>` : ''}
+                    ${chantier.bureauArchitectureNom
+                      ? `<p style="margin-top:8px;"><strong>Bureau d'architecture :</strong> ${chantier.bureauArchitectureNom}</p>`
+                      : ''}
+                    ${chantier.bureauArchitectureAdresse ? `<p>${chantier.bureauArchitectureAdresse}</p>` : ''}
+                    ${chantier.bureauArchitectureLocalite ? `<p>${chantier.bureauArchitectureLocalite}</p>` : ''}
+                </div>
             </div>
         </div>
-        ` : ''}
-        
-        <!-- Informations du projet -->
-        <div class="info-grid">
-            <div class="info-section">
-                <h3>Informations du chantier</h3>
-                <p><span class="label">Nom:</span> ${chantier.nomChantier}</p>
-                ${chantier.client?.nom ? `<p><span class="label">Client:</span> ${chantier.client.nom}</p>` : ''}
-            </div>
-            
-            <div class="info-section">
-                <h3>Détails de la fiche</h3>
-                ${fiche.reference ? `<p><span class="label">CSC:</span> ${fiche.reference}</p>` : ''}
-                ${soustraitant ? `<p><span class="label">Sous-traitant:</span> ${soustraitant.nom}</p>` : ''}
-                <p><span class="label">Matériel:</span> ${fiche.name}</p>
-            </div>
-        </div>
-        
-        ${(chantier.maitreOuvrageNom || chantier.bureauArchitectureNom) ? `
-        <!-- Maître d'ouvrage et Bureau d'architecture -->
-        <div class="stakeholders-grid">
-            ${chantier.maitreOuvrageNom ? `
-            <div class="stakeholder-section">
-                <h3>Maître d'ouvrage</h3>
-                <p>${chantier.maitreOuvrageNom}</p>
-                ${chantier.maitreOuvrageAdresse ? `<p>${chantier.maitreOuvrageAdresse}</p>` : ''}
-                ${chantier.maitreOuvrageLocalite ? `<p>${chantier.maitreOuvrageLocalite}</p>` : ''}
-            </div>
-            ` : '<div></div>'}
-            
-            ${chantier.bureauArchitectureNom ? `
-            <div class="stakeholder-section">
-                <h3>Bureau d'architecture</h3>
-                <p>${chantier.bureauArchitectureNom}</p>
-                ${chantier.bureauArchitectureAdresse ? `<p>${chantier.bureauArchitectureAdresse}</p>` : ''}
-                ${chantier.bureauArchitectureLocalite ? `<p>${chantier.bureauArchitectureLocalite}</p>` : ''}
-            </div>
-            ` : '<div></div>'}
-        </div>
-        ` : ''}
-        
-        ${remarques ? `
-        <!-- Section Remarques -->
-        <div class="remarques-section">
-            <h3>Remarques</h3>
-            <div class="remarques-box">${remarques}</div>
-        </div>
-        ` : `
-        <!-- Section Remarques -->
-        <div class="remarques-section">
-            <h3>Remarques</h3>
+
+        ${soustraitantBlock}
+
+        <div class="section">
+            <div class="section-title">Remarques</div>
             <div class="remarques-box">
-                <div class="remarques-lines">
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
-                </div>
+                ${remarques ? remarques : '..............................................................................................................................'}
             </div>
         </div>
-        `}
-        
-        <!-- Section Approbations -->
-        <div class="approbations-section">
-            <h3>Approuvé par</h3>
+
+        <div class="section">
+            <div class="section-title">Approbations</div>
             <div class="approbations-grid">
-                <div class="approbation-box">
-                    <div class="approbation-label">L'Architecte</div>
-                    <div class="approbation-signature"></div>
-                    <div class="approbation-date">
-                        <div>Date:</div>
-                        <div class="approbation-date-line"></div>
+                ${['L\'Architecte', 'Le M.O.', 'Représentant du M.O.', 'L\'Entrepreneur'].map(label => `
+                    <div class="approbation-box">
+                        <div class="approbation-label">${label}</div>
+                        <div class="signature-line"></div>
+                        <div class="date-line"></div>
                     </div>
-                </div>
-                <div class="approbation-box">
-                    <div class="approbation-label">Le M.O.</div>
-                    <div class="approbation-signature"></div>
-                    <div class="approbation-date">
-                        <div>Date:</div>
-                        <div class="approbation-date-line"></div>
-                    </div>
-                </div>
-                <div class="approbation-box">
-                    <div class="approbation-label">Représentant du M.O.</div>
-                    <div class="approbation-signature"></div>
-                    <div class="approbation-date">
-                        <div>Date:</div>
-                        <div class="approbation-date-line"></div>
-                    </div>
-                </div>
-                <div class="approbation-box">
-                    <div class="approbation-label">L'Entrepreneur</div>
-                    <div class="approbation-signature"></div>
-                    <div class="approbation-date">
-                        <div>Date:</div>
-                        <div class="approbation-date-line"></div>
-                    </div>
-                </div>
+                `).join('')}
             </div>
         </div>
-        
-        <!-- Pied de page -->
-        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 9px; color: #64748b; text-align: center;">
-            <p>© ${settings.name} - ${settings.address}, ${settings.zipCode} ${settings.city}</p>
-        </div>
+
+        <footer>
+            © ${settings.name} — ${settings.address}, ${settings.zipCode} ${settings.city}
+        </footer>
     </div>
 </body>
 </html>
   `
 }
-

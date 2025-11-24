@@ -182,6 +182,10 @@ export const authOptions: AuthOptions = {
       console.error('❌ [NextAuth] Erreur:', code, metadata)
     },
     warn(code) {
+      // Ignorer l'avertissement DEBUG_ENABLED qui est trop verbeux
+      if (code === 'DEBUG_ENABLED') {
+        return
+      }
       console.warn('⚠️ [NextAuth] Avertissement:', code)
     },
     debug(code, metadata) {

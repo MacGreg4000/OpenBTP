@@ -15,7 +15,7 @@ export async function PUT(
     }
 
     const { dossierId } = await params
-    const { fichesStatuts, fichesRemplacees, fichesSoustraitants, fichesRemarques } = await request.json()
+    const { fichesStatuts, fichesRemplacees, fichesSoustraitants, fichesReferences, fichesRemarques } = await request.json()
 
     // Vérifier que le dossier existe
     const dossier = await prisma.dossierTechnique.findUnique({
@@ -33,14 +33,14 @@ export async function PUT(
         const fiche = dossier.fiches.find(f => f.ficheId === ficheId)
         if (fiche) {
           const updateData: {
-            statut: 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
+            statut: 'VALIDEE' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
             soustraitantId?: number | null
             remarques?: string | null
             ficheReference?: string | null
             version?: number
             ficheRemplaceeId?: string | null
           } = {
-            statut: statut as 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
+            statut: statut as 'VALIDEE' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
           }
           
           // Ajouter soustraitantId si fourni
@@ -48,6 +48,11 @@ export async function PUT(
             updateData.soustraitantId = fichesSoustraitants[ficheId]
           } else if (fichesSoustraitants && fichesSoustraitants[ficheId] === '') {
             updateData.soustraitantId = null
+          }
+          
+          // Ajouter ficheReference (CSC) si fourni
+          if (fichesReferences && fichesReferences[ficheId] !== undefined) {
+            updateData.ficheReference = fichesReferences[ficheId] || null
           }
           
           // Ajouter remarques si fourni
@@ -68,25 +73,28 @@ export async function PUT(
       for (const [ancienneFicheId, nouvelleFicheId] of Object.entries(fichesRemplacees)) {
         const ancienneFiche = dossier.fiches.find(f => f.ficheId === ancienneFicheId)
         if (ancienneFiche) {
-          // Marquer l'ancienne fiche comme remplacée
-          await prisma.dossierFiche.update({
-            where: { id: ancienneFiche.id },
-            data: {
-              statut: 'A_REMPLACER'
-            }
+          // Supprimer l'ancienne fiche (elle est remplacée)
+          await prisma.dossierFiche.delete({
+            where: { id: ancienneFiche.id }
           })
 
           // Créer une nouvelle entrée pour la fiche de remplacement
           const nouvelleVersion = ancienneFiche.version + 1
+          // Utiliser la référence modifiée si disponible, sinon celle de l'ancienne fiche
+          const nouvelleReference = (fichesReferences && fichesReferences[ancienneFicheId]) 
+            ? fichesReferences[ancienneFicheId] 
+            : ancienneFiche.ficheReference
           await prisma.dossierFiche.create({
             data: {
               dossierId: dossierId,
               ficheId: nouvelleFicheId as string,
-              ficheReference: ancienneFiche.ficheReference,
+              ficheReference: nouvelleReference,
               version: nouvelleVersion,
               statut: 'NOUVELLE_PROPOSITION',
               ordre: ancienneFiche.ordre,
-              ficheRemplaceeId: ancienneFiche.id
+              ficheRemplaceeId: ancienneFiche.id,
+              soustraitantId: ancienneFiche.soustraitantId,
+              remarques: ancienneFiche.remarques
             }
           })
         }

@@ -168,6 +168,7 @@ export async function PUT(
     if (body.telephone !== undefined) updateData.telephone = body.telephone || null
     if (body.adresse !== undefined) updateData.adresse = body.adresse || null
     if (body.tva !== undefined) updateData.tva = body.tva || null
+    if (body.logo !== undefined) updateData.logo = body.logo || null
     if (body.actif !== undefined) updateData.actif = !!body.actif
 
     const sousTraitant = await prisma.soustraitant.update({

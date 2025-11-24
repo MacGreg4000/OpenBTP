@@ -17,7 +17,7 @@ interface DossierFiche {
   ficheId: string
   ficheReference: string | null
   version: number
-  statut: 'VALIDEE' | 'A_REMPLACER' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
+  statut: 'VALIDEE' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
   ordre: number
   ficheRemplaceeId: string | null
 }
@@ -90,8 +90,6 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
       case 'NOUVELLE_PROPOSITION':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-      case 'A_REMPLACER':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
       case 'BROUILLON':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
       default:
@@ -105,8 +103,6 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
         return 'Validée'
       case 'NOUVELLE_PROPOSITION':
         return 'Nouvelle proposition'
-      case 'A_REMPLACER':
-        return 'À remplacer'
       case 'BROUILLON':
         return 'Brouillon'
       default:
