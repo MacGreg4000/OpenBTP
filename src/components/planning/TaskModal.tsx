@@ -26,9 +26,11 @@ interface TaskData {
 }
 
 interface Chantier {
-  chantierId: string;
-  nomChantier: string;
-  statut: string;
+  chantierId?: string;
+  nomChantier?: string;
+  id?: string; // Format alternatif de l'API
+  title?: string; // Format alternatif de l'API
+  statut?: string;
 }
 
 interface OuvrierInterne {
@@ -180,22 +182,35 @@ export default function TaskModal({
               value={formData.chantierId}
               onChange={(e) => {
                 const selectedChantierId = e.target.value;
-                const selectedChantier = chantiers.find(c => c.chantierId === selectedChantierId);
+                // Gérer les deux formats : chantierId ou id
+                const selectedChantier = chantiers.find(c => 
+                  (c.chantierId || c.id) === selectedChantierId
+                );
                 
                 setFormData(prev => ({
                   ...prev,
                   chantierId: selectedChantierId,
-                  title: selectedChantier ? selectedChantier.nomChantier : ''
+                  title: selectedChantier 
+                    ? (selectedChantier.nomChantier || selectedChantier.title || '')
+                    : ''
                 }));
               }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">Tâche libre (sans chantier)</option>
-              {Array.isArray(chantiers) && chantiers.map(chantier => (
-                <option key={chantier.chantierId} value={chantier.chantierId}>
-                  {chantier.nomChantier} ({chantier.chantierId})
-                </option>
-              ))}
+              {Array.isArray(chantiers) && chantiers.map(chantier => {
+                // Gérer les deux formats : chantierId/nomChantier ou id/title
+                const chantierId = chantier.chantierId || chantier.id || '';
+                const nomChantier = chantier.nomChantier || chantier.title || '';
+                
+                if (!chantierId || !nomChantier) return null;
+                
+                return (
+                  <option key={chantierId} value={chantierId}>
+                    {nomChantier} ({chantierId})
+                  </option>
+                );
+              })}
             </select>
             {!Array.isArray(chantiers) && (
               <p className="mt-1 text-sm text-red-600">Erreur lors du chargement des chantiers</p>

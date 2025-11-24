@@ -60,9 +60,12 @@ export async function GET() {
       const end = chantier.dateFinReelle ? chantier.dateFinReelle.toISOString() : null
 
       // Forme attendue par Dashboard (/src/app/(dashboard)/page.tsx)
+      // Retourner aussi chantierId et nomChantier pour compatibilité avec TaskModal
       return {
         id: chantier.chantierId,
+        chantierId: chantier.chantierId, // Pour compatibilité avec TaskModal
         title: chantier.nomChantier,
+        nomChantier: chantier.nomChantier, // Pour compatibilité avec TaskModal
         client: chantier.client?.nom || 'Client non spécifié',
         etat: etatLibelle,
         start,
