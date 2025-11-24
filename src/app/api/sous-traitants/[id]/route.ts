@@ -72,6 +72,8 @@ export async function GET(
         contact: true,
         telephone: true,
         adresse: true,
+        tva: true,
+        logo: true,
         actif: true,
         createdAt: true,
         updatedAt: true,

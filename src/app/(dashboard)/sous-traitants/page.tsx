@@ -19,7 +19,8 @@ import {
   KeyIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  ChevronUpDownIcon
+  ChevronUpDownIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
 // import { useRouter } from 'next/navigation'
@@ -501,8 +502,16 @@ export default function SousTraitantsPage() {
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <Link
+                        href={`/sous-traitants/${st.id}`}
+                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-200"
+                        title="Consulter"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                      </Link>
+                      <Link
                         href={`/sous-traitants/${st.id}/edit`}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
+                        title="Modifier"
                       >
                         <PencilSquareIcon className="h-4 w-4" />
                       </Link>
@@ -524,6 +533,7 @@ export default function SousTraitantsPage() {
                           isDeleting: false
                         })}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                        title="Supprimer"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -765,6 +775,14 @@ export default function SousTraitantsPage() {
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div className="flex space-x-1 justify-end">
+                              <Link 
+                                href={`/sous-traitants/${st.id}`} 
+                                className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors" 
+                                title="Consulter"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <EyeIcon className="h-4 w-4" />
+                              </Link>
                               <Link 
                                 href={`/sous-traitants/${st.id}/edit`} 
                                 className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors" 
