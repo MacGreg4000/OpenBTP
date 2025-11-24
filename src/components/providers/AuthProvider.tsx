@@ -13,13 +13,13 @@ export default function AuthProvider({
   
   // Désactiver le refetch automatique sur les pages d'authentification pour éviter les boucles
   const isAuthPage = useMemo(() => {
-    return pathname?.includes('/login') || pathname?.includes('/reset-password')
+    return pathname?.includes('/login') || pathname?.includes('/reset-password') || pathname?.includes('/setup')
   }, [pathname])
   useEffect(() => {
-    // Ne pas intercepter les erreurs sur la page de login pour éviter les boucles infinies
+    // Ne pas intercepter les erreurs sur la page de login/setup pour éviter les boucles infinies
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-    if (currentPath.includes('/login') || currentPath.includes('/reset-password')) {
-      // Sur la page de login, on laisse NextAuth gérer les erreurs normalement
+    if (currentPath.includes('/login') || currentPath.includes('/reset-password') || currentPath.includes('/setup')) {
+      // Sur la page de login/setup, on laisse NextAuth gérer les erreurs normalement
       return
     }
 
@@ -33,10 +33,10 @@ export default function AuthProvider({
         console.error('❌ [NextAuth] Erreur de session détectée:', errorMsg)
         // Empêcher la redirection vers reset-password
         event.preventDefault()
-        // Rediriger vers login seulement si on n'est pas déjà sur login ou reset-password
+        // Rediriger vers login seulement si on n'est pas déjà sur login, reset-password ou setup
         if (typeof window !== 'undefined') {
           const path = window.location.pathname
-          if (!path.includes('/login') && !path.includes('/reset-password')) {
+          if (!path.includes('/login') && !path.includes('/reset-password') && !path.includes('/setup')) {
             console.log('🔄 [NextAuth] Redirection vers /login')
             window.location.href = '/login'
           }
@@ -58,7 +58,7 @@ export default function AuthProvider({
         event.preventDefault()
         if (typeof window !== 'undefined') {
           const path = window.location.pathname
-          if (!path.includes('/login') && !path.includes('/reset-password')) {
+          if (!path.includes('/login') && !path.includes('/reset-password') && !path.includes('/setup')) {
             console.log('🔄 [NextAuth] Redirection vers /login (promise rejection)')
             window.location.href = '/login'
           }

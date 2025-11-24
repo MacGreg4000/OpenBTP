@@ -12,7 +12,7 @@ export default function RootClientProviders({ children }: { children: React.Reac
   const isPublicPortal = pathname.startsWith('/public/portail') || pathname.startsWith('/public/bon-regie') || pathname.startsWith('/public')
   
   // Pages d'authentification : ne pas utiliser SessionProvider pour éviter les appels à /api/auth/session
-  const isAuthPage = pathname === '/login' || pathname === '/reset-password'
+  const isAuthPage = pathname === '/login' || pathname === '/reset-password' || pathname === '/setup'
 
   if (isPublicPortal) {
     return (
