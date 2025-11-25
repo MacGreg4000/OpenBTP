@@ -247,9 +247,9 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
     })
     
       // Grouper les rapports généraux avec leurs variantes
-      for (const rapportGeneral of rapportsGeneraux) {
+    for (const rapportGeneral of rapportsGeneraux) {
         // Méthode 1 : Utiliser rapportVariantesIds si disponible
-        const variantesIds = rapportGeneral.metadata?.rapportVariantesIds || []
+      const variantesIds = rapportGeneral.metadata?.rapportVariantesIds || []
         
         // Convertir les IDs en numbers pour la comparaison
         const variantesIdsNumbers = variantesIds.map(id => Number(id))
@@ -292,12 +292,12 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
             }
           }
         }
-        
-        groupes.push({
-          principal: rapportGeneral,
-          variantes
-        })
-      }
+      
+      groupes.push({
+        principal: rapportGeneral,
+        variantes
+      })
+    }
     
     // Collecter tous les IDs des rapports taggés qui ont été groupés
     const rapportsTaggésGroupés = new Set<number>()
@@ -447,11 +447,11 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
                     const hasVariantes = groupe.variantes.length > 0
                     
                     return (
-                      <div key={groupe.principal.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        {/* Rapport principal */}
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
+                    <div key={groupe.principal.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      {/* Rapport principal */}
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1">
                               {/* Bouton flèche pour dérouler (seulement si variantes) */}
                               {hasVariantes && (
                                 <button
@@ -470,60 +470,60 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
                                 <div className="w-7" /> // Espace pour aligner si pas de flèche
                               )}
                               <DocumentTextIcon className="h-6 w-6 text-slate-600 dark:text-slate-300 flex-shrink-0" />
-                              <div className="flex-1">
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                  {groupe.principal.nom}
-                                </h3>
-                                <div className="flex items-center gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                  <span>{groupe.principal.User?.name || groupe.principal.User?.email || 'Utilisateur inconnu'}</span>
-                                  <span>•</span>
-                                  <span>{new Date(groupe.principal.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                            <div className="flex-1">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                {groupe.principal.nom}
+                              </h3>
+                              <div className="flex items-center gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                <span>{groupe.principal.User?.name || groupe.principal.User?.email || 'Utilisateur inconnu'}</span>
+                                <span>•</span>
+                                <span>{new Date(groupe.principal.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
                                   {hasVariantes && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                                        {groupe.variantes.length} variante{groupe.variantes.length > 1 ? 's' : ''} filtrée{groupe.variantes.length > 1 ? 's' : ''}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                                      {groupe.variantes.length} variante{groupe.variantes.length > 1 ? 's' : ''} filtrée{groupe.variantes.length > 1 ? 's' : ''}
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={groupe.principal.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                title="Télécharger"
-                              >
-                                <EyeIcon className="h-5 w-5" />
-                              </a>
-                              <button
-                                onClick={() => handleOpenEmailModal(groupe.principal.id, groupe.principal.nom)}
-                                className="p-2 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                                title="Envoyer par email"
-                              >
-                                <EnvelopeIcon className="h-5 w-5" />
-                              </button>
-                              <Link
-                                href={`/chantiers/${params.chantierId}/rapports/nouveau?edit=${groupe.principal.id}`}
-                                className="p-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                                title="Modifier"
-                              >
-                                <PencilIcon className="h-5 w-5" />
-                              </Link>
-                              <button
-                                onClick={() => handleDeleteRapport(groupe.principal.id)}
-                                className="p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                title="Supprimer"
-                              >
-                                <TrashIcon className="h-5 w-5" />
-                              </button>
-                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={groupe.principal.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Télécharger"
+                            >
+                              <EyeIcon className="h-5 w-5" />
+                            </a>
+                            <button
+                              onClick={() => handleOpenEmailModal(groupe.principal.id, groupe.principal.nom)}
+                              className="p-2 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                              title="Envoyer par email"
+                            >
+                              <EnvelopeIcon className="h-5 w-5" />
+                            </button>
+                            <Link
+                              href={`/chantiers/${params.chantierId}/rapports/nouveau?edit=${groupe.principal.id}`}
+                              className="p-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                              title="Modifier"
+                            >
+                              <PencilIcon className="h-5 w-5" />
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteRapport(groupe.principal.id)}
+                              className="p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Supprimer"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
                           </div>
                         </div>
-                        
+                      </div>
+                      
                         {/* Variantes filtrées - déroulable */}
                         {hasVariantes && (
                           <div 
@@ -532,9 +532,9 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
                             }`}
                           >
                             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
-                              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                                Rapports filtrés par tag :
-                              </h4>
+                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                            Rapports filtrés par tag :
+                          </h4>
                               <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                   <thead className="bg-gray-100 dark:bg-gray-800">
@@ -554,15 +554,15 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
                                     </tr>
                                   </thead>
                                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    {groupe.variantes.map((variante) => (
+                            {groupe.variantes.map((variante) => (
                                       <tr key={variante.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td className="px-4 py-3 whitespace-nowrap">
                                           <div className="flex items-center gap-2">
-                                            <TagIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                                  <TagIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
                                             <span className="text-sm font-medium text-gray-900 dark:text-white">
                                               {getTagFromRapport(variante)}
-                                            </span>
-                                          </div>
+                                  </span>
+                                </div>
                                         </td>
                                         <td className="px-4 py-3">
                                           <span className="text-sm text-gray-900 dark:text-white">
@@ -576,33 +576,33 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                           <div className="flex items-center justify-end gap-2">
-                                            <a
-                                              href={variante.url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                              title="Télécharger"
-                                            >
-                                              <EyeIcon className="h-4 w-4" />
-                                            </a>
-                                            <button
-                                              onClick={() => handleOpenEmailModal(variante.id, variante.nom)}
-                                              className="p-1.5 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
-                                              title="Envoyer par email"
-                                            >
-                                              <EnvelopeIcon className="h-4 w-4" />
-                                            </button>
-                                          </div>
+                                  <a
+                                    href={variante.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                    title="Télécharger"
+                                  >
+                                    <EyeIcon className="h-4 w-4" />
+                                  </a>
+                                  <button
+                                    onClick={() => handleOpenEmailModal(variante.id, variante.nom)}
+                                    className="p-1.5 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
+                                    title="Envoyer par email"
+                                  >
+                                    <EnvelopeIcon className="h-4 w-4" />
+                                  </button>
+                                </div>
                                         </td>
                                       </tr>
                                     ))}
                                   </tbody>
                                 </table>
                               </div>
-                            </div>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
+                    </div>
                     )
                   })}
                 </div>

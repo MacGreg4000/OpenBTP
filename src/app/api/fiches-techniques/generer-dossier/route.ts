@@ -835,23 +835,23 @@ export async function POST(request: Request) {
         // Supprimer les anciennes fiches du brouillon pour les remplacer par les nouvelles
         await prisma.dossierFiche.deleteMany({
           where: { dossierId: dossierBrouillon.id }
-        })
-      } else {
-        // Création d'un nouveau dossier
-        dossierTechnique = await prisma.dossierTechnique.create({
-          data: {
-            chantierId: chantierId,
-            nom: `Dossier technique - ${dateStr}`,
-            version: 1,
-            statut: 'BROUILLON',
-            url: `/chantiers/${chantierId}/documents/${fileName}`,
-            taille: pdfBytes.length,
-            dateGeneration: new Date(),
-            dateModification: new Date(),
-            createdBy: user.id,
-            includeTableOfContents: options?.includeTableOfContents || false
-          }
-        })
+      })
+    } else {
+      // Création d'un nouveau dossier
+      dossierTechnique = await prisma.dossierTechnique.create({
+        data: {
+          chantierId: chantierId,
+          nom: `Dossier technique - ${dateStr}`,
+          version: 1,
+          statut: 'BROUILLON',
+          url: `/chantiers/${chantierId}/documents/${fileName}`,
+          taille: pdfBytes.length,
+          dateGeneration: new Date(),
+          dateModification: new Date(),
+          createdBy: user.id,
+          includeTableOfContents: options?.includeTableOfContents || false
+        }
+      })
       }
     }
 

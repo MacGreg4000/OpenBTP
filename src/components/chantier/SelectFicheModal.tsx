@@ -105,7 +105,7 @@ export default function SelectFicheModal({
       setSearchFilter('')
       setSelectedFicheId(null)
     }
-  }, [isOpen, excludeFicheId])
+  }, [isOpen, excludeFicheId, chantierId])
 
   // Toggle l'expansion d'un dossier (exactement comme sur la page principale)
   const toggleDossier = (chemin: string) => {

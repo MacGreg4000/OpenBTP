@@ -45,12 +45,9 @@ export async function GET(request: Request) {
 
     // Déterminer quel dossier scanner
     let baseDir: string
-    let isCustom = false
-
     if (chantierId && hasCustomFiches(chantierId)) {
       // Utiliser le dossier personnalisé du chantier
       baseDir = getCustomFichesPath(chantierId)
-      isCustom = true
       console.log(`[API Structure] Utilisation du dossier personnalisé pour le chantier ${chantierId}`)
     } else {
       // Utiliser le dossier standard

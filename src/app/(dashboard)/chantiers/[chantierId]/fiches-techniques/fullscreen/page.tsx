@@ -117,7 +117,7 @@ export default function FichesTechniquesFullscreenPage() {
       }
     }
     fetchStructure()
-  }, [])
+  }, [chantierId])
 
   // Charger les sous-traitants
   useEffect(() => {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   XMarkIcon,
   ArrowPathIcon,
@@ -131,60 +131,61 @@ export default function ModifierDossierModal({
     fetchSoustraitants()
   }, [])
 
+  // Fonction pour charger la structure complète
+  const fetchStructure = useCallback(async () => {
+    try {
+      setLoadingStructure(true)
+      const response = await fetch(`/api/fiches-techniques/structure?chantierId=${chantierId}`)
+      if (!response.ok) throw new Error('Erreur lors du chargement')
+      const data = await response.json()
+      
+      // Initialiser tous les dossiers comme ouverts
+      const initExpanded = (dossiers: Dossier[]): Dossier[] => {
+        return dossiers.map(d => ({
+          ...d,
+          isExpanded: true,
+          sousDossiers: initExpanded(d.sousDossiers)
+        }))
+      }
+      
+      const initializedStructure = initExpanded(data)
+      setStructureComplete(initializedStructure)
+      setSearchFilterReplacement('')
+      
+      // Debug: compter toutes les fiches
+      const countAllFiches = (dossiers: Dossier[]): number => {
+        let count = 0
+        dossiers.forEach(d => {
+          count += d.fiches.length
+          if (d.sousDossiers.length > 0) {
+            count += countAllFiches(d.sousDossiers)
+          }
+        })
+        return count
+      }
+      const totalFiches = countAllFiches(initializedStructure)
+      console.log('[ModifierDossierModal] Structure complète chargée:', {
+        totalFiches,
+        replacementMode,
+        dossiers: initializedStructure.map(d => ({
+          nom: d.nom,
+          fichesCount: d.fiches.length,
+          fiches: d.fiches.map(f => ({ id: f.id, titre: f.titre }))
+        }))
+      })
+    } catch (error) {
+      console.error('Erreur lors du chargement de la structure:', error)
+    } finally {
+      setLoadingStructure(false)
+    }
+  }, [chantierId, replacementMode])
+
   // Charger la structure complète quand on entre en mode remplacement
   useEffect(() => {
     if (replacementMode) {
-      const fetchStructure = async () => {
-        try {
-          setLoadingStructure(true)
-          const response = await fetch(`/api/fiches-techniques/structure?chantierId=${chantierId}`)
-          if (!response.ok) throw new Error('Erreur lors du chargement')
-          const data = await response.json()
-          
-          // Initialiser tous les dossiers comme ouverts
-          const initExpanded = (dossiers: Dossier[]): Dossier[] => {
-            return dossiers.map(d => ({
-              ...d,
-              isExpanded: true,
-              sousDossiers: initExpanded(d.sousDossiers)
-            }))
-          }
-          
-          const initializedStructure = initExpanded(data)
-          setStructureComplete(initializedStructure)
-          setSearchFilterReplacement('')
-          
-          // Debug: compter toutes les fiches
-          const countAllFiches = (dossiers: Dossier[]): number => {
-            let count = 0
-            dossiers.forEach(d => {
-              count += d.fiches.length
-              if (d.sousDossiers.length > 0) {
-                count += countAllFiches(d.sousDossiers)
-              }
-            })
-            return count
-          }
-          const totalFiches = countAllFiches(initializedStructure)
-          console.log('[ModifierDossierModal] Structure complète chargée:', {
-            totalFiches,
-            replacementMode,
-            dossiers: initializedStructure.map(d => ({
-              nom: d.nom,
-              fichesCount: d.fiches.length,
-              fiches: d.fiches.map(f => ({ id: f.id, titre: f.titre }))
-            }))
-          })
-        } catch (error) {
-          console.error('Erreur lors du chargement de la structure:', error)
-        } finally {
-          setLoadingStructure(false)
-        }
-      }
-      
       fetchStructure()
     }
-  }, [replacementMode])
+  }, [replacementMode, fetchStructure])
 
   const handleSelectReplacement = (nouvelleFicheId: string) => {
     if (replacementMode) {
