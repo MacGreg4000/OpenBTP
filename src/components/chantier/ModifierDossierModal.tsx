@@ -137,7 +137,7 @@ export default function ModifierDossierModal({
       const fetchStructure = async () => {
         try {
           setLoadingStructure(true)
-          const response = await fetch('/api/fiches-techniques/structure')
+          const response = await fetch(`/api/fiches-techniques/structure?chantierId=${chantierId}`)
           if (!response.ok) throw new Error('Erreur lors du chargement')
           const data = await response.json()
           
@@ -785,39 +785,38 @@ export default function ModifierDossierModal({
                           </div>
                           <div className="ml-6 space-y-1">
                             {d.fiches.map(fiche => (
-                                  <label
-                                    key={fiche.id}
-                                    className="flex items-center py-1 px-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded cursor-pointer"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={fichesSelectionnees.has(fiche.id)}
-                                      onChange={(e) => {
-                                        const newSet = new Set(fichesSelectionnees)
-                                        if (e.target.checked) {
-                                          newSet.add(fiche.id)
-                                        } else {
-                                          newSet.delete(fiche.id)
-                                        }
-                                        setFichesSelectionnees(newSet)
-                                      }}
-                                      className="mr-2"
-                                    />
-                                    <DocumentTextIcon className="h-4 w-4 text-blue-500 mr-2" />
-                                    <span className="text-xs text-gray-700 dark:text-gray-300 flex-1">
-                                      {fiche.titre}
-                                    </span>
-                                    {fiche.referenceCSC && (
-                                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                                        (CSC: {fiche.referenceCSC})
-                                      </span>
-                                    )}
-                                  </label>
-                                ))}
-                            </div>
+                              <label
+                                key={fiche.id}
+                                className="flex items-center py-1 px-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={fichesSelectionnees.has(fiche.id)}
+                                  onChange={(e) => {
+                                    const newSet = new Set(fichesSelectionnees)
+                                    if (e.target.checked) {
+                                      newSet.add(fiche.id)
+                                    } else {
+                                      newSet.delete(fiche.id)
+                                    }
+                                    setFichesSelectionnees(newSet)
+                                  }}
+                                  className="mr-2"
+                                />
+                                <DocumentTextIcon className="h-4 w-4 text-blue-500 mr-2" />
+                                <span className="text-xs text-gray-700 dark:text-gray-300 flex-1">
+                                  {fiche.titre}
+                                </span>
+                                {fiche.referenceCSC && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                    (CSC: {fiche.referenceCSC})
+                                  </span>
+                                )}
+                              </label>
+                            ))}
                           </div>
-                        )
-                      })}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

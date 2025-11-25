@@ -34,6 +34,7 @@ interface SelectFicheModalProps {
   onSelect: (ficheId: string) => void
   excludeFicheId?: string
   title?: string
+  chantierId?: string
 }
 
 export default function SelectFicheModal({
@@ -41,7 +42,8 @@ export default function SelectFicheModal({
   onClose,
   onSelect,
   excludeFicheId,
-  title = 'Sélectionner une fiche technique'
+  title = 'Sélectionner une fiche technique',
+  chantierId
 }: SelectFicheModalProps) {
   const [structure, setStructure] = useState<Dossier[]>([])
   const [loading, setLoading] = useState(false)
@@ -54,7 +56,7 @@ export default function SelectFicheModal({
       const fetchStructure = async () => {
         try {
           setLoading(true)
-          const response = await fetch('/api/fiches-techniques/structure')
+          const response = await fetch(chantierId ? `/api/fiches-techniques/structure?chantierId=${chantierId}` : '/api/fiches-techniques/structure')
           if (!response.ok) throw new Error('Erreur lors du chargement')
           const data = await response.json()
           

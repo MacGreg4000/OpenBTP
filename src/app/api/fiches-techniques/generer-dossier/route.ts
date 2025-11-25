@@ -10,46 +10,137 @@ import { generateFicheTechniqueCoverHTML, type FicheTechniqueCoverData } from '@
 import { generateDossierTechniqueCoverHTML, type DossierTechniqueCoverData } from '@/lib/pdf/templates/dossier-technique-template'
 import { readFile } from 'fs/promises'
 
-// Fonction pour trouver un fichier PDF dans un dossier et ses sous-dossiers
-async function findPdfFile(baseDir: string, fileName: string): Promise<string | null> {
-  console.log(`Recherche de fichier: ${fileName} dans ${baseDir}`)
-  
+// Fonction pour vérifier si un chantier a un dossier personnalisé
+function hasCustomFiches(chantierId: string): boolean {
+  const customPath = path.join(process.cwd(), 'public', 'chantiers', chantierId, 'fiches-techniques')
+  return fs.existsSync(customPath) && fs.statSync(customPath).isDirectory()
+}
+
+// Fonction pour obtenir le chemin de base des fiches techniques (personnalisé ou standard)
+function getFichesBaseDir(chantierId?: string): string {
+  if (chantierId && hasCustomFiches(chantierId)) {
+    return path.join(process.cwd(), 'public', 'chantiers', chantierId, 'fiches-techniques')
+  }
+  return path.join(process.cwd(), 'public', 'fiches-techniques')
+}
+
+// Fonction récursive pour chercher un fichier PDF dans un dossier et ses sous-dossiers
+function findPdfRecursive(dir: string, fileName: string): string | null {
   try {
-    // Vérifier si le chemin est déjà complet avec l'extension .pdf
-    if (fileName.toLowerCase().endsWith('.pdf')) {
-      // Construire le chemin complet sans ajouter d'extension
-      const fullPath = path.join(process.cwd(), 'public', fileName)
-      if (fs.existsSync(fullPath)) {
-        console.log(`Fichier trouvé: ${fullPath}`)
+    const items = fs.readdirSync(dir)
+    for (const item of items) {
+      const fullPath = path.join(dir, item)
+      const stat = fs.statSync(fullPath)
+      
+      if (stat.isDirectory()) {
+        // Chercher récursivement dans les sous-dossiers
+        const found = findPdfRecursive(fullPath, fileName)
+        if (found) return found
+      } else if (item === fileName || item === `${fileName}.pdf` || (fileName.endsWith('.pdf') && item === fileName)) {
+        // Fichier trouvé
         return fullPath
       }
-    } else {
-      // Si le fichier n'a pas d'extension, utiliser l'ancienne logique
-      // Vérifier d'abord dans le dossier Carrelage
-      const carrelagePath = path.join(process.cwd(), 'public', 'fiches-techniques', 'Carrelage', `${fileName}.pdf`)
+    }
+  } catch (error) {
+    console.error(`Erreur lors de la recherche récursive dans ${dir}:`, error)
+  }
+  return null
+}
+
+// Fonction pour trouver un fichier PDF dans un dossier et ses sous-dossiers
+async function findPdfFile(baseDir: string, fileName: string, chantierId?: string): Promise<string | null> {
+  console.log(`🔍 [findPdfFile] Recherche: "${fileName}" dans ${baseDir}${chantierId ? ` (chantier: ${chantierId})` : ''}`)
+  
+  try {
+    const isCustom = chantierId ? hasCustomFiches(chantierId) : false
+    
+    // PRIORITÉ 1: Si c'est un chemin complet relatif depuis public (ex: "chantiers/CH-XXX/fiches-techniques/...")
+    // C'est le cas normal quand on utilise l'ID de la fiche depuis l'API structure
+    if (fileName.startsWith('chantiers/') || fileName.startsWith('fiches-techniques/')) {
+      const fullPath = path.join(process.cwd(), 'public', fileName)
+      if (fs.existsSync(fullPath)) {
+        // Vérifier que le fichier trouvé est dans le bon dossier
+        if (isCustom && !fullPath.includes(`chantiers/${chantierId}/fiches-techniques`)) {
+          console.warn(`⚠️ [findPdfFile] Fichier trouvé dans le mauvais dossier! ID: ${fileName}, Chemin: ${fullPath}`)
+          return null // Ne pas retourner un fichier du mauvais dossier
+        }
+        if (!isCustom && fullPath.includes(`chantiers/${chantierId}`)) {
+          console.warn(`⚠️ [findPdfFile] Fichier trouvé dans le dossier personnalisé alors qu'on utilise le standard!`)
+          return null
+        }
+        console.log(`✅ [findPdfFile] Fichier trouvé via chemin complet: ${fullPath}`)
+        return fullPath
+      } else {
+        console.log(`❌ [findPdfFile] Chemin complet n'existe pas: ${fullPath}`)
+      }
+    }
+    
+    // PRIORITÉ 2: Si on a un dossier personnalisé, NE JAMAIS chercher dans le dossier standard
+    // Chercher uniquement dans le dossier personnalisé
+    if (isCustom) {
+      // Normaliser le nom de fichier
+      const searchName = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`
+      
+      // Chercher directement dans le dossier de base
+      const directPath = path.join(baseDir, searchName)
+      if (fs.existsSync(directPath)) {
+        console.log(`✅ [findPdfFile] Fichier trouvé directement: ${directPath}`)
+        return directPath
+      }
+      
+      // Chercher récursivement dans le dossier personnalisé uniquement
+      const foundPath = findPdfRecursive(baseDir, searchName)
+      if (foundPath) {
+        console.log(`✅ [findPdfFile] Fichier trouvé récursivement: ${foundPath}`)
+        return foundPath
+      }
+      
+      console.log(`❌ [findPdfFile] Fichier non trouvé dans le dossier personnalisé: ${baseDir}`)
+      return null
+    }
+    
+    // PRIORITÉ 3: Si on utilise le dossier standard, chercher normalement
+    const searchName = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`
+    
+    // Chercher directement dans le dossier de base
+    const directPath = path.join(baseDir, searchName)
+    if (fs.existsSync(directPath)) {
+      console.log(`✅ [findPdfFile] Fichier trouvé directement: ${directPath}`)
+      return directPath
+    }
+    
+    // Chercher récursivement dans le dossier standard
+    const foundPath = findPdfRecursive(baseDir, searchName)
+    if (foundPath) {
+      console.log(`✅ [findPdfFile] Fichier trouvé récursivement: ${foundPath}`)
+      return foundPath
+    }
+    
+    // Essayer les dossiers connus (pour compatibilité avec l'ancien système)
+    const standardBaseDir = path.join(process.cwd(), 'public', 'fiches-techniques')
+    if (baseDir === standardBaseDir) {
+      const carrelagePath = path.join(standardBaseDir, 'Carrelage', searchName)
       if (fs.existsSync(carrelagePath)) {
-        console.log(`Fichier trouvé dans Carrelage: ${carrelagePath}`)
+        console.log(`✅ [findPdfFile] Fichier trouvé dans Carrelage: ${carrelagePath}`)
         return carrelagePath
       }
       
-      // Ensuite vérifier dans les dossiers connus de Produits Technique
-      const produitsTechniquePath = path.join(process.cwd(), 'public', 'fiches-techniques', 'Produits Technique')
+      const produitsTechniquePath = path.join(standardBaseDir, 'Produits Technique')
       const knownSubdirs = ['Colle', 'Etanchéité', 'Joint', 'Silicone']
       
       for (const subdir of knownSubdirs) {
-        const ptPath = path.join(produitsTechniquePath, subdir, `${fileName}.pdf`)
+        const ptPath = path.join(produitsTechniquePath, subdir, searchName)
         if (fs.existsSync(ptPath)) {
-          console.log(`Fichier trouvé dans ${subdir}: ${ptPath}`)
+          console.log(`✅ [findPdfFile] Fichier trouvé dans ${subdir}: ${ptPath}`)
           return ptPath
         }
       }
     }
     
-    // Si on n'a pas trouvé, chercher dans tous les sous-dossiers
-    console.log(`Aucun fichier correspondant à ${fileName} trouvé directement, recherche récursive...`)
+    console.log(`❌ [findPdfFile] Aucun fichier correspondant à "${fileName}" trouvé dans ${baseDir}`)
     return null
   } catch (error) {
-    console.error(`Erreur lors de la recherche de fichier:`, error)
+    console.error(`❌ [findPdfFile] Erreur lors de la recherche:`, error)
     return null
   }
 }
@@ -210,8 +301,9 @@ export async function POST(request: Request) {
       let pageCount = 2 // Commencer à 2 (après la page de garde et la table des matières)
       
       // Première analyse pour calculer les numéros de page
+      const baseDir = getFichesBaseDir(chantierId)
       for (const ficheId of ficheIds) {
-        const fichePath = await findPdfFile(path.join(process.cwd(), 'public', 'fiches-techniques'), ficheId)
+        const fichePath = await findPdfFile(baseDir, ficheId, chantierId)
         
         if (fichePath) {
           try {
@@ -436,14 +528,26 @@ export async function POST(request: Request) {
     }
 
     // ===== 3. GÉNÉRER LES PAGES DE COUVERTURE ET AJOUTER LES FICHES =====
+    const baseDir = getFichesBaseDir(chantierId)
+    const isCustom = hasCustomFiches(chantierId || '')
+    console.log(`📁 [API] Génération du dossier - BaseDir: ${baseDir}, IsCustom: ${isCustom}, ChantierId: ${chantierId}`)
+    console.log(`📋 [API] Fiches à traiter (${ficheIds.length}):`, ficheIds)
+    
     for (let index = 0; index < ficheIds.length; index++) {
       const ficheId = ficheIds[index]
       try {
-        console.log('Recherche du fichier:', ficheId)
-        const fichePath = await findPdfFile(path.join(process.cwd(), 'public', 'fiches-techniques'), ficheId)
+        console.log(`🔍 [API] Recherche du fichier ${index + 1}/${ficheIds.length}: ${ficheId}`)
+        const fichePath = await findPdfFile(baseDir, ficheId, chantierId)
         
         if (fichePath) {
-          console.log('Fichier trouvé:', fichePath)
+          console.log(`✅ [API] Fichier trouvé: ${fichePath}`)
+          
+          // Vérifier que le fichier trouvé est bien dans le bon dossier
+          if (isCustom && !fichePath.includes(`chantiers/${chantierId}/fiches-techniques`)) {
+            console.warn(`⚠️ [API] ATTENTION: Fichier trouvé dans le mauvais dossier! Attendu: chantiers/${chantierId}/fiches-techniques, Trouvé: ${fichePath}`)
+          } else if (!isCustom && !fichePath.includes('fiches-techniques') && fichePath.includes(`chantiers/${chantierId}`)) {
+            console.warn(`⚠️ [API] ATTENTION: Fichier trouvé dans le dossier personnalisé alors qu'on utilise le standard!`)
+          }
           
           try {
             // Récupérer les informations de la fiche

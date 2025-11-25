@@ -70,13 +70,32 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
   const [includeTableOfContents, setIncludeTableOfContents] = useState(true)
   const [searchFilter, setSearchFilter] = useState('')
   const [dossierAModifier, setDossierAModifier] = useState<DossierTechnique | null>(null)
+  const [hasCustomFiches, setHasCustomFiches] = useState(false)
+  const [importingZip, setImportingZip] = useState(false)
+  const [clearingCustom, setClearingCustom] = useState(false)
+
+  // Vérifier si le chantier a un dossier personnalisé
+  useEffect(() => {
+    const checkCustomFiches = async () => {
+      try {
+        const response = await fetch(`/api/fiches-techniques/import-zip?chantierId=${chantierId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setHasCustomFiches(data.hasCustom)
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification du dossier personnalisé:', error)
+      }
+    }
+    checkCustomFiches()
+  }, [chantierId])
 
   // Charger la structure des fiches techniques
   useEffect(() => {
     const fetchStructure = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/fiches-techniques/structure')
+        const response = await fetch(`/api/fiches-techniques/structure?chantierId=${chantierId}`)
         if (!response.ok) throw new Error('Erreur lors du chargement')
         const data = await response.json()
         // Initialiser tous les dossiers comme ouverts
@@ -95,7 +114,7 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
       }
     }
     fetchStructure()
-  }, [])
+  }, [chantierId, hasCustomFiches])
 
   // Charger les sous-traitants
   useEffect(() => {
@@ -663,8 +682,160 @@ export default function FichesTechniquesTabContent({ chantierId }: FichesTechniq
     // Ne pas changer d'onglet, rester sur "fiches-techniques"
   }
 
+  // Gérer l'import d'un ZIP
+  const handleImportZip = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.zip')) {
+      showNotification('Le fichier sélectionné doit être un fichier ZIP (.zip)', 'error')
+      return
+    }
+
+    try {
+      setImportingZip(true)
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch(`/api/fiches-techniques/import-zip?chantierId=${chantierId}`, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Une erreur est survenue lors de l\'import du fichier ZIP. Veuillez vérifier que le fichier est valide et réessayer.')
+      }
+
+      showNotification('Le dossier personnalisé de fiches techniques a été importé avec succès. Les fiches sont maintenant disponibles pour ce chantier.', 'success')
+      setHasCustomFiches(true)
+      // Recharger la structure
+      const structureResponse = await fetch(`/api/fiches-techniques/structure?chantierId=${chantierId}`)
+      if (structureResponse.ok) {
+        const data = await structureResponse.json()
+        const initExpanded = (dossiers: Dossier[]): Dossier[] => {
+          return dossiers.map(d => ({
+            ...d,
+            isExpanded: true,
+            sousDossiers: initExpanded(d.sousDossiers)
+          }))
+        }
+        setStructure(initExpanded(data))
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'import:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de l\'import du fichier ZIP. Veuillez réessayer.'
+      showNotification(errorMessage, 'error')
+    } finally {
+      setImportingZip(false)
+      // Réinitialiser l'input
+      event.target.value = ''
+    }
+  }
+
+  // Gérer la suppression du dossier personnalisé
+  const handleClearCustom = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer le dossier personnalisé de fiches techniques ? Cette action est irréversible.')) {
+      return
+    }
+
+    try {
+      setClearingCustom(true)
+      const response = await fetch(`/api/fiches-techniques/clear-custom?chantierId=${chantierId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Une erreur est survenue lors de la suppression du dossier personnalisé. Veuillez réessayer.')
+      }
+
+      showNotification('Le dossier personnalisé de fiches techniques a été supprimé avec succès. Le chantier utilise maintenant le dossier standard.', 'success')
+      setHasCustomFiches(false)
+      // Recharger la structure
+      const structureResponse = await fetch(`/api/fiches-techniques/structure?chantierId=${chantierId}`)
+      if (structureResponse.ok) {
+        const data = await structureResponse.json()
+        const initExpanded = (dossiers: Dossier[]): Dossier[] => {
+          return dossiers.map(d => ({
+            ...d,
+            isExpanded: true,
+            sousDossiers: initExpanded(d.sousDossiers)
+          }))
+        }
+        setStructure(initExpanded(data))
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la suppression du dossier personnalisé. Veuillez réessayer.'
+      showNotification(errorMessage, 'error')
+    } finally {
+      setClearingCustom(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Section de gestion du dossier personnalisé */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+              Dossier de fiches techniques
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {hasCustomFiches 
+                ? 'Ce chantier utilise un dossier personnalisé de fiches techniques'
+                : 'Ce chantier utilise le dossier standard de fiches techniques'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <label className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md">
+              {importingZip ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Import en cours...
+                </>
+              ) : (
+                <>
+                  <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                  {hasCustomFiches ? 'Réimporter un ZIP' : 'Importer un ZIP'}
+                </>
+              )}
+              <input
+                type="file"
+                accept=".zip"
+                onChange={handleImportZip}
+                disabled={importingZip}
+                className="hidden"
+              />
+            </label>
+            {hasCustomFiches && (
+              <button
+                onClick={handleClearCustom}
+                disabled={clearingCustom}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+              >
+                {clearingCustom ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Suppression...
+                  </>
+                ) : (
+                  'Vider le dossier'
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Section des dossiers existants */}
       <DossiersTechniquesManager
         chantierId={chantierId}

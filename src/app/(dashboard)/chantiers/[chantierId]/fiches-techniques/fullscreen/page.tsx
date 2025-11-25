@@ -98,7 +98,7 @@ export default function FichesTechniquesFullscreenPage() {
     const fetchStructure = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/fiches-techniques/structure')
+        const response = await fetch(`/api/fiches-techniques/structure?chantierId=${chantierId}`)
         if (!response.ok) throw new Error('Erreur lors du chargement')
         const data = await response.json()
         // Initialiser tous les dossiers comme ouverts

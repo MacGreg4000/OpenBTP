@@ -21,14 +21,43 @@ interface Dossier {
   fiches: FicheTechnique[]
 }
 
-export async function GET() {
+// Fonction pour obtenir le chemin du dossier personnalisé d'un chantier
+function getCustomFichesPath(chantierId: string): string {
+  return path.join(process.cwd(), 'public', 'chantiers', chantierId, 'fiches-techniques')
+}
+
+// Fonction pour vérifier si un chantier a un dossier personnalisé
+function hasCustomFiches(chantierId: string): boolean {
+  const customPath = getCustomFichesPath(chantierId)
+  return fs.existsSync(customPath) && fs.statSync(customPath).isDirectory()
+}
+
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const baseDir = path.join(process.cwd(), 'public', 'fiches-techniques')
+    // Récupérer le chantierId depuis les query params
+    const { searchParams } = new URL(request.url)
+    const chantierId = searchParams.get('chantierId')
+
+    // Déterminer quel dossier scanner
+    let baseDir: string
+    let isCustom = false
+
+    if (chantierId && hasCustomFiches(chantierId)) {
+      // Utiliser le dossier personnalisé du chantier
+      baseDir = getCustomFichesPath(chantierId)
+      isCustom = true
+      console.log(`[API Structure] Utilisation du dossier personnalisé pour le chantier ${chantierId}`)
+    } else {
+      // Utiliser le dossier standard
+      baseDir = path.join(process.cwd(), 'public', 'fiches-techniques')
+      console.log(`[API Structure] Utilisation du dossier standard${chantierId ? ` (chantier ${chantierId} n'a pas de dossier personnalisé)` : ''}`)
+    }
+
     const structure = scanDirectory(baseDir)
 
     // Compter toutes les fiches pour debug
