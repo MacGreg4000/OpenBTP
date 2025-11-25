@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
 import FormInput from '@/components/ui/FormInput'
@@ -12,6 +12,30 @@ export default function SetupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState(1)
+  const [checkingSetup, setCheckingSetup] = useState(true)
+
+  // Vérifier si l'application est déjà configurée au chargement
+  useEffect(() => {
+    const checkSetupStatus = async () => {
+      try {
+        const response = await fetch('/api/setup')
+        if (response.ok) {
+          const data = await response.json()
+          // Si des utilisateurs existent, rediriger vers login
+          if (data.userCount > 0) {
+            router.push('/login')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification du statut du setup:', error)
+      } finally {
+        setCheckingSetup(false)
+      }
+    }
+
+    checkSetupStatus()
+  }, [router])
 
   // État pour les informations de la société
   const [companyData, setCompanyData] = useState({
@@ -81,6 +105,26 @@ export default function SetupPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Afficher un loader pendant la vérification
+  if (checkingSetup) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl border-0">
+          <CardContent className="pt-8 pb-8">
+            <div className="text-center">
+              <div className="mb-6">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+              </div>
+              <p className="text-gray-600 text-lg">
+                Vérification en cours...
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (step === 3) {

@@ -9,12 +9,30 @@ export async function middleware(req: NextRequest) {
   
   // console.log('🔍 Middleware - Chemin:', pathname);
   
+  // Vérifier si on accède à /setup et si des utilisateurs existent déjà
+  if (pathname === '/setup') {
+    try {
+      const setupCheckUrl = new URL('/api/setup', req.url);
+      const response = await fetch(setupCheckUrl.toString());
+      if (response.ok) {
+        const data = await response.json();
+        // Si des utilisateurs existent, rediriger vers login
+        if (data.userCount > 0) {
+          return NextResponse.redirect(new URL('/login', req.url));
+        }
+      }
+    } catch {
+      // En cas d'erreur, on laisse passer pour éviter les boucles
+    }
+    // Si pas d'utilisateurs, autoriser l'accès à /setup
+    return NextResponse.next();
+  }
+  
   // Pages et ressources publiques
   if (
     pathname === '/login' ||
     pathname === '/logout' ||
     pathname === '/reset-password' ||
-    pathname === '/setup' ||
     pathname === '/clear-cache' ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/setup') ||
