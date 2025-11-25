@@ -82,6 +82,9 @@ export default function ModifierDossierModal({
   const [structureComplete, setStructureComplete] = useState<Dossier[]>([])
   const [loadingStructure, setLoadingStructure] = useState(false)
   const [searchFilterReplacement, setSearchFilterReplacement] = useState('')
+  const [addingFiches, setAddingFiches] = useState(false)
+  const [fichesSelectionnees, setFichesSelectionnees] = useState<Set<string>>(new Set())
+  const [searchFilterAdd, setSearchFilterAdd] = useState('')
   const { data: _session } = useSession()
 
   useEffect(() => {
@@ -207,6 +210,15 @@ export default function ModifierDossierModal({
 
     setSaving(true)
     try {
+      // Préparer les fiches à ajouter
+      const fichesAAjouter = Array.from(fichesSelectionnees).map(ficheId => ({
+        ficheId,
+        ficheReference: fichesReferences[ficheId] || null,
+        statut: fichesStatuts[ficheId] || 'BROUILLON',
+        soustraitantId: fichesSoustraitants[ficheId] || null,
+        remarques: fichesRemarques[ficheId] || null
+      }))
+
       const response = await fetch(`/api/fiches-techniques/dossier/${dossier.id}/fiches`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -215,7 +227,8 @@ export default function ModifierDossierModal({
           fichesRemplacees,
           fichesSoustraitants,
           fichesReferences,
-          fichesRemarques
+          fichesRemarques,
+          fichesAAjouter: fichesAAjouter.length > 0 ? fichesAAjouter : undefined
         })
       })
 
@@ -224,6 +237,8 @@ export default function ModifierDossierModal({
       // Le statut du dossier sera géré automatiquement
 
       showNotification('Succès', 'Modifications enregistrées avec succès', 'success')
+      setFichesSelectionnees(new Set())
+      setAddingFiches(false)
       onRegenerate()
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
@@ -347,6 +362,53 @@ export default function ModifierDossierModal({
     }
     setStructureComplete(prev => updateDossiers(prev))
   }
+
+  // Filtrer l'arborescence pour l'ajout de fiches (exclure les fiches déjà dans le dossier)
+  const filterStructureAdd = (dossiers: Dossier[], searchTerm: string): Dossier[] => {
+    if (!dossier) return []
+    
+    const fichesExistantes = new Set(dossier.fiches.map(f => f.ficheId))
+    
+    if (!searchTerm.trim()) {
+      return dossiers.map(d => ({
+        ...d,
+        fiches: d.fiches.filter(f => !fichesExistantes.has(f.id)),
+        sousDossiers: filterStructureAdd(d.sousDossiers, '')
+      }))
+    }
+
+    const lowerSearch = searchTerm.toLowerCase()
+    
+    const filterDossier = (d: Dossier): Dossier | null => {
+      const filteredFiches = d.fiches.filter(fiche =>
+        (fiche.titre.toLowerCase().includes(lowerSearch) ||
+        fiche.referenceCSC?.toLowerCase().includes(lowerSearch) ||
+        fiche.id.toLowerCase().includes(lowerSearch)) &&
+        !fichesExistantes.has(fiche.id)
+      )
+
+      const filteredSousDossiers = d.sousDossiers
+        .map(filterDossier)
+        .filter((d): d is Dossier => d !== null)
+
+      if (
+        filteredFiches.length > 0 ||
+        filteredSousDossiers.length > 0 ||
+        d.nom.toLowerCase().includes(lowerSearch)
+      ) {
+        return {
+          ...d,
+          fiches: filteredFiches,
+          sousDossiers: filteredSousDossiers
+        }
+      }
+      return null
+    }
+
+    return dossiers.map(filterDossier).filter((d): d is Dossier => d !== null)
+  }
+
+  const filteredStructureAdd = filterStructureAdd(structureComplete, searchFilterAdd)
 
   // Filtrer l'arborescence pour le remplacement
   const filterStructureReplacement = (dossiers: Dossier[], searchTerm: string): Dossier[] => {
@@ -666,6 +728,122 @@ export default function ModifierDossierModal({
                 </div>
               )
             })}
+
+            {/* Section pour ajouter des fiches */}
+            {addingFiches && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
+                  Ajouter des fiches techniques
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setAddingFiches(false)
+                      setFichesSelectionnees(new Set())
+                      setSearchFilterAdd('')
+                    }}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="mb-3">
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchFilterAdd}
+                      onChange={(e) => setSearchFilterAdd(e.target.value)}
+                      placeholder="Rechercher une fiche..."
+                      className="w-full pl-8 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {searchFilterAdd && (
+                      <button
+                        onClick={() => setSearchFilterAdd('')}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
+                  {loadingStructure ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                      <p className="text-xs text-gray-500">Chargement...</p>
+                    </div>
+                  ) : filteredStructureAdd.length === 0 ? (
+                    <p className="text-xs text-gray-500 text-center py-2">Aucune fiche disponible</p>
+                  ) : (
+                    <div>
+                      {filteredStructureAdd.map(d => (
+                        <div key={d.chemin} className="mb-2">
+                          <div className="flex items-center py-1">
+                            <FolderIcon className="h-4 w-4 text-yellow-500 mr-2" />
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{d.nom}</span>
+                          </div>
+                          <div className="ml-6 space-y-1">
+                            {d.fiches.map(fiche => (
+                                  <label
+                                    key={fiche.id}
+                                    className="flex items-center py-1 px-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={fichesSelectionnees.has(fiche.id)}
+                                      onChange={(e) => {
+                                        const newSet = new Set(fichesSelectionnees)
+                                        if (e.target.checked) {
+                                          newSet.add(fiche.id)
+                                        } else {
+                                          newSet.delete(fiche.id)
+                                        }
+                                        setFichesSelectionnees(newSet)
+                                      }}
+                                      className="mr-2"
+                                    />
+                                    <DocumentTextIcon className="h-4 w-4 text-blue-500 mr-2" />
+                                    <span className="text-xs text-gray-700 dark:text-gray-300 flex-1">
+                                      {fiche.titre}
+                                    </span>
+                                    {fiche.referenceCSC && (
+                                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                        (CSC: {fiche.referenceCSC})
+                                      </span>
+                                    )}
+                                  </label>
+                                ))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+                {fichesSelectionnees.size > 0 && (
+                  <div className="mt-3 text-xs text-blue-600 dark:text-blue-400">
+                    {fichesSelectionnees.size} fiche{fichesSelectionnees.size > 1 ? 's' : ''} sélectionnée{fichesSelectionnees.size > 1 ? 's' : ''}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Bouton pour ajouter des fiches */}
+            {!addingFiches && (
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    setAddingFiches(true)
+                    fetchStructure()
+                  }}
+                  className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                >
+                  <DocumentTextIcon className="h-4 w-4" />
+                  Ajouter des fiches techniques
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

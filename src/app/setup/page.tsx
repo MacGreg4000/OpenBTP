@@ -120,8 +120,8 @@ export default function SetupPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Configuration initiale</h1>
           <p className="text-lg text-gray-600 max-w-xl mx-auto">
             Bienvenue ! Configurez votre application en quelques étapes simples.
-          </p>
-        </div>
+        </p>
+      </div>
 
         {/* Indicateur d'étapes */}
         <div className="flex items-center justify-center mb-10">
@@ -130,22 +130,22 @@ export default function SetupPage() {
               step >= 1 ? 'border-blue-600 bg-blue-600 text-white shadow-md scale-110' : 'border-gray-300 bg-white'
             }`}>1</div>
             <span className="ml-3 font-semibold text-base">Informations société</span>
-          </div>
+                </div>
           <div className="h-1 w-20 mx-6 bg-gray-200 rounded-full overflow-hidden">
             <div className={`h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500 rounded-full ${step >= 2 ? 'w-full' : 'w-0'}`}></div>
-          </div>
+                </div>
           <div className={`flex items-center transition-all duration-300 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
             <div className={`rounded-full h-10 w-10 flex items-center justify-center border-2 font-semibold transition-all duration-300 ${
               step >= 2 ? 'border-blue-600 bg-blue-600 text-white shadow-md scale-110' : 'border-gray-300 bg-white'
             }`}>2</div>
             <span className="ml-3 font-semibold text-base">Compte administrateur</span>
-          </div>
-        </div>
+              </div>
+            </div>
 
         {error && (
           <div className="mb-6 p-4 border border-red-200 bg-red-50 dark:bg-red-900/10 rounded-lg shadow-sm">
             <p className="text-red-700 dark:text-red-400 font-medium">{error}</p>
-          </div>
+                </div>
         )}
 
         {/* Étape 1: Informations de la société */}
@@ -240,8 +240,8 @@ export default function SetupPage() {
 
                 <div className="pt-4">
                   <Button type="submit" fullWidth className="h-12 text-base font-semibold">
-                    Continuer vers l&apos;étape 2
-                  </Button>
+                  Continuer vers l&apos;étape 2
+                </Button>
                 </div>
               </form>
             </CardContent>

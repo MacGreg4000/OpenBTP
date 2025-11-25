@@ -702,21 +702,53 @@ export async function POST(request: Request) {
         where: { dossierId: dossierId }
       })
     } else {
-      // Création d'un nouveau dossier
-      dossierTechnique = await prisma.dossierTechnique.create({
-        data: {
+      // Vérifier s'il existe un dossier brouillon pour ce chantier
+      const dossierBrouillon = await prisma.dossierTechnique.findFirst({
+        where: {
           chantierId: chantierId,
-          nom: `Dossier technique - ${dateStr}`,
-          version: 1,
           statut: 'BROUILLON',
-          url: `/chantiers/${chantierId}/documents/${fileName}`,
-          taille: pdfBytes.length,
-          dateGeneration: new Date(),
-          dateModification: new Date(),
-          createdBy: user.id,
-          includeTableOfContents: options?.includeTableOfContents || false
-        }
+          url: '' // Un dossier brouillon n'a pas encore de PDF
+        },
+        orderBy: { dateGeneration: 'desc' }
       })
+
+      if (dossierBrouillon) {
+        // Utiliser le dossier brouillon existant et le mettre à jour
+        dossierTechnique = await prisma.dossierTechnique.update({
+          where: { id: dossierBrouillon.id },
+          data: {
+            nom: `Dossier technique - ${dateStr}`,
+            version: 1,
+            statut: 'BROUILLON',
+            url: `/chantiers/${chantierId}/documents/${fileName}`,
+            taille: pdfBytes.length,
+            dateGeneration: new Date(),
+            dateModification: new Date(),
+            includeTableOfContents: options?.includeTableOfContents || false
+          }
+        })
+        
+        // Supprimer les anciennes fiches du brouillon pour les remplacer par les nouvelles
+        await prisma.dossierFiche.deleteMany({
+          where: { dossierId: dossierBrouillon.id }
+        })
+      } else {
+        // Création d'un nouveau dossier
+        dossierTechnique = await prisma.dossierTechnique.create({
+          data: {
+            chantierId: chantierId,
+            nom: `Dossier technique - ${dateStr}`,
+            version: 1,
+            statut: 'BROUILLON',
+            url: `/chantiers/${chantierId}/documents/${fileName}`,
+            taille: pdfBytes.length,
+            dateGeneration: new Date(),
+            dateModification: new Date(),
+            createdBy: user.id,
+            includeTableOfContents: options?.includeTableOfContents || false
+          }
+        })
+      }
     }
 
     // Créer les entrées DossierFiche pour chaque fiche

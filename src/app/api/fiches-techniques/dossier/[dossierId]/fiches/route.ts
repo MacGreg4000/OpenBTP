@@ -15,7 +15,7 @@ export async function PUT(
     }
 
     const { dossierId } = await params
-    const { fichesStatuts, fichesRemplacees, fichesSoustraitants, fichesReferences, fichesRemarques } = await request.json()
+    const { fichesStatuts, fichesRemplacees, fichesSoustraitants, fichesReferences, fichesRemarques, fichesAAjouter } = await request.json()
 
     // Vérifier que le dossier existe
     const dossier = await prisma.dossierTechnique.findUnique({
@@ -95,6 +95,34 @@ export async function PUT(
               ficheRemplaceeId: ancienneFiche.id,
               soustraitantId: ancienneFiche.soustraitantId,
               remarques: ancienneFiche.remarques
+            }
+          })
+        }
+      }
+    }
+
+    // Gérer les fiches à ajouter
+    if (fichesAAjouter && Array.isArray(fichesAAjouter) && fichesAAjouter.length > 0) {
+      // Compter le nombre de fiches existantes pour déterminer l'ordre
+      const nombreFichesExistantes = dossier.fiches.length
+      
+      for (let index = 0; index < fichesAAjouter.length; index++) {
+        const ficheAAjouter = fichesAAjouter[index]
+        const ficheId = ficheAAjouter.ficheId || ficheAAjouter
+        
+        // Vérifier que la fiche n'existe pas déjà dans le dossier
+        const ficheExistante = dossier.fiches.find(f => f.ficheId === ficheId)
+        if (!ficheExistante) {
+          await prisma.dossierFiche.create({
+            data: {
+              dossierId: dossierId,
+              ficheId: ficheId,
+              ficheReference: (fichesReferences && fichesReferences[ficheId]) ? fichesReferences[ficheId] : null,
+              version: 1,
+              statut: (fichesStatuts && fichesStatuts[ficheId]) ? (fichesStatuts[ficheId] as 'VALIDEE' | 'NOUVELLE_PROPOSITION' | 'BROUILLON') : 'BROUILLON',
+              ordre: nombreFichesExistantes + index + 1,
+              soustraitantId: (fichesSoustraitants && fichesSoustraitants[ficheId]) ? String(fichesSoustraitants[ficheId]) : null,
+              remarques: (fichesRemarques && fichesRemarques[ficheId]) ? fichesRemarques[ficheId] : null
             }
           })
         }
