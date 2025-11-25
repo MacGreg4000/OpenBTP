@@ -207,6 +207,11 @@ export function generateRapportHTML(data: RapportData): string {
             page-break-inside: avoid;
         }
         
+        /* Marge en haut pour les sections qui commencent sur une nouvelle page (comme les photos) */
+        .section.page-break {
+            margin-top: 15mm;
+        }
+        
         .section-header {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;

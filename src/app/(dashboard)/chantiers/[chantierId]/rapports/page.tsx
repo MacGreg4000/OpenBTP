@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, use } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link'
-import { PlusIcon, DocumentTextIcon, TrashIcon, PencilIcon, EyeIcon, EnvelopeIcon, TagIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, DocumentTextIcon, TrashIcon, PencilIcon, EyeIcon, EnvelopeIcon, TagIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { SendRapportEmailModal } from '@/components/modals/SendRapportEmailModal'
 import toast from 'react-hot-toast'
@@ -27,12 +28,14 @@ interface RapportVisite {
 
 export default function RapportsVisitePage(props: { params: Promise<{ chantierId: string }> }) {
   const params = use(props.params);
+  const searchParams = useSearchParams();
   const [rapports, setRapports] = useState<RapportVisite[]>([])
   const [chantier, setChantier] = useState<{ nomChantier?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [emailModalOpen, setEmailModalOpen] = useState(false)
   const [selectedRapport, setSelectedRapport] = useState<{ id: number; nom: string } | null>(null)
+  const [expandedRapports, setExpandedRapports] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     const fetchChantier = async () => {
@@ -49,7 +52,8 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
 
     const fetchRapports = async () => {
       try {
-        const res = await fetch(`/api/chantiers/${params.chantierId}/documents`)
+        // Ajouter un timestamp pour éviter le cache
+        const res = await fetch(`/api/chantiers/${params.chantierId}/documents?t=${Date.now()}`)
         if (!res.ok) throw new Error('Erreur lors de la récupération des documents')
         const data = await res.json()
         
@@ -59,7 +63,22 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
             doc.type === 'rapport-visite' || 
             doc.type === 'rapport-visite-general' || 
             (typeof doc.type === 'string' && doc.type.startsWith('rapport-visite-tag-'))
-          )
+          ).map(doc => {
+            // Parser les métadonnées si c'est une string JSON
+            let metadata = doc.metadata
+            if (typeof metadata === 'string') {
+              try {
+                metadata = JSON.parse(metadata)
+              } catch (e) {
+                console.warn('Erreur lors du parsing des métadonnées:', e)
+                metadata = null
+              }
+            }
+            return {
+              ...doc,
+              metadata
+            }
+          })
           setRapports(rapportsVisite)
         }
       } catch (error) {
@@ -72,7 +91,17 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
 
     fetchChantier()
     fetchRapports()
-  }, [params.chantierId])
+    
+    // Écouter les événements de focus pour rafraîchir quand on revient sur la page
+    const handleFocus = () => {
+      fetchRapports()
+    }
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [params.chantierId, searchParams])
 
   const handleDeleteRapport = async (id: number) => {
     const rapport = rapports.find(r => r.id === id)
@@ -154,6 +183,37 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
     setSelectedRapport(null)
   }
 
+  const toggleRapport = (rapportId: number) => {
+    setExpandedRapports(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(rapportId)) {
+        newSet.delete(rapportId)
+      } else {
+        newSet.add(rapportId)
+      }
+      return newSet
+    })
+  }
+
+  // Extraire le tag d'un rapport depuis le type ou les métadonnées
+  const getTagFromRapport = (rapport: RapportVisite): string => {
+    // D'abord essayer depuis les métadonnées
+    if (rapport.metadata?.tag) {
+      return rapport.metadata.tag
+    }
+    
+    // Sinon, extraire depuis le type (rapport-visite-tag-Maçon -> Maçon)
+    if (typeof rapport.type === 'string' && rapport.type.startsWith('rapport-visite-tag-')) {
+      const tag = rapport.type.replace('rapport-visite-tag-', '').replace(/-/g, ' ')
+      // Capitaliser la première lettre de chaque mot
+      return tag.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ')
+    }
+    
+    return 'Tag inconnu'
+  }
+
   // Grouper les rapports : général + variantes filtrées
   const groupedRapports = () => {
     const groupes: Array<{
@@ -161,24 +221,135 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
       variantes: RapportVisite[]
     }> = []
     
-    // Trouver tous les rapports généraux
-    const rapportsGeneraux = rapports.filter(r => r.type === 'rapport-visite-general' || r.type === 'rapport-visite')
+    // Trouver tous les rapports taggés (variantes) - ils ont rapportPrincipalId
+    const rapportsTaggés = rapports.filter(r => 
+      typeof r.type === 'string' && r.type.startsWith('rapport-visite-tag-')
+    )
     
-    for (const rapportGeneral of rapportsGeneraux) {
-      const variantesIds = rapportGeneral.metadata?.rapportVariantesIds || []
-      const variantes = rapports.filter(r => variantesIds.includes(r.id))
-      
+    // Créer un map des variantes par rapport principal
+    const variantesParPrincipal = new Map<number, RapportVisite[]>()
+    for (const rapportTaggé of rapportsTaggés) {
+      const principalId = rapportTaggé.metadata?.rapportPrincipalId
+      if (principalId) {
+        if (!variantesParPrincipal.has(principalId)) {
+          variantesParPrincipal.set(principalId, [])
+        }
+        variantesParPrincipal.get(principalId)!.push(rapportTaggé)
+      }
+    }
+    
+    // Trouver tous les rapports généraux (principaux)
+    // Un rapport est principal s'il n'est pas taggé ET qu'il n'a pas de rapportPrincipalId
+    const rapportsGeneraux = rapports.filter(r => {
+      const isTaggé = typeof r.type === 'string' && r.type.startsWith('rapport-visite-tag-')
+      const aUnPrincipal = r.metadata?.rapportPrincipalId !== undefined
+      return !isTaggé && !aUnPrincipal
+    })
+    
+      // Grouper les rapports généraux avec leurs variantes
+      for (const rapportGeneral of rapportsGeneraux) {
+        // Méthode 1 : Utiliser rapportVariantesIds si disponible
+        const variantesIds = rapportGeneral.metadata?.rapportVariantesIds || []
+        
+        // Convertir les IDs en numbers pour la comparaison
+        const variantesIdsNumbers = variantesIds.map(id => Number(id))
+        let variantes = rapports.filter(r => variantesIdsNumbers.includes(Number(r.id)))
+        
+        // Méthode 2 : Si pas de variantes via IDs, chercher par rapportPrincipalId dans le map
+        if (variantes.length === 0 && variantesParPrincipal.has(rapportGeneral.id)) {
+          variantes = variantesParPrincipal.get(rapportGeneral.id) || []
+        }
+        
+        // Méthode 3 : Fallback - Grouper les rapports taggés sans métadonnées par date et nom de chantier
+        if (variantes.length === 0) {
+          // Extraire la date du nom du rapport général (format: rapport-visite-NomChantier-YYYY-MM-DD.pdf)
+          // Exemple: rapport-visite-Pirnay-2025-11-25.pdf
+          const generalMatch = rapportGeneral.nom.match(/rapport-visite-(.+?)-(\d{4}-\d{2}-\d{2})\.pdf/)
+          if (generalMatch) {
+            const generalChantier = generalMatch[1] // "Pirnay"
+            const generalDate = generalMatch[2] // "2025-11-25"
+            
+            // Chercher les rapports taggés qui correspondent à la même date
+            // Format des rapports taggés: rapport-visite-Tag-NomChantier-YYYY-MM-DD.pdf
+            // Exemple: rapport-visite-Général-Pirnay-2025-11-25.pdf
+            const variantesParDate = rapportsTaggés.filter(r => {
+              // Si le rapport taggé a déjà un rapportPrincipalId, ne pas le prendre
+              if (r.metadata?.rapportPrincipalId) return false
+              
+              // Vérifier que le nom se termine par le nom du chantier et la date
+              const suffix = `-${generalChantier}-${generalDate}.pdf`
+              const endsWithChantier = r.nom.endsWith(suffix)
+              
+              // Extraire la date du nom du rapport taggé pour vérification
+              const tagDateMatch = r.nom.match(/-(\d{4}-\d{2}-\d{2})\.pdf$/)
+              const dateMatches = tagDateMatch ? tagDateMatch[1] === generalDate : false
+              
+              return dateMatches && endsWithChantier
+            })
+            
+            if (variantesParDate.length > 0) {
+              variantes = variantesParDate
+            }
+          }
+        }
+        
+        groupes.push({
+          principal: rapportGeneral,
+          variantes
+        })
+      }
+    
+    // Collecter tous les IDs des rapports taggés qui ont été groupés
+    const rapportsTaggésGroupés = new Set<number>()
+    for (const groupe of groupes) {
+      for (const variante of groupe.variantes) {
+        rapportsTaggésGroupés.add(variante.id)
+      }
+    }
+    
+    // Ajouter les rapports taggés orphelins (qui ont un rapportPrincipalId mais le principal n'existe pas)
+    const rapportsPrincipauxIds = new Set(rapportsGeneraux.map(r => r.id))
+    const rapportsTaggésOrphelins = rapportsTaggés.filter(r => {
+      // Ne pas inclure les rapports déjà groupés
+      if (rapportsTaggésGroupés.has(r.id)) return false
+      const principalId = r.metadata?.rapportPrincipalId
+      return principalId && !rapportsPrincipauxIds.has(principalId)
+    })
+    
+    // Pour les orphelins, les afficher comme rapports principaux individuels
+    for (const orphelin of rapportsTaggésOrphelins) {
       groupes.push({
-        principal: rapportGeneral,
-        variantes
+        principal: orphelin,
+        variantes: []
       })
     }
     
-    // Ajouter les rapports qui n'ont pas de groupe (anciens rapports sans variantes)
-    const rapportsAvecGroupes = new Set(rapportsGeneraux.map(r => r.id))
+    // Ajouter les rapports taggés non groupés comme rapports principaux individuels
+    const rapportsTaggésNonGroupés = rapportsTaggés.filter(r => {
+      // Ne pas inclure les rapports déjà groupés
+      if (rapportsTaggésGroupés.has(r.id)) return false
+      // Ne pas inclure les orphelins (déjà traités)
+      const principalId = r.metadata?.rapportPrincipalId
+      if (principalId && !rapportsPrincipauxIds.has(principalId)) return false
+      return true
+    })
+    
+    for (const rapportTaggé of rapportsTaggésNonGroupés) {
+      groupes.push({
+        principal: rapportTaggé,
+        variantes: []
+      })
+    }
+    
+    // Ajouter les rapports qui n'ont pas de groupe (anciens rapports sans variantes ni métadonnées)
+    const rapportsAvecGroupes = new Set([
+      ...rapportsGeneraux.map(r => r.id),
+      ...Array.from(rapportsTaggésGroupés),
+      ...rapportsTaggésNonGroupés.map(r => r.id)
+    ])
+    
     const rapportsSansGroupe = rapports.filter(r => 
-      !rapportsAvecGroupes.has(r.id) && 
-      !rapports.some(rg => rg.metadata?.rapportVariantesIds?.includes(r.id))
+      !rapportsAvecGroupes.has(r.id)
     )
     
     for (const rapport of rapportsSansGroupe) {
@@ -271,107 +442,169 @@ export default function RapportsVisitePage(props: { params: Promise<{ chantierId
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {groupedRapports().map((groupe) => (
-                    <div key={groupe.principal.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      {/* Rapport principal */}
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 flex-1">
-                            <DocumentTextIcon className="h-6 w-6 text-slate-600 dark:text-slate-300" />
-                            <div className="flex-1">
-                              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                {groupe.principal.nom}
-                              </h3>
-                              <div className="flex items-center gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                <span>{groupe.principal.User?.name || groupe.principal.User?.email || 'Utilisateur inconnu'}</span>
-                                <span>•</span>
-                                <span>{new Date(groupe.principal.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-                                {groupe.variantes.length > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                                      {groupe.variantes.length} variante{groupe.variantes.length > 1 ? 's' : ''} filtrée{groupe.variantes.length > 1 ? 's' : ''}
-                                    </span>
-                                  </>
-                                )}
+                  {groupedRapports().map((groupe) => {
+                    const isExpanded = expandedRapports.has(groupe.principal.id)
+                    const hasVariantes = groupe.variantes.length > 0
+                    
+                    return (
+                      <div key={groupe.principal.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        {/* Rapport principal */}
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              {/* Bouton flèche pour dérouler (seulement si variantes) */}
+                              {hasVariantes && (
+                                <button
+                                  onClick={() => toggleRapport(groupe.principal.id)}
+                                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
+                                  title={isExpanded ? "Réduire" : "Dérouler les rapports par tag"}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDownIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                                  ) : (
+                                    <ChevronRightIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                                  )}
+                                </button>
+                              )}
+                              {!hasVariantes && (
+                                <div className="w-7" /> // Espace pour aligner si pas de flèche
+                              )}
+                              <DocumentTextIcon className="h-6 w-6 text-slate-600 dark:text-slate-300 flex-shrink-0" />
+                              <div className="flex-1">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                  {groupe.principal.nom}
+                                </h3>
+                                <div className="flex items-center gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                  <span>{groupe.principal.User?.name || groupe.principal.User?.email || 'Utilisateur inconnu'}</span>
+                                  <span>•</span>
+                                  <span>{new Date(groupe.principal.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                                  {hasVariantes && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                                        {groupe.variantes.length} variante{groupe.variantes.length > 1 ? 's' : ''} filtrée{groupe.variantes.length > 1 ? 's' : ''}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={groupe.principal.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                title="Télécharger"
+                              >
+                                <EyeIcon className="h-5 w-5" />
+                              </a>
+                              <button
+                                onClick={() => handleOpenEmailModal(groupe.principal.id, groupe.principal.nom)}
+                                className="p-2 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                                title="Envoyer par email"
+                              >
+                                <EnvelopeIcon className="h-5 w-5" />
+                              </button>
+                              <Link
+                                href={`/chantiers/${params.chantierId}/rapports/nouveau?edit=${groupe.principal.id}`}
+                                className="p-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                title="Modifier"
+                              >
+                                <PencilIcon className="h-5 w-5" />
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteRapport(groupe.principal.id)}
+                                className="p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                title="Supprimer"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Variantes filtrées - déroulable */}
+                        {hasVariantes && (
+                          <div 
+                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                            }`}
+                          >
+                            <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
+                              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                Rapports filtrés par tag :
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                  <thead className="bg-gray-100 dark:bg-gray-800">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Tag
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Nom du fichier
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Date
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Actions
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    {groupe.variantes.map((variante) => (
+                                      <tr key={variante.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                          <div className="flex items-center gap-2">
+                                            <TagIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                              {getTagFromRapport(variante)}
+                                            </span>
+                                          </div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                          <span className="text-sm text-gray-900 dark:text-white">
+                                            {variante.nom}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                                            {new Date(variante.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                          <div className="flex items-center justify-end gap-2">
+                                            <a
+                                              href={variante.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                              title="Télécharger"
+                                            >
+                                              <EyeIcon className="h-4 w-4" />
+                                            </a>
+                                            <button
+                                              onClick={() => handleOpenEmailModal(variante.id, variante.nom)}
+                                              className="p-1.5 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
+                                              title="Envoyer par email"
+                                            >
+                                              <EnvelopeIcon className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={groupe.principal.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                              title="Télécharger"
-                            >
-                              <EyeIcon className="h-5 w-5" />
-                            </a>
-                            <button
-                              onClick={() => handleOpenEmailModal(groupe.principal.id, groupe.principal.nom)}
-                              className="p-2 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                              title="Envoyer par email"
-                            >
-                              <EnvelopeIcon className="h-5 w-5" />
-                            </button>
-                            <Link
-                              href={`/chantiers/${params.chantierId}/rapports/nouveau?edit=${groupe.principal.id}`}
-                              className="p-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                              title="Modifier"
-                            >
-                              <PencilIcon className="h-5 w-5" />
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteRapport(groupe.principal.id)}
-                              className="p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title="Supprimer"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
-                      
-                      {/* Variantes filtrées */}
-                      {groupe.variantes.length > 0 && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50">
-                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                            Rapports filtrés par tag :
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {groupe.variantes.map((variante) => (
-                              <div key={variante.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:shadow-md transition-shadow">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <TagIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                    {variante.metadata?.tag || 'Tag inconnu'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 ml-2">
-                                  <a
-                                    href={variante.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                    title="Télécharger"
-                                  >
-                                    <EyeIcon className="h-4 w-4" />
-                                  </a>
-                                  <button
-                                    onClick={() => handleOpenEmailModal(variante.id, variante.nom)}
-                                    className="p-1.5 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
-                                    title="Envoyer par email"
-                                  >
-                                    <EnvelopeIcon className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

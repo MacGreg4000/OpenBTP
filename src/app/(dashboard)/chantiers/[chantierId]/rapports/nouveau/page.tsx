@@ -919,8 +919,19 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
       }
       const existingDoc = await docResponse.json();
       
+      // Parser les métadonnées si c'est une string JSON
+      let parsedMetadata = existingDoc.metadata
+      if (typeof parsedMetadata === 'string') {
+        try {
+          parsedMetadata = JSON.parse(parsedMetadata)
+        } catch (e) {
+          console.warn('Erreur lors du parsing des métadonnées:', e)
+          parsedMetadata = null
+        }
+      }
+      
       // Récupérer les IDs des variantes filtrées si elles existent
-      const rapportVariantesIds: number[] = existingDoc.metadata?.rapportVariantesIds || []
+      const rapportVariantesIds: number[] = parsedMetadata?.rapportVariantesIds || []
       
       // Supprimer les anciens documents (principal + variantes)
       const idsToDelete = [parseInt(documentId), ...rapportVariantesIds]
@@ -1026,8 +1037,8 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
         }
       }
       
-      // Rediriger vers la liste des rapports
-      router.push(`/chantiers/${params.chantierId}/rapports`);
+      // Rediriger vers la liste des rapports avec un paramètre pour forcer le rafraîchissement
+      router.push(`/chantiers/${params.chantierId}/rapports?refresh=${Date.now()}`);
       
     } catch (error) {
       console.error('Erreur lors de la mise à jour du rapport:', error);
@@ -1207,7 +1218,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
         icon: '✅'
       })
       clearLocalStorage()
-      router.push(`/chantiers/${params.chantierId}/rapports`)
+      router.push(`/chantiers/${params.chantierId}/rapports?refresh=${Date.now()}`)
     } catch (error) {
       console.error("Erreur lors de l'envoi du rapport:", error)
       toast.error("Erreur lors de l'envoi du rapport. Veuillez réessayer.", {

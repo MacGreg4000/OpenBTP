@@ -173,7 +173,7 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
     // Récupérer les métadonnées supplémentaires
     let metadata: JsonValue | null = null;
     
-    if (documentType === 'rapport-visite') {
+    if (documentType === 'rapport-visite' || documentType === 'rapport-visite-general') {
       // Personnes présentes
       const personnesPresentes = formData.get('personnesPresentes');
       // Tags utilisés
@@ -186,6 +186,17 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
           tags: tags ? JSON.parse(tags as string) : [],
           notes: notes
         };
+      }
+    } else if (typeof documentType === 'string' && documentType.startsWith('rapport-visite-tag-')) {
+      // Pour les rapports taggés, récupérer les métadonnées depuis le FormData
+      const metadataStr = formData.get('metadata') as string;
+      if (metadataStr) {
+        try {
+          metadata = JSON.parse(metadataStr) as JsonValue;
+          console.log('📋 POST documents - Métadonnées du rapport taggé:', metadata);
+        } catch (e) {
+          console.error('Erreur lors du parsing des métadonnées du rapport taggé:', e);
+        }
       }
     } else if (documentType === 'photo-chantier') {
       // Récupérer les métadonnées pour les photos
