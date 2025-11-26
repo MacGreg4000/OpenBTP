@@ -37,6 +37,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/setup') ||
     pathname.startsWith('/api/public/') ||
+    pathname.startsWith('/api/contrats/') || // Routes de signature de contrats (publiques)
+    pathname.startsWith('/contrats/') || // Page de signature de contrats (publique)
     pathname.startsWith('/_next/') ||
     pathname.includes('.')
   ) {

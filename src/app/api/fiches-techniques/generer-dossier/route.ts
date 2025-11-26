@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { PDFDocument, rgb } from 'pdf-lib'
+import { PDFDocument } from 'pdf-lib'
 import fs from 'fs'
 import path from 'path'
 import { prisma } from '@/lib/prisma/client'
@@ -564,8 +564,8 @@ export async function POST(request: Request) {
     })
     
     console.log(`👥 [API] Chargement de ${soustraitantIds.size} sous-traitants en parallèle...`, { timestamp: Date.now() - startTime })
-    const soustraitantsMap = new Map<string, any>()
-    const soustraitantsLogosMap = new Map<string, string>()
+    const soustraitantsMap = new Map<string, { id: string; nom: string; logo: string | null }>()
+    const soustraitantLogosMap = new Map<string, string>()
     
     if (soustraitantIds.size > 0) {
       const soustraitants = await Promise.all(
@@ -627,7 +627,7 @@ export async function POST(request: Request) {
           ? soustraitantIdRaw.toString().trim() 
           : null
         const soustraitant = soustraitantId ? soustraitantsMap.get(soustraitantId) : null
-        const soustraitantLogoBase64 = soustraitantId ? soustraitantsLogosMap.get(soustraitantId) || '' : ''
+        const soustraitantLogoBase64 = soustraitantId ? soustraitantLogosMap.get(soustraitantId) || '' : ''
         
         // Générer la page de couverture
         const ficheCoverData: FicheTechniqueCoverData = {
