@@ -10,6 +10,10 @@ import { generateFicheTechniqueCoverHTML, type FicheTechniqueCoverData } from '@
 import { generateDossierTechniqueCoverHTML, type DossierTechniqueCoverData } from '@/lib/pdf/templates/dossier-technique-template'
 import { readFile } from 'fs/promises'
 
+// Configuration du timeout pour cette route (300 secondes = 5 minutes)
+export const maxDuration = 300
+export const dynamic = 'force-dynamic'
+
 // Fonction pour vérifier si un chantier a un dossier personnalisé
 function hasCustomFiches(chantierId: string): boolean {
   const customPath = path.join(process.cwd(), 'public', 'chantiers', chantierId, 'fiches-techniques')
@@ -155,6 +159,9 @@ function normalizeText(text: string): string {
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now()
+  console.log('🚀 [API] Début de la génération du dossier à', new Date().toISOString())
+  
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -162,7 +169,11 @@ export async function POST(request: Request) {
     }
 
     const { chantierId, ficheIds, ficheReferences, options, dossierId, fichesStatuts, fichesSoustraitants, fichesRemarques } = await request.json()
-    console.log('📥 [API] Données reçues:')
+    console.log('📥 [API] Données reçues:', {
+      chantierId,
+      nombreFiches: ficheIds?.length || 0,
+      timestamp: Date.now() - startTime
+    })
     console.log('  - Fiches techniques sélectionnées:', ficheIds)
     console.log('  - Références des fiches:', ficheReferences)
     console.log('  - Dossier ID (si régénération):', dossierId)
@@ -238,6 +249,7 @@ export async function POST(request: Request) {
     const finalPdfDoc = await PDFDocument.create()
 
     // ===== 1. GÉNÉRER LA PAGE DE GARDE DU DOSSIER =====
+    console.log('📄 [API] Génération de la page de garde du dossier...', { timestamp: Date.now() - startTime })
     const dateGeneration = new Date()
     const fichesValidees = fichesStatuts ? Object.values(fichesStatuts).filter((s: string) => s === 'VALIDEE').length : 0
     const fichesNouvelles = fichesStatuts ? Object.values(fichesStatuts).filter((s: string) => s === 'NOUVELLE_PROPOSITION').length : 0
@@ -278,6 +290,7 @@ export async function POST(request: Request) {
     }
 
     const dossierCoverHTML = generateDossierTechniqueCoverHTML(dossierCoverData)
+    console.log('🖨️ [API] Génération PDF de la page de garde...', { timestamp: Date.now() - startTime })
     const dossierCoverPDF = await PDFGenerator.generatePDF(dossierCoverHTML, {
       format: 'A4',
       orientation: 'portrait',
@@ -288,6 +301,7 @@ export async function POST(request: Request) {
         left: '10mm'
       }
     })
+    console.log('✅ [API] Page de garde générée', { timestamp: Date.now() - startTime })
 
     // Ajouter la page de garde au PDF final
     const dossierCoverPdfDoc = await PDFDocument.load(dossierCoverPDF)
@@ -527,240 +541,221 @@ export async function POST(request: Request) {
       tocPages.forEach(page => finalPdfDoc.addPage(page))
     }
 
-    // ===== 3. GÉNÉRER LES PAGES DE COUVERTURE ET AJOUTER LES FICHES =====
+    // ===== 3. OPTIMISATION : PRÉCHARGER TOUTES LES DONNÉES EN PARALLÈLE =====
+    console.log('📚 [API] Début du traitement des fiches techniques...', { timestamp: Date.now() - startTime })
     const baseDir = getFichesBaseDir(chantierId)
     const isCustom = hasCustomFiches(chantierId || '')
     console.log(`📁 [API] Génération du dossier - BaseDir: ${baseDir}, IsCustom: ${isCustom}, ChantierId: ${chantierId}`)
     console.log(`📋 [API] Fiches à traiter (${ficheIds.length}):`, ficheIds)
     
-    for (let index = 0; index < ficheIds.length; index++) {
-      const ficheId = ficheIds[index]
-      try {
-        console.log(`🔍 [API] Recherche du fichier ${index + 1}/${ficheIds.length}: ${ficheId}`)
-        const fichePath = await findPdfFile(baseDir, ficheId, chantierId)
-        
-        if (fichePath) {
-          console.log(`✅ [API] Fichier trouvé: ${fichePath}`)
-          
-          // Vérifier que le fichier trouvé est bien dans le bon dossier
-          if (isCustom && !fichePath.includes(`chantiers/${chantierId}/fiches-techniques`)) {
-            console.warn(`⚠️ [API] ATTENTION: Fichier trouvé dans le mauvais dossier! Attendu: chantiers/${chantierId}/fiches-techniques, Trouvé: ${fichePath}`)
-          } else if (!isCustom && !fichePath.includes('fiches-techniques') && fichePath.includes(`chantiers/${chantierId}`)) {
-            console.warn(`⚠️ [API] ATTENTION: Fichier trouvé dans le dossier personnalisé alors qu'on utilise le standard!`)
-          }
-          
-          try {
-            // Récupérer les informations de la fiche
-            const ficheName = path.basename(fichePath, '.pdf')
-              .replace(/_/g, ' ')
-              .replace(/-/g, ' ')
-              .split(' ')
-              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ')
-            
-            const ficheReference = ficheReferences && ficheReferences[ficheId] ? ficheReferences[ficheId] : null
-            const ficheStatut = fichesStatuts && fichesStatuts[ficheId] ? fichesStatuts[ficheId] : 'BROUILLON'
-            const ficheVersion = 1 // Par défaut
-            const soustraitantIdRaw = fichesSoustraitants && fichesSoustraitants[ficheId] ? fichesSoustraitants[ficheId] : null
-            const remarques = fichesRemarques && fichesRemarques[ficheId] ? fichesRemarques[ficheId] : null
-
-            console.log(`📋 [Fiche ${ficheId}]`)
-            console.log(`  - soustraitantIdRaw:`, soustraitantIdRaw)
-            console.log(`  - remarques:`, remarques)
-            console.log(`  - fichesSoustraitants[${ficheId}]:`, fichesSoustraitants?.[ficheId])
-            console.log(`  - Tous les sous-traitants reçus:`, fichesSoustraitants)
-
-            // Récupérer le sous-traitant si spécifié
-            let soustraitant = null
-            let soustraitantLogoBase64 = ''
-            if (soustraitantIdRaw && soustraitantIdRaw.toString().trim() !== '') {
-              const soustraitantId = soustraitantIdRaw.toString().trim()
-              soustraitant = await prisma.soustraitant.findUnique({
-                where: { id: soustraitantId }
-              })
-              console.log(`  - ✅ Sous-traitant récupéré:`, soustraitant ? { id: soustraitant.id, nom: soustraitant.nom, logo: soustraitant.logo } : 'null')
-              if (soustraitant?.logo) {
-                try {
-                  const soustraitantLogoPath = soustraitant.logo.startsWith('/')
-                    ? path.join(process.cwd(), 'public', soustraitant.logo)
-                    : path.join(process.cwd(), 'public', soustraitant.logo)
-                  if (fs.existsSync(soustraitantLogoPath)) {
-                    const soustraitantLogoBuffer = await readFile(soustraitantLogoPath)
-                    soustraitantLogoBase64 = soustraitantLogoBuffer.toString('base64')
-                    console.log('Logo du sous-traitant chargé avec succès')
-                  } else {
-                    console.warn('Logo du sous-traitant non trouvé:', soustraitantLogoPath)
-                  }
-                } catch (error) {
-                  console.warn('Impossible de charger le logo du sous-traitant:', error)
+    // OPTIMISATION 1: Trouver tous les fichiers PDF en parallèle
+    console.log('🔍 [API] Recherche de tous les fichiers PDF en parallèle...', { timestamp: Date.now() - startTime })
+    const fichePaths = await Promise.all(
+      ficheIds.map(ficheId => findPdfFile(baseDir, ficheId, chantierId))
+    )
+    
+    // OPTIMISATION 2: Précharger tous les sous-traitants nécessaires en une seule requête
+    const soustraitantIds = new Set<string>()
+    ficheIds.forEach(ficheId => {
+      const soustraitantIdRaw = fichesSoustraitants && fichesSoustraitants[ficheId] ? fichesSoustraitants[ficheId] : null
+      if (soustraitantIdRaw && soustraitantIdRaw.toString().trim() !== '') {
+        soustraitantIds.add(soustraitantIdRaw.toString().trim())
+      }
+    })
+    
+    console.log(`👥 [API] Chargement de ${soustraitantIds.size} sous-traitants en parallèle...`, { timestamp: Date.now() - startTime })
+    const soustraitantsMap = new Map<string, any>()
+    const soustraitantsLogosMap = new Map<string, string>()
+    
+    if (soustraitantIds.size > 0) {
+      const soustraitants = await Promise.all(
+        Array.from(soustraitantIds).map(id => 
+          prisma.soustraitant.findUnique({ where: { id } })
+        )
+      )
+      
+      // Charger les logos en parallèle
+      await Promise.all(
+        soustraitants.map(async (soustraitant) => {
+          if (soustraitant) {
+            soustraitantsMap.set(soustraitant.id, soustraitant)
+            if (soustraitant.logo) {
+              try {
+                const soustraitantLogoPath = soustraitant.logo.startsWith('/')
+                  ? path.join(process.cwd(), 'public', soustraitant.logo)
+                  : path.join(process.cwd(), 'public', soustraitant.logo)
+                if (fs.existsSync(soustraitantLogoPath)) {
+                  const soustraitantLogoBuffer = await readFile(soustraitantLogoPath)
+                  soustraitantLogosMap.set(soustraitant.id, soustraitantLogoBuffer.toString('base64'))
                 }
-              }
-            } else {
-              console.log('Aucun ID sous-traitant fourni pour la fiche:', ficheId)
-            }
-
-            // Générer la page de couverture avec le template HTML
-            const ficheCoverData: FicheTechniqueCoverData = {
-              settings: {
-                name: settings.name,
-                address: settings.address || '',
-                zipCode: settings.zipCode || '',
-                city: settings.city || '',
-                phone: settings.phone || '',
-                email: settings.email || '',
-                logo: settings.logo || undefined
-              },
-              chantier: {
-                chantierId: chantier.chantierId,
-                nomChantier: chantier.nomChantier || '',
-                client: chantier.client ? { nom: chantier.client.nom } : undefined,
-                maitreOuvrageNom: chantier.maitreOuvrageNom,
-                maitreOuvrageAdresse: chantier.maitreOuvrageAdresse,
-                maitreOuvrageLocalite: chantier.maitreOuvrageLocalite,
-                bureauArchitectureNom: chantier.bureauArchitectureNom,
-                bureauArchitectureAdresse: chantier.bureauArchitectureAdresse,
-                bureauArchitectureLocalite: chantier.bureauArchitectureLocalite
-              },
-              fiche: {
-                id: ficheId,
-                name: ficheName,
-                reference: ficheReference,
-                statut: ficheStatut,
-                version: ficheVersion
-              },
-              soustraitant: soustraitant ? {
-                nom: soustraitant.nom,
-                logo: soustraitant.logo || undefined
-              } : null,
-              remarques: remarques,
-              logoBase64: logoBase64 || undefined,
-              soustraitantLogoBase64: soustraitantLogoBase64 || undefined
-            }
-
-            console.log(`[Fiche ${ficheId}] Données envoyées au template:`, {
-              soustraitant: ficheCoverData.soustraitant,
-              soustraitantLogoBase64: ficheCoverData.soustraitantLogoBase64 ? 'présent' : 'absent',
-              remarques: ficheCoverData.remarques
-            })
-            
-            const ficheCoverHTML = generateFicheTechniqueCoverHTML(ficheCoverData)
-            const ficheCoverPDF = await PDFGenerator.generatePDF(ficheCoverHTML, {
-              format: 'A4',
-              orientation: 'portrait',
-              margins: {
-                top: '10mm',
-                right: '10mm',
-                bottom: '10mm',
-                left: '10mm'
-              }
-            })
-
-            // Ajouter la page de couverture au PDF final
-            const ficheCoverPdfDoc = await PDFDocument.load(ficheCoverPDF)
-            
-            // Ajouter les champs éditables (AcroForm) pour les remarques et signatures
-            // NOTE: Les champs sont désactivés par défaut car ils masquent le contenu HTML
-            // Pour les réactiver, changez ENABLE_FORM_FIELDS à true
-            // ATTENTION: Les champs peuvent masquer le contenu visuel du PDF même sans backgroundColor
-            const ENABLE_FORM_FIELDS = false // Mettre à true pour activer les champs éditables
-            
-            if (ENABLE_FORM_FIELDS) {
-              const form = ficheCoverPdfDoc.getForm()
-              const pages = ficheCoverPdfDoc.getPages()
-              const coverPage = pages[0]
-              const { width, height } = coverPage.getSize()
-              
-              // Calculer les positions approximatives basées sur le layout HTML
-              // Les marges sont de 10mm = ~28 points
-              // La zone de remarques est environ à 45% de la hauteur de la page
-              // Les signatures sont en bas, environ à 15% de la hauteur
-              
-              try {
-              // Champ de texte pour les remarques (position approximative)
-              const remarquesY = height * 0.45 // Environ 45% du haut de la page
-              const remarquesField = form.createTextField(`remarques_${ficheId}`)
-              remarquesField.setText(remarques || '')
-              // Rendre le champ transparent pour ne pas masquer le contenu HTML
-              remarquesField.addToPage(coverPage, {
-                x: 40, // marge gauche + padding
-                y: height - remarquesY - 50, // Ajuster selon la hauteur du champ
-                width: width - 80, // largeur page - marges
-                height: 50,
-                borderWidth: 0, // Pas de bordure visible
-                borderColor: rgb(0, 0, 0),
-                // Pas de backgroundColor pour laisser le contenu HTML visible
-              })
-              // Essayer de rendre le champ transparent (si supporté)
-              try {
-                remarquesField.enableReadOnly()
-              } catch {
-                // Ignorer si non supporté
-              }
-              
-              // Champs de signature (4 champs côte à côte)
-              // Note: pdf-lib ne supporte pas createSignatureField, on utilise des champs texte pour les signatures
-              const signatureY = height * 0.15 // Environ 15% du haut de la page
-              const signatureWidth = (width - 80) / 4 - 8 // Largeur disponible / 4 - gap
-              const signatureHeight = 35
-              
-              const signatureLabels = ['L\'Architecte', 'Le M.O.', 'Représentant du M.O.', 'L\'Entrepreneur']
-              signatureLabels.forEach((label, index) => {
-                // Utiliser un champ texte pour la signature (pdf-lib ne supporte pas les champs de signature natifs)
-                const signatureField = form.createTextField(`signature_${ficheId}_${index}`)
-                signatureField.setText('') // Champ vide pour signature
-                signatureField.addToPage(coverPage, {
-                  x: 40 + index * (signatureWidth + 8), // Position X avec gap
-                  y: height - signatureY - signatureHeight,
-                  width: signatureWidth,
-                  height: signatureHeight,
-                  borderWidth: 0, // Pas de bordure visible
-                  borderColor: rgb(0, 0, 0),
-                  // Pas de backgroundColor pour laisser le contenu HTML visible
-                })
-              })
-              
-              // Champs de date pour chaque signature
-              signatureLabels.forEach((label, index) => {
-                const dateField = form.createTextField(`date_signature_${ficheId}_${index}`)
-                dateField.addToPage(coverPage, {
-                  x: 40 + index * (signatureWidth + 8),
-                  y: height - signatureY - signatureHeight - 15,
-                  width: signatureWidth,
-                  height: 10,
-                  borderWidth: 0, // Pas de bordure visible
-                  borderColor: rgb(0, 0, 0),
-                  // Pas de backgroundColor pour laisser le contenu HTML visible
-                })
-              })
-              } catch (formError) {
-                console.warn('Erreur lors de l\'ajout des champs de formulaire:', formError)
-                // Continuer même si les champs de formulaire ne peuvent pas être ajoutés
+              } catch (error) {
+                console.warn(`Impossible de charger le logo du sous-traitant ${soustraitant.id}:`, error)
               }
             }
-            
-            const ficheCoverPages = await finalPdfDoc.copyPages(ficheCoverPdfDoc, ficheCoverPdfDoc.getPageIndices())
-            ficheCoverPages.forEach(page => finalPdfDoc.addPage(page))
-
-            // Charger et ajouter les pages de la fiche technique originale
-            const ficheBytes = await readFile(fichePath)
-            const fichePdf = await PDFDocument.load(ficheBytes)
-            const fichePages = await finalPdfDoc.copyPages(fichePdf, fichePdf.getPageIndices())
-            fichePages.forEach(page => finalPdfDoc.addPage(page))
-            
-            console.log('Fichier ajouté avec succès')
-          } catch (pdfError) {
-            console.error(`Erreur lors du chargement du PDF ${fichePath}:`, pdfError)
-            errors.push(`Erreur lors du chargement du PDF ${fichePath}: ${pdfError}`)
           }
-        } else {
-          console.error('Fichier non trouvé:', ficheId)
-          errors.push(`Fichier non trouvé: ${ficheId}`)
+        })
+      )
+    }
+    console.log('✅ [API] Données préchargées', { timestamp: Date.now() - startTime })
+    
+    // ===== 4. GÉNÉRER LES PAGES DE COUVERTURE EN PARALLÈLE =====
+    console.log('🖨️ [API] Génération des pages de couverture en parallèle...', { timestamp: Date.now() - startTime })
+    
+    const ficheCoverPromises = ficheIds.map(async (ficheId, index) => {
+      const fichePath = fichePaths[index]
+      if (!fichePath) {
+        return { ficheId, error: `Fichier non trouvé: ${ficheId}` }
+      }
+      
+      try {
+        // Récupérer les informations de la fiche
+        const ficheName = path.basename(fichePath, '.pdf')
+          .replace(/_/g, ' ')
+          .replace(/-/g, ' ')
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+        
+        const ficheReference = ficheReferences && ficheReferences[ficheId] ? ficheReferences[ficheId] : null
+        const ficheStatut = fichesStatuts && fichesStatuts[ficheId] ? fichesStatuts[ficheId] : 'BROUILLON'
+        const ficheVersion = 1
+        const soustraitantIdRaw = fichesSoustraitants && fichesSoustraitants[ficheId] ? fichesSoustraitants[ficheId] : null
+        const remarques = fichesRemarques && fichesRemarques[ficheId] ? fichesRemarques[ficheId] : null
+        
+        // Récupérer le sous-traitant depuis le cache
+        const soustraitantId = soustraitantIdRaw && soustraitantIdRaw.toString().trim() !== '' 
+          ? soustraitantIdRaw.toString().trim() 
+          : null
+        const soustraitant = soustraitantId ? soustraitantsMap.get(soustraitantId) : null
+        const soustraitantLogoBase64 = soustraitantId ? soustraitantsLogosMap.get(soustraitantId) || '' : ''
+        
+        // Générer la page de couverture
+        const ficheCoverData: FicheTechniqueCoverData = {
+          settings: {
+            name: settings.name,
+            address: settings.address || '',
+            zipCode: settings.zipCode || '',
+            city: settings.city || '',
+            phone: settings.phone || '',
+            email: settings.email || '',
+            logo: settings.logo || undefined
+          },
+          chantier: {
+            chantierId: chantier.chantierId,
+            nomChantier: chantier.nomChantier || '',
+            client: chantier.client ? { nom: chantier.client.nom } : undefined,
+            maitreOuvrageNom: chantier.maitreOuvrageNom,
+            maitreOuvrageAdresse: chantier.maitreOuvrageAdresse,
+            maitreOuvrageLocalite: chantier.maitreOuvrageLocalite,
+            bureauArchitectureNom: chantier.bureauArchitectureNom,
+            bureauArchitectureAdresse: chantier.bureauArchitectureAdresse,
+            bureauArchitectureLocalite: chantier.bureauArchitectureLocalite
+          },
+          fiche: {
+            id: ficheId,
+            name: ficheName,
+            reference: ficheReference,
+            statut: ficheStatut,
+            version: ficheVersion
+          },
+          soustraitant: soustraitant ? {
+            nom: soustraitant.nom,
+            logo: soustraitant.logo || undefined
+          } : null,
+          remarques: remarques,
+          logoBase64: logoBase64 || undefined,
+          soustraitantLogoBase64: soustraitantLogoBase64 || undefined
+        }
+        
+        const ficheCoverHTML = generateFicheTechniqueCoverHTML(ficheCoverData)
+        const ficheCoverPDF = await PDFGenerator.generatePDF(ficheCoverHTML, {
+          format: 'A4',
+          orientation: 'portrait',
+          margins: {
+            top: '10mm',
+            right: '10mm',
+            bottom: '10mm',
+            left: '10mm'
+          }
+        })
+        
+        return { 
+          ficheId, 
+          fichePath, 
+          ficheCoverPDF, 
+          ficheName,
+          ficheReference,
+          ficheStatut,
+          soustraitantId,
+          remarques
         }
       } catch (error) {
-        console.error(`Erreur lors du traitement de la fiche ${ficheId}:`, error)
-        errors.push(`Erreur lors du traitement de la fiche ${ficheId}: ${error}`)
+        console.error(`Erreur lors de la génération de la couverture pour ${ficheId}:`, error)
+        return { ficheId, error: String(error) }
+      }
+    })
+    
+    const ficheCovers = await Promise.all(ficheCoverPromises)
+    console.log('✅ [API] Toutes les pages de couverture générées', { timestamp: Date.now() - startTime })
+    
+    // ===== 5. OPTIMISATION : PRÉCHARGER TOUS LES PDFS ORIGINAUX EN PARALLÈLE =====
+    console.log('📄 [API] Préchargement des PDFs originaux en parallèle...', { timestamp: Date.now() - startTime })
+    const fichePdfsMap = new Map<string, PDFDocument>()
+    
+    await Promise.all(
+      ficheCovers
+        .filter(fc => !fc.error && fc.fichePath)
+        .map(async (ficheCover) => {
+          try {
+            const ficheBytes = await readFile(ficheCover.fichePath!)
+            const fichePdf = await PDFDocument.load(ficheBytes)
+            fichePdfsMap.set(ficheCover.ficheId, fichePdf)
+          } catch (error) {
+            console.error(`Erreur lors du chargement du PDF ${ficheCover.ficheId}:`, error)
+            errors.push(`Erreur lors du chargement du PDF ${ficheCover.ficheId}: ${error}`)
+          }
+        })
+    )
+    console.log('✅ [API] Tous les PDFs originaux préchargés', { timestamp: Date.now() - startTime })
+    
+    // ===== 6. AJOUTER LES PAGES AU PDF FINAL =====
+    console.log('📄 [API] Ajout des pages au PDF final...', { timestamp: Date.now() - startTime })
+    
+    for (let index = 0; index < ficheCovers.length; index++) {
+      const ficheCover = ficheCovers[index]
+      
+      if (ficheCover.error) {
+        errors.push(ficheCover.error)
+        continue
+      }
+      
+      if (!ficheCover.ficheCoverPDF || !ficheCover.fichePath) {
+        errors.push(`Données manquantes pour la fiche ${ficheCover.ficheId}`)
+        continue
+      }
+      
+      try {
+        // Ajouter la page de couverture au PDF final
+        const ficheCoverPdfDoc = await PDFDocument.load(ficheCover.ficheCoverPDF)
+        const ficheCoverPages = await finalPdfDoc.copyPages(ficheCoverPdfDoc, ficheCoverPdfDoc.getPageIndices())
+        ficheCoverPages.forEach(page => finalPdfDoc.addPage(page))
+
+        // Ajouter les pages de la fiche technique originale (déjà chargée)
+        const fichePdf = fichePdfsMap.get(ficheCover.ficheId)
+        if (fichePdf) {
+          const fichePages = await finalPdfDoc.copyPages(fichePdf, fichePdf.getPageIndices())
+          fichePages.forEach(page => finalPdfDoc.addPage(page))
+        } else {
+          errors.push(`PDF original non trouvé pour la fiche ${ficheCover.ficheId}`)
+        }
+        
+      } catch (pdfError) {
+        console.error(`Erreur lors du traitement de la fiche ${ficheCover.ficheId}:`, pdfError)
+        errors.push(`Erreur lors du traitement de la fiche ${ficheCover.ficheId}: ${pdfError}`)
       }
     }
+    
+    console.log('✅ [API] Toutes les fiches ajoutées au PDF final', { timestamp: Date.now() - startTime })
 
     // Si des erreurs sont survenues, les retourner
     if (errors.length > 0) {
@@ -771,7 +766,9 @@ export async function POST(request: Request) {
     }
 
     // Sauvegarder le PDF final
+    console.log('💾 [API] Sauvegarde du PDF final...', { timestamp: Date.now() - startTime })
     const pdfBytes = await finalPdfDoc.save()
+    console.log('✅ [API] PDF final sauvegardé', { timestamp: Date.now() - startTime })
     
     // Créer le dossier Documents du chantier s'il n'existe pas
     const chantierDir = path.join(process.cwd(), 'public', 'chantiers', chantierId, 'documents')
@@ -898,6 +895,8 @@ export async function POST(request: Request) {
     })
 
     // Retourner le PDF
+    const totalDuration = Date.now() - startTime
+    console.log(`🎉 [API] Génération terminée avec succès en ${totalDuration}ms (${(totalDuration / 1000).toFixed(2)}s)`)
     return new NextResponse(pdfBytes, {
       headers: {
         'Content-Type': 'application/pdf',
@@ -905,7 +904,8 @@ export async function POST(request: Request) {
       }
     })
   } catch (error) {
-    console.error('Erreur lors de la génération du dossier:', error)
+    const totalDuration = Date.now() - startTime
+    console.error(`❌ [API] Erreur après ${totalDuration}ms:`, error)
     return NextResponse.json(
       { error: 'Erreur lors de la génération du dossier', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

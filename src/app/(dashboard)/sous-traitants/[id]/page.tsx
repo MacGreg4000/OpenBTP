@@ -17,6 +17,7 @@ import {
   InformationCircleIcon
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui'
+import { useNotification } from '@/hooks/useNotification'
 
 interface SousTraitantData {
   id: string
@@ -48,6 +49,7 @@ export default function SousTraitantConsultationPage(
   const params = use(props.params);
   const router = useRouter()
   const { data: session } = useSession()
+  const { showNotification, NotificationComponent } = useNotification()
   const [sousTraitant, setSousTraitant] = useState<SousTraitantData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -327,9 +329,9 @@ export default function SousTraitantConsultationPage(
                     onClick={() => {
                       try {
                         navigator.clipboard.writeText(portalLink)
-                        alert('Lien copié dans le presse-papiers')
+                        showNotification('Succès', 'Lien copié dans le presse-papiers', 'success')
                       } catch {
-                        alert('Impossible de copier le lien')
+                        showNotification('Erreur', 'Impossible de copier le lien', 'error')
                       }
                     }}
                     className="mt-2 px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -375,6 +377,7 @@ export default function SousTraitantConsultationPage(
           </div>
         </div>
       </div>
+      <NotificationComponent />
     </div>
   )
 }

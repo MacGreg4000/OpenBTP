@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { PageHeader } from '@/components/PageHeader'
 import { CalendarDaysIcon, UserIcon, DocumentArrowDownIcon, FunnelIcon, PencilSquareIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { useNotification } from '@/hooks/useNotification'
 
 type JournalEntry = {
   id: string
@@ -54,6 +55,7 @@ type Chantier = {
 
 export default function JournalPage() {
   const { data: session } = useSession()
+  const { showNotification } = useNotification()
   const [groupedEntries, setGroupedEntries] = useState<GroupedEntry[]>([])
   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([])
   const [chantiers, setChantiers] = useState<Chantier[]>([])
@@ -190,14 +192,14 @@ export default function JournalPage() {
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        alert(data?.error || 'Erreur lors de la suppression')
+        showNotification('Erreur', data?.error || 'Erreur lors de la suppression', 'error')
       } else {
         setEntryToDelete(null)
         await loadJournal()
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
-      alert('Erreur lors de la suppression')
+      showNotification('Erreur', 'Erreur lors de la suppression', 'error')
     } finally {
       setDeleting(false)
     }
@@ -501,6 +503,7 @@ function JournalManagerForm({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { showNotification, NotificationComponent } = useNotification()
   const [formData, setFormData] = useState({
     date: entry.date ? new Date(entry.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     heureDebut: entry.heureDebut || '08:00',
@@ -514,11 +517,11 @@ function JournalManagerForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.chantierId && !formData.lieuLibre.trim()) {
-      alert('Veuillez sélectionner un chantier ou indiquer un lieu libre')
+      showNotification('Attention', 'Veuillez sélectionner un chantier ou indiquer un lieu libre', 'warning')
       return
     }
     if (!formData.description.trim()) {
-      alert('Veuillez renseigner une description')
+      showNotification('Attention', 'Veuillez renseigner une description', 'warning')
       return
     }
 
@@ -531,13 +534,13 @@ function JournalManagerForm({
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        alert(data?.error || 'Erreur lors de la mise à jour de l\'entrée')
+        showNotification('Erreur', data?.error || 'Erreur lors de la mise à jour de l\'entrée', 'error')
         return
       }
       onSaved()
     } catch (error) {
       console.error('Erreur lors de la mise à jour du journal:', error)
-      alert('Erreur lors de la mise à jour du journal')
+      showNotification('Erreur', 'Erreur lors de la mise à jour du journal', 'error')
     } finally {
       setSaving(false)
     }
@@ -649,6 +652,7 @@ function JournalManagerForm({
           </div>
         </form>
       </div>
+      <NotificationComponent />
     </div>
   )
 }

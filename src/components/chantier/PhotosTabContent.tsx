@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { CameraIcon, CloudArrowUpIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
 import PhotosContent from './PhotosContent'
 import toast from 'react-hot-toast'
+import { useNotification } from '@/hooks/useNotification'
 
 interface PhotosTabContentProps {
   chantierId: string
@@ -16,6 +17,7 @@ interface UploadedFile {
 }
 
 export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) {
+  const { showNotification, NotificationComponent } = useNotification()
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -74,13 +76,13 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
     Array.from(files).forEach((file) => {
       // Vérifier le type de fichier
       if (!file.type.startsWith('image/')) {
-        alert(`Le fichier ${file.name} n'est pas une image valide.`)
+        showNotification('Erreur', `Le fichier ${file.name} n'est pas une image valide.`, 'error')
         return
       }
 
       // Vérifier la taille (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert(`Le fichier ${file.name} est trop volumineux (max 10MB).`)
+        showNotification('Erreur', `Le fichier ${file.name} est trop volumineux (max 10MB).`, 'error')
         return
       }
 
@@ -111,7 +113,7 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
   // Upload des photos
   const uploadPhotos = async () => {
     if (uploadedFiles.length === 0) {
-      alert('Veuillez sélectionner au moins une photo à uploader.')
+      showNotification('Attention', 'Veuillez sélectionner au moins une photo à uploader.', 'warning')
       return
     }
 
@@ -169,7 +171,7 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
         setUploadedFiles([])
         setDescription('')
         
-        alert(`✅ ${result.uploadedCount} photo(s) uploadée(s) avec succès !`)
+        showNotification('Succès', `${result.uploadedCount} photo(s) uploadée(s) avec succès !`, 'success')
         
         // Recharger la page pour voir les nouvelles photos
         window.location.reload()
@@ -179,7 +181,7 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
 
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error)
-      alert(`❌ Erreur lors de l'upload: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+      showNotification('Erreur', `Erreur lors de l'upload: ${error instanceof Error ? error.message : 'Erreur inconnue'}`, 'error')
     } finally {
       setUploading(false)
       setUploadProgress(0)
@@ -385,6 +387,7 @@ export default function PhotosTabContent({ chantierId }: PhotosTabContentProps) 
 
       {/* Affichage de toutes les photos */}
       <PhotosContent chantierId={chantierId} />
+      <NotificationComponent />
     </div>
   )
 }

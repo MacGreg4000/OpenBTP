@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { FormInput, FormTextarea } from '@/components/ui'
 import { CameraIcon, XMarkIcon, TagIcon, DocumentDuplicateIcon, ArrowLeftIcon, PlusIcon, TrashIcon, UserGroupIcon, DocumentTextIcon, PhotoIcon, CheckCircleIcon, ExclamationTriangleIcon, CloudArrowUpIcon, WifiIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { useNotification } from '@/hooks/useNotification'
 
 interface ChantierDetails {
   id: number
@@ -111,6 +112,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
   const editMode = searchParams.get('edit'); // ID du document à éditer
   
   const { data: _session } = useSession()
+  const { showNotification, NotificationComponent } = useNotification()
   const router = useRouter()
   const [chantier, setChantier] = useState<ChantierDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -1056,7 +1058,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
       if (isOffline) {
         // Mode hors ligne
         await handleDownloadPDF()
-        alert("Le PDF a été généré en mode hors ligne. Vous pourrez l'envoyer au serveur une fois la connexion rétablie.")
+        showNotification('Information', "Le PDF a été généré en mode hors ligne. Vous pourrez l'envoyer au serveur une fois la connexion rétablie.", 'info')
         return
       }
 
@@ -1248,7 +1250,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
       URL.revokeObjectURL(photo.preview);
     });
     
-    alert("Le formulaire a été réinitialisé.");
+    showNotification('Succès', "Le formulaire a été réinitialisé.", 'success')
   };
 
   return (
@@ -1814,6 +1816,7 @@ export default function NouveauRapportPage(props: { params: Promise<{ chantierId
           </form>
         )}
       </div>
+      <NotificationComponent />
     </div>
   )
 } 

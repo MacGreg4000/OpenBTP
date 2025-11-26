@@ -27,6 +27,7 @@ import {
 import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { Pagination } from '@/components/Pagination'
 import { PageHeader } from '@/components/PageHeader'
+import { useNotification } from '@/hooks/useNotification'
 
 function getStatusStyle(status: string) {
   switch (status) {
@@ -243,6 +244,7 @@ function ChantierCard({
 export default function ChantiersPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { showNotification, NotificationComponent } = useNotification()
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [loading, setLoading] = useState(true)
   const [filtreNom, setFiltreNom] = useState('')
@@ -368,7 +370,7 @@ export default function ChantiersPage() {
       setStatusMenuOpen(null)
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error)
-      alert('Erreur lors de la mise à jour du statut. Veuillez réessayer.')
+      showNotification('Erreur', 'Erreur lors de la mise à jour du statut. Veuillez réessayer.', 'error')
     } finally {
       setUpdatingStatus(null)
     }
@@ -1092,6 +1094,7 @@ export default function ChantiersPage() {
           </>
         )}
       </div>
+      <NotificationComponent />
     </div>
   )
 } 

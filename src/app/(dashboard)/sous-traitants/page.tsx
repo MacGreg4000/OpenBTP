@@ -23,6 +23,7 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
+import { useNotification } from '@/hooks/useNotification'
 // import { useRouter } from 'next/navigation'
 
 interface SousTraitant {
@@ -130,6 +131,7 @@ function DeleteModal({ isOpen, sousTraitant, onClose, onConfirm, isDeleting }: D
 export default function SousTraitantsPage() {
   // const router = useRouter()
   const { data: session } = useSession()
+  const { showNotification, NotificationComponent } = useNotification()
   const [sousTraitants, setSousTraitants] = useState<SousTraitant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -220,7 +222,7 @@ export default function SousTraitantsPage() {
       window.location.reload()
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de la génération du contrat')
+      showNotification('Erreur', 'Erreur lors de la génération du contrat', 'error')
     } finally {
       setGeneratingContract(null)
     }
@@ -241,10 +243,10 @@ export default function SousTraitantsPage() {
         throw new Error(errorData.error || 'Erreur lors de l\'envoi du contrat')
       }
 
-      alert('Le contrat a été envoyé avec succès au sous-traitant')
+      showNotification('Succès', 'Le contrat a été envoyé avec succès au sous-traitant', 'success')
     } catch (error) {
       console.error('Erreur:', error)
-      alert(error instanceof Error ? error.message : 'Erreur lors de l\'envoi du contrat')
+      showNotification('Erreur', error instanceof Error ? error.message : 'Erreur lors de l\'envoi du contrat', 'error')
     } finally {
       setSendingContract(null)
     }
@@ -487,7 +489,7 @@ export default function SousTraitantsPage() {
                                 if(!res.ok) throw new Error('Erreur mise à jour actif')
                                 setSousTraitants(prev=> prev.map(x=> x.id===st.id ? { ...x, actif } : x))
                               } catch {
-                                alert('Erreur lors de la mise à jour du statut actif')
+                                showNotification('Erreur', 'Erreur lors de la mise à jour du statut actif', 'error')
                               }
                             }}
                           />
@@ -1070,7 +1072,7 @@ export default function SousTraitantsPage() {
                                   const pin = prompt('Nouveau PIN (au moins 4 chiffres)') || ''
                                   if (pin && pin.replace(/\D/g,'').length>=4) {
                                     await fetch(`/api/ouvriers-internes/${o.id}/pin`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pin: pin.replace(/\D/g,'') }) })
-                                    alert('PIN enregistré')
+                                    showNotification('Succès', 'PIN enregistré', 'success')
                                   }
                                 }}
                               >
@@ -1096,6 +1098,7 @@ export default function SousTraitantsPage() {
         onConfirm={deleteModal.onConfirm}
         isDeleting={deleteModal.isDeleting}
       />
+      <NotificationComponent />
     </div>
   )
 } 

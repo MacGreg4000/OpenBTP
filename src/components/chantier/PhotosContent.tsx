@@ -5,6 +5,7 @@ import { EyeIcon, CalendarIcon, UserIcon, CameraIcon, TrashIcon, PencilIcon, Tag
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import toast from 'react-hot-toast'
+import { useNotification } from '@/hooks/useNotification'
 
 interface PhotoExterne {
   id: string
@@ -70,6 +71,7 @@ type PhotoItem =
   | (PhotoChantier & { type: 'chantier' })
 
 export default function PhotosContent({ chantierId }: PhotosContentProps) {
+  const { showNotification, NotificationComponent } = useNotification()
   const [photosExternes, setPhotosExternes] = useState<PhotoExterne[]>([])
   const [photosRemarques, setPhotosRemarques] = useState<PhotoRemarque[]>([])
   const [photosSAV, setPhotosSAV] = useState<PhotoSAV[]>([])
@@ -423,7 +425,7 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
       }
     } catch (error) {
       console.error('Erreur lors de la suppression de la photo:', error)
-      alert('Erreur lors de la suppression de la photo. Veuillez réessayer.')
+      showNotification('Erreur', 'Erreur lors de la suppression de la photo. Veuillez réessayer.', 'error')
     } finally {
       setDeleting(false)
       setDeleteConfirm({ show: false, photoId: '', photoName: '' })
@@ -1211,6 +1213,7 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
           </div>
         </div>
       )}
+      <NotificationComponent />
     </div>
   )
 }

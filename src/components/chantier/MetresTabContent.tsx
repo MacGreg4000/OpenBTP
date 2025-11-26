@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useNotification } from '@/hooks/useNotification'
 
 interface MetreLigne {
   id: string
@@ -51,6 +52,7 @@ interface MetresTabContentProps {
 
 export default function MetresTabContent({ chantierId }: MetresTabContentProps) {
   const router = useRouter()
+  const { showNotification, NotificationComponent } = useNotification()
   const [metres, setMetres] = useState<Metre[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedMetres, setExpandedMetres] = useState<Set<string>>(new Set())
@@ -132,7 +134,7 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
       await loadMetres()
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de la suppression du métré')
+      showNotification('Erreur', 'Erreur lors de la suppression du métré', 'error')
     } finally {
       setDeletingMetreId(null)
     }
@@ -172,7 +174,7 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
       window.URL.revokeObjectURL(downloadUrl)
     } catch (error) {
       console.error('Erreur lors de l\'export PDF:', error)
-      alert('Erreur lors de l\'export du PDF')
+      showNotification('Erreur', 'Erreur lors de l\'export du PDF', 'error')
     } finally {
       setExportingMetreId(null)
     }
@@ -436,6 +438,7 @@ export default function MetresTabContent({ chantierId }: MetresTabContentProps) 
           </div>
         )
       })}
+      <NotificationComponent />
     </div>
   )
 }

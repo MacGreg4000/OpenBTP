@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { CalendarIcon, PlusIcon, UserIcon, BuildingOfficeIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
 import ResourceScheduler from '@/components/planning/ResourceScheduler'
 import TaskModal from '@/components/planning/TaskModal'
+import { useNotification } from '@/hooks/useNotification'
 
 interface Chantier {
   chantierId: string
@@ -76,6 +77,7 @@ interface Task {
 
 export default function PlanningRessourcesPage() {
   const router = useRouter()
+  const { showNotification, NotificationComponent } = useNotification()
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState<TaskData | null>(null)
   const [chantiers, setChantiers] = useState<Chantier[]>([])
@@ -217,7 +219,7 @@ export default function PlanningRessourcesPage() {
       } else {
         const errorData = await response.json()
         console.error('Erreur lors de la suppression de la journée:', errorData.error)
-        alert('Erreur lors de la suppression de la journée: ' + errorData.error)
+        showNotification('Erreur', 'Erreur lors de la suppression de la journée: ' + errorData.error, 'error')
       }
       return
     }
@@ -290,11 +292,11 @@ export default function PlanningRessourcesPage() {
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
         console.error('❌ Erreur lors de l\'export PDF:', errorData);
-        alert(`Erreur lors de l'export PDF: ${errorData.details || errorData.error || 'Erreur inconnue'}`);
+        showNotification('Erreur', `Erreur lors de l'export PDF: ${errorData.details || errorData.error || 'Erreur inconnue'}`, 'error');
       }
     } catch (error) {
       console.error('❌ Erreur lors de l\'export PDF:', error)
-      alert(`Erreur lors de l'export PDF: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+      showNotification('Erreur', `Erreur lors de l'export PDF: ${error instanceof Error ? error.message : 'Erreur inconnue'}`, 'error')
     }
   }
 
@@ -399,6 +401,7 @@ export default function PlanningRessourcesPage() {
         ouvriersInternes={ouvriersInternes}
         soustraitants={soustraitants}
       />
+      <NotificationComponent />
     </div>
   )
 }
