@@ -127,6 +127,7 @@ export const config = {
     '/sav/:path*',
     '/metres/:path*',
     '/planification-chargements/:path*',
-    '/admin/:path*'
+    '/admin/:path*',
+    '/contrats/:path*' // Routes de signature de contrats (publiques)
   ],
 }; 
