@@ -776,46 +776,115 @@ export default function SousTraitantsPage() {
                             )}
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                            <div className="flex space-x-1 justify-end">
-                              <Link 
-                                href={`/sous-traitants/${st.id}`} 
-                                className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors" 
-                                title="Consulter"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <EyeIcon className="h-4 w-4" />
-                              </Link>
-                              <Link 
-                                href={`/sous-traitants/${st.id}/edit`} 
-                                className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors" 
-                                title="Modifier"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <PencilSquareIcon className="h-4 w-4" />
-                              </Link>
-                              <a
-                                href={`/public/portail/soustraitant/${st.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
-                                title="Portail public"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <GlobeAltIcon className="h-4 w-4" />
-                              </a>
-                              <button
-                                onClick={() => setDeleteModal({
-                                  isOpen: true,
-                                  sousTraitant: st,
-                                  onClose: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
-                                  onConfirm: handleDelete,
-                                  isDeleting: false
-                                })}
-                                className="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900 rounded transition-colors"
-                                title="Supprimer"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </button>
+                            <div className="flex items-center space-x-1 justify-end">
+                              {/* Actions de contrat */}
+                              <div className="flex items-center space-x-1 pr-2 border-r border-gray-300 dark:border-gray-600">
+                                {st.contrats && st.contrats.length > 0 && st.contrats[0].estSigne ? (
+                                  <a
+                                    href={st.contrats[0].url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 text-green-600 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900 rounded transition-colors"
+                                    title="Voir contrat signé"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <DocumentTextIcon className="h-4 w-4" />
+                                  </a>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        genererContrat(st.id)
+                                      }}
+                                      disabled={generatingContract === st.id}
+                                      className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Générer contrat"
+                                    >
+                                      {generatingContract === st.id ? (
+                                        <svg className="animate-spin h-4 w-4 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                      ) : (
+                                        <DocumentTextIcon className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                    {st.contrats && st.contrats.length > 0 && !st.contrats[0].estSigne && (
+                                      <a
+                                        href={st.contrats[0].url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
+                                        title="Consulter contrat"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <EyeIcon className="h-4 w-4" />
+                                      </a>
+                                    )}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        envoyerContrat(st.id)
+                                      }}
+                                      disabled={sendingContract === st.id || !st.contrats || st.contrats.length === 0}
+                                      className="p-2 text-green-600 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Envoyer contrat"
+                                    >
+                                      {sendingContract === st.id ? (
+                                        <svg className="animate-spin h-4 w-4 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                      ) : (
+                                        <EnvelopeIcon className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                              {/* Autres actions */}
+                              <div className="flex items-center space-x-1">
+                                <Link 
+                                  href={`/sous-traitants/${st.id}`} 
+                                  className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors" 
+                                  title="Consulter"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <EyeIcon className="h-4 w-4" />
+                                </Link>
+                                <Link 
+                                  href={`/sous-traitants/${st.id}/edit`} 
+                                  className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors" 
+                                  title="Modifier"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <PencilSquareIcon className="h-4 w-4" />
+                                </Link>
+                                <a
+                                  href={`/public/portail/soustraitant/${st.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
+                                  title="Portail public"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <GlobeAltIcon className="h-4 w-4" />
+                                </a>
+                                <button
+                                  onClick={() => setDeleteModal({
+                                    isOpen: true,
+                                    sousTraitant: st,
+                                    onClose: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
+                                    onConfirm: handleDelete,
+                                    isDeleting: false
+                                  })}
+                                  className="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900 rounded transition-colors"
+                                  title="Supprimer"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                           </td>
                         </tr>
