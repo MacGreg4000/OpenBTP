@@ -71,7 +71,10 @@ export async function POST(
     // Récupérer les informations de l'entreprise
     const companySettings = await prisma.companysettings.findFirst()
     const companyName = companySettings?.name || 'Secotech'
-    const companyEmail = companySettings?.email || null
+    
+    // Toujours envoyer une copie à l'adresse principale de l'entreprise
+    // (emailCc configuré dans les paramètres sera aussi ajouté automatiquement)
+    const companyEmail = companySettings?.email || undefined
     
     // Envoyer l'email avec copie à l'adresse principale de l'entreprise
     const emailSent = await sendContractSignatureEmail(
@@ -79,7 +82,7 @@ export async function POST(
       soustraitant.nom,
       companyName,
       token,
-      companyEmail || undefined
+      companyEmail
     )
     
     if (!emailSent) {

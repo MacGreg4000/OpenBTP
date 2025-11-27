@@ -236,19 +236,24 @@ export async function sendContractSignatureEmail(
       html
     };
 
-    // Ajouter la copie à l'email principal de l'entreprise si fourni
+    // Construire la liste des CC
+    const ccList: string[] = []
+    
+    // Toujours ajouter l'email principal de l'entreprise si fourni (pour les contrats)
     if (cc && cc.trim()) {
-      mailOptions.cc = cc.trim();
+      ccList.push(cc.trim())
     }
-
-    // Ajouter Cc si configuré dans les paramètres
+    
+    // Ajouter aussi emailCc si configuré dans les paramètres (pour tous les emails)
     if (settings?.emailCc && settings.emailCc.trim()) {
-      // Si on a déjà un cc, on combine les deux
-      if (mailOptions.cc) {
-        mailOptions.cc = `${mailOptions.cc}, ${settings.emailCc.trim()}`;
-      } else {
-        mailOptions.cc = settings.emailCc.trim();
-      }
+      // Éviter les doublons
+      const emailCcList = settings.emailCc.split(',').map(e => e.trim()).filter(e => e && e !== cc?.trim())
+      ccList.push(...emailCcList)
+    }
+    
+    // Si on a des CC, les combiner
+    if (ccList.length > 0) {
+      mailOptions.cc = ccList.join(', ')
     }
 
     // Ajouter Cci si configuré
