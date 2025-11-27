@@ -169,13 +169,15 @@ export async function sendEmailWithAttachment(
  * @param nomSousTraitant Nom du sous-traitant
  * @param nomEntreprise Nom de l'entreprise
  * @param token Token unique du contrat
+ * @param cc Adresse email pour la copie carbone (optionnel)
  * @returns Promise<boolean> Indique si l'email a été envoyé avec succès
  */
 export async function sendContractSignatureEmail(
   to: string,
   nomSousTraitant: string,
   nomEntreprise: string,
-  token: string
+  token: string,
+  cc?: string
 ): Promise<boolean> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const signatureUrl = `${baseUrl}/contrats/${token}`
@@ -212,5 +214,54 @@ export async function sendContractSignatureEmail(
     </div>
   `
 
-  return await sendEmail(to, subject, html)
+  try {
+    const transporter = await createTransporter()
+    const settings = await prisma.companysettings.findFirst() as unknown as EmailSettings;
+    
+    const fromEmail = settings?.emailFrom || process.env.EMAIL_FROM || 'noreply@example.com'
+    const fromName = settings?.emailFromName || process.env.EMAIL_FROM_NAME || 'Secotech'
+    
+    // Préparer les options d'envoi
+    const mailOptions: {
+      from: string
+      to: string
+      subject: string
+      html: string
+      cc?: string
+      bcc?: string
+    } = {
+      from: `"${fromName}" <${fromEmail}>`,
+      to,
+      subject,
+      html
+    };
+
+    // Ajouter la copie à l'email principal de l'entreprise si fourni
+    if (cc && cc.trim()) {
+      mailOptions.cc = cc.trim();
+    }
+
+    // Ajouter Cc si configuré dans les paramètres
+    if (settings?.emailCc && settings.emailCc.trim()) {
+      // Si on a déjà un cc, on combine les deux
+      if (mailOptions.cc) {
+        mailOptions.cc = `${mailOptions.cc}, ${settings.emailCc.trim()}`;
+      } else {
+        mailOptions.cc = settings.emailCc.trim();
+      }
+    }
+
+    // Ajouter Cci si configuré
+    if (settings?.emailBcc && settings.emailBcc.trim()) {
+      mailOptions.bcc = settings.emailBcc.trim();
+    }
+
+    const info = await transporter.sendMail(mailOptions)
+
+    console.log('Email envoyé:', info.messageId)
+    return true
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de l\'email:', error)
+    return false
+  }
 } 
