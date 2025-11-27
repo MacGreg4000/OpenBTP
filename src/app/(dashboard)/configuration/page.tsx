@@ -7,6 +7,7 @@ import DocumentManager from '@/components/documents/DocumentManager'
 import AdminTaskTypesManager from '@/components/configuration/AdminTaskTypesManager'
 import { usePermission } from '@/hooks/usePermission'
 import { PageHeader } from '@/components/PageHeader'
+import { useNotification } from '@/hooks/useNotification'
 
 interface CompanySettings {
   name: string
@@ -59,7 +60,7 @@ export default function ConfigurationPage() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  const { showNotification, NotificationComponent } = useNotification()
   const [smtpTestLoading, setSmtpTestLoading] = useState(false)
   const [smtpTestResult, setSmtpTestResult] = useState<{
     success: boolean;
@@ -179,12 +180,13 @@ export default function ConfigurationPage() {
       })
 
       if (res.ok) {
-        setMessage('Configuration enregistrée')
-        setTimeout(() => setMessage(''), 2000)
+        showNotification('Succès', 'Configuration enregistrée', 'success')
+      } else {
+        showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error')
       }
     } catch (error) {
       console.error('Erreur:', error)
-      setMessage('Erreur lors de la sauvegarde')
+      showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error')
     } finally {
       setSaving(false)
     }
@@ -462,12 +464,6 @@ export default function ConfigurationPage() {
             />
           </div>
         </div>
-
-        {message && (
-          <div className="mt-4 p-4 rounded bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100">
-            {message}
-          </div>
-        )}
 
         <div className="flex justify-end">
           <button
@@ -804,6 +800,7 @@ export default function ConfigurationPage() {
         </button>
       </div>
       </div>
+      <NotificationComponent />
     </div>
   )
 } 
