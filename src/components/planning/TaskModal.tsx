@@ -31,6 +31,9 @@ interface Chantier {
   id?: string; // Format alternatif de l'API
   title?: string; // Format alternatif de l'API
   statut?: string;
+  type?: 'CHANTIER' | 'SAV'; // Type pour distinguer chantiers et SAV
+  savId?: string; // ID original du SAV
+  numTicket?: string; // Numéro de ticket SAV
 }
 
 interface OuvrierInterne {
@@ -198,19 +201,56 @@ export default function TaskModal({
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">Tâche libre (sans chantier)</option>
-              {Array.isArray(chantiers) && chantiers.map(chantier => {
-                // Gérer les deux formats : chantierId/nomChantier ou id/title
-                const chantierId = chantier.chantierId || chantier.id || '';
-                const nomChantier = chantier.nomChantier || chantier.title || '';
-                
-                if (!chantierId || !nomChantier) return null;
+              {Array.isArray(chantiers) && (() => {
+                // Séparer les chantiers et les SAV
+                const chantiersList = chantiers.filter(c => !c.type || c.type === 'CHANTIER');
+                const savList = chantiers.filter(c => c.type === 'SAV');
                 
                 return (
-                  <option key={chantierId} value={chantierId}>
-                    {nomChantier} ({chantierId})
-                  </option>
+                  <>
+                    {/* Afficher les chantiers */}
+                    {chantiersList.map(chantier => {
+                      // Gérer les deux formats : chantierId/nomChantier ou id/title
+                      const chantierId = chantier.chantierId || chantier.id || '';
+                      const nomChantier = chantier.nomChantier || chantier.title || '';
+                      
+                      if (!chantierId || !nomChantier) return null;
+                      
+                      return (
+                        <option key={chantierId} value={chantierId}>
+                          {nomChantier} {chantier.chantierId && !chantierId.startsWith('SAV-') ? `(${chantier.chantierId})` : ''}
+                        </option>
+                      );
+                    })}
+                    
+                    {/* Séparateur SAV */}
+                    {savList.length > 0 && (
+                      <option disabled style={{ 
+                        fontWeight: 'bold', 
+                        backgroundColor: '#f3f4f6',
+                        color: '#6b7280',
+                        fontStyle: 'italic'
+                      }}>
+                        -- SAV --
+                      </option>
+                    )}
+                    
+                    {/* Afficher les SAV */}
+                    {savList.map(sav => {
+                      const savId = sav.chantierId || sav.id || '';
+                      const nomSav = sav.nomChantier || sav.title || '';
+                      
+                      if (!savId || !nomSav) return null;
+                      
+                      return (
+                        <option key={savId} value={savId}>
+                          {nomSav}
+                        </option>
+                      );
+                    })}
+                  </>
                 );
-              })}
+              })()}
             </select>
             {!Array.isArray(chantiers) && (
               <p className="mt-1 text-sm text-red-600">Erreur lors du chargement des chantiers</p>

@@ -69,11 +69,62 @@ export async function GET() {
         client: chantier.client?.nom || 'Client non spécifié',
         etat: etatLibelle,
         start,
-        end
+        end,
+        type: 'CHANTIER' // Identifier comme chantier
       }
     })
 
-    return NextResponse.json(chantiersFormates);
+    // Récupérer les tickets SAV non clos/annulés
+    const ticketsSAV = await prisma.ticketSAV.findMany({
+      where: {
+        statut: {
+          notIn: ['CLOS', 'ANNULE'] // Exclure les tickets clos et annulés
+        }
+      },
+      select: {
+        id: true,
+        numTicket: true,
+        titre: true,
+        nomLibre: true,
+        statut: true,
+        chantier: {
+          select: {
+            chantierId: true,
+            nomChantier: true
+          }
+        }
+      },
+      orderBy: {
+        numTicket: 'asc'
+      }
+    })
+
+    // Transformer les tickets SAV au même format
+    const savFormates = ticketsSAV.map(ticket => {
+      // Construire le nom d'affichage : numTicket - titre (ou nomLibre si pas de chantier)
+      const nomAffiche = ticket.chantier 
+        ? `${ticket.numTicket} - ${ticket.titre} (${ticket.chantier.nomChantier})`
+        : `${ticket.numTicket} - ${ticket.titre}${ticket.nomLibre ? ` (${ticket.nomLibre})` : ''}`
+      
+      return {
+        id: `SAV-${ticket.id}`, // Préfixe SAV pour identifier
+        chantierId: `SAV-${ticket.id}`, // Pour compatibilité avec TaskModal
+        title: nomAffiche,
+        nomChantier: nomAffiche, // Pour compatibilité avec TaskModal
+        client: ticket.chantier?.nomChantier || ticket.nomLibre || 'SAV libre',
+        etat: ticket.statut,
+        start: null,
+        end: null,
+        type: 'SAV', // Identifier comme SAV
+        savId: ticket.id, // ID original du SAV pour référence
+        numTicket: ticket.numTicket // Numéro de ticket pour affichage
+      }
+    })
+
+    // Combiner chantiers et SAV
+    const resultat = [...chantiersFormates, ...savFormates]
+
+    return NextResponse.json(resultat);
 
   } catch (error) {
     console.error('Erreur lors de la récupération des chantiers:', error);
