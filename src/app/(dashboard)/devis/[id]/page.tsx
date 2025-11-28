@@ -494,6 +494,16 @@ export default function DevisDetailPage() {
               <span className="hidden sm:inline">PDF</span>
             </a>
 
+            <a
+              href={`/api/devis/${devisId}/pdf-sans-prix`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">PDF sans prix</span>
+            </a>
+
             <button
               onClick={handleDuplicate}
               className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
