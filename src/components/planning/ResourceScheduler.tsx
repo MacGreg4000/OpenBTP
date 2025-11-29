@@ -325,7 +325,23 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
   const [tasksByResourceAndDate, setTasksByResourceAndDate] = useState<Record<string, Record<string, Task[]>>>({});
   const [chantierColorMap, setChantierColorMap] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [weekOffset, setWeekOffset] = useState(0); // 0 = semaine courante, 1 = semaine suivante, etc.
+  
+  // Récupérer le weekOffset depuis le localStorage ou utiliser 0 par défaut
+  const getInitialWeekOffset = (): number => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('planning-week-offset');
+      if (saved !== null) {
+        const offset = parseInt(saved, 10);
+        // Valider que l'offset est dans la plage autorisée
+        if (!isNaN(offset) && offset >= -2 && offset <= 3) {
+          return offset;
+        }
+      }
+    }
+    return 0;
+  };
+  
+  const [weekOffset, setWeekOffset] = useState<number>(() => getInitialWeekOffset()); // 0 = semaine courante, 1 = semaine suivante, etc.
 
   // Générer les créneaux horaires (7 jours complets : lundi à dimanche)
   useEffect(() => {
@@ -519,15 +535,33 @@ export default function ResourceScheduler({ onAddTask, onEditTask, onDeleteTask 
   };
 
   const handlePreviousWeek = () => {
-    setWeekOffset(prev => Math.max(prev - 1, -2)); // Permet 2 semaines dans le passé
+    setWeekOffset(prev => {
+      const newOffset = Math.max(prev - 1, -2);
+      // Sauvegarder dans le localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('planning-week-offset', newOffset.toString());
+      }
+      return newOffset;
+    });
   };
 
   const handleNextWeek = () => {
-    setWeekOffset(prev => Math.min(prev + 1, 3)); // Limite à 3 semaines dans le futur
+    setWeekOffset(prev => {
+      const newOffset = Math.min(prev + 1, 3);
+      // Sauvegarder dans le localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('planning-week-offset', newOffset.toString());
+      }
+      return newOffset;
+    });
   };
 
   const handleToday = () => {
     setWeekOffset(0);
+    // Sauvegarder dans le localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('planning-week-offset', '0');
+    }
   };
 
   return (
