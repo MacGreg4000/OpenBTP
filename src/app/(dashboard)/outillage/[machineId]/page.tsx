@@ -1,18 +1,23 @@
 'use client'
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation'
 import { 
   PencilIcon, 
   QrCodeIcon,
   UserIcon,
   ArrowUturnLeftIcon,
-  TrashIcon
+  TrashIcon,
+  PhotoIcon,
+  XMarkIcon,
+  CameraIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import PretModal from '@/components/outillage/PretModal'
 import RetourPretModal from '@/components/outillage/RetourPretModal'
 import QRCodeModal from '@/components/outillage/QRCodeModal'
+import { useNotification } from '@/hooks/useNotification'
+import Image from 'next/image'
 
 interface Machine {
   id: string
@@ -44,16 +49,22 @@ interface Pret {
 export default function MachinePage(props: { params: Promise<{ machineId: string }> }) {
   const params = use(props.params);
   const router = useRouter()
+  const { showNotification, NotificationComponent } = useNotification()
   const [machine, setMachine] = useState<Machine | null>(null)
   const [prets, setPrets] = useState<Pret[]>([])
   const [showPretModal, setShowPretModal] = useState(false)
   const [showRetourModal, setShowRetourModal] = useState(false)
   const [selectedPretId, setSelectedPretId] = useState<string | null>(null)
   const [showQRCodeModal, setShowQRCodeModal] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [deletingPhoto, setDeletingPhoto] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchMachine()
     fetchPrets()
+    fetchPhoto()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.machineId])
 
@@ -76,6 +87,93 @@ export default function MachinePage(props: { params: Promise<{ machineId: string
       setPrets(data)
     } catch (error) {
       console.error('Erreur:', error)
+    }
+  }
+
+  const fetchPhoto = async () => {
+    try {
+      const response = await fetch(`/api/outillage/machines/${params.machineId}/photo`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.exists) {
+          setPhotoUrl(data.url)
+        } else {
+          setPhotoUrl(null)
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération de la photo:', error)
+    }
+  }
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Vérifier que c'est une image
+    if (!file.type.startsWith('image/')) {
+      showNotification('Erreur', 'Le fichier doit être une image', 'error')
+      return
+    }
+
+    // Vérifier la taille (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification('Erreur', 'Le fichier est trop volumineux (max 10MB)', 'error')
+      return
+    }
+
+    setUploadingPhoto(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch(`/api/outillage/machines/${params.machineId}/photo`, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erreur lors de l\'upload')
+      }
+
+      const data = await response.json()
+      setPhotoUrl(data.url)
+      showNotification('Succès', 'Photo uploadée avec succès', 'success')
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error)
+      showNotification('Erreur', `Erreur lors de l'upload: ${error instanceof Error ? error.message : 'Erreur inconnue'}`, 'error')
+    } finally {
+      setUploadingPhoto(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handlePhotoDelete = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette photo ?')) {
+      return
+    }
+
+    setDeletingPhoto(true)
+    try {
+      const response = await fetch(`/api/outillage/machines/${params.machineId}/photo`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erreur lors de la suppression')
+      }
+
+      setPhotoUrl(null)
+      showNotification('Succès', 'Photo supprimée avec succès', 'success')
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      showNotification('Erreur', `Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`, 'error')
+    } finally {
+      setDeletingPhoto(false)
     }
   }
 
@@ -180,6 +278,85 @@ export default function MachinePage(props: { params: Promise<{ machineId: string
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Photo de la machine */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">
+              Photo de la machine
+            </h3>
+          </div>
+          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            {photoUrl ? (
+              <div className="relative">
+                <div className="relative w-full h-64 rounded-lg overflow-hidden bg-gray-100">
+                  <Image
+                    src={photoUrl}
+                    alt={machine.nom}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    <CameraIcon className="h-4 w-4 mr-2" />
+                    {uploadingPhoto ? 'Upload...' : 'Remplacer'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePhotoDelete}
+                    disabled={deletingPhoto}
+                    className="inline-flex items-center justify-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  >
+                    <TrashIcon className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+              </div>
+            ) : (
+              <div>
+                <label
+                  htmlFor="photo-upload"
+                  className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <PhotoIcon className="w-12 h-12 mb-3 text-gray-400" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Cliquez pour ajouter une photo</span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG, JPEG (max. 10Mo)
+                    </p>
+                  </div>
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    ref={fileInputRef}
+                  />
+                </label>
+                {uploadingPhoto && (
+                  <p className="mt-2 text-sm text-gray-500 text-center">Upload en cours...</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Informations de la machine */}
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6">
@@ -310,6 +487,8 @@ export default function MachinePage(props: { params: Promise<{ machineId: string
           onClose={() => setShowQRCodeModal(false)}
         />
       )}
+
+      <NotificationComponent />
     </div>
   )
 } 

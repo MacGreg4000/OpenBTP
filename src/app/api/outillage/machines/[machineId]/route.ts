@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { join } from 'path'
+import { existsSync, unlink } from 'fs/promises'
 
 // GET /api/outillage/machines/[machineId] - Récupère une machine spécifique
 export async function GET(
@@ -209,6 +211,17 @@ export async function DELETE(
     }
 
     try {
+      // Supprimer la photo associée si elle existe
+      const uploadDir = join(process.cwd(), 'public', 'uploads', 'machines')
+      const extensions = ['jpg', 'jpeg', 'png', 'webp']
+      for (const ext of extensions) {
+        const photoPath = join(uploadDir, `${machineId}.${ext}`)
+        if (existsSync(photoPath)) {
+          await unlink(photoPath)
+          console.log(`Photo de la machine ${machineId} supprimée`)
+        }
+      }
+
       // Supprimer la machine
       await prisma.machine.delete({
         where: {

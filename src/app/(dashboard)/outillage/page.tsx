@@ -16,9 +16,11 @@ import {
   Squares2X2Icon,
   ListBulletIcon,
   MagnifyingGlassIcon,
-  XMarkIcon
+  XMarkIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
+import Image from 'next/image'
 
 interface Machine {
   id: string
@@ -26,6 +28,7 @@ interface Machine {
   modele: string
   localisation: string
   statut: 'DISPONIBLE' | 'PRETE' | 'EN_PANNE' | 'EN_REPARATION' | 'MANQUE_CONSOMMABLE'
+  photoUrl?: string | null
 }
 
 export default function OutillagePage() {
@@ -49,7 +52,24 @@ export default function OutillagePage() {
       const response = await fetch('/api/outillage/machines')
       if (!response.ok) throw new Error('Erreur lors de la récupération des machines')
       const data = await response.json()
-      setMachines(data)
+      
+      // Charger les photos pour chaque machine
+      const machinesWithPhotos = await Promise.all(
+        data.map(async (machine: Machine) => {
+          try {
+            const photoResponse = await fetch(`/api/outillage/machines/${machine.id}/photo`)
+            if (photoResponse.ok) {
+              const photoData = await photoResponse.json()
+              return { ...machine, photoUrl: photoData.exists ? photoData.url : null }
+            }
+          } catch (error) {
+            console.error(`Erreur lors de la récupération de la photo pour ${machine.id}:`, error)
+          }
+          return { ...machine, photoUrl: null }
+        })
+      )
+      
+      setMachines(machinesWithPhotos)
     } catch (error) {
       console.error('Erreur:', error)
     } finally {
@@ -328,6 +348,23 @@ export default function OutillagePage() {
               
               return (
                 <div key={machine.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 overflow-hidden">
+                  {/* Photo de la machine */}
+                  {machine.photoUrl ? (
+                    <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-700">
+                      <Image
+                        src={machine.photoUrl}
+                        alt={machine.nom}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <PhotoIcon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+                    </div>
+                  )}
+                  
                   {/* En-tête de la carte */}
                   <div className="p-6 pb-4">
                     <div className="flex items-start justify-between">
@@ -431,9 +468,21 @@ export default function OutillagePage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                              <WrenchScrewdriverIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
+                            {machine.photoUrl ? (
+                              <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+                                <Image
+                                  src={machine.photoUrl}
+                                  alt={machine.nom}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                                <WrenchScrewdriverIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                              </div>
+                            )}
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">
