@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { join } from 'path'
-import { existsSync, mkdir, writeFile, unlink } from 'fs/promises'
+import { existsSync } from 'fs'
+import { mkdir, writeFile, unlink } from 'fs/promises'
 
 // GET /api/outillage/machines/[machineId]/photo - Vérifie si une photo existe
 export async function GET(

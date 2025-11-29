@@ -8,7 +8,6 @@ import {
   ArrowUturnLeftIcon,
   TrashIcon,
   PhotoIcon,
-  XMarkIcon,
   CameraIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'

@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { join } from 'path'
-import { existsSync, unlink } from 'fs/promises'
+import { existsSync } from 'fs'
+import { unlink } from 'fs/promises'
 
 // GET /api/outillage/machines/[machineId] - Récupère une machine spécifique
 export async function GET(
