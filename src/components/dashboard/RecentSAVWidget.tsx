@@ -132,14 +132,23 @@ export default function RecentSAVWidget() {
                   <h3 className="font-bold text-gray-900 dark:text-white truncate group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
                     {ticket.titre}
                   </h3>
-                  {ticket.chantier && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 truncate">
-                      <span className="font-bold">{ticket.chantier.nomChantier}</span>
-                      {ticket.chantier.clientNom && (
-                        <span> • {ticket.chantier.clientNom}</span>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Chantier:
+                    </span>
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400 truncate">
+                      {ticket.chantier ? (
+                        <>
+                          {ticket.chantier.nomChantier}
+                          {ticket.chantier.clientNom && (
+                            <span className="text-gray-600 dark:text-gray-400 font-normal"> • {ticket.chantier.clientNom}</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-gray-500 dark:text-gray-400 italic">SAV libre</span>
                       )}
-                    </p>
-                  )}
+                    </span>
+                  </div>
                   <div className="mt-3 flex items-center gap-2 text-xs">
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 font-medium">
                       <ClockIcon className="h-3.5 w-3.5" />
