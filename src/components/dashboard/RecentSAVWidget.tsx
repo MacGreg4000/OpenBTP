@@ -22,6 +22,7 @@ interface TicketSAV {
   priorite: PrioriteSAV
   statut: StatutSAV
   dateDemande: string
+  nomLibre?: string | null
   chantier?: {
     id: string
     chantierId: string
@@ -144,6 +145,8 @@ export default function RecentSAVWidget() {
                             <span className="text-gray-600 dark:text-gray-400 font-normal"> • {ticket.chantier.clientNom}</span>
                           )}
                         </>
+                      ) : ticket.nomLibre ? (
+                        ticket.nomLibre
                       ) : (
                         <span className="text-gray-500 dark:text-gray-400 italic">SAV libre</span>
                       )}

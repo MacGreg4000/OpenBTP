@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   InformationCircleIcon,
@@ -12,8 +12,9 @@ import {
   XMarkIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
+import { StatutSAV, LABELS_STATUT_SAV } from '@/types/sav'
 
-type Statut = 'NOUVEAU'|'EN_ATTENTE'|'ASSIGNE'|'PLANIFIE'|'EN_COURS'|'EN_ATTENTE_PIECES'|'EN_ATTENTE_VALIDATION'|'RESOLU'|'CLOS'|'ANNULE'
+type Statut = StatutSAV
 
 interface TicketSAV {
   id: string
@@ -41,6 +42,10 @@ export default function SavDetailPage() {
   const [newComment, setNewComment] = useState('')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  
+  // Refs pour les onglets (pour calculer la position de l'indicateur)
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, left: 0 })
   const [form, setForm] = useState({
     titre: '',
     description: '',
@@ -85,6 +90,25 @@ export default function SavDetailPage() {
       } catch {}
     })()
   }, [])
+  
+  // Mettre à jour la position de l'indicateur coulissant
+  useEffect(() => {
+    const tabs: TabKey[] = ['infos', 'interventions', 'documents', 'photos', 'commentaires']
+    const currentIndex = tabs.indexOf(tab)
+    const activeTabRef = tabRefs.current[currentIndex]
+
+    if (activeTabRef) {
+      const nav = activeTabRef.parentElement
+      if (nav) {
+        const navRect = nav.getBoundingClientRect()
+        const tabRect = activeTabRef.getBoundingClientRect()
+        setIndicatorStyle({
+          width: tabRect.width,
+          left: tabRect.left - navRect.left,
+        })
+      }
+    }
+  }, [tab])
 
   type TicketSavPatch = Partial<TicketSAV> & {
     ouvrierInterneAssignId?: string | null
@@ -109,75 +133,119 @@ export default function SavDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* En-tête */}
-      <div className="bg-gradient-to-r from-blue-700 to-indigo-800 shadow">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            {/* Effet de fond subtil avec dégradé rouge/rose (couleur pour SAV) - opacité 60% */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-600/60 via-rose-700/60 to-pink-800/60 dark:from-red-600/30 dark:via-rose-700/30 dark:to-pink-800/30"></div>
+
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                {/* Bouton retour rond */}
                 <button 
                   onClick={() => router.push('/sav')}
-                  className="inline-flex items-center text-white/90 hover:text-white transition-colors"
+                  className="group relative inline-flex items-center justify-center rounded-full border border-red-200/60 dark:border-red-900/40 bg-white/80 dark:bg-red-950/30 text-red-700 dark:text-red-200 shadow-lg shadow-red-500/10 hover:shadow-red-500/20 hover:border-red-300 dark:hover:border-red-700 transition-all w-8 h-8 flex-shrink-0"
                 >
-                  <ArrowLeftIcon className="h-5 w-5 mr-1"/>
-                  Retour à la liste
+                  <span className="absolute inset-0 rounded-full bg-gradient-to-r from-red-100/70 via-red-200/60 to-rose-200/60 dark:from-red-900/30 dark:via-red-800/20 dark:to-rose-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ArrowLeftIcon className="relative h-4 w-4" />
                 </button>
+
+                {/* Badge icône + Titre */}
+                <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 flex-1 min-w-0">
+                  <div className="flex items-center justify-center rounded-full bg-gradient-to-br from-red-500 via-rose-600 to-pink-600 text-white shadow-lg shadow-red-500/40 w-8 h-8 flex-shrink-0">
+                    <WrenchScrewdriverIcon className="h-4 w-4 drop-shadow-md" />
+                  </div>
+                  <h1 className="text-lg sm:text-xl font-bold text-red-900 dark:text-white truncate">
+                    Ticket #{ticket.numTicket}
+                  </h1>
+                </div>
+
+                {/* Actions à droite */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <select 
+                    className="px-3 py-2 rounded-md bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white outline-none ring-1 ring-inset ring-white/20 dark:ring-gray-700/50 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500 shadow-sm text-sm" 
+                    value={ticket.statut} 
+                    onChange={e=>updateField({ statut: e.target.value as Statut })}
+                  >
+                    {Object.values(StatutSAV).map(statut => (
+                      <option key={statut} value={statut}>
+                        {LABELS_STATUT_SAV[statut]}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    disabled={saving}
+                    onClick={()=> updateField({
+                      titre: form.titre,
+                      description: form.description,
+                      localisation: form.localisation,
+                      adresseIntervention: form.adresseIntervention,
+                      contactNom: form.contactNom,
+                      contactTelephone: form.contactTelephone,
+                      contactEmail: form.contactEmail,
+                    })}
+                    className="px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-red-900 dark:text-white border-white/50 disabled:opacity-60"
+                  >
+                    {saving ? 'Enregistrement...' : 'Enregistrer'}
+                  </button>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Ticket #{ticket.numTicket}</h1>
-              <input
-                className="mt-3 w-full px-3 py-2.5 rounded-md bg-white text-gray-900 outline-none ring-1 ring-inset ring-white/20 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-500 shadow-sm"
-                name="titre"
-                value={form.titre}
-                onChange={onChangeForm}
-                placeholder="Titre du ticket"
-              />
-            </div>
-            <div className="flex items-end gap-2">
-              <select className="px-3 py-2.5 rounded-md bg-white text-gray-900 outline-none ring-1 ring-inset ring-white/20 focus:ring-2 focus:ring-blue-200 shadow-sm" value={ticket.statut} onChange={e=>updateField({ statut: e.target.value as Statut })}>
-                {['NOUVEAU','EN_ATTENTE','ASSIGNE','PLANIFIE','EN_COURS','EN_ATTENTE_PIECES','EN_ATTENTE_VALIDATION','RESOLU','CLOS','ANNULE'].map(s=> <option key={s} value={s}>{s}</option>)}
-              </select>
-              <button
-                disabled={saving}
-                onClick={()=> updateField({
-                  titre: form.titre,
-                  description: form.description,
-                  localisation: form.localisation,
-                  adresseIntervention: form.adresseIntervention,
-                  contactNom: form.contactNom,
-                  contactTelephone: form.contactTelephone,
-                  contactEmail: form.contactEmail,
-                })}
-                className="px-4 py-2.5 bg-white text-blue-700 rounded-md hover:bg-blue-50 disabled:opacity-60 shadow-sm"
-              >
-                {saving ? 'Enregistrement...' : 'Enregistrer'}
-              </button>
+              
+              {/* Champ titre en dessous */}
+              <div className="mt-3">
+                <input
+                  className="w-full px-3 py-2 rounded-md bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white outline-none ring-1 ring-inset ring-white/20 dark:ring-gray-700/50 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 shadow-sm text-sm"
+                  name="titre"
+                  value={form.titre}
+                  onChange={onChangeForm}
+                  placeholder="Titre du ticket"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Contenu */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Contenu */}
         {/* Tabs */}
-        <div className="bg-white/90 backdrop-blur rounded-xl shadow border border-gray-200">
-          <div className="px-4 pt-4">
-            <div className="flex gap-2 overflow-auto">
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-xl shadow border border-gray-200 dark:border-gray-700">
+          {/* Onglets centrés avec icônes et effet coulissant */}
+          <div className="relative border-b border-gray-200 dark:border-gray-700">
+            <nav className="relative -mb-px flex justify-center space-x-1 sm:space-x-4 px-4 pt-4">
+              {/* Indicateur coulissant animé - dégradé rouge/rose pour SAV */}
+              <div
+                className="absolute bottom-0 h-1 bg-gradient-to-r from-red-400 via-rose-600 to-pink-800 rounded-t-full transition-all duration-300 ease-in-out shadow-lg"
+                style={{
+                  width: indicatorStyle.width || 0,
+                  left: indicatorStyle.left || 0,
+                }}
+              />
+              
               {[
-                {k:'infos', label:'Infos', Icon: InformationCircleIcon},
-                {k:'interventions', label:'Interventions', Icon: WrenchScrewdriverIcon},
-                {k:'documents', label:'Documents', Icon: DocumentIcon},
-                {k:'photos', label:'Photos', Icon: PhotoIcon},
-                {k:'commentaires', label:'Commentaires', Icon: ChatBubbleLeftRightIcon},
-              ].map(({k,label,Icon})=> (
-                <button key={k} onClick={()=>setTab(k as TabKey)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm transition ${tab===k?'bg-blue-600 text-white shadow':'text-gray-700 hover:bg-gray-100'}`}>
-                  <Icon className="h-4 w-4"/>
-                  {label}
+                {k:'infos', label:'Infos', Icon: InformationCircleIcon, index: 0},
+                {k:'interventions', label:'Interventions', Icon: WrenchScrewdriverIcon, index: 1},
+                {k:'documents', label:'Documents', Icon: DocumentIcon, index: 2},
+                {k:'photos', label:'Photos', Icon: PhotoIcon, index: 3},
+                {k:'commentaires', label:'Commentaires', Icon: ChatBubbleLeftRightIcon, index: 4},
+              ].map(({k, label, Icon, index})=> (
+                <button
+                  key={k}
+                  ref={(el) => { tabRefs.current[index] = el }}
+                  onClick={()=>setTab(k as TabKey)}
+                  className={`relative py-3 px-4 sm:px-6 font-medium text-sm flex items-center gap-2 transition-all duration-300 rounded-t-lg ${
+                    tab === k
+                      ? 'text-red-700 dark:text-red-400 bg-gradient-to-b from-red-50 to-transparent dark:from-red-900/30 dark:to-transparent shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 transition-colors ${tab === k ? 'text-red-700 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}`} />
+                  <span>{label}</span>
                 </button>
               ))}
-            </div>
+            </nav>
           </div>
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4">
 
       {tab==='infos' && (
         <div className="space-y-4">
