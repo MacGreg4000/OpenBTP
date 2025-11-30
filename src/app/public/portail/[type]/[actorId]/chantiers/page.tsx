@@ -62,13 +62,13 @@ function InnerChantiersPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
   const getStatutLabel = (statut: string) => {
     switch (statut) {
       case 'EN_COURS':
-        return 'En cours'
+        return t('status_in_progress')
       case 'EN_PREPARATION':
-        return 'En préparation'
+        return t('status_preparation')
       case 'A_VENIR':
-        return 'À venir'
+        return t('status_upcoming')
       case 'TERMINE':
-        return 'Terminé'
+        return t('status_completed')
       default:
         return statut
     }
@@ -111,7 +111,7 @@ function InnerChantiersPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
             </button>
             <div className="flex items-center ml-auto gap-2">
               <BuildingOfficeIcon className="h-5 w-5 text-white/90"/>
-              <span className="font-medium">Chantiers</span>
+              <span className="font-medium">{t('chantiers')}</span>
               <select value={lang} onChange={(e)=> setLang(e.target.value as 'fr'|'en'|'pt'|'ro')} className="ml-2 bg-white/90 text-gray-900 border-0 rounded px-2 py-1 text-sm">
                 <option value="fr">FR</option>
                 <option value="en">EN</option>
@@ -128,7 +128,7 @@ function InnerChantiersPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder={t('search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -141,7 +141,7 @@ function InnerChantiersPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
           <div className="bg-white rounded-xl p-4 shadow text-center">{t('loading')}</div>
         ) : chantiersFiltres.length === 0 ? (
           <div className="bg-white rounded-xl p-6 shadow text-center text-gray-500">
-            {searchTerm ? 'Aucun chantier trouvé' : t('none')}
+            {searchTerm ? t('no_chantier_found') : t('none')}
           </div>
         ) : (
           <div className="space-y-3">
@@ -169,10 +169,10 @@ function InnerChantiersPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
                       className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                     >
                       <MapPinIcon className="h-4 w-4 mr-1" />
-                      Voir sur la carte
+                      {t('view_on_map')}
                     </button>
                   ) : (
-                    <span className="text-xs text-gray-400">Localisation non disponible</span>
+                    <span className="text-xs text-gray-400">{t('location_unavailable')}</span>
                   )}
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatutColor(chantier.statut)}`}>
                     {getStatutLabel(chantier.statut)}
@@ -186,9 +186,9 @@ function InnerChantiersPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
         {/* Compteur de résultats */}
         {!loading && chantiersFiltres.length > 0 && (
           <div className="text-sm text-gray-600 text-center">
-            {chantiersFiltres.length} {chantiersFiltres.length === 1 ? 'chantier trouvé' : 'chantiers trouvés'}
+            {chantiersFiltres.length} {chantiersFiltres.length === 1 ? t('chantier_found') : t('chantiers_found')}
             {searchTerm && chantiers.length !== chantiersFiltres.length && (
-              <span> sur {chantiers.length}</span>
+              <span> {t('on')} {chantiers.length}</span>
             )}
           </div>
         )}

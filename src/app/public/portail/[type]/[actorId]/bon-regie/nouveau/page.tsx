@@ -26,7 +26,7 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (signatureRef.current?.isEmpty()) return alert('Signature requise')
+    if (signatureRef.current?.isEmpty()) return alert(t('signature_required'))
     setLoading(true)
     try {
       const signature = signatureRef.current?.toDataURL('image/jpeg', 0.5) || ''
@@ -37,7 +37,7 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
       setDates(''); setClient(''); setNomChantier(''); setDescription(''); setTempsChantier(''); setNombreTechniciens('1'); setMateriaux(''); setNomSignataire(''); clearSignature()
       window.scrollTo(0, 0)
     } catch {
-      alert('Erreur lors de l\'enregistrement')
+      alert(t('error_save_bon'))
     } finally {
       setLoading(false)
     }
@@ -48,59 +48,59 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
       <div className="max-w-md mx-auto space-y-4">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow text-white">
           <div className="p-4 flex items-center gap-2">
-            <button onClick={()=> router.back()} className="inline-flex items-center text-white/90 hover:text-white"><ArrowLeftIcon className="h-5 w-5 mr-1"/>Retour</button>
+            <button onClick={()=> router.back()} className="inline-flex items-center text-white/90 hover:text-white"><ArrowLeftIcon className="h-5 w-5 mr-1"/>{t('back')}</button>
             <div className="ml-auto font-medium">{t('new_bon_regie')}</div>
           </div>
         </div>
 
         {success && (
-          <div className="bg-green-50 rounded-xl p-4 shadow text-green-700 flex items-center"><DocumentCheckIcon className="h-6 w-6 mr-2"/> Enregistré</div>
+          <div className="bg-green-50 rounded-xl p-4 shadow text-green-700 flex items-center"><DocumentCheckIcon className="h-6 w-6 mr-2"/> {t('saved')}</div>
         )}
 
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg space-y-4 border-2 border-gray-200 dark:border-gray-600">
           <div>
-            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Date</label>
+            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('date_label')}</label>
             <input type="date" value={dates} onChange={(e)=> setDates(e.target.value)} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px]" required />
           </div>
           <div>
-            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Client</label>
+            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('client_label')}</label>
             <input value={client} onChange={(e)=> setClient(e.target.value)} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px]" required />
           </div>
           <div>
-            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Chantier</label>
+            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('chantier_label_bon')}</label>
             <input value={nomChantier} onChange={(e)=> setNomChantier(e.target.value)} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px]" required />
           </div>
           <div>
-            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Travail réalisé</label>
+            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('work_done')}</label>
             <textarea value={description} onChange={(e)=> setDescription(e.target.value)} rows={3} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Temps (h)</label>
+              <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('time_hours')}</label>
               <input type="number" step="0.5" value={tempsChantier} onChange={(e)=> setTempsChantier(e.target.value)} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px]" required />
             </div>
             <div>
-              <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Ouvriers</label>
+              <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('workers')}</label>
               <input type="number" min="1" value={nombreTechniciens} onChange={(e)=> setNombreTechniciens(e.target.value)} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px]" required />
             </div>
           </div>
           <div>
-            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Matériaux <span className="text-sm font-normal text-gray-600 dark:text-gray-400">(optionnel)</span></label>
+            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('materials')} <span className="text-sm font-normal text-gray-600 dark:text-gray-400">{t('materials_optional')}</span></label>
             <textarea value={materiaux} onChange={(e)=> setMateriaux(e.target.value)} rows={2} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
           </div>
           <div>
-            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Nom du signataire</label>
+            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('signatory_name')}</label>
             <input value={nomSignataire} onChange={(e)=> setNomSignataire(e.target.value)} className="w-full border-2 border-gray-300 dark:border-gray-500 rounded-lg px-4 py-3 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px]" required />
           </div>
           <div>
-            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Signature</label>
+            <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('signature_label')}</label>
             <div className="mt-2 border-2 border-gray-300 dark:border-gray-500 rounded-lg bg-white overflow-hidden">
               <SignatureCanvas ref={signatureRef} canvasProps={{ width: 500, height: 200, className: 'w-full h-auto' }} backgroundColor="#fff" penColor="#000" />
             </div>
-            <button type="button" onClick={clearSignature} className="mt-3 text-base font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">Effacer la signature</button>
+            <button type="button" onClick={clearSignature} className="mt-3 text-base font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">{t('clear_signature')}</button>
           </div>
           <div className="pt-3">
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg py-4 text-base font-semibold shadow-lg disabled:opacity-60 transition-colors min-h-[48px]">{loading ? 'Enregistrement...' : 'Enregistrer le bon de régie'}</button>
+            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg py-4 text-base font-semibold shadow-lg disabled:opacity-60 transition-colors min-h-[48px]">{loading ? t('saving_bon') : t('save_bon')}</button>
           </div>
         </form>
       </div>

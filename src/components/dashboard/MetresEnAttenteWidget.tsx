@@ -83,7 +83,7 @@ export default function MetresEnAttenteWidget() {
             return (
               <Link 
                 key={m.id} 
-                href={`/chantiers/${m.chantier.chantierId}`} 
+                href={`/metres/${m.id}`} 
                 className="block border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-lg transition-all duration-200 group"
               >
                 <div className="flex justify-between items-start">

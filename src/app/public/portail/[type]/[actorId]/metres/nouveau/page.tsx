@@ -167,7 +167,7 @@ function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'
         </div>
       )}
 
-      <div className="max-w-md mx-auto space-y-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow text-white">
           <div className="p-4 flex items-center gap-2">
@@ -208,8 +208,9 @@ function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'
           )}
 
           {/* Lignes */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border border-gray-200">
+          <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
+            <div className="min-w-full inline-block align-middle">
+              <table className="w-full text-sm border border-gray-200 min-w-[800px]">
               <thead>
                 <tr className="bg-gray-50">
                   <th className="p-2 text-left text-xs font-medium text-gray-700">{t('table_description')}</th>
@@ -227,10 +228,25 @@ function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'
                         const v = e.target.value; setLignes(prev => prev.map((x,i)=> i===idx?{...x, description:v}:x))
                       }} />
                     </td>
-                    <td className="p-2 w-20">
-                      <input className="w-full border border-gray-300 rounded p-1.5 text-sm text-center bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" value={l.unite} onChange={e => {
-                        const v = e.target.value; setLignes(prev => prev.map((x,i)=> i===idx?{...x, unite:v}:x))
-                      }} />
+                    <td className="p-2 w-24">
+                      <select 
+                        className="w-full border border-gray-300 rounded p-1.5 text-sm text-center bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
+                        value={l.unite} 
+                        onChange={e => {
+                          const v = e.target.value; setLignes(prev => prev.map((x,i)=> i===idx?{...x, unite:v}:x))
+                        }}
+                      >
+                        <option value="Mct">Mct</option>
+                        <option value="M²">M²</option>
+                        <option value="M³">M³</option>
+                        <option value="Heures">Heures</option>
+                        <option value="Pièces">Pièces</option>
+                        <option value="Fft">Forfait</option>
+                        <option value="U">U</option>
+                        <option value="m">m</option>
+                        <option value="kg">kg</option>
+                        <option value="L">L</option>
+                      </select>
                     </td>
                     <td className="p-2 w-24">
                       <input type="number" className="w-full border border-gray-300 rounded p-1.5 text-sm text-right bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" value={l.prixUnitaire} onChange={e => {
@@ -247,6 +263,7 @@ function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'
                 ))}
               </tbody>
             </table>
+            </div>
             <div className="mt-3 flex gap-2">
               <button onClick={addSupplement} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors">
                 {freeMode ? t('add_line') : t('add_supplement')}

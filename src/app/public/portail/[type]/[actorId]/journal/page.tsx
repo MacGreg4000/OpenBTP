@@ -36,7 +36,9 @@ function MonthGroup({
   handleDevalider, 
   setEditingEntry, 
   handleDelete,
-  isCurrentMonth = false
+  isCurrentMonth = false,
+  t,
+  locale
 }: {
   monthLabel: string
   entries: JournalEntry[]
@@ -46,6 +48,8 @@ function MonthGroup({
   setEditingEntry: (entry: JournalEntry) => void
   handleDelete: (id: string) => void
   isCurrentMonth?: boolean
+  t: (key: string) => string
+  locale: string
 }) {
   const [isExpanded, setIsExpanded] = useState(isCurrentMonth)
   
@@ -64,7 +68,7 @@ function MonthGroup({
               <ChevronRightIcon className="h-5 w-5 text-gray-500"/>
             )}
             <h3 className="text-lg font-semibold text-gray-900">{monthLabel}</h3>
-            <span className="text-sm text-gray-500">({entries.length} activité{entries.length > 1 ? 's' : ''})</span>
+            <span className="text-sm text-gray-500">({entries.length} {entries.length === 1 ? t('activity') : t('activities')})</span>
           </div>
         </div>
       </div>
@@ -79,12 +83,12 @@ function MonthGroup({
                   <div className="flex-1">
                     {/* En-tête avec date et heures */}
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                      <span>{new Date(entry.date).toLocaleDateString('fr-FR')}</span>
+                      <span>{new Date(entry.date).toLocaleDateString(locale)}</span>
                       <span>•</span>
                       <span>{entry.heureDebut} - {entry.heureFin}</span>
                       {entry.estValide && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                          ✅ Validé
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                          ✅ {t('validated')}
                         </span>
                       )}
                     </div>
@@ -116,7 +120,7 @@ function MonthGroup({
                           <button
                             onClick={() => handleValider(entry.id)}
                             className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Valider cette entrée"
+                            title={t('validate_entry')}
                           >
                             <CheckIcon className="h-4 w-4"/>
                           </button>
@@ -124,7 +128,7 @@ function MonthGroup({
                           <button
                             onClick={() => handleDevalider(entry.id)}
                             className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
-                            title="Dévalider cette entrée"
+                            title={t('unvalidate_entry')}
                           >
                             <XMarkIcon className="h-4 w-4"/>
                           </button>
@@ -133,7 +137,7 @@ function MonthGroup({
                         <button
                           onClick={() => setEditingEntry(entry)}
                           className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Modifier cette entrée"
+                            title={t('edit_entry')}
                         >
                           <PencilIcon className="h-4 w-4"/>
                         </button>
@@ -141,7 +145,7 @@ function MonthGroup({
                         <button
                           onClick={() => handleDelete(entry.id)}
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Supprimer cette entrée"
+                            title={t('delete_entry')}
                         >
                           <TrashIcon className="h-4 w-4"/>
                         </button>
@@ -238,7 +242,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
   }
 
   const handleDelete = async (entryId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette entrée ?')) return
+    if (!confirm(t('confirm_delete'))) return
     
     try {
       const response = await fetch(`/api/journal/ouvrier/${entryId}`, {
@@ -338,7 +342,8 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
               for (let i = 0; i < 6; i++) {
                 const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
                 const monthKey = monthDate.toISOString().slice(0, 7) // YYYY-MM
-                const monthLabel = monthDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+                const locale = lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-PT' : 'ro-RO'
+                const monthLabel = monthDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
                 
                 const monthEntries = journalEntries.filter(entry => 
                   entry.date.startsWith(monthKey)
@@ -354,6 +359,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
                 }
               }
               
+              const locale = lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-PT' : 'ro-RO'
               return months.map(({ monthKey, monthLabel, entries, isCurrentMonth }) => (
                 <MonthGroup 
                   key={monthKey}
@@ -365,6 +371,8 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
                   setEditingEntry={setEditingEntry}
                   handleDelete={handleDelete}
                   isCurrentMonth={isCurrentMonth}
+                  t={t}
+                  locale={locale}
                 />
               ))
             })()}
@@ -424,12 +432,12 @@ function JournalForm({
     
     // Validation côté client
     if (!formData.chantierId && !formData.lieuLibre?.trim()) {
-      alert('⚠️ Veuillez sélectionner un chantier ou indiquer un lieu libre')
+      alert(`⚠️ ${t('error_chantier_required')}`)
       return
     }
     
     if (!formData.description?.trim()) {
-      alert('⚠️ Veuillez décrire votre activité')
+      alert(`⚠️ ${t('error_description_required')}`)
       return
     }
     
@@ -475,20 +483,20 @@ function JournalForm({
         console.error('❌ Erreur API journal:', errorData)
         
         // Messages d'erreur plus sympas
-        let errorMessage = 'Erreur lors de la sauvegarde'
+        let errorMessage = t('error_save')
         if (errorData.error === 'Chantier ou lieu libre requis') {
-          errorMessage = '⚠️ Veuillez sélectionner un chantier ou indiquer un lieu libre'
+          errorMessage = `⚠️ ${t('error_chantier_required')}`
         } else if (errorData.error === 'Données manquantes') {
-          errorMessage = '⚠️ Veuillez remplir tous les champs obligatoires'
+          errorMessage = `⚠️ ${t('error_fill_required')}`
         } else {
-          errorMessage = `❌ ${errorData.error || 'Erreur inconnue'}`
+          errorMessage = `❌ ${errorData.error || t('error_unknown')}`
         }
         
         alert(errorMessage)
       }
     } catch (error) {
       console.error('❌ Erreur lors de la sauvegarde:', error)
-      alert(`❌ Erreur de connexion: ${error}`)
+      alert(`❌ ${t('error_connection')}: ${error}`)
     } finally {
       setSaving(false)
     }
@@ -498,7 +506,7 @@ function JournalForm({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold mb-4">
-          {entry ? 'Modifier l\'entrée' : 'Nouvelle activité'}
+          {entry ? t('modal_edit_entry') : t('modal_new_activity')}
         </h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -527,7 +535,7 @@ function JournalForm({
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="journeeEntiere" className="text-sm font-medium text-gray-700">
-              ☀️ Journée entière (8h-17h)
+              ☀️ {t('full_day_label')}
             </label>
           </div>
 

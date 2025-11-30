@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/PageHeader'
@@ -51,6 +51,7 @@ interface Chantier {
 
 export default function MetreDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const { data: session } = useSession()
   const metreId = params.id as string
   const [metre, setMetre] = useState<Metre | null>(null)
@@ -199,14 +200,14 @@ export default function MetreDetailPage() {
         icon={ChartBarIcon}
         badgeColor="from-purple-600 via-indigo-600 to-blue-700"
         gradientColor="from-purple-600/10 via-indigo-600/10 to-blue-700/10"
-        actions={
-          <Link
-            href="/metres"
-            className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+        leftAction={
+          <button 
+            onClick={() => router.push('/metres')}
+            className="group relative inline-flex items-center justify-center rounded-full border border-purple-200/60 dark:border-purple-900/40 bg-white/80 dark:bg-purple-950/30 text-purple-700 dark:text-purple-200 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20 hover:border-purple-300 dark:hover:border-purple-700 transition-all w-8 h-8 flex-shrink-0"
           >
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Retour à la liste
-          </Link>
+            <span className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-100/70 via-purple-200/60 to-indigo-200/60 dark:from-purple-900/30 dark:via-purple-800/20 dark:to-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ArrowLeftIcon className="relative h-4 w-4" />
+          </button>
         }
       />
 
@@ -301,15 +302,17 @@ export default function MetreDetailPage() {
                 {/* Actions pour ADMIN/MANAGER */}
                 {isAdminOrManager && (
                   <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Actions</h3>
+                    <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg mb-4">
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">Actions</h3>
+                    </div>
                     
                     {/* Association chantier (si chantier libre) */}
                     {metre.chantier.chantierId.startsWith('CH-LIBRE-') && (
-                      <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <div className="mb-6 p-4 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-xl shadow-lg">
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
                           Associer à un chantier existant
                         </label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                           <div className="flex-1">
                             <SearchableSelect
                               options={chantiers.map((c) => ({
@@ -329,33 +332,61 @@ export default function MetreDetailPage() {
                           <button
                             onClick={associerChantier}
                             disabled={!selectedChantierId || updating}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-semibold text-sm"
                           >
-                            Associer
+                            {updating ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                Association...
+                              </>
+                            ) : (
+                              <>
+                                <CheckIcon className="h-4 w-4" />
+                                Associer
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
                     )}
 
                     {/* Boutons de statut */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                       {metre.statut === 'SOUMIS' && (
                         <>
                           <button
                             onClick={() => updateStatut('VALIDE')}
                             disabled={updating}
-                            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-semibold text-sm ring-2 ring-green-300/50 dark:ring-green-500/50"
                           >
-                            <CheckIcon className="h-4 w-4 mr-2" />
-                            Valider
+                            {updating ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                Validation...
+                              </>
+                            ) : (
+                              <>
+                                <CheckIcon className="h-5 w-5" />
+                                Valider
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => updateStatut('REJETE')}
                             disabled={updating}
-                            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-semibold text-sm ring-2 ring-red-300/50 dark:ring-red-500/50"
                           >
-                            <XMarkIcon className="h-4 w-4 mr-2" />
-                            Rejeter
+                            {updating ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                Rejet...
+                              </>
+                            ) : (
+                              <>
+                                <XMarkIcon className="h-5 w-5" />
+                                Rejeter
+                              </>
+                            )}
                           </button>
                         </>
                       )}
@@ -363,29 +394,54 @@ export default function MetreDetailPage() {
                         <button
                           onClick={() => updateStatut('SOUMIS')}
                           disabled={updating}
-                          className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-semibold text-sm ring-2 ring-gray-300/50 dark:ring-gray-500/50"
                         >
-                          Remettre en attente
+                          {updating ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                              Mise à jour...
+                            </>
+                          ) : (
+                            'Remettre en attente'
+                          )}
                         </button>
                       )}
                       {metre.statut === 'VALIDE' && (
                         <button
                           onClick={() => updateStatut('REJETE')}
                           disabled={updating}
-                          className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-semibold text-sm ring-2 ring-red-300/50 dark:ring-red-500/50"
                         >
-                          <XMarkIcon className="h-4 w-4 mr-2" />
-                          Rejeter
+                          {updating ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                              Rejet...
+                            </>
+                          ) : (
+                            <>
+                              <XMarkIcon className="h-5 w-5" />
+                              Rejeter
+                            </>
+                          )}
                         </button>
                       )}
                       {metre.statut === 'REJETE' && (
                         <button
                           onClick={() => updateStatut('VALIDE')}
                           disabled={updating}
-                          className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-semibold text-sm ring-2 ring-green-300/50 dark:ring-green-500/50"
                         >
-                          <CheckIcon className="h-4 w-4 mr-2" />
-                          Valider
+                          {updating ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                              Validation...
+                            </>
+                          ) : (
+                            <>
+                              <CheckIcon className="h-5 w-5" />
+                              Valider
+                            </>
+                          )}
                         </button>
                       )}
                     </div>
@@ -412,7 +468,6 @@ export default function MetreDetailPage() {
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Prix unitaire</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Quantité</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Total</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Type</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -441,17 +496,6 @@ export default function MetreDetailPage() {
                         <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-white">
                           {formatMontant(ligne.prixUnitaire * ligne.quantite)} €
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          {ligne.estSupplement ? (
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full">
-                              Supplément
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">
-                              Commande
-                            </span>
-                          )}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -463,7 +507,6 @@ export default function MetreDetailPage() {
                       <td className="px-4 py-4 text-right text-lg font-black text-gray-900 dark:text-white">
                         {formatMontant(total)} €
                       </td>
-                      <td></td>
                     </tr>
                   </tfoot>
                 </table>
