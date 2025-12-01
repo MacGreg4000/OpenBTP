@@ -39,7 +39,6 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
     window.addEventListener('resize', checkMobile);
 
     let ticking = false;
-    let lastScrollY = window.scrollY;
     
     const handleScroll = () => {
       if (!ticking) {
@@ -54,7 +53,6 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
             } else if (isCompact && scrollY < 50) {
               setIsCompact(false);
             }
-            lastScrollY = scrollY;
           }
           ticking = false;
         });

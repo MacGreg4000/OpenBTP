@@ -91,13 +91,8 @@ export default function ExportPdfButton({ title = 'Exporter PDF', fileName = 'pl
       pdfMakeLib.createPdf(docDefinition).download(fileName)
     } catch (e) {
       console.error(e)
-      // Note: Ce composant est utilisé dans un contexte où toast pourrait ne pas être disponible
-      // On garde alert() pour l'instant ou on peut utiliser window.alert si nécessaire
-      if (typeof window !== 'undefined' && (window as any).toast) {
-        (window as any).toast.error("Échec de l'export PDF")
-      } else {
-        alert("Échec de l'export PDF")
-      }
+      // Note: Ce composant utilise pdfmake chargé dynamiquement, alert() est conservé pour compatibilité
+      alert("Échec de l'export PDF")
     }
   }
 

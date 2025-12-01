@@ -211,11 +211,7 @@ export default function MachinePage(props: { params: Promise<{ machineId: string
       router.push('/outillage')
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
-      showNotification({
-        type: 'error',
-        title: 'Erreur',
-        message: error instanceof Error ? error.message : 'Erreur inconnue lors de la suppression'
-      })
+      showNotification('Erreur', error instanceof Error ? error.message : 'Erreur inconnue lors de la suppression', 'error')
     }
   }
 

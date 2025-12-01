@@ -58,11 +58,7 @@ export default function EditMachinePage(props: { params: Promise<{ machineId: st
       })
     } catch (error) {
       console.error('Erreur:', error)
-      showNotification({
-        type: 'error',
-        title: 'Erreur',
-        message: "Erreur lors de la récupération des données de la machine"
-      })
+      showNotification('Erreur', "Erreur lors de la récupération des données de la machine", 'error')
     } finally {
       setLoading(false)
     }
@@ -89,11 +85,7 @@ export default function EditMachinePage(props: { params: Promise<{ machineId: st
       router.refresh()
     } catch (error) {
       console.error('Erreur:', error)
-      showNotification({
-        type: 'error',
-        title: 'Erreur',
-        message: "Une erreur s'est produite lors de la mise à jour de la machine"
-      })
+      showNotification('Erreur', "Une erreur s'est produite lors de la mise à jour de la machine", 'error')
     } finally {
       setSaving(false)
     }
