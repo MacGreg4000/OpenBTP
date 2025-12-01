@@ -249,7 +249,7 @@ export default function CommandeSousTraitantPage(
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-        } catch (parseError) {
+        } catch {
           // Si le corps de la réponse n'est pas JSON, essayer de lire le texte
           try {
             const errorText = await response.text();
