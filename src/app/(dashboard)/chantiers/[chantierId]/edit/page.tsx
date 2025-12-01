@@ -684,7 +684,7 @@ export default function EditChantierPage(props: { params: Promise<{ chantierId: 
           onClose={() => {
             setShowPPSSModal(false)
             setPpssModalData(null)
-            router.push('/chantiers')
+            router.push(`/chantiers/${params.chantierId}`)
           }}
           success={ppssModalData.success}
           message={ppssModalData.message}
