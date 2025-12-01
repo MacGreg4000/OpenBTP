@@ -249,13 +249,23 @@ export default function CommandeSousTraitantPage(
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Si le corps de la réponse n'est pas JSON ou est vide
+        } catch (parseError) {
+          // Si le corps de la réponse n'est pas JSON, essayer de lire le texte
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          } catch {
+            // Si même le texte ne peut pas être lu, utiliser le message par défaut
+          }
         }
         throw new Error(errorMessage);
       }
 
-      // Recharger les données complètes pour avoir toutes les informations à jour (y compris les lignes)
+      // La réponse est OK, recharger les données complètes pour avoir toutes les informations à jour (y compris les lignes)
+      // On ne parse pas la réponse car elle peut ne pas contenir toutes les données (pas de lignes)
+      // fetchCommande() récupérera toutes les données complètes
       await fetchCommande();
 
       toast.success(`Commande ${nouvelEtatVerrouillage ? 'verrouillée' : 'déverrouillée'} avec succès`);

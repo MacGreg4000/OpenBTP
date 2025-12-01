@@ -92,6 +92,13 @@ export async function POST(
       WHERE c.id = ${parseInt(commandeId)}
     `
 
+    if (!commandeMiseAJour || commandeMiseAJour.length === 0) {
+      return NextResponse.json(
+        { error: 'Erreur lors de la récupération de la commande mise à jour' },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json(commandeMiseAJour[0])
   } catch (error) {
     console.error('Erreur:', error)
