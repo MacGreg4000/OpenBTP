@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { Button, FormInput, FormTextarea } from '@/components/ui'; // FormLabel supprimé de l'import
+import { toast } from 'react-hot-toast'
 
 interface ContactData {
   id?: string; // Optionnel, pour la modification
@@ -61,7 +62,7 @@ export default function ContactForm({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!formData.prenom || !formData.nom) {
-      alert('Le prénom et le nom sont obligatoires.'); // Ou une meilleure gestion d'erreur/notification
+      toast.error('Le prénom et le nom sont obligatoires.');
       return;
     }
     await onSubmit(formData);

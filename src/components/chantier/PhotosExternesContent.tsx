@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { TrashIcon, EyeIcon, CalendarIcon, UserIcon, DocumentIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { toast } from 'react-hot-toast'
 
 interface PhotoExterne {
   id: string
@@ -70,9 +71,10 @@ export default function PhotosExternesContent({ chantierId }: PhotosExternesCont
       } else {
         throw new Error(data.error || 'Erreur lors de la suppression')
       }
+      toast.success('Photo supprimée avec succès')
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
-      alert('Erreur lors de la suppression de la photo')
+      toast.error('Erreur lors de la suppression de la photo')
     } finally {
       setDeleting(null)
     }

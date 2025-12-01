@@ -101,9 +101,10 @@ export default function BonsRegiePage() {
     navigator.clipboard.writeText(publicUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      toast.success('Lien copié dans le presse-papiers');
     }).catch(err => {
       console.error('Erreur lors de la copie du lien:', err);
-      alert('Impossible de copier le lien.');
+      toast.error('Impossible de copier le lien.');
     });
   };
 
@@ -154,7 +155,7 @@ export default function BonsRegiePage() {
     } catch (error) {
       console.error('❌ Erreur:', error)
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'association du bon au chantier'
-      alert(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setUpdating(false)
     }

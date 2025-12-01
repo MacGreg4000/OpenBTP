@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Dialog } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import SelectField from '@/components/ui/SelectField'
+import { toast } from 'react-hot-toast'
 
 interface RetourPretModalProps {
   pretId: string
@@ -40,9 +41,10 @@ export default function RetourPretModal({ pretId, onClose, onSuccess }: RetourPr
       }
 
       onSuccess()
+      toast.success('Prêt retourné avec succès')
     } catch (error) {
       console.error('Erreur:', error)
-      alert("Une erreur s'est produite lors du retour du prêt")
+      toast.error("Une erreur s'est produite lors du retour du prêt")
     } finally {
       setSaving(false)
     }

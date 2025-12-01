@@ -7,6 +7,7 @@ import {
 } from '@heroicons/react/24/outline'
 import DetailChoixCard from './DetailChoixCard'
 import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
+import { toast } from 'react-hot-toast'
 
 interface Chantier {
   chantierId: string
@@ -190,12 +191,13 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
       
       if (data.success) {
         setDocuments([...documents, data.url])
+        toast.success('Document uploadé avec succès')
       } else {
-        alert('Erreur lors de l\'upload du document')
+        toast.error('Erreur lors de l\'upload du document')
       }
     } catch (error) {
       console.error('Erreur upload:', error)
-      alert('Erreur lors de l\'upload du document')
+      toast.error('Erreur lors de l\'upload du document')
     } finally {
       setUploadingDocument(false)
     }
@@ -209,7 +211,7 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
     e.preventDefault()
     
     if (!nomClient.trim()) {
-      alert('Le nom du client est requis')
+      toast.error('Le nom du client est requis')
       return
     }
 

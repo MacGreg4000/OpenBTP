@@ -13,6 +13,7 @@ import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline'
+import { toast } from 'react-hot-toast'
 
 // Initialiser dayjs
 dayjs.extend(weekOfYear)
@@ -251,13 +252,14 @@ const GanttChart: React.FC<GanttChartProps> = ({ chantiers, loading = false }) =
         document.body.removeChild(a)
         
         console.log('✅ PDF exporté avec succès')
+        toast.success('PDF exporté avec succès')
       } else {
         console.error('❌ Erreur lors de l\'export PDF')
-        alert('Erreur lors de l\'export PDF')
+        toast.error('Erreur lors de l\'export PDF')
       }
     } catch (error) {
       console.error('❌ Erreur lors de l\'export PDF:', error)
-      alert('Erreur lors de l\'export PDF')
+      toast.error('Erreur lors de l\'export PDF')
     }
   }
   

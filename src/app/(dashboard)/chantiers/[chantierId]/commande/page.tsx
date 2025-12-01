@@ -639,7 +639,7 @@ export default function CommandePage(props: CommandePageProps) {
       toast.success('Commande enregistrée et validée avec succès');
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setSaving(false);
     }
@@ -892,7 +892,7 @@ export default function CommandePage(props: CommandePageProps) {
       // Récupérer la première feuille
       const worksheet = workbook.getWorksheet(1);
       if (!worksheet) {
-        alert('Le fichier Excel est vide ou n\'a pas le bon format.');
+        toast.error('Le fichier Excel est vide ou n\'a pas le bon format.');
         return;
       }
 
@@ -909,7 +909,7 @@ export default function CommandePage(props: CommandePageProps) {
       );
       
       if (missingHeaders.length > 0) {
-        alert(`Le fichier ne contient pas tous les en-têtes requis. Manquants : ${missingHeaders.join(', ')}. Veuillez télécharger et utiliser le modèle fourni.`);
+        toast.error(`Le fichier ne contient pas tous les en-têtes requis. Manquants : ${missingHeaders.join(', ')}. Veuillez télécharger et utiliser le modèle fourni.`);
         return;
       }
 
@@ -947,7 +947,7 @@ export default function CommandePage(props: CommandePageProps) {
       });
 
       if (newLignes.length === 0) {
-        alert('Aucune ligne valide n\'a été trouvée dans le fichier.');
+        toast.error('Aucune ligne valide n\'a été trouvée dans le fichier.');
         return;
       }
 
@@ -973,10 +973,10 @@ export default function CommandePage(props: CommandePageProps) {
         };
       });
 
-      alert(`${newLignes.length} lignes ont été importées avec succès.`);
+      toast.success(`${newLignes.length} lignes ont été importées avec succès.`);
     } catch (error) {
       console.error('Erreur lors de l\'importation du fichier Excel:', error);
-      alert('Une erreur est survenue lors de l\'importation du fichier Excel.');
+      toast.error('Une erreur est survenue lors de l\'importation du fichier Excel.');
     }
 
     // Réinitialiser l'input file

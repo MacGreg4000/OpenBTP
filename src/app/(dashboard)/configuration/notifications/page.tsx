@@ -12,6 +12,7 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
 } from '@heroicons/react/24/outline'
+import { toast } from 'react-hot-toast'
 
 interface NotificationType {
   id: string
@@ -182,11 +183,11 @@ export default function NotificationsConfigPage() {
         // Recharger
         await loadUserConfig(selectedUserId)
       } else {
-        alert('Erreur lors de la sauvegarde')
+        toast.error('Erreur lors de la sauvegarde')
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
-      alert('Erreur lors de la sauvegarde')
+      toast.error('Erreur lors de la sauvegarde')
     } finally {
       setSaving(false)
     }
@@ -233,11 +234,11 @@ export default function NotificationsConfigPage() {
           await loadUserConfig(session.user.id)
         }
       } else {
-        alert('Erreur lors de l\'initialisation')
+        toast.error('Erreur lors de l\'initialisation')
       }
     } catch (error) {
       console.error('Erreur lors du seeding:', error)
-      alert('Erreur lors de l\'initialisation')
+      toast.error('Erreur lors de l\'initialisation')
     } finally {
       setIsSeeding(false)
     }

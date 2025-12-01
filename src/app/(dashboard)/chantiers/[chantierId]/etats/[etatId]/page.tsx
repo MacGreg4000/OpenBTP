@@ -218,7 +218,7 @@ export default function EtatAvancementPage(props: PageProps) {
       setEtatAvancement(updatedEtat);
       
       // Afficher un message de succès
-      alert('État d\'avancement réouvert avec succès !');
+      toast.success('État d\'avancement réouvert avec succès !');
     } catch (error) {
       console.error('Erreur:', error);
       setError('Erreur lors de la réouverture de l\'état d\'avancement');

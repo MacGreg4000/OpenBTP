@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/PageHeader'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { ChartBarIcon, ArrowLeftIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { toast } from 'react-hot-toast'
 
 interface MetreLigne {
   id: string
@@ -128,9 +129,10 @@ export default function MetreDetailPage() {
       }
 
       await loadMetre()
+      toast.success('Statut mis à jour avec succès')
     } catch (err) {
       console.error('Erreur:', err)
-      alert(err instanceof Error ? err.message : 'Erreur lors de la mise à jour')
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de la mise à jour')
     } finally {
       setUpdating(false)
     }
@@ -153,9 +155,10 @@ export default function MetreDetailPage() {
 
       await loadMetre()
       setSelectedChantierId(null)
+      toast.success('Chantier associé avec succès')
     } catch (err) {
       console.error('Erreur:', err)
-      alert(err instanceof Error ? err.message : 'Erreur lors de l\'association')
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de l\'association')
     } finally {
       setUpdating(false)
     }

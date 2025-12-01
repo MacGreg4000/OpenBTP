@@ -14,6 +14,7 @@ import {
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
+import { toast } from 'react-hot-toast'
 
 interface Document {
   id: string
@@ -200,11 +201,12 @@ export default function DocumentsAdministratifsPage() {
 
       console.log('✅ Document supprimé avec succès')
       await fetchDocuments()
+      toast.success('Document supprimé avec succès')
     } catch (err) {
       console.error('❌ Erreur:', err)
       const errorMessage = err instanceof Error ? err.message : 'Impossible de supprimer le document'
       setError(errorMessage)
-      alert(errorMessage)
+      toast.error(errorMessage)
     }
   }
 

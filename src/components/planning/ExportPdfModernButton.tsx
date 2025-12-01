@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+import { toast } from 'react-hot-toast'
 
 type TaskStatus = 'PREVU' | 'EN_COURS' | 'TERMINE'
 
@@ -80,10 +81,11 @@ export default function ExportPdfModernButton({
       window.URL.revokeObjectURL(url)
 
       console.log('✅ PDF téléchargé avec succès')
+      toast.success('PDF téléchargé avec succès')
 
     } catch (error) {
       console.error('❌ Erreur lors de l\'export PDF moderne:', error)
-      alert(`Échec de l'export PDF: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+      toast.error(`Échec de l'export PDF: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     } finally {
       setIsGenerating(false)
     }

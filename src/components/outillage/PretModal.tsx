@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Dialog } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { addDays } from 'date-fns'
+import { toast } from 'react-hot-toast'
 
 interface PretModalProps {
   machineId: string
@@ -42,9 +43,10 @@ export default function PretModal({ machineId, onClose, onSuccess }: PretModalPr
       }
 
       onSuccess()
+      toast.success('Prêt créé avec succès')
     } catch (error) {
       console.error('Erreur:', error)
-      alert("Une erreur s'est produite lors de la création du prêt")
+      toast.error("Une erreur s'est produite lors de la création du prêt")
     } finally {
       setSaving(false)
     }
