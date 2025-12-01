@@ -46,6 +46,7 @@ export default function LigneCommande({
   deleteLigne
 }: LigneCommandeProps) {
   const ref = useRef<HTMLTableRowElement>(null)
+  const dragIconRef = useRef<HTMLDivElement>(null)
   const isSectionHeader = type === 'TITRE' || type === 'SOUS_TITRE'
   const sectionLabel = type === 'TITRE' ? 'Titre' : 'Sous-titre'
 
@@ -94,8 +95,9 @@ export default function LigneCommande({
     }),
   })
 
-  const opacity = isDragging ? 0 : 1
-  drag(drop(ref))
+  const opacity = isDragging ? 0.5 : 1
+  drag(dragIconRef)
+  drop(ref)
 
   return (
     <tr
@@ -104,8 +106,14 @@ export default function LigneCommande({
       data-handler-id={handlerId}
       className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${isSectionHeader ? (type === 'TITRE' ? 'bg-blue-50/60 dark:bg-blue-900/30' : 'bg-gray-100/60 dark:bg-gray-800/40') : ''}`}
     >
-      <td className="px-3 py-2 whitespace-nowrap cursor-move align-top">
-        <BarsArrowUpIcon className={`h-5 w-5 ${isSectionHeader ? 'text-blue-500 dark:text-blue-300' : 'text-gray-400'}`} />
+      <td className="px-3 py-2 whitespace-nowrap align-top">
+        <div
+          ref={dragIconRef}
+          className="inline-flex items-center justify-center cursor-move hover:bg-gray-200 dark:hover:bg-gray-600 rounded p-1 transition-colors"
+          title="Glisser pour réorganiser"
+        >
+          <BarsArrowUpIcon className={`h-5 w-5 ${isSectionHeader ? 'text-blue-500 dark:text-blue-300' : 'text-gray-400'}`} />
+        </div>
       </td>
       <td className="px-3 py-2 whitespace-nowrap align-top">
         {isSectionHeader ? (
