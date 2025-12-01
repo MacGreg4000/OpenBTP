@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
+import { notifier } from '@/lib/services/notificationService';
 
 /**
  * POST /api/chantiers/photos/upload
@@ -117,6 +118,18 @@ export async function POST(request: NextRequest) {
       });
 
       console.log(`Photos manuelles créées en base: ${uploadedUrls.length} photos`);
+
+      // 🔔 NOTIFICATION : Photos uploadées
+      await notifier({
+        code: 'PHOTOS_UPLOADEES',
+        rolesDestinataires: ['ADMIN', 'MANAGER'],
+        metadata: {
+          chantierId: chantier.chantierId,
+          chantierNom: chantier.nomChantier,
+          nb: uploadedUrls.length.toString(),
+          uploader: session.user.name || session.user.email || 'Un utilisateur',
+        },
+      })
 
       return NextResponse.json({
         success: true,

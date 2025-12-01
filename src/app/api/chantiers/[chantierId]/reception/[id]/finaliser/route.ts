@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { notifier } from '@/lib/services/notificationService';
 
 // Fonction pour convertir les BigInt en nombre lors de la sérialisation JSON
 function formatBigIntValues(data: unknown): unknown {
@@ -91,16 +92,31 @@ export async function POST(
       WHERE id = ${receptionId}
     `;
 
-    // Récupérer la réception mise à jour
+    // Récupérer la réception mise à jour avec le chantier
     const receptionMAJ = await prisma.$queryRaw<Record<string, unknown>[]>`
-      SELECT * FROM reception_chantier
-      WHERE id = ${receptionId}
+      SELECT rc.*, c.chantierId, c.nomChantier
+      FROM reception_chantier rc
+      JOIN Chantier c ON rc.chantierId = c.chantierId
+      WHERE rc.id = ${receptionId}
     `;
+
+    const receptionData = formatBigIntValues(receptionMAJ[0]) as Record<string, unknown>
+
+    // 🔔 NOTIFICATION : Réception finalisée
+    await notifier({
+      code: 'RECEPTION_FINALISEE',
+      rolesDestinataires: ['ADMIN', 'MANAGER'],
+      metadata: {
+        chantierId: receptionData.chantierId as string,
+        chantierNom: receptionData.nomChantier as string,
+        userName: session.user.name || session.user.email || 'Un utilisateur',
+      },
+    })
 
     return NextResponse.json({
       success: true,
       message: 'Réception finalisée avec succès',
-      reception: formatBigIntValues(receptionMAJ[0])
+      reception: receptionData
     });
   } catch (error) {
     console.error('Erreur:', error);

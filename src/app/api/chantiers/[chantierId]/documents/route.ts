@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { notifier } from '@/lib/services/notificationService'
 
 // Type JSON local pour éviter la dépendance aux types Prisma
 type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
@@ -481,6 +482,22 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
         }
       }
       
+      // 🔔 NOTIFICATION : Document uploadé
+      const chantier = await prisma.chantier.findUnique({
+        where: { chantierId: params.chantierId },
+        select: { nomChantier: true },
+      })
+      
+      await notifier({
+        code: 'DOCUMENT_UPLOAD',
+        rolesDestinataires: ['ADMIN', 'MANAGER'],
+        metadata: {
+          chantierId: params.chantierId,
+          chantierNom: chantier?.nomChantier || 'Chantier inconnu',
+          nom: file.name,
+        },
+      })
+
       return NextResponse.json(document)
     } catch (dbError: unknown) {
       const dbMessage = dbError instanceof Error ? dbError.message : String(dbError)

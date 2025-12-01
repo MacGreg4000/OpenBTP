@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { signerContrat } from '@/lib/contract-generator-simple'
 import { prisma } from '@/lib/prisma/client'
+import { notifier } from '@/lib/services/notificationService'
 
 // Fonction pour obtenir l'adresse IP du client
 function getClientIP(request: NextRequest): string | null {
@@ -118,6 +119,16 @@ export async function POST(
     
     console.log(`Contrat signé avec succès, URL: ${contratUrl}`)
     console.log(`Audit enregistré - IP: ${ipAddress}, User-Agent: ${userAgent?.substring(0, 50)}...`)
+    
+    // 🔔 NOTIFICATION : Contrat signé
+    await notifier({
+      code: 'CONTRAT_SIGNE',
+      rolesDestinataires: ['ADMIN'],
+      metadata: {
+        soustraitantId: contrat.soustraitant.id,
+        soustraitantNom: contrat.soustraitant.nom,
+      },
+    })
     
     return NextResponse.json({ url: contratUrl })
   } catch (error) {

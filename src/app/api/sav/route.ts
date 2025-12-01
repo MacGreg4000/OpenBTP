@@ -10,6 +10,7 @@ import {
   FiltresSAV 
 } from '@/types/sav'
 import { generateTicketSAVNumber, validateTicketSAVData } from '@/lib/sav/utils'
+import { notifier } from '@/lib/services/notificationService'
 
 /**
  * GET /api/sav
@@ -291,6 +292,45 @@ export async function POST(request: Request) {
         }
       }
     })
+
+    // 🔔 NOTIFICATION : Nouveau ticket SAV créé
+    await notifier({
+      code: 'SAV_TICKET_CREE',
+      rolesDestinataires: ['ADMIN', 'MANAGER'],
+      metadata: {
+        num: nouveauTicket.numTicket,
+        titre: nouveauTicket.titre,
+        priorite: nouveauTicket.priorite,
+        ticketSAVId: nouveauTicket.id,
+        chantierNom: nouveauTicket.chantier?.nomChantier || nouveauTicket.nomLibre || 'Chantier libre',
+      },
+    })
+
+    // Si assigné à un technicien, notifier le technicien
+    if (nouveauTicket.technicienAssign?.id) {
+      await notifier({
+        code: 'SAV_TICKET_ASSIGNE',
+        destinataires: [nouveauTicket.technicienAssign.id],
+        metadata: {
+          num: nouveauTicket.numTicket,
+          titre: nouveauTicket.titre,
+          ticketSAVId: nouveauTicket.id,
+        },
+      })
+    }
+
+    // Si assigné à un ouvrier interne, notifier l'ouvrier
+    if (nouveauTicket.ouvrierInterneAssign?.id) {
+      await notifier({
+        code: 'SAV_TICKET_ASSIGNE',
+        destinataires: [nouveauTicket.ouvrierInterneAssign.id],
+        metadata: {
+          num: nouveauTicket.numTicket,
+          titre: nouveauTicket.titre,
+          ticketSAVId: nouveauTicket.id,
+        },
+      })
+    }
 
     return NextResponse.json(nouveauTicket, { status: 201 })
 

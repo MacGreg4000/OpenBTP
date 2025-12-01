@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { generatePPSS } from '@/lib/ppss-generator'
+import { notifier } from '@/lib/services/notificationService'
 
 // GET /api/chantiers/[chantierId] - Récupère un chantier spécifique
 export async function GET(
@@ -100,6 +101,13 @@ export async function PUT(
     const dateDebut = body.dateDebut ? new Date(body.dateDebut) : 
                       body.dateCommencement ? new Date(body.dateCommencement) : null;
 
+    // Récupérer l'ancien statut pour détecter les changements
+    const ancienChantier = await prisma.chantier.findUnique({
+      where: { chantierId: chantierId },
+      select: { statut: true, nomChantier: true },
+    })
+    const ancienStatut = ancienChantier?.statut
+
     // Mise à jour du chantier avec gestion des différents formats de champs
     const chantier = await prisma.chantier.update({
       where: { chantierId: chantierId },
@@ -149,6 +157,45 @@ export async function PUT(
         ...chantier,
         ppssError: `Chantier mis à jour mais erreur PPSS: ${(ppssError as Error).message}`
       });
+    }
+
+    // 🔔 NOTIFICATIONS : Détecter les changements de statut
+    const userName = session.user.name || session.user.email || 'Un utilisateur'
+    
+    // Notification de modification générale
+    await notifier({
+      code: 'CHANTIER_MODIFIE',
+      rolesDestinataires: ['ADMIN', 'MANAGER'],
+      metadata: {
+        chantierId: chantier.chantierId,
+        chantierNom: chantier.nomChantier,
+        userName,
+      },
+    })
+
+    // Notification spécifique si le chantier démarre
+    if (ancienStatut !== 'EN_COURS' && statut === 'EN_COURS') {
+      await notifier({
+        code: 'CHANTIER_DEMARRE',
+        rolesDestinataires: ['ADMIN', 'MANAGER'],
+        metadata: {
+          chantierId: chantier.chantierId,
+          chantierNom: chantier.nomChantier,
+          date: dateDebut ? dateDebut.toISOString() : new Date().toISOString(),
+        },
+      })
+    }
+
+    // Notification spécifique si le chantier est terminé
+    if (ancienStatut !== 'TERMINE' && statut === 'TERMINE') {
+      await notifier({
+        code: 'CHANTIER_TERMINE',
+        rolesDestinataires: ['ADMIN', 'MANAGER'],
+        metadata: {
+          chantierId: chantier.chantierId,
+          chantierNom: chantier.nomChantier,
+        },
+      })
     }
 
     return NextResponse.json(chantier)

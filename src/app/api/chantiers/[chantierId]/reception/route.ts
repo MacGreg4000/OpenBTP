@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import crypto from 'crypto'
+import { notifier } from '@/lib/services/notificationService'
 
 // Générer un code PIN aléatoire (numérique, 6 chiffres)
 function generatePIN() {
@@ -210,6 +211,18 @@ export async function POST(
       });
 
       console.log('Réception créée avec succès:', nouvelleReception);
+      
+      // 🔔 NOTIFICATION : Réception créée
+      await notifier({
+        code: 'RECEPTION_CREEE',
+        rolesDestinataires: ['ADMIN', 'MANAGER'],
+        metadata: {
+          chantierId: chantierId,
+          chantierNom: chantier.nomChantier,
+          date: dateLimiteObj.toISOString(),
+        },
+      })
+      
       return NextResponse.json(nouvelleReception, { status: 201 });
     } catch (dbError) {
       console.error('Erreur lors de la création avec Prisma:', dbError);

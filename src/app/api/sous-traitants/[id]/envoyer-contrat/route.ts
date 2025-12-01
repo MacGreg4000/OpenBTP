@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { sendContractSignatureEmail } from '@/lib/email-sender'
 import { generateContratSoustraitance } from '@/lib/contract-generator-simple'
+import { notifier } from '@/lib/services/notificationService'
 
 export async function POST(
   request: Request,
@@ -88,6 +89,16 @@ export async function POST(
     if (!emailSent) {
       return NextResponse.json({ error: 'Erreur lors de l\'envoi de l\'email' }, { status: 500 })
     }
+    
+    // 🔔 NOTIFICATION : Contrat généré et envoyé
+    await notifier({
+      code: 'CONTRAT_GENERE',
+      rolesDestinataires: ['ADMIN'],
+      metadata: {
+        soustraitantId: soustraitant.id,
+        soustraitantNom: soustraitant.nom,
+      },
+    })
     
     return NextResponse.json({ success: true, message: 'Email envoyé avec succès' })
   } catch (error: unknown) {

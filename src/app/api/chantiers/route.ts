@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { readPortalSessionFromCookie } from '@/app/public/portail/auth'
 // import { Prisma } from '@prisma/client'
 import { generatePPSS } from '@/lib/ppss-generator'
+import { notifier } from '@/lib/services/notificationService'
 
 // GET /api/chantiers - Liste tous les chantiers
 export async function GET(request: Request) {
@@ -233,6 +234,17 @@ export async function POST(req: Request) {
       // Ne pas bloquer la création du chantier si la génération du PPSS échoue
       // Erreur lors de la génération automatique du PPSS (non bloquant)
     }
+
+    // 🔔 NOTIFICATION : Nouveau chantier créé
+    await notifier({
+      code: 'CHANTIER_CREE',
+      rolesDestinataires: ['ADMIN', 'MANAGER'],
+      metadata: {
+        chantierId: chantier.chantierId,
+        chantierNom: chantier.nomChantier,
+        userName: session.user.name || session.user.email || 'Un utilisateur',
+      },
+    })
 
     return NextResponse.json(chantier)
   } catch {

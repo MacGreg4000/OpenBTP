@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma/client';
 import crypto from 'crypto';
 import { ensureDirectoryExists, saveFileToServer } from '@/lib/fileUploadUtils';
+import { notifier } from '@/lib/services/notificationService';
 // Remplacer l’usage direct de Prisma types par des types locaux pour la compatibilité
 type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
 type PrismaClientKnownRequestErrorLike = { code: string; message: string }
@@ -438,8 +439,65 @@ export async function POST(
       include: {
         photos: true,
         tags: true,
+        reception: {
+          include: {
+            chantier: {
+              select: {
+                chantierId: true,
+                nomChantier: true,
+              },
+            },
+          },
+        },
       },
     });
+
+    // 🔔 NOTIFICATION : Remarque créée
+    if (remarqueComplete) {
+      // Récupérer les IDs des utilisateurs tagués
+      const tagsIds: string[] = []
+      if (remarqueComplete.tags && remarqueComplete.tags.length > 0) {
+        // Pour chaque tag, chercher l'utilisateur correspondant par email ou nom
+        for (const tag of remarqueComplete.tags) {
+          if (tag.email) {
+            const user = await prisma.user.findFirst({
+              where: { email: tag.email },
+              select: { id: true },
+            })
+            if (user) {
+              tagsIds.push(user.id)
+            }
+          }
+        }
+      }
+
+      // Notifier les personnes taguées et les admins
+      if (tagsIds.length > 0) {
+        await notifier({
+          code: 'REMARQUE_CREEE',
+          destinataires: tagsIds,
+          rolesDestinataires: ['ADMIN'],
+          metadata: {
+            chantierId: remarqueComplete.reception?.chantier?.chantierId || chantierId,
+            chantierNom: remarqueComplete.reception?.chantier?.nomChantier || 'Chantier inconnu',
+            description: remarqueComplete.description,
+            remarqueId: remarqueComplete.id,
+          },
+        })
+      } else {
+        // Si aucun tag, notifier seulement les admins
+        await notifier({
+          code: 'REMARQUE_CREEE',
+          rolesDestinataires: ['ADMIN', 'MANAGER'],
+          metadata: {
+            chantierId: remarqueComplete.reception?.chantier?.chantierId || chantierId,
+            chantierNom: remarqueComplete.reception?.chantier?.nomChantier || 'Chantier inconnu',
+            description: remarqueComplete.description,
+            remarqueId: remarqueComplete.id,
+          },
+        })
+      }
+    }
     
     return NextResponse.json(remarqueComplete, { status: 201 });
   } catch (error) {
