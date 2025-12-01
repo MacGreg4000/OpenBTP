@@ -229,20 +229,42 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Localisation:</span>
-                        {chantier.latitude && chantier.longitude ? (
-                          <button
-                            onClick={handleShareLocation}
-                            className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors"
-                            title="Partager la localisation GPS"
-                          >
-                            <ArrowUpTrayIcon className="h-5 w-5" />
-                          </button>
-                        ) : (
-                          <div className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg opacity-50" title="Aucune localisation GPS enregistrée">
-                            <MapIcon className="h-5 w-5 text-gray-400" />
-                          </div>
-                        )}
+                        {(() => {
+                          // Construire l'URL Google Maps
+                          let googleMapsUrl = '';
+                          if (chantier.latitude && chantier.longitude) {
+                            // Utiliser les coordonnées GPS si disponibles (plus précis)
+                            googleMapsUrl = `https://www.google.com/maps?q=${chantier.latitude},${chantier.longitude}`;
+                          } else {
+                            // Sinon utiliser l'adresse textuelle (fonctionne très bien avec Google Maps)
+                            const address = [chantier.adresseChantier, chantier.villeChantier].filter(Boolean).join(', ');
+                            googleMapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
+                          }
+                          
+                          return (
+                            <>
+                              <a
+                                href={googleMapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors text-sm font-medium shadow-md hover:shadow-lg"
+                                title="Ouvrir dans Google Maps"
+                              >
+                                <MapIcon className="h-4 w-4" />
+                                <span className="hidden sm:inline">Google Maps</span>
+                              </a>
+                              {chantier.latitude && chantier.longitude && (
+                                <button
+                                  onClick={handleShareLocation}
+                                  className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors"
+                                  title="Partager la localisation GPS"
+                                >
+                                  <ArrowUpTrayIcon className="h-5 w-5" />
+                                </button>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
