@@ -371,8 +371,7 @@ export function generateEtatAvancementHTML(
         }
         
         .quantite-actuelle {
-            background: white;
-            border: 1px solid #3b82f6;
+            background: #eff6ff;
             font-weight: bold;
             color: #1e40af;
         }
