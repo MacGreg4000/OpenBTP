@@ -38,11 +38,27 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
+    let ticking = false;
+    let lastScrollY = window.scrollY;
+    
     const handleScroll = () => {
-      // Active le mode compact après 100px de scroll (seulement sur desktop)
-      if (window.innerWidth >= 768) {
-        const scrollThreshold = 100;
-        setIsCompact(window.scrollY > scrollThreshold);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Active le mode compact après 100px de scroll (seulement sur desktop)
+          if (window.innerWidth >= 768) {
+            const scrollY = window.scrollY;
+            // Hystérésis : seuil différent pour activer (100px) et désactiver (50px)
+            // Cela évite les vibrations autour du seuil
+            if (!isCompact && scrollY > 100) {
+              setIsCompact(true);
+            } else if (isCompact && scrollY < 50) {
+              setIsCompact(false);
+            }
+            lastScrollY = scrollY;
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -51,7 +67,7 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', checkMobile);
     };
-  }, []);
+  }, [isCompact]);
   
   // Calculer la taille de police en fonction de la longueur du titre
   const getTitleSize = (title: string) => {
@@ -162,9 +178,9 @@ export function ChantierHeader({ chantierId, chantier }: ChantierHeaderProps) {
       {/* Effet de fond animé */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-purple-50/10 dark:from-gray-900 dark:via-blue-900/5 dark:to-purple-900/5 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.08),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.03),rgba(0,0,0,0))]" />
       
-      <div className={`relative w-full overflow-visible transition-all duration-300 ${isCompact ? 'py-2' : 'py-6'}`}>
+      <div className={`relative w-full overflow-visible transition-[padding] duration-300 ease-out will-change-[padding] ${isCompact ? 'py-2' : 'py-6'}`}>
         {/* Container flex pour titre + boutons sur la même ligne - effet flottant */}
-        <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 ${isCompact ? 'p-2' : 'p-5 hover:-translate-y-1'}`}>
+        <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-[padding,transform] duration-300 ease-out will-change-[padding,transform] ${isCompact ? 'p-2' : 'p-5 hover:-translate-y-1'}`}>
           
           {/* Desktop: grille avec 3 colonnes */}
           <div className="hidden md:grid relative grid-cols-[auto_1fr_auto] items-center gap-3 w-full">

@@ -86,7 +86,7 @@ export default function ChantierLayout(
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-visible" suppressHydrationWarning>
       {/* ChantierHeader avec position sticky - toujours visible et limité à la largeur du container */}
-      <div className="sticky top-16 z-50 bg-gray-50 dark:bg-gray-900 overflow-visible shadow-sm">
+      <div className="sticky top-16 z-50 bg-gray-50 dark:bg-gray-900 overflow-visible shadow-sm will-change-transform">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <ChantierHeader 
             chantierId={chantierId || ""}
