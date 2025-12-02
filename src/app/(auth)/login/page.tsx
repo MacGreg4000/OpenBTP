@@ -35,37 +35,63 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    e.stopPropagation()
+    
+    console.log('🔐 Tentative de connexion...')
     setLoading(true)
     setError('')
 
     try {
       const formData = new FormData(e.currentTarget)
+      const email = formData.get('email') as string
+      const password = formData.get('password') as string
+
+      // Validation côté client
+      if (!email || !password) {
+        console.error('❌ Champs manquants')
+        setError('Veuillez remplir tous les champs')
+        setLoading(false)
+        return
+      }
+
+      console.log('📧 Email:', email ? `${email.substring(0, 3)}***` : 'vide')
+      console.log('🔑 Mot de passe:', password ? '***' : 'vide')
+
       const response = await signIn('credentials', {
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
+        email: email.trim(),
+        password: password,
         redirect: false,
         callbackUrl: callbackUrl
       })
 
-      console.log('Réponse de connexion:', response)
+      console.log('📥 Réponse de connexion:', {
+        ok: response?.ok,
+        error: response?.error,
+        status: response?.status,
+        url: response?.url
+      })
 
       if (response?.error) {
-        console.log('Erreur de connexion:', response.error)
-        setError('Identifiants invalides')
+        console.error('❌ Erreur de connexion:', response.error)
+        setError('Identifiants invalides. Vérifiez votre email et mot de passe.')
+        setLoading(false)
       } else if (response?.ok) {
-        console.log('Connexion réussie, redirection vers:', callbackUrl)
+        console.log('✅ Connexion réussie, redirection vers:', callbackUrl)
+        
+        // Forcer le rechargement de la session
+        await new Promise(resolve => setTimeout(resolve, 100))
         
         // Redirection immédiate sans animation vers le callbackUrl
         window.location.href = callbackUrl
         return // Arrêter l'exécution ici
       } else {
-        console.log('Réponse inattendue:', response)
-        setError('Une erreur est survenue lors de la connexion')
+        console.error('⚠️ Réponse inattendue:', response)
+        setError('Une erreur est survenue lors de la connexion. Veuillez réessayer.')
+        setLoading(false)
       }
     } catch (error) {
-      console.error('Erreur de connexion:', error)
-      setError('Une erreur est survenue')
-    } finally {
+      console.error('❌ Erreur de connexion (catch):', error)
+      setError('Une erreur est survenue. Vérifiez votre connexion internet et réessayez.')
       setLoading(false)
     }
   }
@@ -161,7 +187,12 @@ function LoginForm() {
 
           {/* Formulaire */}
           <div className={`transform transition-all duration-1000 delay-400 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form 
+              className="space-y-6" 
+              onSubmit={handleSubmit}
+              noValidate
+              autoComplete="on"
+            >
               {/* Message d'erreur amélioré */}
               {error && (
                 <div className="rounded-xl bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800 animate-shake">
@@ -173,6 +204,15 @@ function LoginForm() {
                       <p className="text-sm font-medium text-red-700 dark:text-red-400">{error}</p>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Message de débogage (visible uniquement en développement) */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3 border border-blue-200 dark:border-blue-800 text-xs">
+                  <p className="text-blue-700 dark:text-blue-400">
+                    💡 Mode débogage: Vérifiez la console pour les logs de connexion
+                  </p>
                 </div>
               )}
               
@@ -187,9 +227,26 @@ function LoginForm() {
                     name="email"
                     type="email"
                     autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    inputMode="email"
                     required
                     className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-200 hover:border-gray-400"
                     placeholder="votre.email@entreprise.com"
+                    onKeyDown={(e) => {
+                      // Permettre la soumission avec Enter
+                      if (e.key === 'Enter') {
+                        const form = e.currentTarget.closest('form')
+                        if (form) {
+                          const passwordInput = form.querySelector('input[name="password"]') as HTMLInputElement
+                          if (passwordInput && passwordInput.value) {
+                            form.requestSubmit()
+                          } else {
+                            passwordInput?.focus()
+                          }
+                        }
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -205,9 +262,20 @@ function LoginForm() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
                     required
                     className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-200 hover:border-gray-400 pr-12"
                     placeholder="••••••••••••"
+                    onKeyDown={(e) => {
+                      // Soumettre le formulaire avec Enter
+                      if (e.key === 'Enter') {
+                        const form = e.currentTarget.closest('form')
+                        if (form) {
+                          form.requestSubmit()
+                        }
+                      }
+                    }}
                   />
                   <button
                     type="button"
@@ -246,16 +314,30 @@ function LoginForm() {
               
               {/* Bouton de connexion */}
               <div>
-                <Button
+                <button
                   type="submit"
-                  variant="primary"
-                  fullWidth
-                  isLoading={loading}
-                  className="py-3 shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl font-semibold"
+                  disabled={loading}
+                  className="w-full py-3 shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold text-white flex items-center justify-center"
+                  onClick={(e) => {
+                    // S'assurer que le formulaire se soumet même sur mobile
+                    const form = e.currentTarget.closest('form')
+                    if (form) {
+                      form.requestSubmit()
+                    }
+                  }}
                 >
-                  <LockClosedIcon className="h-5 w-5 mr-2" />
-                  {loading ? 'Connexion en cours...' : 'Se connecter'}
-                </Button>
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Connexion en cours...
+                    </>
+                  ) : (
+                    <>
+                      <LockClosedIcon className="h-5 w-5 mr-2" />
+                      Se connecter
+                    </>
+                  )}
+                </button>
               </div>
             </form>
             
