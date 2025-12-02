@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { signOut } from 'next-auth/react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
 import { BottomNav } from '@/components/mobile/BottomNav'
 import {
@@ -9,6 +10,7 @@ import {
   MapPinIcon,
   ArrowRightIcon,
   MagnifyingGlassIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 
 interface Chantier {
@@ -136,6 +138,14 @@ export default function MobileHomePage() {
               <h1 className="text-2xl font-black">OpenBTP Mobile</h1>
               <p className="text-sm text-blue-100 mt-1">Sélectionnez un chantier</p>
             </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-white transition-colors duration-200 border border-white/30"
+              title="Déconnexion"
+            >
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              <span className="text-sm font-medium hidden sm:inline">Déconnexion</span>
+            </button>
           </div>
 
           {/* Chantier actuellement sélectionné */}
