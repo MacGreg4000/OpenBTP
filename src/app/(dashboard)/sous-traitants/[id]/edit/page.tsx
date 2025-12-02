@@ -3,6 +3,14 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { FormInput, Button } from '@/components/ui'
+import { 
+  PencilSquareIcon,
+  ArrowLeftIcon,
+  BuildingOfficeIcon,
+  KeyIcon,
+  LinkIcon
+} from '@heroicons/react/24/outline'
+import { toast, Toaster } from 'react-hot-toast'
 
 interface FormData {
   nom: string
@@ -111,10 +119,14 @@ export default function EditSousTraitantPage(
       })
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la mise à jour du sous-traitant')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erreur lors de la mise à jour du sous-traitant')
       }
 
-      router.push('/sous-traitants')
+      toast.success('Sous-traitant modifié avec succès')
+      
+      // Rediriger vers la page de consultation du sous-traitant
+      router.push(`/sous-traitants/${params.id}`)
       router.refresh()
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Une erreur est survenue')
@@ -183,21 +195,55 @@ export default function EditSousTraitantPage(
     }
   }
 
-  if (loading) return <div className="p-8">Chargement...</div>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
-            Modifier le Sous-Traitant
-          </h2>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Toaster position="top-right" />
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header moderne */}
+        <div className="mb-6">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/60 via-indigo-700/60 to-purple-800/60 dark:from-blue-600/30 dark:via-indigo-700/30 dark:to-purple-800/30"></div>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => router.push(`/sous-traitants/${params.id}`)}
+                    className="p-2 bg-white/30 backdrop-blur-sm rounded-lg hover:bg-white/40 transition-all duration-200"
+                  >
+                    <ArrowLeftIcon className="h-5 w-5 text-blue-900 dark:text-white" />
+                  </button>
+                  <div className="flex flex-col gap-3">
+                    <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30">
+                      <PencilSquareIcon className="w-6 h-6 mr-3 text-blue-900 dark:text-white" />
+                      <h1 className="text-xl font-bold text-blue-900 dark:text-white">
+                        Modifier le Sous-Traitant
+                      </h1>
+                    </div>
+                    {formData.nom && (
+                      <span className="px-3 py-1 rounded-full bg-white/30 backdrop-blur-sm text-blue-900 dark:text-white shadow-sm text-xs sm:text-sm font-semibold inline-flex w-max">
+                        {formData.nom}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Formulaire */}
+        <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+          <div className="rounded-xl bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800">
             <div className="flex">
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800 dark:text-red-400">{error}</h3>
@@ -206,7 +252,7 @@ export default function EditSousTraitantPage(
           </div>
         )}
 
-        <div className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
           <FormInput
             id="nom"
             name="nom"
@@ -299,38 +345,78 @@ export default function EditSousTraitantPage(
             )}
           </div>
 
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Accès Portail (PIN)</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-              <FormInput
-                id="pin"
-                name="pin"
-                type="text"
-                label="Code PIN (4-8 chiffres)"
-                value={pin}
-                onChange={(e)=> setPin(e.target.value.replace(/\D/g, ''))}
-              />
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-4">
+              <KeyIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Accès Portail (PIN)</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+              <div className="sm:col-span-2">
+                <FormInput
+                  id="pin"
+                  name="pin"
+                  type="text"
+                  label="Code PIN (4-8 chiffres)"
+                  value={pin}
+                  onChange={(e)=> setPin(e.target.value.replace(/\D/g, ''))}
+                  maxLength={8}
+                />
+              </div>
               <div>
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={savingPin || pin.length<4}
-                  onClick={async ()=>{ setSavingPin(true); await fetch(`/api/sous-traitants/${params.id}/pin`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) }); setSavingPin(false) }}
+                  disabled={savingPin || pin.length < 4}
+                  onClick={async () => { 
+                    setSavingPin(true)
+                    try {
+                      const response = await fetch(`/api/sous-traitants/${params.id}/pin`, { 
+                        method: 'PUT', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ pin }) 
+                      })
+                      if (response.ok) {
+                        toast.success('PIN enregistré avec succès')
+                      } else {
+                        toast.error('Erreur lors de l\'enregistrement du PIN')
+                      }
+                    } catch (error) {
+                      toast.error('Erreur lors de l\'enregistrement du PIN')
+                    } finally {
+                      setSavingPin(false)
+                    }
+                  }}
+                  className="w-full"
                 >
                   {savingPin ? 'Enregistrement...' : 'Enregistrer le PIN'}
                 </Button>
               </div>
             </div>
-            <div className="mt-3 text-sm text-gray-700 dark:text-gray-300">
-              Lien d'accès public:
-              <div className="flex items-center gap-3 mt-1">
-                <a href={portalLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <LinkIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lien d'accès public:</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <a 
+                  href={portalLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-600 dark:text-blue-400 hover:underline text-sm break-all flex-1"
+                >
                   {portalLink}
                 </a>
                 <button
                   type="button"
-                  onClick={() => { try { navigator.clipboard.writeText(portalLink) } catch {} }}
-                  className="px-2 py-1 border rounded text-xs"
+                  onClick={async () => { 
+                    try { 
+                      await navigator.clipboard.writeText(portalLink)
+                      toast.success('Lien copié dans le presse-papiers')
+                    } catch {
+                      toast.error('Impossible de copier le lien')
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                 >
                   Copier
                 </button>
@@ -339,11 +425,12 @@ export default function EditSousTraitantPage(
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-end gap-3 pt-6">
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.back()}
+            onClick={() => router.push(`/sous-traitants/${params.id}`)}
+            className="px-6"
           >
             Annuler
           </Button>
@@ -352,11 +439,13 @@ export default function EditSousTraitantPage(
             variant="primary"
             disabled={saving}
             isLoading={saving}
+            className="px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700"
           >
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
+            {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
           </Button>
         </div>
       </form>
+      </div>
     </div>
   )
 } 
