@@ -139,7 +139,7 @@ export default function MobileHomePage() {
               <p className="text-sm text-blue-100 mt-1">Sélectionnez un chantier</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={() => signOut({ callbackUrl: '/login?callbackUrl=/mobile' })}
               className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-white transition-colors duration-200 border border-white/30"
               title="Déconnexion"
             >
