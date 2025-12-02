@@ -20,16 +20,26 @@ export default function MobileLayout({
     if (status === 'unauthenticated') {
       // Récupérer le chemin actuel pour le callbackUrl
       const currentPath = pathname || '/mobile'
+      console.log('🔒 Mobile: Utilisateur non authentifié, redirection vers login')
       router.push(`/login?callbackUrl=${encodeURIComponent(currentPath)}`)
       return
     }
 
     if (session?.user) {
+      console.log('👤 Mobile: Utilisateur connecté:', {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role
+      })
+      
       const allowedRoles = ['ADMIN', 'MANAGER', 'USER']
       if (!allowedRoles.includes(session.user.role || '')) {
+        console.warn('⚠️ Mobile: Rôle non autorisé:', session.user.role)
         router.push('/')
         return
       }
+      
+      console.log('✅ Mobile: Accès autorisé pour le rôle:', session.user.role)
     }
   }, [status, session, router, pathname])
 

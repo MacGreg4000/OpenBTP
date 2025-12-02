@@ -56,6 +56,13 @@ function LoginForm() {
       console.log('📧 Email:', email ? `${email.substring(0, 3)}***` : 'vide')
       console.log('🔑 Mot de passe:', password ? '***' : 'vide')
 
+      // Détecter si on est sur mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      console.log('📱 Appareil détecté:', isMobile ? 'Mobile' : 'Desktop')
+      console.log('🌐 User Agent:', navigator.userAgent)
+      console.log('🍪 Cookies disponibles:', document.cookie ? 'Oui' : 'Non')
+      console.log('🔗 Callback URL:', callbackUrl)
+
       const response = await signIn('credentials', {
         email: email.trim(),
         password: password,
@@ -72,13 +79,37 @@ function LoginForm() {
 
       if (response?.error) {
         console.error('❌ Erreur de connexion:', response.error)
-        setError('Identifiants invalides. Vérifiez votre email et mot de passe.')
+        
+        // Messages d'erreur plus détaillés
+        let errorMessage = 'Identifiants invalides. Vérifiez votre email et mot de passe.'
+        if (response.error === 'CredentialsSignin') {
+          errorMessage = 'Email ou mot de passe incorrect.'
+        } else if (response.error.includes('fetch')) {
+          errorMessage = 'Erreur de connexion au serveur. Vérifiez votre connexion internet.'
+        } else {
+          errorMessage = `Erreur: ${response.error}`
+        }
+        
+        setError(errorMessage)
         setLoading(false)
       } else if (response?.ok) {
         console.log('✅ Connexion réussie, redirection vers:', callbackUrl)
+        console.log('🍪 Cookies après connexion:', document.cookie)
         
-        // Forcer le rechargement de la session
-        await new Promise(resolve => setTimeout(resolve, 100))
+        // Sur mobile, attendre un peu plus longtemps pour que les cookies soient bien définis
+        const waitTime = isMobile ? 300 : 100
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+        
+        // Vérifier que la session est bien créée avant de rediriger
+        try {
+          const sessionCheck = await fetch('/api/auth/session', { credentials: 'include' })
+          if (sessionCheck.ok) {
+            const sessionData = await sessionCheck.json()
+            console.log('✅ Session vérifiée:', sessionData?.user ? 'Utilisateur connecté' : 'Pas de session')
+          }
+        } catch (err) {
+          console.warn('⚠️ Impossible de vérifier la session:', err)
+        }
         
         // Redirection immédiate sans animation vers le callbackUrl
         window.location.href = callbackUrl
@@ -209,8 +240,23 @@ function LoginForm() {
               {/* Message de débogage (visible uniquement en développement) */}
               {process.env.NODE_ENV === 'development' && (
                 <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3 border border-blue-200 dark:border-blue-800 text-xs">
-                  <p className="text-blue-700 dark:text-blue-400">
+                  <p className="text-blue-700 dark:text-blue-400 mb-2">
                     💡 Mode débogage: Vérifiez la console pour les logs de connexion
+                  </p>
+                  <p className="text-blue-600 dark:text-blue-500 text-xs">
+                    📱 Si problème sur mobile: Vérifiez les cookies, le réseau, et les logs dans la console
+                  </p>
+                </div>
+              )}
+
+              {/* Message d'aide pour mobile */}
+              {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
+                <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3 border border-amber-200 dark:border-amber-800 text-xs">
+                  <p className="text-amber-700 dark:text-amber-400 font-medium mb-1">
+                    📱 Mode mobile détecté
+                  </p>
+                  <p className="text-amber-600 dark:text-amber-500 text-xs">
+                    Si la connexion échoue, vérifiez que les cookies sont activés et que JavaScript est activé dans votre navigateur.
                   </p>
                 </div>
               )}
