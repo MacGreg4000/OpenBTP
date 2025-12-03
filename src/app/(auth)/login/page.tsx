@@ -70,12 +70,22 @@ function LoginForm() {
         callbackUrl: callbackUrl
       })
 
-      console.log('📥 Réponse de connexion:', {
+      console.log('📥 Réponse de connexion complète:', JSON.stringify({
         ok: response?.ok,
         error: response?.error,
         status: response?.status,
         url: response?.url
-      })
+      }, null, 2))
+      
+      // Vérifier immédiatement les cookies NextAuth
+      const allCookies = document.cookie.split(';').map(c => c.trim())
+      const nextAuthCookies = allCookies.filter(c => 
+        c.includes('next-auth') || 
+        c.includes('__Secure-next-auth') || 
+        c.includes('__Host-next-auth')
+      )
+      console.log('🍪 Cookies NextAuth trouvés:', nextAuthCookies.length > 0 ? nextAuthCookies : 'Aucun cookie NextAuth trouvé')
+      console.log('🍪 Tous les cookies:', allCookies)
 
       if (response?.error) {
         console.error('❌ Erreur de connexion:', response.error)
@@ -93,70 +103,46 @@ function LoginForm() {
         setError(errorMessage)
         setLoading(false)
       } else if (response?.ok) {
-        console.log('✅ Connexion réussie, redirection vers:', callbackUrl)
-        console.log('🍪 Cookies après connexion:', document.cookie)
+        console.log('✅ Connexion réussie selon signIn, redirection vers:', callbackUrl)
         
-        // Attendre que le cookie soit bien défini
-        const waitTime = isMobile ? 500 : 200
-        await new Promise(resolve => setTimeout(resolve, waitTime))
+        // Le problème : signIn avec redirect: false ne crée pas toujours le cookie immédiatement
+        // On va utiliser window.location.href pour forcer une navigation complète
+        // qui permettra au middleware de vérifier le token
         
-        // Vérifier que la session est bien créée avant de rediriger
-        let sessionValid = false
-        let attempts = 0
-        const maxAttempts = 5
+        // Attendre un peu pour que le cookie soit potentiellement créé
+        await new Promise(resolve => setTimeout(resolve, 300))
         
-        while (!sessionValid && attempts < maxAttempts) {
-          try {
-            const sessionCheck = await fetch('/api/auth/session', { 
-              credentials: 'include',
-              cache: 'no-store',
-              headers: {
-                'Cache-Control': 'no-cache'
-              }
-            })
-            
-            if (sessionCheck.ok) {
-              const sessionData = await sessionCheck.json()
-              console.log(`✅ Tentative ${attempts + 1}: Session vérifiée:`, sessionData?.user ? 'Utilisateur connecté' : 'Pas de session')
-              
-              if (sessionData?.user?.id && sessionData?.user?.email) {
-                sessionValid = true
-                console.log('✅ Session valide avec ID et email')
-                break
-              } else {
-                console.warn(`⚠️ Tentative ${attempts + 1}: Session incomplète, attente...`)
-                await new Promise(resolve => setTimeout(resolve, 200))
-                attempts++
-              }
-            } else {
-              console.warn(`⚠️ Tentative ${attempts + 1}: Session check échoué (${sessionCheck.status}), attente...`)
-              await new Promise(resolve => setTimeout(resolve, 200))
-              attempts++
+        // Vérifier une fois la session, mais ne pas bloquer si elle n'est pas encore disponible
+        // Le middleware gérera la redirection si nécessaire
+        try {
+          const sessionCheck = await fetch('/api/auth/session', { 
+            credentials: 'include',
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache'
             }
-          } catch (err) {
-            console.warn(`⚠️ Tentative ${attempts + 1}: Erreur lors de la vérification de session:`, err)
-            await new Promise(resolve => setTimeout(resolve, 200))
-            attempts++
+          })
+          
+          if (sessionCheck.ok) {
+            const sessionData = await sessionCheck.json()
+            console.log('📋 Session check:', sessionData?.user ? `Utilisateur: ${sessionData.user.email}` : 'Pas de session')
+            
+            if (sessionData?.user?.id && sessionData?.user?.email) {
+              console.log('✅ Session valide, redirection immédiate')
+              window.location.href = callbackUrl
+              return
+            }
           }
+        } catch (err) {
+          console.warn('⚠️ Erreur lors de la vérification de session:', err)
         }
         
-        if (!sessionValid) {
-          console.error('❌ Impossible de valider la session après plusieurs tentatives')
-          setError('Erreur lors de la création de la session. Veuillez réessayer.')
-          setLoading(false)
-          return
-        }
-        
-        // Vérifier une dernière fois les cookies avant redirection
-        console.log('🍪 Cookies finaux avant redirection:', document.cookie)
-        
-        // Redirection avec un petit délai supplémentaire pour s'assurer que tout est prêt
-        await new Promise(resolve => setTimeout(resolve, 100))
-        
-        // Redirection vers le callbackUrl
-        console.log('🚀 Redirection vers:', callbackUrl)
+        // Même si la session n'est pas encore disponible, on redirige
+        // Le middleware vérifiera le token et redirigera vers login si nécessaire
+        // Mais normalement, le cookie devrait être créé par NextAuth
+        console.log('🚀 Redirection vers:', callbackUrl, '(le middleware vérifiera l\'authentification)')
         window.location.href = callbackUrl
-        return // Arrêter l'exécution ici
+        return
       } else {
         console.error('⚠️ Réponse inattendue:', response)
         setError('Une erreur est survenue lors de la connexion. Veuillez réessayer.')
