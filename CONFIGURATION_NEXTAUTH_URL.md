@@ -38,14 +38,25 @@ NEXT_PUBLIC_APP_URL="https://openbtp.secotech.synology.me"
 
 ---
 
-### 3️⃣ Accès direct au port (HTTPS)
+### 3️⃣ Accès direct au port (HTTP ou HTTPS)
 
-Si vous accédez directement au port avec HTTPS (ex: `https://secotech.synology.me:3000`) :
+Si vous accédez directement au port (ex: `http://secotech.synology.me:3000` ou `https://secotech.synology.me:3000`) :
 
+**HTTP (si reverse proxy ne fonctionne pas)** :
+```env
+NEXTAUTH_URL="http://secotech.synology.me:3000"
+NEXT_PUBLIC_APP_URL="http://secotech.synology.me:3000"
+```
+
+**HTTPS (si SSL direct)** :
 ```env
 NEXTAUTH_URL="https://secotech.synology.me:3000"
 NEXT_PUBLIC_APP_URL="https://secotech.synology.me:3000"
 ```
+
+⚠️ **Important** : 
+- Ne pas utiliser `www.` dans l'URL (utilisez `secotech.synology.me` et non `www.secotech.synology.me`)
+- Le protocole (http/https) doit correspondre exactement à celui utilisé dans votre navigateur
 
 ---
 
@@ -97,6 +108,19 @@ Pour vérifier que votre configuration est correcte :
 1. Vérifiez que `NEXTAUTH_SECRET` est bien défini
 2. Vérifiez que `NEXTAUTH_URL` correspond à l'URL du navigateur
 3. Vérifiez les logs serveur pour voir si les cookies sont créés
+
+### ❌ Erreur : "Application error: a client-side exception has occurred"
+
+**Cause** : 
+- `NEXTAUTH_URL` contient `www.` alors que vous accédez sans `www.` (ou vice versa)
+- `NEXTAUTH_URL` ne correspond pas exactement à l'URL utilisée dans le navigateur
+- Problème de redirection avec une URL incorrecte
+
+**Solution** : 
+1. Vérifiez que `NEXTAUTH_URL` correspond **exactement** à l'URL dans votre navigateur (sans `www.` si vous n'utilisez pas `www.`)
+2. Vérifiez les logs serveur pour voir les redirections NextAuth
+3. Assurez-vous que le protocole (http/https) et le port correspondent
+4. Exemple : Si vous accédez via `http://secotech.synology.me:3000`, `NEXTAUTH_URL` doit être `http://secotech.synology.me:3000` (pas `https://`, pas `www.`)
 
 ---
 

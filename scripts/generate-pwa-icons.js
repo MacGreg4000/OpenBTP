@@ -6,6 +6,7 @@ const publicDir = path.join(__dirname, '..', 'public')
 const svgPath = path.join(publicDir, 'favicon.svg')
 const output192 = path.join(publicDir, 'favicon-192.png')
 const output512 = path.join(publicDir, 'favicon-512.png')
+const output180 = path.join(publicDir, 'apple-touch-icon.png') // iOS 180x180
 
 async function generateIcons() {
   try {
@@ -38,6 +39,17 @@ async function generateIcons() {
       .toFile(output512)
 
     console.log('✅ favicon-512.png créé')
+
+    // Générer l'icône 180x180 pour iOS (apple-touch-icon)
+    await sharp(svgPath)
+      .resize(180, 180, {
+        fit: 'contain',
+        background: { r: 37, g: 99, b: 235, alpha: 1 } // Bleu #2563eb
+      })
+      .png()
+      .toFile(output180)
+
+    console.log('✅ apple-touch-icon.png créé (180x180 pour iOS)')
     console.log('✨ Icônes PWA générées avec succès !')
   } catch (error) {
     console.error('❌ Erreur lors de la génération des icônes:', error)

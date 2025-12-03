@@ -135,9 +135,29 @@ export const authOptions: AuthOptions = {
       // Ignorer baseUrl qui peut être détecté incorrectement par les headers du reverse proxy
       let finalBaseUrl = process.env.NEXTAUTH_URL
       
-      // Si NEXTAUTH_URL n'est pas défini, utiliser baseUrl tel quel (sans forcer HTTPS)
+      console.log('🔄 [NextAuth Redirect] URL demandée:', url)
+      console.log('🔄 [NextAuth Redirect] baseUrl détecté:', baseUrl)
+      console.log('🔄 [NextAuth Redirect] NEXTAUTH_URL configuré:', finalBaseUrl)
+      
+      // Si NEXTAUTH_URL n'est pas défini, utiliser baseUrl mais le nettoyer
       if (!finalBaseUrl) {
+        console.warn('⚠️ [NextAuth Redirect] NEXTAUTH_URL non défini, utilisation de baseUrl:', baseUrl)
         finalBaseUrl = baseUrl
+      }
+      
+      // Nettoyer finalBaseUrl pour éviter les problèmes avec www. ou autres variations
+      if (finalBaseUrl) {
+        try {
+          const urlObj = new URL(finalBaseUrl)
+          // Reconstruire l'URL sans www. si présent
+          if (urlObj.hostname.startsWith('www.')) {
+            urlObj.hostname = urlObj.hostname.replace(/^www\./, '')
+            finalBaseUrl = urlObj.toString()
+            console.log('🔧 [NextAuth Redirect] www. supprimé de NEXTAUTH_URL:', finalBaseUrl)
+          }
+        } catch (e) {
+          console.error('❌ [NextAuth Redirect] Erreur lors du parsing de NEXTAUTH_URL:', e)
+        }
       }
       
       // Ne PAS forcer HTTPS automatiquement - respecter NEXTAUTH_URL tel quel
@@ -183,24 +203,58 @@ export const authOptions: AuthOptions = {
         }
       }
       
-      if (url.startsWith(finalBaseUrl)) return url
-      if (url.startsWith(baseUrl)) {
-        // Remplacer baseUrl par finalBaseUrl en forçant HTTPS si nécessaire
-        let cleanedUrl = url.replace(baseUrl, finalBaseUrl)
-        if (process.env.NODE_ENV === 'production' && cleanedUrl.startsWith('http://')) {
-          cleanedUrl = cleanedUrl.replace('http://', 'https://')
+      // Nettoyer l'URL d'entrée pour éviter les problèmes avec www.
+      let cleanedInputUrl = url
+      try {
+        const inputUrlObj = new URL(url, baseUrl)
+        if (inputUrlObj.hostname.startsWith('www.')) {
+          inputUrlObj.hostname = inputUrlObj.hostname.replace(/^www\./, '')
+          cleanedInputUrl = inputUrlObj.toString()
+          console.log('🔧 [NextAuth Redirect] www. supprimé de l\'URL d\'entrée:', cleanedInputUrl)
         }
+      } catch {
+        // Si l'URL est relative, on la garde telle quelle
+      }
+      
+      if (cleanedInputUrl.startsWith(finalBaseUrl)) {
+        console.log('✅ [NextAuth Redirect] URL déjà correcte:', cleanedInputUrl)
+        return cleanedInputUrl
+      }
+      
+      // Nettoyer baseUrl pour éviter les problèmes avec www.
+      let cleanedBaseUrl = baseUrl
+      try {
+        const baseUrlObj = new URL(baseUrl)
+        if (baseUrlObj.hostname.startsWith('www.')) {
+          baseUrlObj.hostname = baseUrlObj.hostname.replace(/^www\./, '')
+          cleanedBaseUrl = baseUrlObj.toString()
+          console.log('🔧 [NextAuth Redirect] www. supprimé de baseUrl:', cleanedBaseUrl)
+        }
+      } catch {
+        // Si baseUrl est invalide, on le garde tel quel
+      }
+      
+      if (cleanedInputUrl.startsWith(cleanedBaseUrl)) {
+        // Remplacer baseUrl par finalBaseUrl sans forcer HTTPS
+        let cleanedUrl = cleanedInputUrl.replace(cleanedBaseUrl, finalBaseUrl)
+        console.log('✅ [NextAuth Redirect] URL nettoyée:', cleanedUrl)
         return cleanedUrl
       }
-      if (url.startsWith('/')) {
+      
+      if (cleanedInputUrl.startsWith('/')) {
         // EMPÊCHER redirection directe vers /reset-password
-        if (url === '/reset-password' || url.startsWith('/reset-password')) {
-          console.warn('⚠️ [NextAuth] Redirection vers /reset-password bloquée, redirection vers /login')
+        if (cleanedInputUrl === '/reset-password' || cleanedInputUrl.startsWith('/reset-password')) {
+          console.warn('⚠️ [NextAuth Redirect] Redirection vers /reset-password bloquée, redirection vers /login')
           return `${finalBaseUrl}/login`
         }
-        return `${finalBaseUrl}${url}`
+        const finalUrl = `${finalBaseUrl}${cleanedInputUrl}`
+        console.log('✅ [NextAuth Redirect] URL relative construite:', finalUrl)
+        return finalUrl
       }
-      return `${finalBaseUrl}/dashboard`
+      
+      const defaultUrl = `${finalBaseUrl}/dashboard`
+      console.log('✅ [NextAuth Redirect] Redirection par défaut vers:', defaultUrl)
+      return defaultUrl
     }
   },
   // Events silencieux pour éviter le spam terminal en dev

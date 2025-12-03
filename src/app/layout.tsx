@@ -9,7 +9,8 @@ export const metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
+    title: 'OpenBTP',
   },
   icons: {
     icon: [
@@ -19,6 +20,7 @@ export const metadata = {
     ],
     shortcut: '/favicon.svg',
     apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
       { url: '/favicon-192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
@@ -35,7 +37,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <head></head>
       <body suppressHydrationWarning>
         <RootClientProviders>
           {children}
