@@ -25,7 +25,8 @@ DATABASE_URL="mysql://openbtp_user:votre_mot_de_passe@localhost:3306/openbtp"
 # AUTHENTIFICATION (OBLIGATOIRE)
 # ====================================
 NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="changez_moi_par_une_cle_aleatoire_de_32_caracteres_minimum"
+# Exemple de clé générée (remplacez par votre propre clé pour la production) :
+NEXTAUTH_SECRET="KIZ7iC1gWHrq99cRj6jpY3rFaksqWlc25Wvo1L8haUQ="
 
 # ====================================
 # APPLICATION (OBLIGATOIRE)
