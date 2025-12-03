@@ -34,13 +34,37 @@ export default function EmailEtatAvancementModal({
   const [pdfFileName, setPdfFileName] = useState<string>(''); // État pour le nom du fichier PDF
 
   useEffect(() => {
-    if (isOpen && chantier && chantier.clientId) {
+    if (isOpen && chantier) {
       const fetchContactsAndSettings = async () => {
         try {
-          // Récupérer les contacts du client
-          const contactsResponse = await fetch(`/api/clients/${chantier.clientId}/contacts`);
-          if (!contactsResponse.ok) throw new Error('Erreur lors de la récupération des contacts');
-          const contactsData = await contactsResponse.json();
+          // Vérifier si c'est un état d'avancement sous-traitant
+          const isSoustraitantEtat = (etatAvancement as any).typeSoustraitant || (etatAvancement as any).soustraitantId;
+          const soustraitantId = (etatAvancement as any).soustraitantId;
+
+          let contactsData: Contact[] = [];
+
+          if (isSoustraitantEtat && soustraitantId) {
+            // Récupérer les informations du sous-traitant
+            const soustraitantResponse = await fetch(`/api/sous-traitants/${soustraitantId}`);
+            if (!soustraitantResponse.ok) throw new Error('Erreur lors de la récupération du sous-traitant');
+            const soustraitantData = await soustraitantResponse.json();
+            
+            // Créer un contact avec les informations du sous-traitant
+            if (soustraitantData.email) {
+              contactsData = [{
+                id: 'soustraitant',
+                prenom: '',
+                nom: soustraitantData.nom || 'Sous-traitant',
+                email: soustraitantData.email
+              }];
+            }
+          } else if (chantier.clientId) {
+            // Récupérer les contacts du client
+            const contactsResponse = await fetch(`/api/clients/${chantier.clientId}/contacts`);
+            if (!contactsResponse.ok) throw new Error('Erreur lors de la récupération des contacts');
+            contactsData = await contactsResponse.json();
+          }
+
           setContacts(contactsData);
           if (contactsData.length > 0) setSelectedContactId(contactsData[0].id);
 
@@ -61,7 +85,7 @@ export default function EmailEtatAvancementModal({
       };
       fetchContactsAndSettings();
     }
-  }, [isOpen, chantier]);
+  }, [isOpen, chantier, etatAvancement]);
 
   useEffect(() => {
     if (etatAvancement && chantier) {
@@ -182,7 +206,7 @@ export default function EmailEtatAvancementModal({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label htmlFor="contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Destinataire (Contact Client)
+              Destinataire {((etatAvancement as any).typeSoustraitant || (etatAvancement as any).soustraitantId) ? '(Sous-traitant)' : '(Contact Client)'}
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
