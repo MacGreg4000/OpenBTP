@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { PageHeader } from '@/components/PageHeader'
-import { 
+  import { 
   PlusIcon, 
   PencilSquareIcon, 
   UserGroupIcon,
@@ -20,7 +20,8 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
-  EyeIcon
+  EyeIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
@@ -152,6 +153,8 @@ export default function SousTraitantsPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [ouvrierSortField, setOuvrierSortField] = useState<OuvrierSortField | null>(null)
   const [ouvrierSortDirection, setOuvrierSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [statusMenuOpen, setStatusMenuOpen] = useState<string | null>(null)
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
 
   useEffect(() => {
     if (session) {
@@ -176,6 +179,21 @@ export default function SousTraitantsPage() {
         .catch(()=>{})
     }
   }, [session])
+
+  // Fermer le menu de statut quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.status-menu-container')) {
+        setStatusMenuOpen(null)
+      }
+    }
+    
+    if (statusMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [statusMenuOpen])
 
   const handleDelete = async () => {
     if (!deleteModal.sousTraitant) return
@@ -249,6 +267,48 @@ export default function SousTraitantsPage() {
       showNotification('Erreur', error instanceof Error ? error.message : 'Erreur lors de l\'envoi du contrat', 'error')
     } finally {
       setSendingContract(null)
+    }
+  }
+
+  // Fonction pour obtenir le style du statut
+  const getStatusStyle = (actif: boolean) => {
+    return actif
+      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+  }
+
+  // Fonction pour mettre à jour le statut d'un sous-traitant
+  const handleStatusChange = async (soustraitantId: string, actif: boolean) => {
+    setUpdatingStatus(soustraitantId)
+    try {
+      const response = await fetch(`/api/sous-traitants/${soustraitantId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ actif })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour du statut')
+      }
+      
+      // Mettre à jour l'état local
+      setSousTraitants(prevSousTraitants =>
+        prevSousTraitants.map(st =>
+          st.id === soustraitantId
+            ? { ...st, actif }
+            : st
+        )
+      )
+      
+      setStatusMenuOpen(null)
+      showNotification('Succès', `Statut mis à jour: ${actif ? 'Actif' : 'Inactif'}`, 'success')
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error)
+      showNotification('Erreur', 'Erreur lors de la mise à jour du statut. Veuillez réessayer.', 'error')
+    } finally {
+      setUpdatingStatus(null)
     }
   }
 
@@ -747,15 +807,67 @@ export default function SousTraitantsPage() {
                             </Link>
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
-                            {st.actif ?? true ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                Actif
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                Inactif
-                              </span>
-                            )}
+                            <div className="status-menu-container relative inline-block">
+                              <button
+                                type="button"
+                                onClick={() => setStatusMenuOpen(statusMenuOpen === st.id ? null : st.id)}
+                                disabled={updatingStatus === st.id}
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer hover:opacity-80 hover:shadow-md transition-all ${getStatusStyle(st.actif ?? true)} ${
+                                  updatingStatus === st.id ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                                title="Cliquer pour changer le statut"
+                              >
+                                {updatingStatus === st.id ? (
+                                  <span className="flex items-center gap-1">
+                                    <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Mise à jour...
+                                  </span>
+                                ) : (
+                                  <>
+                                    <span>{st.actif ?? true ? 'Actif' : 'Inactif'}</span>
+                                    <ChevronDownIcon className="h-3 w-3 opacity-70" />
+                                  </>
+                                )}
+                              </button>
+                              
+                              {statusMenuOpen === st.id && (
+                                <div className="absolute z-50 mt-1 w-40 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStatusChange(st.id, true)}
+                                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center justify-between ${
+                                        (st.actif ?? true)
+                                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                          : 'text-gray-900 dark:text-white'
+                                      }`}
+                                    >
+                                      <span>Actif</span>
+                                      {(st.actif ?? true) && (
+                                        <CheckIcon className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStatusChange(st.id, false)}
+                                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center justify-between ${
+                                        !(st.actif ?? true)
+                                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                          : 'text-gray-900 dark:text-white'
+                                      }`}
+                                    >
+                                      <span>Inactif</span>
+                                      {!(st.actif ?? true) && (
+                                        <CheckIcon className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
                             {st.contrats && st.contrats.length > 0 && st.contrats[0].estSigne ? (
