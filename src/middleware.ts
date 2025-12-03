@@ -64,34 +64,46 @@ export async function middleware(req: NextRequest) {
   }
   
   // Vérifier l'authentification avec NextAuth JWT
-  const token = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET,
-  }); 
+  let token
+  try {
+    token = await getToken({ 
+      req, 
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+  } catch (error) {
+    console.error('❌ [Middleware] Erreur lors de la récupération du token:', error)
+    const loginUrl = new URL('/login', req.url)
+    if (pathname !== '/') {
+      loginUrl.searchParams.set('callbackUrl', pathname)
+    }
+    return NextResponse.redirect(loginUrl)
+  }
   
-  // console.log('🔐 Token trouvé:', !!token);
+  console.log('🔐 [Middleware] Token trouvé:', !!token, 'Path:', pathname)
   if (token) {
-    // console.log('👤 Utilisateur:', token.email);
+    console.log('👤 [Middleware] Utilisateur:', token.email, 'ID:', token.id, 'Role:', token.role)
     
     // Vérification supplémentaire : s'assurer que le token a tous les champs requis
     if (!token.id || !token.email) {
-      // console.log('⚠️ Token incomplet - redirection vers login');
-      const loginUrl = new URL('/login', req.url);
+      console.log('⚠️ [Middleware] Token incomplet - redirection vers login')
+      console.log('⚠️ [Middleware] Token contenu:', { id: token.id, email: token.email, hasId: !!token.id, hasEmail: !!token.email })
+      const loginUrl = new URL('/login', req.url)
       if (pathname !== '/') {
-        loginUrl.searchParams.set('callbackUrl', pathname);
+        loginUrl.searchParams.set('callbackUrl', pathname)
       }
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(loginUrl)
     }
   }
   
   // Si pas de token ou token invalide, rediriger vers login
   if (!token) {
-    // console.log('❌ Non authentifié - redirection vers login');
-    const loginUrl = new URL('/login', req.url);
+    console.log('❌ [Middleware] Non authentifié - redirection vers login')
+    console.log('❌ [Middleware] Cookies reçus:', req.cookies.getAll().map(c => c.name))
+    const loginUrl = new URL('/login', req.url)
     if (pathname !== '/') {
-      loginUrl.searchParams.set('callbackUrl', pathname);
+      loginUrl.searchParams.set('callbackUrl', pathname)
     }
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(loginUrl)
   }
   
   // Si authentifié et sur la racine, rediriger vers dashboard

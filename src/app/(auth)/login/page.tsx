@@ -96,22 +96,65 @@ function LoginForm() {
         console.log('✅ Connexion réussie, redirection vers:', callbackUrl)
         console.log('🍪 Cookies après connexion:', document.cookie)
         
-        // Sur mobile, attendre un peu plus longtemps pour que les cookies soient bien définis
-        const waitTime = isMobile ? 300 : 100
+        // Attendre que le cookie soit bien défini
+        const waitTime = isMobile ? 500 : 200
         await new Promise(resolve => setTimeout(resolve, waitTime))
         
         // Vérifier que la session est bien créée avant de rediriger
-        try {
-          const sessionCheck = await fetch('/api/auth/session', { credentials: 'include' })
-          if (sessionCheck.ok) {
-            const sessionData = await sessionCheck.json()
-            console.log('✅ Session vérifiée:', sessionData?.user ? 'Utilisateur connecté' : 'Pas de session')
+        let sessionValid = false
+        let attempts = 0
+        const maxAttempts = 5
+        
+        while (!sessionValid && attempts < maxAttempts) {
+          try {
+            const sessionCheck = await fetch('/api/auth/session', { 
+              credentials: 'include',
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache'
+              }
+            })
+            
+            if (sessionCheck.ok) {
+              const sessionData = await sessionCheck.json()
+              console.log(`✅ Tentative ${attempts + 1}: Session vérifiée:`, sessionData?.user ? 'Utilisateur connecté' : 'Pas de session')
+              
+              if (sessionData?.user?.id && sessionData?.user?.email) {
+                sessionValid = true
+                console.log('✅ Session valide avec ID et email')
+                break
+              } else {
+                console.warn(`⚠️ Tentative ${attempts + 1}: Session incomplète, attente...`)
+                await new Promise(resolve => setTimeout(resolve, 200))
+                attempts++
+              }
+            } else {
+              console.warn(`⚠️ Tentative ${attempts + 1}: Session check échoué (${sessionCheck.status}), attente...`)
+              await new Promise(resolve => setTimeout(resolve, 200))
+              attempts++
+            }
+          } catch (err) {
+            console.warn(`⚠️ Tentative ${attempts + 1}: Erreur lors de la vérification de session:`, err)
+            await new Promise(resolve => setTimeout(resolve, 200))
+            attempts++
           }
-        } catch (err) {
-          console.warn('⚠️ Impossible de vérifier la session:', err)
         }
         
-        // Redirection immédiate sans animation vers le callbackUrl
+        if (!sessionValid) {
+          console.error('❌ Impossible de valider la session après plusieurs tentatives')
+          setError('Erreur lors de la création de la session. Veuillez réessayer.')
+          setLoading(false)
+          return
+        }
+        
+        // Vérifier une dernière fois les cookies avant redirection
+        console.log('🍪 Cookies finaux avant redirection:', document.cookie)
+        
+        // Redirection avec un petit délai supplémentaire pour s'assurer que tout est prêt
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Redirection vers le callbackUrl
+        console.log('🚀 Redirection vers:', callbackUrl)
         window.location.href = callbackUrl
         return // Arrêter l'exécution ici
       } else {

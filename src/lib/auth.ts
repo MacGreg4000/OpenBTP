@@ -16,14 +16,34 @@ export const authOptions: AuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
        async authorize(credentials) {
-         if (!credentials?.email || !credentials?.password) {
+         try {
+           console.log('🔐 [NextAuth] Tentative d\'autorisation pour:', credentials?.email ? `${credentials.email.substring(0, 3)}***` : 'email manquant')
+           
+           if (!credentials?.email || !credentials?.password) {
+             console.log('❌ [NextAuth] Credentials manquants')
+             return null
+           }
+           
+           const user = await prisma.user.findUnique({ where: { email: credentials.email } })
+           if (!user) {
+             console.log('❌ [NextAuth] Utilisateur non trouvé:', credentials.email)
+             return null
+           }
+           
+           console.log('✅ [NextAuth] Utilisateur trouvé:', user.email, 'ID:', user.id)
+           
+           const isValid = await bcrypt.compare(credentials.password, user.password)
+           if (!isValid) {
+             console.log('❌ [NextAuth] Mot de passe invalide pour:', credentials.email)
+             return null
+           }
+           
+           console.log('✅ [NextAuth] Authentification réussie pour:', user.email, 'Role:', user.role)
+           return { id: user.id, email: user.email, name: user.name, role: user.role }
+         } catch (error) {
+           console.error('❌ [NextAuth] Erreur lors de l\'autorisation:', error)
            return null
          }
-         const user = await prisma.user.findUnique({ where: { email: credentials.email } })
-         if (!user) return null
-         const isValid = await bcrypt.compare(credentials.password, user.password)
-         if (!isValid) return null
-         return { id: user.id, email: user.email, name: user.name, role: user.role }
        }
     })
   ],
@@ -39,12 +59,52 @@ export const authOptions: AuthOptions = {
   jwt: {
     maxAge: 8 * 60 * 60, // 8 heures
   },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' 
+        ? '__Secure-next-auth.session-token' 
+        : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.callback-url'
+        : 'next-auth.callback-url',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: process.env.NODE_ENV === 'production'
+        ? '__Host-next-auth.csrf-token'
+        : 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   callbacks: {
     jwt: async ({ token, user }) => {
       if (user) {
         const u = user as { id: string; role?: User_role | string }
+        console.log('🔑 [NextAuth] Création du token JWT pour:', u.email, 'ID:', u.id, 'Role:', u.role)
         ;(token as Record<string, unknown>).id = u.id
         ;(token as Record<string, unknown>).role = (u.role as User_role) ?? undefined
+        ;(token as Record<string, unknown>).email = u.email
+        console.log('✅ [NextAuth] Token JWT créé avec:', { id: token.id, email: token.email, role: token.role })
+      } else {
+        console.log('🔄 [NextAuth] Rafraîchissement du token JWT existant')
       }
       return token
     },
@@ -52,6 +112,7 @@ export const authOptions: AuthOptions = {
       if (session?.user) {
         session.user.id = (token as Record<string, unknown>).id as string
         session.user.role = (token as Record<string, unknown>).role as User_role
+        console.log('📋 [NextAuth] Session créée pour:', session.user.email, 'ID:', session.user.id, 'Role:', session.user.role)
       }
       return session
     },
@@ -159,7 +220,10 @@ export const authOptions: AuthOptions = {
     },
   },
   debug: process.env.NODE_ENV === 'development',
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || (() => {
+    console.error('❌ [NextAuth] NEXTAUTH_SECRET n\'est pas défini! L\'authentification ne fonctionnera pas correctement.')
+    return 'fallback-secret-change-in-production'
+  })(),
   // Gestion des erreurs
   logger: {
     error(code, metadata) {
