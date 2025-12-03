@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { EtatAvancement, SoustraitantEtat, EtatAvancementSummary, AvenantEtatAvancement, AvenantSoustraitantEtat } from '@/types/etat-avancement'
 import { TrashIcon, PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
@@ -89,35 +89,85 @@ export default function EtatAvancementUnifie({
     setCommentaires(etat.commentaires || '');
   }, [etat]);
 
-  useEffect(() => {
-    // Initialiser les quantités avec les valeurs actuelles
-    const initialQuantites = etat.lignes.reduce((acc, ligne) => {
-      acc[ligne.id] = ligne.quantiteActuelle || 0
-      return acc
-    }, {} as { [key: number]: number })
-    setQuantites(initialQuantites)
+  // Utiliser une référence pour suivre si c'est le premier chargement
+  const isInitialMount = useRef(true)
+  const previousEtatId = useRef<number | null>(null)
 
-    // Initialiser les valeurs des avenants
-    const initialAvenantValues = etat.avenants.reduce((acc, avenant) => {
-      acc[avenant.id] = {
-        article: avenant.article || '',
-        description: avenant.description || '',
-        type: avenant.type || 'QP',
-        unite: avenant.unite || 'Pièces',
-        prixUnitaire: avenant.prixUnitaire || 0,
-        quantite: avenant.quantite || 0,
-        quantiteActuelle: avenant.quantiteActuelle || 0,
-        quantitePrecedente: avenant.quantitePrecedente || 0,
-        quantiteTotale: avenant.quantiteTotale || 0,
-        montantPrecedent: avenant.montantPrecedent || 0,
-        montantActuel: avenant.montantActuel || 0,
-        montantTotal: avenant.montantTotal || 0
-      }
-      return acc
-    }, {} as typeof avenantValues)
-    
-    setAvenantValues(initialAvenantValues)
-    setAvenants(etat.avenants);
+  useEffect(() => {
+    // Ne réinitialiser que si l'ID de l'état change (nouvel état) ou au premier chargement
+    const currentEtatId = etat.id
+    const shouldReinitialize = isInitialMount.current || previousEtatId.current !== currentEtatId
+
+    if (shouldReinitialize) {
+      // Initialiser les quantités avec les valeurs actuelles
+      const initialQuantites = etat.lignes.reduce((acc, ligne) => {
+        acc[ligne.id] = ligne.quantiteActuelle || 0
+        return acc
+      }, {} as { [key: number]: number })
+      setQuantites(initialQuantites)
+
+      // Initialiser les valeurs des avenants
+      const initialAvenantValues = etat.avenants.reduce((acc, avenant) => {
+        acc[avenant.id] = {
+          article: avenant.article || '',
+          description: avenant.description || '',
+          type: avenant.type || 'QP',
+          unite: avenant.unite || 'Pièces',
+          prixUnitaire: avenant.prixUnitaire || 0,
+          quantite: avenant.quantite || 0,
+          quantiteActuelle: avenant.quantiteActuelle || 0,
+          quantitePrecedente: avenant.quantitePrecedente || 0,
+          quantiteTotale: avenant.quantiteTotale || 0,
+          montantPrecedent: avenant.montantPrecedent || 0,
+          montantActuel: avenant.montantActuel || 0,
+          montantTotal: avenant.montantTotal || 0
+        }
+        return acc
+      }, {} as typeof avenantValues)
+      
+      setAvenantValues(initialAvenantValues)
+      setAvenants(etat.avenants)
+      
+      previousEtatId.current = currentEtatId
+      isInitialMount.current = false
+    } else {
+      // Mettre à jour seulement les nouvelles lignes/avenants sans écraser les valeurs existantes
+      setQuantites(prev => {
+        const updated = { ...prev }
+        etat.lignes.forEach(ligne => {
+          // Ne mettre à jour que si la ligne n'existe pas déjà dans l'état local
+          if (!(ligne.id in updated)) {
+            updated[ligne.id] = ligne.quantiteActuelle || 0
+          }
+        })
+        return updated
+      })
+
+      setAvenantValues(prev => {
+        const updated = { ...prev }
+        etat.avenants.forEach(avenant => {
+          if (!(avenant.id in updated)) {
+            updated[avenant.id] = {
+              article: avenant.article || '',
+              description: avenant.description || '',
+              type: avenant.type || 'QP',
+              unite: avenant.unite || 'Pièces',
+              prixUnitaire: avenant.prixUnitaire || 0,
+              quantite: avenant.quantite || 0,
+              quantiteActuelle: avenant.quantiteActuelle || 0,
+              quantitePrecedente: avenant.quantitePrecedente || 0,
+              quantiteTotale: avenant.quantiteTotale || 0,
+              montantPrecedent: avenant.montantPrecedent || 0,
+              montantActuel: avenant.montantActuel || 0,
+              montantTotal: avenant.montantTotal || 0
+            }
+          }
+        })
+        return updated
+      })
+
+      setAvenants(etat.avenants)
+    }
   }, [etat])
 
   // Utilisation de useMemo pour éviter les recalculs inutiles et les boucles
@@ -725,7 +775,7 @@ export default function EtatAvancementUnifie({
                 if (isSectionHeader) {
                   return (
                     <tr
-                      key={`ligne-${ligne.id}-${index}-section`}
+                      key={`ligne-section-${ligne.id}`}
                       className={`${ligne.type === 'TITRE' ? 'bg-blue-50/80 dark:bg-blue-900/30' : 'bg-gray-100/80 dark:bg-gray-800/40'}`}
                     >
                       <td
@@ -740,7 +790,7 @@ export default function EtatAvancementUnifie({
 
                 return (
                   <tr
-                    key={`ligne-${ligne.id}-${index}`}
+                    key={`ligne-${ligne.id}`}
                     className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200`}
                   >
                     <td className="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 font-medium">
@@ -877,7 +927,7 @@ export default function EtatAvancementUnifie({
                 // Un avenant provient d'un état précédent si quantitePrecedente > 0
                 const isFromPreviousState = avenant.quantitePrecedente > 0
                 return (
-                <tr key={`avenant-${avenant.id}-${index}`} className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group`}>
+                <tr key={`avenant-${avenant.id}`} className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group`}>
                   <td className="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
                     {!etat.estFinalise && !isFromPreviousState ? (
                       <input
