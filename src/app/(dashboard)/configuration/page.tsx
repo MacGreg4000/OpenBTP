@@ -67,6 +67,10 @@ export default function ConfigurationPage() {
     message: string;
     details?: string;
   } | null>(null)
+  const [uploadingDesktopIcon, setUploadingDesktopIcon] = useState(false)
+  const [uploadingMobileIcon, setUploadingMobileIcon] = useState(false)
+  const [desktopIconUrl, setDesktopIconUrl] = useState<string | null>(null)
+  const [mobileIconUrl, setMobileIconUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -167,6 +171,94 @@ export default function ConfigurationPage() {
       console.error('Erreur upload signature:', error)
     }
   }
+
+  const handleDesktopIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingDesktopIcon(true)
+    const formData = new FormData()
+    formData.append('icon', file)
+    formData.append('type', 'desktop')
+
+    try {
+      const res = await fetch('/api/settings/icons', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setDesktopIconUrl('/images/icons/favicon-192.png')
+        showNotification('success', 'Icône desktop uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.')
+      } else {
+        const error = await res.json()
+        showNotification('error', 'Erreur lors de l\'upload', error.error || 'Une erreur est survenue')
+      }
+    } catch (error) {
+      console.error('Erreur upload icône desktop:', error)
+      showNotification('error', 'Erreur lors de l\'upload', 'Une erreur est survenue lors de l\'upload de l\'icône desktop')
+    } finally {
+      setUploadingDesktopIcon(false)
+    }
+  }
+
+  const handleMobileIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingMobileIcon(true)
+    const formData = new FormData()
+    formData.append('icon', file)
+    formData.append('type', 'mobile')
+
+    try {
+      const res = await fetch('/api/settings/icons', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setMobileIconUrl('/images/icons/apple-touch-icon.png')
+        showNotification('success', 'Icône mobile uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.')
+      } else {
+        const error = await res.json()
+        showNotification('error', 'Erreur lors de l\'upload', error.error || 'Une erreur est survenue')
+      }
+    } catch (error) {
+      console.error('Erreur upload icône mobile:', error)
+      showNotification('error', 'Erreur lors de l\'upload', 'Une erreur est survenue lors de l\'upload de l\'icône mobile')
+    } finally {
+      setUploadingMobileIcon(false)
+    }
+  }
+
+  // Vérifier si les icônes personnalisées existent
+  useEffect(() => {
+    const checkCustomIcons = async () => {
+      try {
+        // Vérifier l'icône desktop
+        const desktopRes = await fetch('/images/icons/favicon-192.png', { method: 'HEAD' })
+        if (desktopRes.ok) {
+          setDesktopIconUrl('/images/icons/favicon-192.png')
+        }
+        
+        // Vérifier l'icône mobile
+        const mobileRes = await fetch('/images/icons/apple-touch-icon.png', { method: 'HEAD' })
+        if (mobileRes.ok) {
+          setMobileIconUrl('/images/icons/apple-touch-icon.png')
+        }
+      } catch (error) {
+        // Les icônes personnalisées n'existent pas encore, on utilisera les icônes par défaut
+        console.log('Icônes personnalisées non trouvées, utilisation des icônes par défaut')
+      }
+    }
+    
+    if (!loading) {
+      checkCustomIcons()
+    }
+  }, [loading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -682,6 +774,113 @@ export default function ConfigurationPage() {
           </button>
         </div>
       </form>
+
+      {/* Section Icônes de l'application */}
+      <div className="mt-12 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
+        <h2 className="text-xl font-bold mb-6 flex items-center gap-2 dark:text-white">
+          <Cog6ToothIcon className="h-5 w-5 text-blue-600" />
+          Icônes de l'application
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Personnalisez les icônes de l'application pour la version desktop et mobile. Les icônes seront automatiquement redimensionnées aux différentes tailles nécessaires.
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Icône Desktop */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Icône Desktop (Version complète)
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Icône utilisée pour les favoris et l'onglet du navigateur. Formats acceptés : PNG, JPG, SVG. Tailles générées : 16x16, 32x32, 192x192, 512x512.
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleDesktopIconChange}
+              disabled={uploadingDesktopIcon}
+              className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100
+                dark:file:bg-blue-900 dark:file:text-blue-300
+                dark:hover:file:bg-blue-800
+                disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            {uploadingDesktopIcon && (
+              <div className="mt-2 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                Traitement en cours...
+              </div>
+            )}
+            {desktopIconUrl && (
+              <div className="mt-4 flex items-center gap-4">
+                <img 
+                  src={desktopIconUrl} 
+                  alt="Icône desktop" 
+                  className="h-16 w-16 object-contain border border-gray-300 dark:border-gray-600 rounded"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Icône actuelle</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Taille : 192x192</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Icône Mobile */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Icône Mobile (iOS/Android)
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Icône utilisée pour l'écran d'accueil sur mobile. Formats acceptés : PNG, JPG, SVG. Tailles générées : 180x180 (iOS), 192x192, 512x512.
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleMobileIconChange}
+              disabled={uploadingMobileIcon}
+              className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100
+                dark:file:bg-blue-900 dark:file:text-blue-300
+                dark:hover:file:bg-blue-800
+                disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            {uploadingMobileIcon && (
+              <div className="mt-2 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                Traitement en cours...
+              </div>
+            )}
+            {mobileIconUrl && (
+              <div className="mt-4 flex items-center gap-4">
+                <img 
+                  src={mobileIconUrl} 
+                  alt="Icône mobile" 
+                  className="h-16 w-16 object-contain border border-gray-300 dark:border-gray-600 rounded"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Icône actuelle</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Taille : 180x180 (iOS)</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            <strong>Note :</strong> Après avoir uploadé une icône, vous devrez peut-être vider le cache de votre navigateur ou redémarrer l'application pour voir les changements. Les icônes sont mises en cache par les navigateurs et les systèmes d'exploitation.
+          </p>
+        </div>
+      </div>
 
       <h2 className="text-xl font-bold mt-12 mb-6 flex items-center gap-2 dark:text-white">
         Gestion des fiches techniques

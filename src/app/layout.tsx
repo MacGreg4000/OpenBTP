@@ -29,6 +29,7 @@ export const metadata = {
 import RootClientProviders from '@/components/providers/RootClientProviders'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import PWAInstall from '@/components/PWAInstall'
+import CustomIcons from '@/components/CustomIcons'
 
 export default function RootLayout({
   children,
@@ -38,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        <CustomIcons />
         <RootClientProviders>
           {children}
           <ServiceWorkerRegistration />
