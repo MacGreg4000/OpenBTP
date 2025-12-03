@@ -5,6 +5,17 @@ import bcrypt from 'bcryptjs'
 // Remplacement de l'enum Prisma par une union locale pour éviter les erreurs d'export
 type User_role = 'ADMIN' | 'MANAGER' | 'USER' | 'OUVRIER' | 'SOUSTRAITANT'
 
+// Fonction pour déterminer si on doit utiliser secure pour les cookies
+// Basé sur NEXTAUTH_URL ou détection automatique
+function shouldUseSecureCookies(): boolean {
+  const nextAuthUrl = process.env.NEXTAUTH_URL
+  if (nextAuthUrl) {
+    return nextAuthUrl.startsWith('https://')
+  }
+  // Par défaut, si NEXTAUTH_URL n'est pas défini, on assume HTTP (développement)
+  return false
+}
+
 export const authOptions: AuthOptions = {
   // Forcer l'utilisation de NEXTAUTH_URL en production
   // Note: trustHost n'est pas disponible dans NextAuth 4.24.11, mais le callback redirect gère cela
@@ -69,8 +80,7 @@ export const authOptions: AuthOptions = {
         sameSite: 'lax',
         path: '/',
         // secure doit être true uniquement si on est vraiment en HTTPS
-        // Vérifier NEXTAUTH_URL pour déterminer si on est en HTTPS
-        secure: process.env.NEXTAUTH_URL?.startsWith('https://') ?? false,
+        secure: shouldUseSecureCookies(),
       },
     },
     callbackUrl: {
@@ -125,27 +135,14 @@ export const authOptions: AuthOptions = {
       // Ignorer baseUrl qui peut être détecté incorrectement par les headers du reverse proxy
       let finalBaseUrl = process.env.NEXTAUTH_URL
       
-      // Si NEXTAUTH_URL n'est pas défini, utiliser baseUrl mais le nettoyer
+      // Si NEXTAUTH_URL n'est pas défini, utiliser baseUrl tel quel (sans forcer HTTPS)
       if (!finalBaseUrl) {
         finalBaseUrl = baseUrl
-        // En production, forcer HTTPS
-        if (process.env.NODE_ENV === 'production' && finalBaseUrl.startsWith('http://')) {
-          finalBaseUrl = finalBaseUrl.replace('http://', 'https://')
-        }
       }
       
-      // Forcer HTTPS en production si l'URL commence par http://
-      if (process.env.NODE_ENV === 'production' && finalBaseUrl.startsWith('http://')) {
-        finalBaseUrl = finalBaseUrl.replace('http://', 'https://')
-      }
-      
-      // S'assurer que finalBaseUrl utilise HTTPS en production
-      if (process.env.NODE_ENV === 'production' && !finalBaseUrl.startsWith('https://')) {
-        // Si on est en production mais que l'URL n'est pas HTTPS, essayer de la convertir
-        if (finalBaseUrl.includes('secotech.synology.me') || finalBaseUrl.includes('openbtp')) {
-          finalBaseUrl = finalBaseUrl.replace(/^http:\/\//, 'https://')
-        }
-      }
+      // Ne PAS forcer HTTPS automatiquement - respecter NEXTAUTH_URL tel quel
+      // Si NEXTAUTH_URL est en HTTP (IP locale), on reste en HTTP
+      // Si NEXTAUTH_URL est en HTTPS (reverse proxy), on reste en HTTPS
       
       // EMPÊCHER toute redirection vers /reset-password
       if (url.includes('/reset-password') || url.includes('reset-password')) {
@@ -153,15 +150,9 @@ export const authOptions: AuthOptions = {
         return `${finalBaseUrl}/login`
       }
       
-      // Nettoyer l'URL d'entrée pour s'assurer qu'elle utilise le bon protocole
-      if (url.startsWith('http://') && process.env.NODE_ENV === 'production') {
-        url = url.replace('http://', 'https://')
-      }
-      
-      // Nettoyer baseUrl s'il contient http:// en production
-      if (baseUrl.startsWith('http://') && process.env.NODE_ENV === 'production') {
-        baseUrl = baseUrl.replace('http://', 'https://')
-      }
+      // Ne pas forcer HTTPS - respecter le protocole de NEXTAUTH_URL
+      // Si on accède via IP locale (HTTP), on reste en HTTP
+      // Si on accède via reverse proxy (HTTPS), on reste en HTTPS
       
       if (url.includes('callbackUrl=')) {
         try {
