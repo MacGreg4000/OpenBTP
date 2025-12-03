@@ -6,7 +6,6 @@ import { FormInput, Button } from '@/components/ui'
 import { 
   PencilSquareIcon,
   ArrowLeftIcon,
-  BuildingOfficeIcon,
   KeyIcon,
   LinkIcon
 } from '@heroicons/react/24/outline'
@@ -380,7 +379,7 @@ export default function EditSousTraitantPage(
                       } else {
                         toast.error('Erreur lors de l\'enregistrement du PIN')
                       }
-                    } catch (error) {
+                    } catch {
                       toast.error('Erreur lors de l\'enregistrement du PIN')
                     } finally {
                       setSavingPin(false)

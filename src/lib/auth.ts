@@ -97,12 +97,14 @@ export const authOptions: AuthOptions = {
   callbacks: {
     jwt: async ({ token, user }) => {
       if (user) {
-        const u = user as { id: string; role?: User_role | string }
-        console.log('🔑 [NextAuth] Création du token JWT pour:', u.email, 'ID:', u.id, 'Role:', u.role)
+        const u = user as { id: string; email?: string; role?: User_role | string }
+        console.log('🔑 [NextAuth] Création du token JWT pour:', u.email || 'N/A', 'ID:', u.id, 'Role:', u.role)
         ;(token as Record<string, unknown>).id = u.id
         ;(token as Record<string, unknown>).role = (u.role as User_role) ?? undefined
-        ;(token as Record<string, unknown>).email = u.email
-        console.log('✅ [NextAuth] Token JWT créé avec:', { id: token.id, email: token.email, role: token.role })
+        if (u.email) {
+          ;(token as Record<string, unknown>).email = u.email
+        }
+        console.log('✅ [NextAuth] Token JWT créé avec:', { id: token.id, email: (token as Record<string, unknown>).email, role: token.role })
       } else {
         console.log('🔄 [NextAuth] Rafraîchissement du token JWT existant')
       }
