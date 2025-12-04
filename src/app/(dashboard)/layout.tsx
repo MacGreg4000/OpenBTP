@@ -68,7 +68,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 overflow-visible">
       <Navbar />
       
-      <main className="pt-6 pb-6 overflow-visible">
+      <main className="pt-16 pb-6 overflow-visible">
         {/* Le dashboard contrôle sa propre largeur, mais les autres pages ont besoin d'un container */}
         {children}
       </main>

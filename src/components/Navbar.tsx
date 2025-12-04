@@ -572,9 +572,6 @@ export function Navbar() {
           </div>
         </div>
       </Transition>
-
-      {/* Espacer le contenu pour compenser la navbar fixe */}
-      <div className="h-16"></div>
     </>
   )
 } 
