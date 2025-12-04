@@ -189,8 +189,21 @@ export default function ConfigurationPage() {
 
       if (res.ok) {
         const _data = await res.json()
-        setDesktopIconUrl('/images/icons/favicon-192.png')
-        showNotification('Icône desktop uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.', 'success')
+        // Attendre un peu pour que les fichiers soient bien écrits
+        await new Promise(resolve => setTimeout(resolve, 500))
+        // Vérifier que l'icône existe maintenant
+        try {
+          const checkRes = await fetch('/images/icons/favicon-192.png', { method: 'HEAD', cache: 'no-store' })
+          if (checkRes.ok) {
+            setDesktopIconUrl('/images/icons/favicon-192.png')
+            showNotification('Icône desktop uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.', 'success')
+          } else {
+            showNotification('Icône uploadée', 'L\'icône a été uploadée mais peut nécessiter un rechargement de la page pour être visible.', 'info')
+          }
+        } catch {
+          setDesktopIconUrl('/images/icons/favicon-192.png')
+          showNotification('Icône desktop uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.', 'success')
+        }
       } else {
         const error = await res.json()
         showNotification('Erreur lors de l\'upload', error.error || 'Une erreur est survenue', 'error')
@@ -220,8 +233,27 @@ export default function ConfigurationPage() {
 
       if (res.ok) {
         const _data = await res.json()
-        setMobileIconUrl('/images/icons/apple-touch-icon.png')
-        showNotification('Icône mobile uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.', 'success')
+        // Attendre un peu pour que les fichiers soient bien écrits
+        await new Promise(resolve => setTimeout(resolve, 500))
+        // Vérifier que l'icône existe maintenant
+        try {
+          const checkRes = await fetch('/images/icons/apple-touch-icon.png', { method: 'HEAD', cache: 'no-store' })
+          if (checkRes.ok) {
+            setMobileIconUrl('/images/icons/apple-touch-icon.png')
+            showNotification('Icône mobile uploadée avec succès', 'Les différentes tailles ont été générées automatiquement. L\'icône sera visible après un rechargement de la page.', 'success')
+            // Forcer le rechargement du manifest
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(registration => registration.update())
+              })
+            }
+          } else {
+            showNotification('Icône uploadée', 'L\'icône a été uploadée mais peut nécessiter un rechargement de la page pour être visible.', 'info')
+          }
+        } catch {
+          setMobileIconUrl('/images/icons/apple-touch-icon.png')
+          showNotification('Icône mobile uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.', 'success')
+        }
       } else {
         const error = await res.json()
         showNotification('Erreur lors de l\'upload', error.error || 'Une erreur est survenue', 'error')
