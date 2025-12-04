@@ -9,9 +9,12 @@ export async function POST(request: Request) {
   try {
     // Vérifier la session portail (code PIN)
     const cookieHeader = request.headers.get('cookie')
+    console.log('🔍 Cookie header reçu:', cookieHeader ? 'présent' : 'absent')
     const portalSession = readPortalSessionFromCookie(cookieHeader)
+    console.log('🔐 Session portail extraite:', portalSession)
 
     if (!portalSession || portalSession.t !== 'OUVRIER_INTERNE') {
+      console.error('❌ Accès non autorisé - Session:', portalSession)
       return NextResponse.json({ 
         error: 'Accès non autorisé. Seuls les ouvriers internes connectés via code PIN peuvent uploader des documents.' 
       }, { status: 401 })
@@ -49,17 +52,25 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File
     const nomDocument = formData.get('nom') as string | null
 
+    console.log('📄 Fichier reçu:', file ? { name: file.name, size: file.size, type: file.type } : 'aucun')
+    console.log('📝 Nom document:', nomDocument || 'non fourni')
+
     if (!file) {
+      console.error('❌ Aucun fichier fourni dans le FormData')
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 })
     }
 
     const documentsBaseDir = path.join(process.cwd(), 'public', 'uploads', 'documents')
     const adminDocsDir = path.join(documentsBaseDir, 'administratifs')
 
+    console.log('📁 Répertoires:', { documentsBaseDir, adminDocsDir })
+
     if (!existsSync(documentsBaseDir)) {
+      console.log('📁 Création du répertoire documents')
       await mkdir(documentsBaseDir, { recursive: true })
     }
     if (!existsSync(adminDocsDir)) {
+      console.log('📁 Création du répertoire administratifs')
       await mkdir(adminDocsDir, { recursive: true })
     }
 
@@ -69,61 +80,95 @@ export async function POST(request: Request) {
     const filePath = path.join(adminDocsDir, uniqueFilename)
     const fileUrl = `/uploads/documents/administratifs/${uniqueFilename}`
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
+    console.log('💾 Écriture du fichier:', { filePath, fileUrl, size: file.size })
+
+    try {
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      await writeFile(filePath, buffer)
+      console.log('✅ Fichier écrit avec succès')
+    } catch (writeError) {
+      console.error('❌ Erreur lors de l\'écriture du fichier:', writeError)
+      throw writeError
+    }
 
     // Créer ou récupérer le tag "Comptabilité"
-    const tagComptabilite = await prisma.tag.upsert({
-      where: { nom: 'Comptabilité' },
-      update: {},
-      create: { nom: 'Comptabilité' },
-      select: { id: true }
-    })
+    console.log('🏷️ Création/récupération du tag Comptabilité')
+    let tagComptabilite
+    try {
+      tagComptabilite = await prisma.tag.upsert({
+        where: { nom: 'Comptabilité' },
+        update: {},
+        create: { nom: 'Comptabilité' },
+        select: { id: true }
+      })
+      console.log('✅ Tag Comptabilité:', tagComptabilite.id)
+    } catch (tagError) {
+      console.error('❌ Erreur lors de la création/récupération du tag:', tagError)
+      throw tagError
+    }
 
     // Nom du document : utiliser celui fourni ou générer un nom automatique
     const documentNom = nomDocument?.trim() || `Document_${new Date().toISOString().split('T')[0]}_${timestamp}`
 
-    const calculatedFileType = file.type || path.extname(file.name).slice(1) || 'inconnu'
+    // Utiliser le type MIME du fichier pour mimeType, et l'extension pour type
+    const mimeType = file.type || 'application/octet-stream'
+    const fileType = path.extname(file.name).slice(1) || 'inconnu'
 
     // Pour les ouvriers internes, on doit utiliser un User système car createdBy est obligatoire
     // On cherche un User ADMIN ou MANAGER pour associer le document
-    const systemUser = await prisma.user.findFirst({
-      where: {
-        role: {
-          in: ['ADMIN', 'MANAGER']
+    console.log('👤 Recherche d\'un User système (ADMIN/MANAGER)')
+    let systemUser
+    try {
+      systemUser = await prisma.user.findFirst({
+        where: {
+          role: {
+            in: ['ADMIN', 'MANAGER']
+          }
+        },
+        orderBy: {
+          createdAt: 'asc'
         }
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    })
+      })
 
-    if (!systemUser) {
-      console.error('Aucun User ADMIN ou MANAGER trouvé pour associer le document')
-      return NextResponse.json({ 
-        error: 'Erreur de configuration système. Veuillez contacter un administrateur.' 
-      }, { status: 500 })
+      if (!systemUser) {
+        console.error('❌ Aucun User ADMIN ou MANAGER trouvé pour associer le document')
+        return NextResponse.json({ 
+          error: 'Erreur de configuration système. Veuillez contacter un administrateur.' 
+        }, { status: 500 })
+      }
+      console.log('✅ User système trouvé:', systemUser.id)
+    } catch (userError) {
+      console.error('❌ Erreur lors de la recherche du User système:', userError)
+      throw userError
     }
 
     // Créer le document avec le tag "Comptabilité"
-    const newDocument = await prisma.document.create({
-      data: {
-        nom: documentNom,
-        url: fileUrl,
-        type: calculatedFileType,
-        mimeType: calculatedFileType,
-        taille: file.size,
-        User: { connect: { id: systemUser.id } },
-        tags: {
-          connect: [{ id: tagComptabilite.id }]
+    console.log('📝 Création du document dans la base de données')
+    let newDocument
+    try {
+      newDocument = await prisma.document.create({
+        data: {
+          nom: documentNom,
+          url: fileUrl,
+          type: fileType,
+          mimeType: mimeType,
+          taille: file.size,
+          User: { connect: { id: systemUser.id } },
+          tags: {
+            connect: [{ id: tagComptabilite.id }]
+          }
+        },
+        include: {
+          User: true,
+          tags: true
         }
-      },
-      include: {
-        User: true,
-        tags: true
-      }
-    })
+      })
+      console.log('✅ Document créé avec succès:', newDocument.id)
+    } catch (docError) {
+      console.error('❌ Erreur lors de la création du document:', docError)
+      throw docError
+    }
 
     const tagNamesFromDoc = newDocument.tags.map(tag => tag.nom)
 
@@ -141,9 +186,13 @@ export async function POST(request: Request) {
       }
     })
   } catch (error: unknown) {
-    console.error('Erreur lors de l\'upload du document par ouvrier interne:', error)
+    console.error('❌ Erreur lors de l\'upload du document par ouvrier interne:', error)
+    if (error instanceof Error) {
+      console.error('❌ Message d\'erreur:', error.message)
+      console.error('❌ Stack trace:', error.stack)
+    }
     return NextResponse.json({ 
-      error: 'Erreur serveur lors de l\'upload du document' 
+      error: error instanceof Error ? `Erreur serveur: ${error.message}` : 'Erreur serveur lors de l\'upload du document' 
     }, { status: 500 })
   }
 }

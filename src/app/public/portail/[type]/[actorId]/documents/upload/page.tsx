@@ -146,18 +146,29 @@ function InnerDocumentsPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
     }
 
     try {
+      console.log('📤 Envoi du fichier au serveur...', {
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        fileType: selectedFile.type,
+        nomDocument: nomDocument || 'non fourni'
+      })
+
       const response = await fetch('/api/documents/administratifs/upload-ouvrier', {
         method: 'POST',
         body: formData,
         credentials: 'include'
       })
 
+      console.log('📥 Réponse du serveur:', { status: response.status, ok: response.ok })
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload' }))
-        throw new Error(errorData.error || 'Erreur lors de l\'upload du document')
+        console.error('❌ Erreur serveur:', errorData)
+        throw new Error(errorData.error || `Erreur lors de l'upload du document (${response.status})`)
       }
 
       const _data: UploadResponse = await response.json()
+      console.log('✅ Upload réussi:', _data)
       setUploadSuccess(true)
       
       // Réinitialiser le formulaire
