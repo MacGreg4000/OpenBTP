@@ -107,13 +107,13 @@ export default function MobileDocumentPDFPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header avec bouton retour */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+    <div className="min-h-screen bg-gray-50 flex flex-col relative">
+      {/* Header avec bouton retour - toujours visible */}
+      <div className="bg-white border-b border-gray-200 shadow-md fixed top-0 left-0 right-0 z-50 safe-area-top">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => router.push('/mobile/documents')}
-            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            className="p-2 -ml-2 active:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 touch-manipulation"
           >
             <ArrowLeftIcon className="h-6 w-6 text-gray-700" />
             <span className="text-gray-700 font-medium">Retour</span>
@@ -123,7 +123,7 @@ export default function MobileDocumentPDFPage() {
           </h1>
           <button
             onClick={handleDownload}
-            className="p-2 -mr-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors touch-manipulation"
             aria-label="Télécharger"
           >
             <ArrowDownTrayIcon className="h-6 w-6 text-gray-700" />
@@ -131,8 +131,8 @@ export default function MobileDocumentPDFPage() {
         </div>
       </div>
 
-      {/* Viewer */}
-      <div className="flex-1 overflow-hidden">
+      {/* Viewer avec padding pour le header */}
+      <div className="flex-1 overflow-hidden mt-[64px]">
         {isPDF ? (
           <iframe
             src={`${documentUrl}#toolbar=1`}
@@ -150,6 +150,19 @@ export default function MobileDocumentPDFPage() {
           </div>
         )}
       </div>
+
+      {/* Bouton flottant de retour - visible même si le header est caché */}
+      <button
+        onClick={() => router.push('/mobile/documents')}
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full p-4 shadow-lg z-50 touch-manipulation flex items-center gap-2 transition-all"
+        style={{
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+        }}
+        aria-label="Retour"
+      >
+        <ArrowLeftIcon className="h-6 w-6" />
+        <span className="font-medium hidden sm:inline">Retour</span>
+      </button>
     </div>
   )
 }
