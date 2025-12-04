@@ -236,7 +236,7 @@ export const authOptions: AuthOptions = {
       
       if (cleanedInputUrl.startsWith(cleanedBaseUrl)) {
         // Remplacer baseUrl par finalBaseUrl sans forcer HTTPS
-        let cleanedUrl = cleanedInputUrl.replace(cleanedBaseUrl, finalBaseUrl)
+        const cleanedUrl = cleanedInputUrl.replace(cleanedBaseUrl, finalBaseUrl)
         console.log('✅ [NextAuth Redirect] URL nettoyée:', cleanedUrl)
         return cleanedUrl
       }

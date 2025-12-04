@@ -188,16 +188,16 @@ export default function ConfigurationPage() {
       })
 
       if (res.ok) {
-        const data = await res.json()
+        const _data = await res.json()
         setDesktopIconUrl('/images/icons/favicon-192.png')
-        showNotification('success', 'Icône desktop uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.')
+        showNotification('Icône desktop uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.', 'success')
       } else {
         const error = await res.json()
-        showNotification('error', 'Erreur lors de l\'upload', error.error || 'Une erreur est survenue')
+        showNotification('Erreur lors de l\'upload', error.error || 'Une erreur est survenue', 'error')
       }
     } catch (error) {
       console.error('Erreur upload icône desktop:', error)
-      showNotification('error', 'Erreur lors de l\'upload', 'Une erreur est survenue lors de l\'upload de l\'icône desktop')
+      showNotification('Erreur lors de l\'upload', 'Une erreur est survenue lors de l\'upload de l\'icône desktop', 'error')
     } finally {
       setUploadingDesktopIcon(false)
     }
@@ -219,16 +219,16 @@ export default function ConfigurationPage() {
       })
 
       if (res.ok) {
-        const data = await res.json()
+        const _data = await res.json()
         setMobileIconUrl('/images/icons/apple-touch-icon.png')
-        showNotification('success', 'Icône mobile uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.')
+        showNotification('Icône mobile uploadée avec succès', 'Les différentes tailles ont été générées automatiquement.', 'success')
       } else {
         const error = await res.json()
-        showNotification('error', 'Erreur lors de l\'upload', error.error || 'Une erreur est survenue')
+        showNotification('Erreur lors de l\'upload', error.error || 'Une erreur est survenue', 'error')
       }
     } catch (error) {
       console.error('Erreur upload icône mobile:', error)
-      showNotification('error', 'Erreur lors de l\'upload', 'Une erreur est survenue lors de l\'upload de l\'icône mobile')
+      showNotification('Erreur lors de l\'upload', 'Une erreur est survenue lors de l\'upload de l\'icône mobile', 'error')
     } finally {
       setUploadingMobileIcon(false)
     }
@@ -272,13 +272,13 @@ export default function ConfigurationPage() {
       })
 
       if (res.ok) {
-        showNotification('Succès', 'Configuration enregistrée', 'success')
+        showNotification('Configuration enregistrée', 'Les paramètres ont été sauvegardés avec succès.', 'success')
       } else {
-        showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error')
+        showNotification('Erreur lors de la sauvegarde', 'Une erreur est survenue lors de la sauvegarde des paramètres.', 'error')
       }
     } catch (error) {
       console.error('Erreur:', error)
-      showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error')
+      showNotification('Erreur lors de la sauvegarde', 'Une erreur est survenue lors de la sauvegarde des paramètres.', 'error')
     } finally {
       setSaving(false)
     }
