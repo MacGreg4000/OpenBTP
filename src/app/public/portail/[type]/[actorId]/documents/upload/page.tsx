@@ -27,7 +27,7 @@ interface UploadResponse {
 function InnerDocumentsPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
   const { type, actorId } = props.params
   const router = useRouter()
-  const [_t] = usePortalI18n()
+  const _portalI18n = usePortalI18n()
   const [error, setError] = useState<string | null>(null)
   
   // Données de session
