@@ -249,7 +249,7 @@ export default function ConfigurationPage() {
         if (mobileRes.ok) {
           setMobileIconUrl('/images/icons/apple-touch-icon.png')
         }
-      } catch (error) {
+      } catch {
         // Les icônes personnalisées n'existent pas encore, on utilisera les icônes par défaut
         console.log('Icônes personnalisées non trouvées, utilisation des icônes par défaut')
       }

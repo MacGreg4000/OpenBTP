@@ -9,6 +9,11 @@ type Contact = { id: string; prenom?: string; nom?: string; email?: string }
 import { toast } from 'react-hot-toast';
 import { Session } from 'next-auth'; // Importer le type Session
 
+// Type guard pour vérifier si c'est un état sous-traitant
+function isSoustraitantEtat(etat: EtatAvancementEtendu): etat is EtatAvancementEtendu & { typeSoustraitant: true; soustraitantId: string } {
+  return !!(etat.typeSoustraitant || etat.soustraitantId)
+}
+
 interface EmailEtatAvancementModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,12 +43,12 @@ export default function EmailEtatAvancementModal({
       const fetchContactsAndSettings = async () => {
         try {
           // Vérifier si c'est un état d'avancement sous-traitant
-          const isSoustraitantEtat = (etatAvancement as any).typeSoustraitant || (etatAvancement as any).soustraitantId;
-          const soustraitantId = (etatAvancement as any).soustraitantId;
+          const isSoustraitant = isSoustraitantEtat(etatAvancement);
+          const soustraitantId = etatAvancement.soustraitantId;
 
           let contactsData: Contact[] = [];
 
-          if (isSoustraitantEtat && soustraitantId) {
+          if (isSoustraitant && soustraitantId) {
             // Récupérer les informations du sous-traitant
             const soustraitantResponse = await fetch(`/api/sous-traitants/${soustraitantId}`);
             if (!soustraitantResponse.ok) throw new Error('Erreur lors de la récupération du sous-traitant');
@@ -206,7 +211,7 @@ export default function EmailEtatAvancementModal({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label htmlFor="contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Destinataire {((etatAvancement as any).typeSoustraitant || (etatAvancement as any).soustraitantId) ? '(Sous-traitant)' : '(Contact Client)'}
+              Destinataire {isSoustraitantEtat(etatAvancement) ? '(Sous-traitant)' : '(Contact Client)'}
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
