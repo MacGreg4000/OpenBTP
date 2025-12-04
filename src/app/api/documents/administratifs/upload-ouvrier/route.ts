@@ -64,7 +64,6 @@ export async function POST(request: Request) {
     }
 
     // Générer un nom de fichier unique
-    const fileExtension = file.name.split('.').pop() || 'jpg'
     const timestamp = Date.now()
     const uniqueFilename = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`
     const filePath = path.join(adminDocsDir, uniqueFilename)

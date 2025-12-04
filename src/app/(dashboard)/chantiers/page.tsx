@@ -18,7 +18,6 @@ import {
   ClockIcon,
   XMarkIcon,
   PlusIcon,
-  MagnifyingGlassIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   ChevronUpDownIcon,

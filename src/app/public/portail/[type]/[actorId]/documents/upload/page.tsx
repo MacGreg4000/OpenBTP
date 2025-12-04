@@ -27,7 +27,7 @@ interface UploadResponse {
 function InnerDocumentsPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
   const { type, actorId } = props.params
   const router = useRouter()
-  const { t } = usePortalI18n()
+  const [_t] = usePortalI18n()
   const [error, setError] = useState<string | null>(null)
   
   // Données de session
@@ -157,7 +157,7 @@ function InnerDocumentsPage(props: { params: { type: 'ouvrier'|'soustraitant'; a
         throw new Error(errorData.error || 'Erreur lors de l\'upload du document')
       }
 
-      const data: UploadResponse = await response.json()
+      const _data: UploadResponse = await response.json()
       setUploadSuccess(true)
       
       // Réinitialiser le formulaire

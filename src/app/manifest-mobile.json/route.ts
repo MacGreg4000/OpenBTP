@@ -4,9 +4,6 @@ import path from 'path'
 
 export async function GET() {
   try {
-    const publicDir = path.join(process.cwd(), 'public')
-    const iconsDir = path.join(publicDir, 'images', 'icons')
-    
     // Vérifier quelles icônes sont disponibles
     // Priorité : 1) Icônes uploadées dans images/icons/ 2) Icônes dans public/
     const checkIcon = (iconPath: string): boolean => {
