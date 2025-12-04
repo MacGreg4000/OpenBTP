@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon, LockClosedIcon, CalendarIcon, ClipboardDocumentListIcon, WrenchScrewdriverIcon, DocumentPlusIcon, ArrowRightIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, LockClosedIcon, CalendarIcon, ClipboardDocumentListIcon, WrenchScrewdriverIcon, DocumentPlusIcon, ArrowRightIcon, BuildingOfficeIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline'
 import { PortalI18nProvider, usePortalI18n } from '../../i18n'
 import Link from 'next/link'
 
@@ -251,6 +251,24 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
             <ArrowRightIcon className="h-4 w-4 text-gray-400"/>
           </button>
         </div>
+
+        {/* Carte Upload Documents - Seulement pour les ouvriers internes */}
+        {type === 'ouvrier' && (
+          <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+            <button onClick={() => router.push(`/public/portail/${type}/${actorId}/documents/upload`)} className="flex items-center justify-between hover:bg-gray-50 rounded-lg p-3 transition-colors w-full text-left">
+              <div className="flex items-center">
+                <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mr-3">
+                  <DocumentArrowUpIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-800">Envoyer un document</div>
+                  <div className="text-sm text-gray-500">Facture ou document comptable</div>
+                </div>
+              </div>
+              <ArrowRightIcon className="h-4 w-4 text-gray-400"/>
+            </button>
+          </div>
+        )}
 
         {/* Encart: Mes métrés soumis */}
         {type === 'soustraitant' && (
