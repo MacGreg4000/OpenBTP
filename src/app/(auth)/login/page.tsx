@@ -265,30 +265,6 @@ function LoginForm() {
                   </div>
                 </div>
               )}
-
-              {/* Message de débogage (visible uniquement en développement) */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3 border border-blue-200 dark:border-blue-800 text-xs">
-                  <p className="text-blue-700 dark:text-blue-400 mb-2">
-                    💡 Mode débogage: Vérifiez la console pour les logs de connexion
-                  </p>
-                  <p className="text-blue-600 dark:text-blue-500 text-xs">
-                    📱 Si problème sur mobile: Vérifiez les cookies, le réseau, et les logs dans la console
-                  </p>
-                </div>
-              )}
-
-              {/* Message d'aide pour mobile */}
-              {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
-                <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3 border border-amber-200 dark:border-amber-800 text-xs">
-                  <p className="text-amber-700 dark:text-amber-400 font-medium mb-1">
-                    📱 Mode mobile détecté
-                  </p>
-                  <p className="text-amber-600 dark:text-amber-500 text-xs">
-                    Si la connexion échoue, vérifiez que les cookies sont activés et que JavaScript est activé dans votre navigateur.
-                  </p>
-                </div>
-              )}
               
               {/* Champ email */}
               <div>

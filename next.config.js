@@ -4,7 +4,12 @@ const nextConfig = {
   reactStrictMode: true,
   // output standalone désactivé pour éviter le warning de copy traced files
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
     // Configurations spécifiques pour les images statiques
     disableStaticImages: false,
     // Permettre les images non optimisées pour les URLs dynamiques
@@ -19,12 +24,9 @@ const nextConfig = {
     },
     largePageDataBytes: 10 * 1024 * 1024, // 10MB pour les réponses
   },
-  // Production: activer les vérifications TypeScript et ESLint
+  // Production: activer les vérifications TypeScript
   typescript: {
     ignoreBuildErrors: false,
-  },
-  eslint: {
-    ignoreDuringBuilds: false,
   },
   // Configuration pour permettre l'importation d'images
   webpack(config) {
@@ -35,6 +37,8 @@ const nextConfig = {
 
     return config;
   },
+  // Configuration Turbopack (Next.js 16+)
+  turbopack: {},
   // Ajouter des règles de réécriture pour servir correctement les fichiers statiques
   async rewrites() {
     return [

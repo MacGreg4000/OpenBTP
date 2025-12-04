@@ -19,6 +19,7 @@ import {
   XMarkIcon,
   PlusIcon,
   MagnifyingGlassIcon,
+  ChevronDownIcon,
   ChevronUpIcon,
   ChevronUpDownIcon,
   CheckIcon
@@ -27,7 +28,7 @@ import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { Pagination } from '@/components/Pagination'
 import { PageHeader } from '@/components/PageHeader'
 import { useNotification } from '@/hooks/useNotification'
-import { SearchFilter } from '@/components/SearchFilter'
+import { SearchInput } from '@/components/ui'
 
 function getStatusStyle(status: string) {
   switch (status) {
@@ -248,6 +249,7 @@ export default function ChantiersPage() {
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [loading, setLoading] = useState(true)
   const [filtreNom, setFiltreNom] = useState('')
+  const [filtreClient, setFiltreClient] = useState('')
   const [filtreEtat, setFiltreEtat] = useState('')
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [page, setPage] = useState(1)
@@ -259,7 +261,6 @@ export default function ChantiersPage() {
   const [filtreClientId, setFiltreClientId] = useState<string | null>(clientIdFromUrl)
   const [clientName, setClientName] = useState<string>('')
   const [clients, setClients] = useState<{ id: string; nom: string }[]>([])
-  const [selectedChantierId, setSelectedChantierId] = useState<string | null>(null)
   
   // État pour le menu de changement de statut d'un chantier spécifique
   const [statusMenuOpen, setStatusMenuOpen] = useState<string | null>(null)
@@ -296,15 +297,7 @@ export default function ChantiersPage() {
     }
   }, [statusMenuOpen])
   
-  // Options d'états disponibles
-  const etatOptions = [
-    { value: '', label: 'Tous les états' },
-    { value: 'En préparation', label: 'En préparation' },
-    { value: 'En cours', label: 'En cours' },
-    { value: 'Terminé', label: 'Terminé' }
-  ]
-  
-  // Options de statut pour le changement rapide (sans "Tous les états")
+  // Options de statut pour le changement rapide
   const statusOptions = [
     { value: 'En préparation', label: 'En préparation' },
     { value: 'En cours', label: 'En cours' },
@@ -347,40 +340,6 @@ export default function ChantiersPage() {
     }
   }
   
-  // Préparer les options pour les filtres
-  const chantierFilterOptions = [
-    { value: null, label: 'Tous les chantiers' },
-    ...chantiers.map(c => ({
-      value: c.chantierId,
-      label: c.nomChantier,
-      subtitle: c.clientNom || undefined
-    }))
-  ]
-
-  const clientFilterOptions = [
-    { value: null, label: 'Tous les clients' },
-    ...clients.map(c => ({
-      value: c.id,
-      label: c.nom
-    }))
-  ]
-
-  const etatFilterOptions = etatOptions.map(e => ({
-    value: e.value === '' ? null : e.value,
-    label: e.label
-  }))
-  
-  // Fonction pour gérer le changement de filtre état
-  const handleEtatSelect = (etatValue: string | number | null) => {
-    if (etatValue === null || etatValue === '') {
-      setFiltreEtat('')
-    } else {
-      setFiltreEtat(String(etatValue))
-    }
-  }
-  
-  // Normaliser filtreEtat pour le SearchFilter ('' devient null)
-  const etatFilterValue = filtreEtat === '' ? null : filtreEtat
   
   // Synchroniser filtreClientId avec l'URL et récupérer le nom du client
   useEffect(() => {
@@ -429,20 +388,6 @@ export default function ChantiersPage() {
     fetchChantiers()
   }, [clientIdFromUrl, page, filtreEtat])
 
-  // Fonction pour gérer le changement de filtre chantier
-  const handleChantierSelect = (chantierId: string | number | null) => {
-    if (chantierId) {
-      const chantier = chantiers.find(c => c.chantierId === String(chantierId))
-      if (chantier) {
-        setSelectedChantierId(String(chantierId))
-        setFiltreNom(chantier.nomChantier)
-      }
-    } else {
-      setSelectedChantierId(null)
-      setFiltreNom('')
-    }
-  }
-  
   // Fonction pour gérer le clic sur un en-tête de colonne
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -505,29 +450,16 @@ export default function ChantiersPage() {
     })
   }
   
-  // Le filtre d'état est maintenant géré par l'API, on ne filtre côté client que par nom et client
+  // Filtrer les chantiers selon les critères de recherche
   const chantiersFiltrés = sortChantiers(
     chantiers.filter(chantier => {
       const matchNom = !filtreNom || chantier.nomChantier.toLowerCase().includes(filtreNom.toLowerCase())
-      const matchChantierId = !selectedChantierId || chantier.chantierId === selectedChantierId
-      const matchClient = !filtreClientId || chantier.clientId === filtreClientId
-      return matchNom && matchChantierId && matchClient
+      const matchClient = !filtreClient || (chantier.clientNom && chantier.clientNom.toLowerCase().includes(filtreClient.toLowerCase()))
+      const matchEtat = !filtreEtat || chantier.etatChantier.toLowerCase().includes(filtreEtat.toLowerCase())
+      const matchClientId = !filtreClientId || chantier.clientId === filtreClientId
+      return matchNom && matchClient && matchEtat && matchClientId
     })
   )
-  
-  // Fonction pour gérer le changement de filtre client
-  const handleClientSelect = (clientId: string | number | null) => {
-    if (clientId) {
-      const client = clients.find(c => c.id === String(clientId))
-      if (client) {
-        setFiltreClientId(String(clientId))
-        setClientName(client.nom)
-        router.push(`/chantiers?clientId=${clientId}`)
-      }
-    } else {
-      clearClientFilter()
-    }
-  }
   
   // Fonction pour supprimer le filtre client
   const clearClientFilter = () => {
@@ -664,49 +596,36 @@ export default function ChantiersPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sr-only">
                   Filtrer par chantier
                 </label>
-                <SearchFilter
-                  options={chantierFilterOptions}
-                  value={selectedChantierId}
-                  onChange={handleChantierSelect}
+                <SearchInput
+                  id="search-chantier"
                   placeholder="Rechercher un chantier..."
-                  allOptionLabel="Tous les chantiers"
-                  emptyMessage="Aucun chantier trouvé"
-                  renderOption={(option) => (
-                    <div className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                      <div className="font-medium">{option.label}</div>
-                      {option.subtitle && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {option.subtitle}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  value={filtreNom}
+                  onChange={(e) => setFiltreNom(e.target.value)}
+                  className="w-full"
                 />
               </div>
               <div className="sm:w-64">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sr-only">
                   Filtrer par client
                 </label>
-                <SearchFilter
-                  options={clientFilterOptions}
-                  value={filtreClientId}
-                  onChange={handleClientSelect}
+                <SearchInput
+                  id="search-client"
                   placeholder="Rechercher un client..."
-                  allOptionLabel="Tous les clients"
-                  emptyMessage="Aucun client trouvé"
+                  value={filtreClient}
+                  onChange={(e) => setFiltreClient(e.target.value)}
+                  className="w-full"
                 />
               </div>
               <div className="sm:w-48">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sr-only">
                   Filtrer par état
                 </label>
-                <SearchFilter
-                  options={etatFilterOptions}
-                  value={etatFilterValue}
-                  onChange={handleEtatSelect}
+                <SearchInput
+                  id="search-etat"
                   placeholder="Rechercher un état..."
-                  allOptionLabel="Tous les états"
-                  emptyMessage="Aucun état trouvé"
+                  value={filtreEtat}
+                  onChange={(e) => setFiltreEtat(e.target.value)}
+                  className="w-full"
                 />
               </div>
             </div>
