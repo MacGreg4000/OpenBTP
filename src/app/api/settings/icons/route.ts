@@ -92,16 +92,20 @@ export async function POST(request: Request) {
           
           // Sauvegarder aussi dans le dossier public pour compatibilité
           const publicIconsDir = path.join(process.cwd(), 'public')
-          const appleIcon = await sharp(buffer)
-            .resize(180, 180, {
-              fit: 'contain',
-              background: { r: 37, g: 99, b: 235, alpha: 1 }
-            })
-            .png()
-            .toBuffer()
-          
-          await writeFile(path.join(publicIconsDir, 'apple-touch-icon.png'), appleIcon)
-          console.log('✅ Icône mobile 180x180 créée dans public: apple-touch-icon.png')
+          const mobileSizes = [180, 192, 512]
+          for (const size of mobileSizes) {
+            const resized = await sharp(buffer)
+              .resize(size, size, {
+                fit: 'contain',
+                background: { r: 37, g: 99, b: 235, alpha: 1 }
+              })
+              .png()
+              .toBuffer()
+            
+            const filename = size === 180 ? 'apple-touch-icon.png' : `favicon-${size}.png`
+            await writeFile(path.join(publicIconsDir, filename), resized)
+            console.log(`✅ Icône mobile ${size}x${size} créée dans public: ${filename}`)
+          }
         }
 
         // Sauvegarder l'icône source originale

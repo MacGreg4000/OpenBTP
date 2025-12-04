@@ -49,8 +49,8 @@ export default function CustomIcons() {
         })
       }
 
-      // Vérifier l'icône mobile - d'abord dans public/, puis dans images/icons/
-      const mobilePaths = ['/apple-touch-icon.png', '/images/icons/apple-touch-icon.png']
+      // Vérifier l'icône mobile - d'abord dans images/icons/ (uploadées), puis dans public/ (générées)
+      const mobilePaths = ['/images/icons/apple-touch-icon.png', '/apple-touch-icon.png']
       let mobileBasePath = null
       
       for (const path of mobilePaths) {
