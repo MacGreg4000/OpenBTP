@@ -19,7 +19,6 @@ import {
   XMarkIcon,
   PlusIcon,
   MagnifyingGlassIcon,
-  ChevronDownIcon,
   ChevronUpIcon,
   ChevronUpDownIcon,
   CheckIcon
@@ -28,6 +27,7 @@ import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { Pagination } from '@/components/Pagination'
 import { PageHeader } from '@/components/PageHeader'
 import { useNotification } from '@/hooks/useNotification'
+import { SearchFilter } from '@/components/SearchFilter'
 
 function getStatusStyle(status: string) {
   switch (status) {
@@ -259,13 +259,7 @@ export default function ChantiersPage() {
   const [filtreClientId, setFiltreClientId] = useState<string | null>(clientIdFromUrl)
   const [clientName, setClientName] = useState<string>('')
   const [clients, setClients] = useState<{ id: string; nom: string }[]>([])
-  const [clientDropdownOpen, setClientDropdownOpen] = useState(false)
-  const [clientSearchTerm, setClientSearchTerm] = useState('')
-  const [chantierDropdownOpen, setChantierDropdownOpen] = useState(false)
-  const [chantierSearchTerm, setChantierSearchTerm] = useState('')
   const [selectedChantierId, setSelectedChantierId] = useState<string | null>(null)
-  const [etatDropdownOpen, setEtatDropdownOpen] = useState(false)
-  const [etatSearchTerm, setEtatSearchTerm] = useState('')
   
   // État pour le menu de changement de statut d'un chantier spécifique
   const [statusMenuOpen, setStatusMenuOpen] = useState<string | null>(null)
@@ -287,43 +281,20 @@ export default function ChantiersPage() {
       .catch(() => setClients([]))
   }, [])
   
-  // Fermer les dropdowns quand on clique ailleurs
+  // Fermer le menu de statut quand on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      if (!target.closest('.client-dropdown-container')) {
-        setClientDropdownOpen(false)
-        setClientSearchTerm('')
-      }
-      if (!target.closest('.chantier-dropdown-container')) {
-        setChantierDropdownOpen(false)
-        setChantierSearchTerm('')
-      }
-      if (!target.closest('.etat-dropdown-container')) {
-        setEtatDropdownOpen(false)
-        setEtatSearchTerm('')
-      }
       if (!target.closest('.status-menu-container')) {
         setStatusMenuOpen(null)
       }
     }
     
-    if (clientDropdownOpen || chantierDropdownOpen || etatDropdownOpen || statusMenuOpen) {
+    if (statusMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [clientDropdownOpen, chantierDropdownOpen, etatDropdownOpen, statusMenuOpen])
-  
-  // Filtrer les chantiers selon le terme de recherche dans le dropdown
-  const filteredChantierOptions = chantiers.filter(chantier =>
-    chantier.nomChantier.toLowerCase().includes(chantierSearchTerm.toLowerCase()) ||
-    (chantier.clientNom && chantier.clientNom.toLowerCase().includes(chantierSearchTerm.toLowerCase()))
-  )
-  
-  // Filtrer les clients selon le terme de recherche
-  const filteredClientOptions = clients.filter(client =>
-    client.nom.toLowerCase().includes(clientSearchTerm.toLowerCase())
-  )
+  }, [statusMenuOpen])
   
   // Options d'états disponibles
   const etatOptions = [
@@ -376,26 +347,40 @@ export default function ChantiersPage() {
     }
   }
   
-  // Filtrer les états selon le terme de recherche
-  const filteredEtatOptions = etatOptions.filter(etat =>
-    etat.label.toLowerCase().includes(etatSearchTerm.toLowerCase())
-  )
-  
-  // Trouver le libellé de l'état sélectionné
-  const selectedEtatLabel = filtreEtat 
-    ? etatOptions.find(e => e.value === filtreEtat)?.label || filtreEtat
-    : 'Tous les états'
+  // Préparer les options pour les filtres
+  const chantierFilterOptions = [
+    { value: null, label: 'Tous les chantiers' },
+    ...chantiers.map(c => ({
+      value: c.chantierId,
+      label: c.nomChantier,
+      subtitle: c.clientNom || undefined
+    }))
+  ]
+
+  const clientFilterOptions = [
+    { value: null, label: 'Tous les clients' },
+    ...clients.map(c => ({
+      value: c.id,
+      label: c.nom
+    }))
+  ]
+
+  const etatFilterOptions = etatOptions.map(e => ({
+    value: e.value === '' ? null : e.value,
+    label: e.label
+  }))
   
   // Fonction pour gérer le changement de filtre état
-  const handleEtatSelect = (etatValue: string) => {
-    if (etatValue === '') {
+  const handleEtatSelect = (etatValue: string | number | null) => {
+    if (etatValue === null || etatValue === '') {
       setFiltreEtat('')
     } else {
-      setFiltreEtat(etatValue)
+      setFiltreEtat(String(etatValue))
     }
-    setEtatDropdownOpen(false)
-    setEtatSearchTerm('')
   }
+  
+  // Normaliser filtreEtat pour le SearchFilter ('' devient null)
+  const etatFilterValue = filtreEtat === '' ? null : filtreEtat
   
   // Synchroniser filtreClientId avec l'URL et récupérer le nom du client
   useEffect(() => {
@@ -444,25 +429,18 @@ export default function ChantiersPage() {
     fetchChantiers()
   }, [clientIdFromUrl, page, filtreEtat])
 
-  // Trouver le nom du chantier sélectionné
-  const selectedChantierName = selectedChantierId 
-    ? chantiers.find(c => c.chantierId === selectedChantierId)?.nomChantier || 'Chantier sélectionné'
-    : 'Tous les chantiers'
-  
   // Fonction pour gérer le changement de filtre chantier
-  const handleChantierSelect = (chantierId: string | null) => {
+  const handleChantierSelect = (chantierId: string | number | null) => {
     if (chantierId) {
-      const chantier = chantiers.find(c => c.chantierId === chantierId)
+      const chantier = chantiers.find(c => c.chantierId === String(chantierId))
       if (chantier) {
-        setSelectedChantierId(chantierId)
+        setSelectedChantierId(String(chantierId))
         setFiltreNom(chantier.nomChantier)
       }
     } else {
       setSelectedChantierId(null)
       setFiltreNom('')
     }
-    setChantierDropdownOpen(false)
-    setChantierSearchTerm('')
   }
   
   // Fonction pour gérer le clic sur un en-tête de colonne
@@ -537,25 +515,18 @@ export default function ChantiersPage() {
     })
   )
   
-  // Trouver le nom du client sélectionné
-  const selectedClientName = filtreClientId 
-    ? clients.find(c => c.id === filtreClientId)?.nom || 'Client sélectionné'
-    : 'Tous les clients'
-  
   // Fonction pour gérer le changement de filtre client
-  const handleClientSelect = (clientId: string | null) => {
+  const handleClientSelect = (clientId: string | number | null) => {
     if (clientId) {
-      const client = clients.find(c => c.id === clientId)
+      const client = clients.find(c => c.id === String(clientId))
       if (client) {
-        setFiltreClientId(clientId)
+        setFiltreClientId(String(clientId))
         setClientName(client.nom)
         router.push(`/chantiers?clientId=${clientId}`)
       }
     } else {
       clearClientFilter()
     }
-    setClientDropdownOpen(false)
-    setClientSearchTerm('')
   }
   
   // Fonction pour supprimer le filtre client
@@ -689,182 +660,54 @@ export default function ChantiersPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <div className="sm:w-64 chantier-dropdown-container relative">
+              <div className="sm:w-64">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sr-only">
                   Filtrer par chantier
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setChantierDropdownOpen(!chantierDropdownOpen)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <span className="truncate">{selectedChantierName}</span>
-                  <ChevronDownIcon className={`h-5 w-5 text-gray-400 flex-shrink-0 ml-2 transition-transform ${chantierDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {chantierDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-80 flex flex-col">
-                    {/* Champ de recherche */}
-                    <div className="p-2 border-b border-gray-200 dark:border-gray-600">
-                      <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Rechercher un chantier..."
-                          value={chantierSearchTerm}
-                          onChange={(e) => setChantierSearchTerm(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Liste des options */}
-                    <div className="overflow-y-auto max-h-64">
-                      <button
-                        type="button"
-                        onClick={() => handleChantierSelect(null)}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                          !selectedChantierId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
-                      >
-                        Tous les chantiers
-                      </button>
-                      {filteredChantierOptions.length > 0 ? (
-                        filteredChantierOptions.map(chantier => (
-                          <button
-                            key={chantier.chantierId}
-                            type="button"
-                            onClick={() => handleChantierSelect(chantier.chantierId)}
-                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border-b border-gray-200 dark:border-gray-600 last:border-b-0 ${
-                              selectedChantierId === chantier.chantierId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                            }`}
-                          >
-                            <div className="font-medium">{chantier.nomChantier}</div>
-                            {chantier.clientNom && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">{chantier.clientNom}</div>
-                            )}
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                          Aucun chantier trouvé
+                <SearchFilter
+                  options={chantierFilterOptions}
+                  value={selectedChantierId}
+                  onChange={handleChantierSelect}
+                  placeholder="Rechercher un chantier..."
+                  allOptionLabel="Tous les chantiers"
+                  emptyMessage="Aucun chantier trouvé"
+                  renderOption={(option) => (
+                    <div className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                      <div className="font-medium">{option.label}</div>
+                      {option.subtitle && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {option.subtitle}
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                />
               </div>
-              <div className="sm:w-64 client-dropdown-container relative">
+              <div className="sm:w-64">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sr-only">
                   Filtrer par client
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setClientDropdownOpen(!clientDropdownOpen)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <span className="truncate">{selectedClientName}</span>
-                  <ChevronDownIcon className={`h-5 w-5 text-gray-400 flex-shrink-0 ml-2 transition-transform ${clientDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {clientDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-80 flex flex-col">
-                    {/* Champ de recherche */}
-                    <div className="p-2 border-b border-gray-200 dark:border-gray-600">
-                      <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Rechercher un client..."
-                          value={clientSearchTerm}
-                          onChange={(e) => setClientSearchTerm(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Liste des options */}
-                    <div className="overflow-y-auto max-h-64">
-                      <button
-                        type="button"
-                        onClick={() => handleClientSelect(null)}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                          !filtreClientId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
-                      >
-                        Tous les clients
-                      </button>
-                      {filteredClientOptions.length > 0 ? (
-                        filteredClientOptions.map(client => (
-                          <button
-                            key={client.id}
-                            type="button"
-                            onClick={() => handleClientSelect(client.id)}
-                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                              filtreClientId === client.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                            }`}
-                          >
-                            {client.nom}
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                          Aucun client trouvé
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <SearchFilter
+                  options={clientFilterOptions}
+                  value={filtreClientId}
+                  onChange={handleClientSelect}
+                  placeholder="Rechercher un client..."
+                  allOptionLabel="Tous les clients"
+                  emptyMessage="Aucun client trouvé"
+                />
               </div>
-              <div className="sm:w-48 etat-dropdown-container relative">
+              <div className="sm:w-48">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sr-only">
                   Filtrer par état
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setEtatDropdownOpen(!etatDropdownOpen)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <span className="truncate">{selectedEtatLabel}</span>
-                  <ChevronDownIcon className={`h-5 w-5 text-gray-400 flex-shrink-0 ml-2 transition-transform ${etatDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {etatDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-80 flex flex-col">
-                    {/* Champ de recherche */}
-                    <div className="p-2 border-b border-gray-200 dark:border-gray-600">
-                      <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Rechercher un état..."
-                          value={etatSearchTerm}
-                          onChange={(e) => setEtatSearchTerm(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Liste des options */}
-                    <div className="overflow-y-auto max-h-64">
-                      {filteredEtatOptions.map(etat => (
-                        <button
-                          key={etat.value}
-                          type="button"
-                          onClick={() => handleEtatSelect(etat.value)}
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                            filtreEtat === etat.value ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          {etat.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <SearchFilter
+                  options={etatFilterOptions}
+                  value={etatFilterValue}
+                  onChange={handleEtatSelect}
+                  placeholder="Rechercher un état..."
+                  allOptionLabel="Tous les états"
+                  emptyMessage="Aucun état trouvé"
+                />
               </div>
             </div>
             <div className="flex gap-2">
