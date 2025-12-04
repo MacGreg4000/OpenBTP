@@ -4,6 +4,7 @@ import { SelectedChantierProvider } from '@/contexts/SelectedChantierContext'
 import { useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
+import MobileManifest from '@/components/MobileManifest'
 
 export default function MobileLayout({
   children,
@@ -60,6 +61,7 @@ export default function MobileLayout({
 
   return (
     <SelectedChantierProvider>
+      <MobileManifest />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
         {children}
       </div>
