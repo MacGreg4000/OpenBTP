@@ -14,25 +14,22 @@ export async function GET() {
     }
     
     // Déterminer les icônes à utiliser pour mobile
-    let icon192 = '/favicon-192.png'
-    let icon512 = '/favicon-512.png'
+    // Priorité : 1) Icônes uploadées dans images/icons/ 2) Icônes dans public/
+    let mobileIcon192 = '/favicon-192.png'
+    let mobileIcon512 = '/favicon-512.png'
     
-    // Vérifier d'abord les icônes uploadées (mobile)
+    // Vérifier d'abord les icônes uploadées (mobile) dans images/icons/
     if (checkIcon('/images/icons/favicon-192.png')) {
-      icon192 = '/images/icons/favicon-192.png'
+      mobileIcon192 = '/images/icons/favicon-192.png'
+    } else if (checkIcon('/favicon-192.png')) {
+      mobileIcon192 = '/favicon-192.png'
     }
+    
     if (checkIcon('/images/icons/favicon-512.png')) {
-      icon512 = '/images/icons/favicon-512.png'
+      mobileIcon512 = '/images/icons/favicon-512.png'
+    } else if (checkIcon('/favicon-512.png')) {
+      mobileIcon512 = '/favicon-512.png'
     }
-    
-    // Si les icônes mobile spécifiques existent, les utiliser
-    const mobileIcon192 = checkIcon('/images/icons/favicon-192.png') 
-      ? '/images/icons/favicon-192.png'
-      : (checkIcon('/favicon-192.png') ? '/favicon-192.png' : icon192)
-    
-    const mobileIcon512 = checkIcon('/images/icons/favicon-512.png')
-      ? '/images/icons/favicon-512.png'
-      : (checkIcon('/favicon-512.png') ? '/favicon-512.png' : icon512)
     
     const manifest = {
       name: 'OpenBTP Mobile',

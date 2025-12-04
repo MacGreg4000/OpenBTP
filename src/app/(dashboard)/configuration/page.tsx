@@ -238,16 +238,32 @@ export default function ConfigurationPage() {
   useEffect(() => {
     const checkCustomIcons = async () => {
       try {
-        // Vérifier l'icône desktop
-        const desktopRes = await fetch('/images/icons/favicon-192.png', { method: 'HEAD' })
-        if (desktopRes.ok) {
-          setDesktopIconUrl('/images/icons/favicon-192.png')
+        // Vérifier l'icône desktop - d'abord dans images/icons/, puis dans public/
+        const desktopPaths = ['/images/icons/favicon-192.png', '/favicon-192.png']
+        for (const iconPath of desktopPaths) {
+          try {
+            const res = await fetch(iconPath, { method: 'HEAD' })
+            if (res.ok) {
+              setDesktopIconUrl(iconPath.replace('/favicon-192.png', '/images/icons/favicon-192.png'))
+              break
+            }
+          } catch {
+            continue
+          }
         }
         
-        // Vérifier l'icône mobile
-        const mobileRes = await fetch('/images/icons/apple-touch-icon.png', { method: 'HEAD' })
-        if (mobileRes.ok) {
-          setMobileIconUrl('/images/icons/apple-touch-icon.png')
+        // Vérifier l'icône mobile - d'abord dans images/icons/, puis dans public/
+        const mobilePaths = ['/images/icons/apple-touch-icon.png', '/apple-touch-icon.png']
+        for (const iconPath of mobilePaths) {
+          try {
+            const res = await fetch(iconPath, { method: 'HEAD' })
+            if (res.ok) {
+              setMobileIconUrl(iconPath)
+              break
+            }
+          } catch {
+            continue
+          }
         }
       } catch {
         // Les icônes personnalisées n'existent pas encore, on utilisera les icônes par défaut
