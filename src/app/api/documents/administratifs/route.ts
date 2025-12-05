@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import fs from 'fs'
-import path from 'path'
+import { prisma } from '@/lib/prisma/client'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -17,33 +16,65 @@ export async function GET() {
       return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 })
     }
 
-    const documentsDir = path.join(process.cwd(), 'public', 'documents', 'administratifs')
-    
-    // Créer le dossier s'il n'existe pas
-    if (!fs.existsSync(documentsDir)) {
-      fs.mkdirSync(documentsDir, { recursive: true })
+    // Récupérer le paramètre de filtre par tag depuis l'URL
+    const url = new URL(request.url)
+    const tagFilter = url.searchParams.get('tag')
+
+    // Construire la clause where pour les documents administratifs
+    // Les documents administratifs sont ceux sans chantierId (null)
+    const whereClause: {
+      chantierId: null;
+      tags?: { some: { nom: string } };
+    } = {
+      chantierId: null
     }
 
-    // Lire le contenu du dossier
-    const files = fs.readdirSync(documentsDir)
-    
-    const documents = files.map(file => {
-      const filePath = path.join(documentsDir, file)
-      const stats = fs.statSync(filePath)
-      
-      return {
-        id: file,
-        nom: file,
-        type: path.extname(file).slice(1), // Enlever le point de l'extension
-        taille: stats.size,
-        dateUpload: stats.mtime.toISOString(),
-        url: `/documents/administratifs/${encodeURIComponent(file)}`
+    // Ajouter le filtre par tag si présent
+    if (tagFilter) {
+      whereClause.tags = {
+        some: {
+          nom: tagFilter
+        }
+      }
+    }
+
+    // Récupérer les documents depuis Prisma
+    const documents = await prisma.document.findMany({
+      where: whereClause,
+      include: {
+        User: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        tags: {
+          select: {
+            id: true,
+            nom: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     })
 
-    return NextResponse.json(documents)
+    // Formater les documents pour le frontend
+    const formattedDocuments = documents.map(doc => ({
+      id: doc.id.toString(),
+      nom: doc.nom,
+      type: doc.type,
+      taille: doc.taille,
+      dateUpload: doc.createdAt.toISOString(),
+      url: doc.url,
+      tags: doc.tags.map(tag => tag.nom),
+      uploadedBy: doc.User ? (doc.User.name || doc.User.email || 'Inconnu') : 'Inconnu'
+    }))
+
+    return NextResponse.json(formattedDocuments)
   } catch (error) {
-    console.error('Erreur:', error)
+    console.error('Erreur lors de la récupération des documents administratifs:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 } 
