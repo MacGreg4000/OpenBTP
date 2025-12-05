@@ -144,7 +144,22 @@ export default function SelectionPostesPage() {
       
       // Préparer les lignes pour la création de la commande sous-traitant
       const lignesArray = Array.from(selectedLignes.values()).map(ligne => {
+        const isSection = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE';
         const modifiedValues = modifiedLignes.get(ligne.id);
+        
+        // Pour les titres et sous-titres, forcer les valeurs à 0
+        if (isSection) {
+          return {
+            article: ligne.article,
+            description: ligne.description,
+            type: ligne.type,
+            unite: '',
+            prixUnitaire: 0,
+            quantite: 0
+          };
+        }
+        
+        // Pour les lignes normales, utiliser les valeurs modifiées ou originales
         return {
           article: ligne.article,
           description: ligne.description,
@@ -192,6 +207,10 @@ export default function SelectionPostesPage() {
   const calculateTotal = () => {
     let total = 0;
     selectedLignes.forEach((ligne) => {
+      // Exclure les titres et sous-titres du calcul
+      if (ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') {
+        return;
+      }
       const modifiedValues = modifiedLignes.get(ligne.id);
       const quantite = modifiedValues?.quantite ?? ligne.quantite;
       const prix = modifiedValues?.prixUnitaire ?? ligne.prixUnitaire;
@@ -390,7 +409,11 @@ export default function SelectionPostesPage() {
                               </td>
                               
                               <td className="px-4 py-4 text-right">
-                                {isSelected ? (
+                                {(ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') ? (
+                                  <span className="font-medium text-gray-400 dark:text-gray-500">
+                                    -
+                                  </span>
+                                ) : isSelected ? (
                                   <NumericInput
                                     value={quantite}
                                     onChangeNumber={(val)=> handleQuantiteChange(ligne.id, String(val))}
@@ -406,7 +429,11 @@ export default function SelectionPostesPage() {
                               </td>
                               
                               <td className="px-4 py-4 text-right">
-                                {isSelected ? (
+                                {(ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') ? (
+                                  <span className="font-medium text-gray-400 dark:text-gray-500">
+                                    -
+                                  </span>
+                                ) : isSelected ? (
                                   <NumericInput
                                     value={prix}
                                     onChangeNumber={(val)=> handlePrixChange(ligne.id, String(val))}

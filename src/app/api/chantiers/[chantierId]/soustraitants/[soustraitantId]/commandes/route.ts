@@ -103,10 +103,26 @@ export async function POST(
       )
     }
 
-    // Calculer les totaux
+    // Calculer les totaux (en excluant les titres et sous-titres)
     let sousTotal = 0
     type LigneIn = { article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }
     const lignesAvecTotal = (lignes as LigneIn[]).map((ligne, index: number) => {
+      const typeLigne = ligne.type || 'QP'
+      const isSection = typeLigne === 'TITRE' || typeLigne === 'SOUS_TITRE'
+      
+      // Pour les titres et sous-titres, mettre tout à 0
+      if (isSection) {
+        return {
+          ...ligne,
+          ordre: index + 1,
+          prixUnitaire: 0,
+          quantite: 0,
+          total: 0,
+          unite: ''
+        }
+      }
+      
+      // Pour les lignes normales, calculer le total
       const total = ligne.prixUnitaire * ligne.quantite
       sousTotal += total
       return {
@@ -150,19 +166,24 @@ export async function POST(
 
     // Créer les lignes de commande
     await prisma.ligneCommandeSousTraitant.createMany({
-      data: lignesAvecTotal.map((ligne) => ({
-        commandeSousTraitantId: commandeId,
-        ordre: ligne.ordre,
-        article: ligne.article,
-        description: ligne.description,
-        type: ligne.type || 'QP',
-        unite: ligne.unite,
-        prixUnitaire: ligne.prixUnitaire,
-        quantite: ligne.quantite,
-        total: ligne.total,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }))
+      data: lignesAvecTotal.map((ligne) => {
+        const typeLigne = ligne.type || 'QP'
+        const isSection = typeLigne === 'TITRE' || typeLigne === 'SOUS_TITRE'
+        
+        return {
+          commandeSousTraitantId: commandeId,
+          ordre: ligne.ordre,
+          article: ligne.article,
+          description: ligne.description,
+          type: typeLigne,
+          unite: isSection ? '' : ligne.unite,
+          prixUnitaire: isSection ? 0 : ligne.prixUnitaire,
+          quantite: isSection ? 0 : ligne.quantite,
+          total: isSection ? 0 : ligne.total,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+      })
     })
 
     // Récupérer la commande complète avec Prisma
