@@ -51,7 +51,7 @@ export function PageHeader({
   }
 
   return (
-    <div className="sticky top-16 z-40 pb-4">
+    <div className="sticky top-20 z-40 pb-4">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-1 overflow-hidden">
           {/* Effet de brillance en arrière-plan */}
