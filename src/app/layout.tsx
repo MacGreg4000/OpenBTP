@@ -30,6 +30,7 @@ import RootClientProviders from '@/components/providers/RootClientProviders'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import PWAInstall from '@/components/PWAInstall'
 import CustomIcons from '@/components/CustomIcons'
+import DynamicManifest from '@/components/DynamicManifest'
 
 export default function RootLayout({
   children,
@@ -40,6 +41,7 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <CustomIcons />
+        <DynamicManifest />
         <RootClientProviders>
           {children}
           <ServiceWorkerRegistration />
