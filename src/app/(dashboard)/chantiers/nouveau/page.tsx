@@ -2,8 +2,8 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ArrowLeftIcon, BuildingOfficeIcon, MapPinIcon, CalendarIcon, ClockIcon, PlusIcon, ExclamationCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
-import { Breadcrumb } from '@/components/Breadcrumb'
+import { ArrowLeftIcon, BuildingOfficeIcon, MapPinIcon, CalendarIcon, ClockIcon, PlusIcon, ExclamationCircleIcon, DocumentTextIcon, BuildingOffice2Icon } from '@heroicons/react/24/outline'
+import { PageHeader } from '@/components/PageHeader'
 import { toast } from 'react-hot-toast'
 import { SearchableSelect } from '@/components/SearchableSelect'
 
@@ -178,49 +178,26 @@ export default function NouveauChantierPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* En-tête avec gradient cohérent avec /chantiers */}
-      <div className="bg-gradient-to-r from-amber-600 to-orange-700 shadow-lg">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center">
-                <PlusIcon className="h-8 w-8 text-white mr-3" />
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    Nouveau Chantier
-                  </h1>
-                  <p className="mt-2 text-amber-100">
-                    Créez un nouveau projet de construction
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 md:mt-0">
-              <button
-                onClick={() => router.push('/chantiers')}
-                className="inline-flex items-center px-4 py-2 border border-white/20 rounded-md shadow-sm text-sm font-medium text-white bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors duration-200"
-              >
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Retour aux chantiers
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Breadcrumb */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <Breadcrumb 
-          items={[
-            { label: 'Chantiers', href: '/chantiers' },
-            { label: 'Nouveau chantier', href: '/chantiers/nouveau' }
-          ]} 
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-amber-50/20 to-orange-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Nouveau Chantier"
+        subtitle="Créez un nouveau projet de construction"
+        icon={BuildingOffice2Icon}
+        badgeColor="from-red-700 via-red-800 to-red-900"
+        gradientColor="from-red-700/10 via-red-800/10 to-red-900/10"
+        actions={
+          <button
+            onClick={() => router.push('/chantiers')}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+          >
+            Retour
+          </button>
+        }
+      />
 
       {/* Contenu principal */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto">
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
             <div className="flex">
@@ -619,6 +596,7 @@ export default function NouveauChantierPage() {
               </div>
             </form>
           </div>
+        </div>
         </div>
       </div>
     </div>

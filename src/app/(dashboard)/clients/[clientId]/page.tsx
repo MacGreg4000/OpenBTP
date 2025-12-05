@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeftIcon, PencilIcon, PlusCircleIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, PlusCircleIcon, TrashIcon, BuildingOfficeIcon, BuildingStorefrontIcon } from '@heroicons/react/24/outline';
 import ContactForm from '@/components/clients/ContactForm';
+import { PageHeader } from '@/components/PageHeader';
 
 // Types (à définir plus précisément)
 interface ChantierSimplifie { // Nouvelle interface pour les chantiers du client
@@ -160,41 +161,65 @@ export default function ClientDetailPage() {
   };
 
   if (loadingClient || loadingContacts) {
-    return <div className="p-6">Chargement des détails du client...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-300">Chargement des détails du client...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-6 text-red-500">Erreur: {error}</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-red-500">Erreur: {error}</div>
+      </div>
+    );
   }
 
   if (!client) {
-    return <div className="p-6">Client non trouvé.</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-300">Client non trouvé.</div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Fil d'Ariane et bouton retour */}
-      <div className="mb-6">
-        <Link href="/clients" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center">
-          <ArrowLeftIcon className="h-5 w-5 mr-2" />
-          Retour à la liste des clients
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title={client.nom}
+        subtitle="Détails du client"
+        icon={BuildingStorefrontIcon}
+        badgeColor="from-indigo-600 via-purple-600 to-pink-700"
+        gradientColor="from-indigo-600/10 via-purple-600/10 to-pink-700/10"
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              href="/clients"
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+            >
+              Retour
+            </Link>
+            <Link
+              href={`/clients/${client.id}/edit`}
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            >
+              <PencilIcon className="h-4 w-4 mr-1.5" />
+              Modifier
+            </Link>
+          </div>
+        }
+      />
 
-      {/* Section Informations Générales */}
-      <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg mb-8">
-        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-          <h2 className="text-xl font-semibold leading-6 text-gray-900 dark:text-white">
-            {client.nom}
-          </h2>
-          <Link
-            href={`/clients/${client.id}/edit`}
-            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="Éditer le client"
-          >
-            <PencilIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          </Link>
-        </div>
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Section Informations Générales */}
+        <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg mb-8">
+          <div className="px-4 py-5 sm:px-6">
+            <h2 className="text-xl font-semibold leading-6 text-gray-900 dark:text-white">
+              Informations générales
+            </h2>
+          </div>
         <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-0">
           <dl className="sm:divide-y sm:divide-gray-200 dark:sm:divide-gray-700">
             <div className="py-3 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -371,14 +396,15 @@ export default function ClientDetailPage() {
         </div>
       </div>
       
-      {/* Modale pour ajouter/modifier un contact */}
-      <ContactForm 
-        isOpen={isContactModalOpen}
-        onClose={handleCloseContactModal}
-        onSubmit={handleSubmitContact}
-        initialData={editingContact}
-        isSubmitting={isSubmittingContact}
-      />
+        {/* Modale pour ajouter/modifier un contact */}
+        <ContactForm 
+          isOpen={isContactModalOpen}
+          onClose={handleCloseContactModal}
+          onSubmit={handleSubmitContact}
+          initialData={editingContact}
+          isSubmitting={isSubmittingContact}
+        />
+      </div>
     </div>
   );
 } 

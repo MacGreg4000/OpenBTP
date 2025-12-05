@@ -3,8 +3,9 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-// import { type Chantier } from '@/types/chantier'
 import { FormInput, FormTextarea, Button } from '@/components/ui'
+import { PageHeader } from '@/components/PageHeader'
+import { BuildingStorefrontIcon, PencilIcon } from '@heroicons/react/24/outline'
 
 interface Client {
   id: string
@@ -96,20 +97,62 @@ export default function EditClientPage(props: { params: Promise<{ clientId: stri
   }
 
   if (!session) {
-    return <div className="p-8 text-red-600">Veuillez vous connecter pour accéder à cette page</div>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-red-600">Veuillez vous connecter pour accéder à cette page</div>
+      </div>
+    )
   }
 
-  if (loading) return <div className="p-8">Chargement...</div>
-  if (error) return <div className="p-8 text-red-600">Erreur: {error}</div>
-  if (!client) return <div className="p-8">Client non trouvé</div>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-300">Chargement...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-red-600">Erreur: {error}</div>
+      </div>
+    )
+  }
+
+  if (!client) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-300">Client non trouvé</div>
+      </div>
+    )
+  }
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="space-y-8">
-        {/* Formulaire d'édition */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <form onSubmit={handleSubmit} className="space-y-6 p-6">
-            <h2 className="text-xl font-bold dark:text-white">Informations du client</h2>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title={`Modifier ${client.nom}`}
+        subtitle="Éditez les informations du client"
+        icon={BuildingStorefrontIcon}
+        badgeColor="from-indigo-600 via-purple-600 to-pink-700"
+        gradientColor="from-indigo-600/10 via-purple-600/10 to-pink-700/10"
+        actions={
+          <Link
+            href="/clients"
+            className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+          >
+            Retour
+          </Link>
+        }
+      />
+
+      {/* Contenu principal */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-8">
+          {/* Formulaire d'édition */}
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <form onSubmit={handleSubmit} className="space-y-6 p-6">
+              <h2 className="text-xl font-bold dark:text-white">Informations du client</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <FormInput
                 id="nom"
@@ -233,6 +276,7 @@ export default function EditClientPage(props: { params: Promise<{ clientId: stri
                   ))}
                 </tbody>
               </table>
+            </div>
             </div>
           </div>
         </div>
