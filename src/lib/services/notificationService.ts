@@ -269,7 +269,9 @@ export class NotificationService {
     metadata?: NotificationMetadata
   ): Promise<void> {
     try {
-      const subject = notificationType.emailSubject || titre
+      // Remplacer les variables dans le sujet de l'email
+      const subjectTemplate = notificationType.emailSubject || titre
+      const subject = this.replaceTemplateVariables(subjectTemplate, metadata)
       
       // Template HTML de base si pas de template personnalisé
       const htmlContent = notificationType.emailTemplate 
