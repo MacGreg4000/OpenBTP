@@ -74,11 +74,11 @@ export async function GET() {
       }
     })
 
-    // Récupérer les tickets SAV non clos/annulés
+    // Récupérer les tickets SAV encore à faire (exclure clos, annulés et résolus)
     const ticketsSAV = await prisma.ticketSAV.findMany({
       where: {
         statut: {
-          notIn: ['CLOS', 'ANNULE'] // Exclure les tickets clos et annulés
+          notIn: ['CLOS', 'ANNULE', 'RESOLU'] // Exclure les tickets clos, annulés et résolus
         }
       },
       select: {
