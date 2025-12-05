@@ -155,6 +155,7 @@ export async function POST(request: Request) {
           mimeType: mimeType,
           taille: file.size,
           User: { connect: { id: systemUser.id } },
+          updatedAt: new Date(),
           tags: {
             connect: [{ id: tagComptabilite.id }]
           }
