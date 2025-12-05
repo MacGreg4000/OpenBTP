@@ -12,7 +12,7 @@ export default function DynamicManifest() {
     const manifestHref = isMobilePath ? '/manifest-mobile.json' : '/manifest.json'
     
     // Vérifier si le lien manifest existe déjà
-    let existingLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null
+    const existingLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null
     
     if (existingLink) {
       // Mettre à jour le manifest existant
