@@ -897,7 +897,9 @@ export async function POST(request: Request) {
     // Retourner le PDF
     const totalDuration = Date.now() - startTime
     console.log(`🎉 [API] Génération terminée avec succès en ${totalDuration}ms (${(totalDuration / 1000).toFixed(2)}s)`)
-    return new NextResponse(pdfBytes, {
+    // Convertir en Uint8Array standard pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBytes)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${fileName}"`
