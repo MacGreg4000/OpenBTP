@@ -2,12 +2,12 @@ import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Note: La vérification des modules actifs est gérée côté client et dans les API routes
-// Ce middleware se concentre sur l'authentification
+// Ce proxy se concentre sur l'authentification
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   
-  // console.log('🔍 Middleware - Chemin:', pathname);
+  // console.log('🔍 Proxy - Chemin:', pathname);
   
   // Vérifier si on accède à /setup et si des utilisateurs existent déjà
   if (pathname === '/setup') {
@@ -71,7 +71,7 @@ export async function middleware(req: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     })
   } catch (error) {
-    console.error('❌ [Middleware] Erreur lors de la récupération du token:', error)
+    console.error('❌ [Proxy] Erreur lors de la récupération du token:', error)
     const loginUrl = new URL('/login', req.url)
     if (pathname !== '/') {
       loginUrl.searchParams.set('callbackUrl', pathname)
@@ -79,14 +79,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
   
-  console.log('🔐 [Middleware] Token trouvé:', !!token, 'Path:', pathname)
+  console.log('🔐 [Proxy] Token trouvé:', !!token, 'Path:', pathname)
   if (token) {
-    console.log('👤 [Middleware] Utilisateur:', token.email, 'ID:', token.id, 'Role:', token.role)
+    console.log('👤 [Proxy] Utilisateur:', token.email, 'ID:', token.id, 'Role:', token.role)
     
     // Vérification supplémentaire : s'assurer que le token a tous les champs requis
     if (!token.id || !token.email) {
-      console.log('⚠️ [Middleware] Token incomplet - redirection vers login')
-      console.log('⚠️ [Middleware] Token contenu:', { id: token.id, email: token.email, hasId: !!token.id, hasEmail: !!token.email })
+      console.log('⚠️ [Proxy] Token incomplet - redirection vers login')
+      console.log('⚠️ [Proxy] Token contenu:', { id: token.id, email: token.email, hasId: !!token.id, hasEmail: !!token.email })
       const loginUrl = new URL('/login', req.url)
       if (pathname !== '/') {
         loginUrl.searchParams.set('callbackUrl', pathname)
@@ -97,8 +97,8 @@ export async function middleware(req: NextRequest) {
   
   // Si pas de token ou token invalide, rediriger vers login
   if (!token) {
-    console.log('❌ [Middleware] Non authentifié - redirection vers login')
-    console.log('❌ [Middleware] Cookies reçus:', req.cookies.getAll().map(c => c.name))
+    console.log('❌ [Proxy] Non authentifié - redirection vers login')
+    console.log('❌ [Proxy] Cookies reçus:', req.cookies.getAll().map(c => c.name))
     const loginUrl = new URL('/login', req.url)
     if (pathname !== '/') {
       loginUrl.searchParams.set('callbackUrl', pathname)
@@ -113,7 +113,7 @@ export async function middleware(req: NextRequest) {
   }
   
   // La vérification des modules actifs est gérée côté client et dans les API routes
-  // Le middleware se concentre sur l'authentification
+  // Le proxy se concentre sur l'authentification
   // console.log('✅ Accès autorisé');
   return NextResponse.next();
 }
@@ -142,4 +142,5 @@ export const config = {
     '/admin/:path*',
     '/contrats/:path*' // Routes de signature de contrats (publiques)
   ],
-}; 
+};
+
