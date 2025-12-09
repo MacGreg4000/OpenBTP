@@ -101,7 +101,9 @@ export async function GET(
     console.log(`📄 Nom de fichier: ${filename}`)
 
     // Retourner le fichier
-    return new NextResponse(buffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(buffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,
