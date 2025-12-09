@@ -111,7 +111,9 @@ export async function GET(request: Request) {
     const dateStr = mois || new Date().toISOString().slice(0, 7)
     const filename = `Journal_Ouvrier_${dateStr}.xlsx`
 
-    return new NextResponse(buffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(buffer)
+    return new NextResponse(uint8Array, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

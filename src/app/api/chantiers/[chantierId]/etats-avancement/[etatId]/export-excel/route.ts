@@ -126,7 +126,9 @@ export async function GET(
     const filename = `Etat_${chantier.chantierId}_${etatAvancement.numero}_${new Date().toISOString().split('T')[0]}.xlsx`
 
     // Retourner le fichier
-    return new NextResponse(buffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(buffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,
