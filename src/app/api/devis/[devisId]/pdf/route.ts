@@ -122,7 +122,9 @@ export async function GET(
     })
 
     // Retourner le PDF avec headers pour permettre l'affichage dans iframe
-    const response = new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    const response = new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="Devis_${devis.numeroDevis}.pdf"`,

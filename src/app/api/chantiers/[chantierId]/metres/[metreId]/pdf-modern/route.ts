@@ -155,7 +155,9 @@ export async function GET(
     // Formater la date pour le nom de fichier
     const dateStr = new Date(metre.date).toISOString().split('T')[0]
 
-    return new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="metre-${chantier.chantierId}-${dateStr}.pdf"`,

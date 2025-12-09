@@ -117,7 +117,9 @@ export async function GET(
 
     console.log('✅ PDF généré avec succès')
 
-    return new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="reception-${reception.chantier.chantierId}-${reception.id}-${new Date().toISOString().split('T')[0]}.pdf"`

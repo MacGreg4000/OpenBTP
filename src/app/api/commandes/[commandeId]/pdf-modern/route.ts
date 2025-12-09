@@ -125,7 +125,9 @@ export async function GET(
 
     console.log('✅ PDF généré avec succès')
 
-    const response = new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    const response = new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="commande-${commandeData.commande.reference}.pdf"`,

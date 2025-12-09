@@ -213,7 +213,9 @@ export async function POST(request: Request) {
       }
     }
     
-    return new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="bon-regie-${data.id}.pdf"`

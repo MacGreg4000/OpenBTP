@@ -117,7 +117,9 @@ export async function POST(
     console.log(`✅ PDF généré: ${pdfBuffer.length} bytes`)
 
     // Retourner le PDF
-    return new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="choix-client-${choixClient.nomClient.replace(/\s/g, '-')}.pdf"`

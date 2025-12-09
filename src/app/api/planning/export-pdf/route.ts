@@ -491,7 +491,9 @@ export async function POST(_request: Request) {
 
     console.log(`✅ PDF généré avec succès (${pdfBuffer.length} bytes)`);
 
-    return new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="planning-ressources-${new Date().toISOString().split('T')[0]}.pdf"`,

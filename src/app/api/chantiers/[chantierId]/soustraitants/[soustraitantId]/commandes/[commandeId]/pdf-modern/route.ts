@@ -142,7 +142,9 @@ export async function GET(
     const fileName = `commande-soustraitant-${commande.Chantier.chantierId}-${commande.soustraitant.nom.replace(/[^a-zA-Z0-9]/g, '_')}-${commande.reference || commande.id}.pdf`
 
     // Retourner le PDF avec headers pour permettre l'affichage dans iframe
-    const response = new NextResponse(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(pdfBuffer)
+    const response = new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${fileName}"`,

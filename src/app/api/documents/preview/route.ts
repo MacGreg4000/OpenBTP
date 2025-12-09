@@ -93,7 +93,9 @@ export async function GET(request: NextRequest) {
     const mimeType = getMimeType(fullPath)
     
     // Retourner le fichier
-    return new NextResponse(fileBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(fileBuffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': mimeType,
         'Content-Disposition': `inline; filename="${path.basename(fullPath)}"`,

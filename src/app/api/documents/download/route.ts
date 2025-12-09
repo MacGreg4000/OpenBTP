@@ -94,7 +94,9 @@ export async function GET(request: NextRequest) {
     const fileName = path.basename(fullPath)
     
     // Retourner le fichier pour téléchargement
-    return new NextResponse(fileBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(fileBuffer)
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': mimeType,
         'Content-Disposition': `attachment; filename="${fileName}"`,

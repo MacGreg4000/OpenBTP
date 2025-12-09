@@ -71,7 +71,9 @@ export async function GET(
     const mimeType = getMimeType(fullPath);
     
     // Retourner le fichier en ligne (pas comme pièce jointe)
-    const response = new NextResponse(fileBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse
+    const uint8Array = new Uint8Array(fileBuffer)
+    const response = new NextResponse(uint8Array, {
       headers: {
         'Content-Type': mimeType,
         'Content-Length': stats.size.toString(),
