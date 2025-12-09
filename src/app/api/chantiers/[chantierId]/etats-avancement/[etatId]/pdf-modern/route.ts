@@ -164,7 +164,9 @@ export async function GET(
     const fileName = `etat-avancement-client-${chantierEntity.chantierId}-n${etatNumero}.pdf`
 
     // Retourner le PDF
-    return new Response(pdfBuffer, {
+    // Convertir le Buffer en Uint8Array pour compatibilité avec Response
+    const uint8Array = new Uint8Array(pdfBuffer)
+    return new Response(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`,
