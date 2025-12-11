@@ -43,7 +43,15 @@ export default function RecentSAVWidget() {
   const fetchRecentSAV = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/sav?pageSize=10&page=1', {
+      // Ne garder que les tickets à traiter (exclure résolus/clos/annulés)
+      const statutsActifs = [
+        StatutSAV.NOUVEAU,
+        StatutSAV.ASSIGNE,
+        StatutSAV.EN_COURS,
+        StatutSAV.EN_ATTENTE,
+        StatutSAV.EN_PAUSE
+      ]
+      const response = await fetch(`/api/sav?pageSize=10&page=1&statut=${statutsActifs.join(',')}`, {
         cache: 'no-store'
       })
       
@@ -53,7 +61,11 @@ export default function RecentSAVWidget() {
       
       const data = await response.json()
       const ticketsList = Array.isArray(data) ? data : (data.data || [])
-      setTickets(ticketsList.slice(0, 10))
+      // Filtre de sécurité côté client pour exclure les statuts clos/résolus/annulés
+      const filtered = ticketsList.filter(
+        (t) => ![StatutSAV.RESOLU, StatutSAV.CLOS, StatutSAV.ANNULE].includes(t.statut)
+      )
+      setTickets(filtered.slice(0, 10))
       setLoading(false)
     } catch (error) {
       console.error('Erreur lors de la récupération des tickets SAV:', error)
