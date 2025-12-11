@@ -262,7 +262,7 @@ export function generateDepensesHTML(data: DepensesData): string {
         ` : ''}
         
         <div class="footer">
-            <p>Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p>Rapport généré le ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
             <p>© ${new Date().getFullYear()} - Document généré automatiquement</p>
         </div>
     </div>

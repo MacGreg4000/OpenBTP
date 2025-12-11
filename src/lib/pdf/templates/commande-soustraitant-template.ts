@@ -532,7 +532,7 @@ export function generateCommandeSoustraitantHTML(
         <!-- Pied de page -->
         <div class="footer">
             <div class="footer-left">
-                Document généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
+                Document généré le ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
             </div>
             <div class="footer-right">
                 ${companySettings?.nomEntreprise || 'Nom Entreprise'}

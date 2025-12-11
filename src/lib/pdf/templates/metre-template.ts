@@ -474,9 +474,9 @@ export function generateMetreHTML(data: MetreData): string {
         <div class="footer">
             <p>Document généré le ${new Date().toLocaleDateString('fr-FR', {
               day: '2-digit',
-              month: 'long',
+              month: '2-digit',
               year: 'numeric'
-            })}</p>
+            })} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
             <p>${companySettings.nom}${companySettings.siret ? ` - SIRET: ${companySettings.siret}` : ''}</p>
         </div>
     </div>

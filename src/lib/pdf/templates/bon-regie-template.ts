@@ -347,7 +347,7 @@ export function generateBonRegieHTML(data: BonRegieData, companySettings: Compan
         
         <!-- Pied de page -->
         <div class="footer">
-            <div>Document généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
+            <div>Document généré le ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
             <div>${companySettings?.nomEntreprise || 'Nom Entreprise'} - Bon de régie N°${data.id}</div>
         </div>
     </div>

@@ -777,7 +777,7 @@ export function generateCommandeHTML(data: CommandeData): string {
                 <p>© ${entreprise.name} - Document généré automatiquement</p>
             </div>
             <div class="footer-right">
-                <p>Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                <p>Généré le ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
             </div>
         </div>
     </div>
