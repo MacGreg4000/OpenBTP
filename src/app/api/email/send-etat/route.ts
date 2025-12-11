@@ -19,13 +19,21 @@ export async function POST(request: Request) {
     const {
       etatAvancementId,
       chantierId, // CUID du chantier
-      recipientEmail,
+      recipients,
+      cc,
       subject,
       body: emailBody,
     } = body;
 
-    if (!etatAvancementId || !chantierId || !recipientEmail || !subject || !emailBody) {
+    if (!etatAvancementId || !chantierId || !subject || !emailBody) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
+    }
+
+    const toList: string[] = Array.isArray(recipients) ? recipients.filter((r) => typeof r === 'string' && r.trim().length > 0) : [];
+    const ccList: string[] = Array.isArray(cc) ? cc.filter((r) => typeof r === 'string' && r.trim().length > 0) : [];
+
+    if (toList.length === 0) {
+      return NextResponse.json({ error: 'Aucun destinataire fourni' }, { status: 400 });
     }
 
     // 1. Récupérer les détails de l'état d'avancement et du chantier
@@ -252,7 +260,7 @@ export async function POST(request: Request) {
       bcc?: string
     } = {
       from: `"${companySettingsRaw.name || 'Votre Entreprise'}" <${companySettingsRaw.emailFrom || companySettingsRaw.emailUser}>`,
-      to: recipientEmail,
+      to: toList.join(','),
       subject: subject,
       html: emailBody.replace(/\n/g, '<br />'),
       attachments: [
@@ -264,9 +272,11 @@ export async function POST(request: Request) {
       ],
     };
 
-    // Ajouter Cc si configuré
-    if (companySettingsRaw.emailCc && companySettingsRaw.emailCc.trim()) {
-      mailOptions.cc = companySettingsRaw.emailCc.trim();
+    // Ajouter Cc combiné (configuration + saisie utilisateur)
+    const ccConfigured = companySettingsRaw.emailCc?.trim();
+    const ccCombined = [...ccList, ...(ccConfigured ? [ccConfigured] : [])];
+    if (ccCombined.length > 0) {
+      mailOptions.cc = ccCombined.join(',');
     }
 
     // Ajouter Cci si configuré

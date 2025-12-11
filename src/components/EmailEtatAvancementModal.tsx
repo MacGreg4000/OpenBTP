@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useMemo } from 'react';
 import { XMarkIcon, PaperAirplaneIcon, UserCircleIcon, EnvelopeIcon as EnvelopeSolidIcon, PaperClipIcon } from '@heroicons/react/24/solid';
 import { EtatAvancementEtendu } from '@/types/etat-avancement'; // Corrigé : Import depuis les types partagés
 import { Chantier } from '@/types/chantier'; // Adapter le chemin si nécessaire
@@ -30,7 +30,9 @@ export default function EmailEtatAvancementModal({
   session, // Récupérer la session
 }: EmailEtatAvancementModalProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [selectedContactId, setSelectedContactId] = useState<string>('');
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+  const [customRecipients, setCustomRecipients] = useState<string>(''); // Destinataires libres (TO)
+  const [customCc, setCustomCc] = useState<string>(''); // CC libres
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +73,7 @@ export default function EmailEtatAvancementModal({
           }
 
           setContacts(contactsData);
-          if (contactsData.length > 0) setSelectedContactId(contactsData[0].id);
+          if (contactsData.length > 0) setSelectedContactIds([contactsData[0].id]);
 
           // Récupérer les paramètres de l'entreprise (pour le nom)
           const settingsResponse = await fetch('/api/settings/company'); // Supposant une API pour les companySettings
@@ -92,14 +94,33 @@ export default function EmailEtatAvancementModal({
     }
   }, [isOpen, chantier, etatAvancement]);
 
+  const parseEmails = (value: string) =>
+    value
+      .split(/[,; \n]+/)
+      .map((email) => email.trim())
+      .filter((email) => email.length > 0);
+
+  const selectedEmails = useMemo(() => {
+    const base = contacts
+      .filter((c) => selectedContactIds.includes(c.id))
+      .map((c) => c.email || '')
+      .filter(Boolean);
+    const custom = parseEmails(customRecipients);
+    return Array.from(new Set([...base, ...custom]));
+  }, [contacts, selectedContactIds, customRecipients]);
+
+  const ccEmails = useMemo(() => {
+    return parseEmails(customCc);
+  }, [customCc]);
+
   useEffect(() => {
     if (etatAvancement && chantier) {
       const loadBodyWithGestionnaires = async () => {
         const defaultSubject = `État d\'avancement N° ${etatAvancement.numero} - Chantier: ${chantier.nomChantier}`;
         setSubject(defaultSubject);
 
-        const selectedContact = contacts.find(c => c.id === selectedContactId);
-        const contactFullName = selectedContact ? `${selectedContact.prenom} ${selectedContact.nom}` : '';
+        const firstSelected = contacts.find(c => selectedContactIds.includes(c.id));
+        const contactFullName = firstSelected ? `${firstSelected.prenom} ${firstSelected.nom}`.trim() : '';
         
         const userName = session?.user?.name || '[Votre Nom]';
         
@@ -130,7 +151,8 @@ export default function EmailEtatAvancementModal({
 
         const signature = `Cordialement,\n${userName}\n${companyName}`;
 
-        const defaultBody = selectedContact 
+        const hasSingleRecipient = selectedEmails.length === 1 && ccEmails.length === 0;
+        const defaultBody = hasSingleRecipient && contactFullName
           ? `Bonjour ${contactFullName},\n\nVeuillez trouver ci-joint l\'état d\'avancement N° ${etatAvancement.numero} concernant le chantier ${chantier.nomChantier} situé à ${chantier.adresseChantier}.${replyMessage}\n${signature}`
           : `Bonjour,\n\nVeuillez trouver ci-joint l\'état d\'avancement N° ${etatAvancement.numero} concernant le chantier ${chantier.nomChantier} situé à ${chantier.adresseChantier}.${replyMessage}\n${signature}`;
         setBody(defaultBody);
@@ -143,15 +165,14 @@ export default function EmailEtatAvancementModal({
       
       loadBodyWithGestionnaires();
     }
-  }, [etatAvancement, chantier, selectedContactId, contacts, session, companyName]);
+  }, [etatAvancement, chantier, selectedEmails, ccEmails, contacts, session, companyName, selectedContactIds]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const selectedContact = contacts.find(c => c.id === selectedContactId);
-    if (!selectedContact || !selectedContact.email) {
-      toast.error('Veuillez sélectionner un contact avec une adresse e-mail valide.');
+    if (selectedEmails.length === 0) {
+      toast.error('Veuillez sélectionner ou saisir au moins un destinataire.');
       setIsLoading(false);
       return;
     }
@@ -167,8 +188,8 @@ export default function EmailEtatAvancementModal({
         body: JSON.stringify({
           etatAvancementId: etatAvancement.id, // Ceci est l'ID numérique de l'état (PK)
           chantierId: chantier?.chantierId, // Utiliser l'ID externe (chantierId) au lieu de l'ID interne (id)
-          recipientEmail: selectedContact.email,
-          recipientName: `${selectedContact.prenom} ${selectedContact.nom}`,
+          recipients: selectedEmails,
+          cc: ccEmails,
           subject,
           body,
         }),
@@ -210,28 +231,65 @@ export default function EmailEtatAvancementModal({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label htmlFor="contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Destinataire {isSoustraitantEtat(etatAvancement) ? '(Sous-traitant)' : '(Contact Client)'}
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Destinataires {isSoustraitantEtat(etatAvancement) ? '(Sous-traitant)' : '(Contacts Client)'}
             </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UserCircleIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                </div>
-                <select
-                id="contact"
-                name="contact"
-                value={selectedContactId}
-                onChange={(e) => setSelectedContactId(e.target.value)}
-                className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                required
-                >
-                {contacts.length === 0 && <option value="" disabled>Aucun contact trouvé</option>}
-                {contacts.map((contact) => (
-                    <option key={contact.id} value={contact.id}>
-                    {contact.prenom} {contact.nom} ({contact.email})
-                    </option>
-                ))}
-                </select>
+            <div className="mt-2 space-y-2 max-h-44 overflow-auto border border-gray-200 dark:border-gray-600 rounded-md p-3 bg-gray-50 dark:bg-gray-700/50">
+              {contacts.length === 0 && (
+                <div className="text-sm text-gray-500 dark:text-gray-300">Aucun contact trouvé</div>
+              )}
+              {contacts.map((contact) => {
+                const isChecked = selectedContactIds.includes(contact.id);
+                return (
+                  <label key={contact.id} className="flex items-center space-x-2 text-sm text-gray-800 dark:text-gray-100">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        setSelectedContactIds((prev) => {
+                          if (e.target.checked) {
+                            return Array.from(new Set([...prev, contact.id]));
+                          }
+                          return prev.filter((id) => id !== contact.id);
+                        });
+                      }}
+                    />
+                    <span className="flex-1">
+                      {contact.prenom} {contact.nom} ({contact.email})
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Destinataires libres (TO)
+              </label>
+              <input
+                type="text"
+                value={customRecipients}
+                onChange={(e) => setCustomRecipients(e.target.value)}
+                placeholder="email1@exemple.com; email2@exemple.com"
+                className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Séparez par virgule, point-virgule ou espace.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                CC libres
+              </label>
+              <input
+                type="text"
+                value={customCc}
+                onChange={(e) => setCustomCc(e.target.value)}
+                placeholder="cc1@exemple.com; cc2@exemple.com"
+                className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Optionnel. Séparez par virgule, point-virgule ou espace.</p>
             </div>
           </div>
 
