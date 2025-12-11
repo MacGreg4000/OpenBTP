@@ -106,7 +106,7 @@ export default function LigneCommande({
       data-handler-id={handlerId}
       className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${isSectionHeader ? (type === 'TITRE' ? 'bg-blue-50/60 dark:bg-blue-900/30' : 'bg-gray-100/60 dark:bg-gray-800/40') : ''}`}
     >
-      <td className="px-3 py-2 whitespace-nowrap align-top">
+      <td className="hidden sm:table-cell px-3 py-2 whitespace-nowrap align-top w-32">
         <div
           ref={dragIconRef}
           className="inline-flex items-center justify-center cursor-move hover:bg-gray-200 dark:hover:bg-gray-600 rounded p-1 transition-colors"
@@ -127,11 +127,10 @@ export default function LigneCommande({
             value={article}
             onChange={(e) => updateLigne(id, 'article', e.target.value)}
             disabled={isLocked}
-            style={{ maxWidth: '100px' }}
           />
         )}
       </td>
-      <td className="px-3 py-2 align-top">
+      <td className="px-3 py-2 align-top w-full">
         <input
           type="text"
           className={`w-full px-2 py-1.5 text-sm md:text-base border-2 rounded-md focus:outline-none transition-colors ${
