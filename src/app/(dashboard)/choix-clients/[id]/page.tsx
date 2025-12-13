@@ -12,6 +12,7 @@ import {
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import toast, { Toaster } from 'react-hot-toast'
+import { PageHeader } from '@/components/PageHeader'
 
 const STATUTS = {
   BROUILLON: { label: 'Brouillon', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
@@ -184,60 +185,59 @@ export default function ViewChoixClientPage({ params }: { params: Promise<{ id: 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       <Toaster position="top-right" />
-      
-      {/* Header avec retour */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+
+      <PageHeader
+        title={choixClient.nomClient}
+        subtitle={`Visite du ${format(new Date(choixClient.dateVisite), 'dd MMMM yyyy', { locale: fr })}`}
+        icon={DocumentTextIcon}
+        badge={
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${STATUTS[choixClient.statut as keyof typeof STATUTS].color}`}>
+            {STATUTS[choixClient.statut as keyof typeof STATUTS].label}
+          </span>
+        }
+        badgeColor="from-purple-600 via-pink-600 to-rose-700"
+        gradientColor="from-purple-600/10 via-pink-600/10 to-rose-700/10"
+        leftAction={
+          <button
+            onClick={() => router.push('/choix-clients')}
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            title="Retour à la liste des choix clients"
+          >
+            <ArrowLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/choix-clients/${id}/edit`}
+              className="inline-flex items-center px-3 py-2 text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <PencilIcon className="h-4 w-4 mr-1.5" />
+              Modifier
+            </Link>
+            <button
+              onClick={handleGeneratePDF}
+              disabled={generatingPDF}
+              className="inline-flex items-center px-3 py-2 text-sm font-semibold bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <DocumentTextIcon className="h-4 w-4 mr-1.5" />
+              {generatingPDF ? 'Génération...' : 'PDF'}
+            </button>
+            {choixClient.emailClient && (
               <button
-                onClick={() => router.back()}
-                className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="inline-flex items-center px-3 py-2 text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Retour
+                <EnvelopeIcon className="h-4 w-4 mr-1.5" />
+                {sendingEmail ? 'Envoi...' : 'Email'}
               </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {choixClient.nomClient}
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Visite du {format(new Date(choixClient.dateVisite), 'dd MMMM yyyy', { locale: fr })}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Link
-                href={`/choix-clients/${id}/edit`}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
-              >
-                <PencilIcon className="h-4 w-4 mr-2" />
-                Modifier
-              </Link>
-              <button
-                onClick={handleGeneratePDF}
-                disabled={generatingPDF}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <DocumentTextIcon className="h-4 w-4 mr-2" />
-                {generatingPDF ? 'Génération...' : 'PDF'}
-              </button>
-              {choixClient.emailClient && (
-                <button
-                  onClick={handleSendEmail}
-                  disabled={sendingEmail}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <EnvelopeIcon className="h-4 w-4 mr-2" />
-                  {sendingEmail ? 'Envoi...' : 'Email'}
-                </button>
-              )}
-            </div>
+            )}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Contenu */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">

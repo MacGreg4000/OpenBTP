@@ -29,7 +29,7 @@ interface CreateDevisPayload {
   lignes?: LignePayload[]
 }
 
-// GET /api/devis - Liste tous les devis
+// GET /api/devis - Liste tous les devis avec pagination
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -41,12 +41,25 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const clientId = searchParams.get('clientId')
     const statut = searchParams.get('statut')
+    const devisId = searchParams.get('devisId') // Filtre par ID de devis (pour le filtre numéro)
+    
+    // Paramètres de pagination
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '25')
+    const skip = (page - 1) * pageSize
 
+    // Construire le where
+    const where: any = {}
+    if (clientId) where.clientId = clientId
+    if (statut) where.statut = statut
+    if (devisId) where.id = devisId
+
+    // Compter le total avec les filtres
+    const total = await prisma.devis.count({ where })
+
+    // Récupérer les devis paginés
     const devis = await prisma.devis.findMany({
-      where: {
-        ...(clientId ? { clientId } : {}),
-        ...(statut ? { statut } : {})
-      },
+      where,
       include: {
         client: {
           select: {
@@ -77,10 +90,22 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         dateCreation: 'desc'
-      }
+      },
+      skip,
+      take: pageSize
     })
 
-    return NextResponse.json(devis)
+    const totalPages = Math.ceil(total / pageSize)
+
+    return NextResponse.json({
+      devis,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages
+      }
+    })
   } catch (error) {
     console.error('Erreur lors de la récupération des devis:', error)
     return NextResponse.json(

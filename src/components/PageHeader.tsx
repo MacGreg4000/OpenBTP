@@ -7,7 +7,7 @@ interface PageHeaderProps {
   title: string
   subtitle?: string
   icon: React.ComponentType<{ className?: string }>
-  badge?: string
+  badge?: string | ReactNode
   badgeColor?: string
   gradientColor?: string
   stats?: ReactNode
@@ -75,9 +75,15 @@ export function PageHeader({
                   <h1 className={`font-black ${getTextColor()} flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 transition-all duration-300 ${isCompact ? 'text-xs sm:text-sm md:text-base' : 'text-base sm:text-xl md:text-2xl'}`}>
                     <span className="truncate">{title}</span>
                     {!isCompact && badge && (
-                      <span className={`hidden md:inline px-2 sm:px-3 py-0.5 sm:py-1 bg-gradient-to-r ${badgeColor}/20 backdrop-blur-sm rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold border border-gray-300/30 dark:border-gray-600/30 whitespace-nowrap`}>
-                        {badge}
-                      </span>
+                      typeof badge === 'string' ? (
+                        <span className={`hidden md:inline px-2 sm:px-3 py-0.5 sm:py-1 bg-gradient-to-r ${badgeColor}/20 backdrop-blur-sm rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold border border-gray-300/30 dark:border-gray-600/30 whitespace-nowrap`}>
+                          {badge}
+                        </span>
+                      ) : (
+                        <span className="hidden md:inline">
+                          {badge}
+                        </span>
+                      )
                     )}
                   </h1>
                   {!isCompact && subtitle && (

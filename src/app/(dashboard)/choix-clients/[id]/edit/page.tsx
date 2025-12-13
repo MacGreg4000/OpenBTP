@@ -4,6 +4,8 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 import ChoixClientForm from '@/components/choix-client/ChoixClientForm'
+import { PageHeader } from '@/components/PageHeader'
+import { DocumentTextIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 export default function EditChoixClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -153,33 +155,25 @@ export default function EditChoixClientPage({ params }: { params: Promise<{ id: 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       <Toaster position="top-right" />
-      
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/choix-clients')}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Retour
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Modifier le Choix Client
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {choixClient.nomClient}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+
+      <PageHeader
+        title="Modifier le Choix Client"
+        subtitle={choixClient.nomClient}
+        icon={DocumentTextIcon}
+        badgeColor="from-purple-600 via-pink-600 to-rose-700"
+        gradientColor="from-purple-600/10 via-pink-600/10 to-rose-700/10"
+        leftAction={
+          <button
+            onClick={() => router.push('/choix-clients')}
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            title="Retour à la liste des choix clients"
+          >
+            <ArrowLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+        }
+      />
 
       {/* Contenu */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">

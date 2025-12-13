@@ -7,6 +7,7 @@ import path from 'path'
  * S'exécute au démarrage de l'application
  */
 export async function syncProfessionalTemplate() {
+  let connectionEstablished = false
   try {
     console.log('🔄 Synchronisation du template professionnel...')
     
@@ -26,6 +27,7 @@ export async function syncProfessionalTemplate() {
         name: 'Contrat de Sous-Traitance Professionnel'
       }
     })
+    connectionEstablished = true
     
     if (existingTemplate) {
       // Mettre à jour uniquement si le contenu a changé
@@ -56,11 +58,24 @@ export async function syncProfessionalTemplate() {
       })
       console.log('✅ Template professionnel créé avec ID:', template.id)
     }
-  } catch (error) {
-    console.error('❌ Erreur lors de la synchronisation du template:', error)
+  } catch (error: any) {
+    // Vérifier si c'est une erreur de connexion à la base de données
+    if (error?.code === 'P1001' || error?.message?.includes("Can't reach database server")) {
+      console.warn('⚠️  Base de données non disponible, synchronisation du template reportée')
+      // Ne pas afficher l'erreur complète pour les erreurs de connexion
+      return
+    }
+    console.error('❌ Erreur lors de la synchronisation du template:', error?.message || error)
     // Ne pas faire échouer le démarrage de l'application
   } finally {
-    await prisma.$disconnect()
+    // Ne déconnecter que si la connexion a été établie
+    if (connectionEstablished) {
+      try {
+        await prisma.$disconnect()
+      } catch (disconnectError) {
+        // Ignorer les erreurs de déconnexion
+      }
+    }
   }
 }
 
@@ -76,12 +91,17 @@ export async function getActiveTemplate() {
     })
     
     return template
-  } catch (error) {
-    console.error('❌ Erreur lors de la récupération du template actif:', error)
+  } catch (error: any) {
+    // Vérifier si c'est une erreur de connexion à la base de données
+    if (error?.code === 'P1001' || error?.message?.includes("Can't reach database server")) {
+      console.warn('⚠️  Base de données non disponible')
+      return null
+    }
+    console.error('❌ Erreur lors de la récupération du template actif:', error?.message || error)
     return null
-  } finally {
-    await prisma.$disconnect()
   }
+  // Ne pas déconnecter ici car cette fonction peut être appelée plusieurs fois
+  // et Prisma gère les connexions automatiquement
 }
 
 /**
@@ -99,11 +119,11 @@ export async function exportActiveTemplate(outputPath: string) {
     console.log('✅ Template exporté vers:', outputPath)
     
     return template
-  } catch (error) {
-    console.error('❌ Erreur lors de l\'exportation du template:', error)
+  } catch (error: any) {
+    console.error('❌ Erreur lors de l\'exportation du template:', error?.message || error)
     throw error
-  } finally {
-    await prisma.$disconnect()
   }
+  // Ne pas déconnecter ici car cette fonction peut être appelée plusieurs fois
+  // et Prisma gère les connexions automatiquement
 }
 

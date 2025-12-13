@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/PageHeader'
 import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
+import { Pagination } from '@/components/Pagination'
 import { 
   PlusIcon,
   DocumentTextIcon,
@@ -78,31 +79,93 @@ const statutLabels: Record<string, { label: string; color: string; icon: IconCom
   }
 }
 
+interface DevisForFilter {
+  id: string
+  numeroDevis: string
+  montantTTC: number
+  statut: string
+  client: {
+    id: string
+    nom: string
+    email: string
+  }
+}
+
 export default function DevisPage() {
   const [devisList, setDevisList] = useState<Devis[]>([])
+  const [allDevisForFilters, setAllDevisForFilters] = useState<DevisForFilter[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingFilters, setLoadingFilters] = useState(true)
   const [numeroFilter, setNumeroFilter] = useState<string | number | null>(null)
   const [clientFilter, setClientFilter] = useState<string | number | null>(null)
   const [statutFilter, setStatutFilter] = useState<string | number | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const pageSize = 25
 
-  useEffect(() => {
-    loadDevis()
-  }, [])
-
-  const loadDevis = async () => {
+  // Charger les options de filtres (tous les devis)
+  const loadFilterOptions = useCallback(async () => {
     try {
-      setLoading(true)
-      const response = await fetch('/api/devis')
+      setLoadingFilters(true)
+      const response = await fetch('/api/devis/options')
       if (response.ok) {
         const data = await response.json()
-        setDevisList(data)
+        setAllDevisForFilters(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des options de filtres:', error)
+    } finally {
+      setLoadingFilters(false)
+    }
+  }, [])
+
+  // Charger les devis paginés avec filtres
+  const loadDevis = useCallback(async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      params.append('page', currentPage.toString())
+      params.append('pageSize', pageSize.toString())
+      
+      if (clientFilter) {
+        params.append('clientId', clientFilter.toString())
+      }
+      if (statutFilter) {
+        params.append('statut', statutFilter.toString())
+      }
+      if (numeroFilter) {
+        params.append('devisId', numeroFilter.toString())
+      }
+
+      const response = await fetch(`/api/devis?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setDevisList(data.devis || [])
+        setTotalPages(data.pagination?.totalPages || 1)
+        setTotal(data.pagination?.total || 0)
       }
     } catch (error) {
       console.error('Erreur lors du chargement des devis:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, clientFilter, statutFilter, numeroFilter, allDevisForFilters])
+
+  useEffect(() => {
+    loadFilterOptions()
+  }, [loadFilterOptions])
+
+  useEffect(() => {
+    if (!loadingFilters) {
+      loadDevis()
+    }
+  }, [loadDevis, loadingFilters])
+
+  // Réinitialiser à la page 1 quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [clientFilter, statutFilter, numeroFilter])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -119,17 +182,17 @@ export default function DevisPage() {
     }).format(amount)
   }
 
-  // Créer la liste des numéros de devis pour le filtre
-  const numeroOptions: SearchableSelectOption[] = devisList
+  // Créer la liste des numéros de devis pour le filtre (depuis tous les devis)
+  const numeroOptions: SearchableSelectOption[] = allDevisForFilters
     .map(devis => ({
       value: devis.id,
       label: devis.numeroDevis,
-      subtitle: `${devis.client.nom} - ${formatCurrency(Number(devis.montantTTC))}`
+      subtitle: `${devis.client.nom} - ${formatCurrency(devis.montantTTC)}`
     }))
     .sort((a, b) => a.label.localeCompare(b.label))
 
-  // Créer la liste des clients uniques pour le filtre
-  const clientOptions: SearchableSelectOption[] = devisList
+  // Créer la liste des clients uniques pour le filtre (depuis tous les devis)
+  const clientOptions: SearchableSelectOption[] = allDevisForFilters
     .reduce<SearchableSelectOption[]>((acc, devis) => {
       const existingClient = acc.find(c => c.value === devis.client.id)
       if (!existingClient) {
@@ -153,15 +216,8 @@ export default function DevisPage() {
     { value: 'EXPIRE', label: 'Expiré' }
   ]
 
-  const devisFiltres = devisList.filter((devis) => {
-    const matchNumero = numeroFilter === null || devis.id === numeroFilter
-    
-    const matchClient = clientFilter === null || devis.client.id === clientFilter
-    
-    const matchStatut = statutFilter === null || devis.statut === statutFilter
-
-    return matchNumero && matchClient && matchStatut
-  })
+  // Les filtres sont maintenant appliqués côté serveur, donc on utilise directement devisList
+  const devisFiltres = devisList
 
   const isExpired = (devis: Devis) => {
     return new Date(devis.dateValidite) < new Date() && devis.statut === 'EN_ATTENTE'
@@ -375,6 +431,26 @@ export default function DevisPage() {
           </tbody>
         </table>
         </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
+        
+        {/* Info de pagination */}
+        {total > 0 && (
+          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              Affichage de <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> à{' '}
+              <span className="font-medium">{Math.min(currentPage * pageSize, total)}</span> sur{' '}
+              <span className="font-medium">{total}</span> devis
+            </p>
+          </div>
+        )}
       </div>
       </div>
     </div>

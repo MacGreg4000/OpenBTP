@@ -56,20 +56,39 @@ export default function RecentSAVWidget() {
       })
       
       if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des tickets SAV')
+        // Essayer de récupérer le message d'erreur de l'API
+        let errorMessage = 'Erreur lors de la récupération des tickets SAV'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // Si on ne peut pas parser le JSON, utiliser le message par défaut
+        }
+        throw new Error(`${errorMessage} (${response.status})`)
       }
       
       const data = await response.json()
+      
+      // L'API retourne { data: tickets[], meta: {...} }
       const ticketsList = Array.isArray(data) ? data : (data.data || [])
+      
+      if (!Array.isArray(ticketsList)) {
+        console.warn('Format de réponse inattendu:', data)
+        setTickets([])
+        setLoading(false)
+        return
+      }
+      
       // Filtre de sécurité côté client pour exclure les statuts clos/résolus/annulés
       const filtered = ticketsList.filter(
-        (t) => ![StatutSAV.RESOLU, StatutSAV.CLOS, StatutSAV.ANNULE].includes(t.statut)
+        (t) => t && ![StatutSAV.RESOLU, StatutSAV.CLOS, StatutSAV.ANNULE].includes(t.statut)
       )
       setTickets(filtered.slice(0, 10))
       setLoading(false)
     } catch (error) {
       console.error('Erreur lors de la récupération des tickets SAV:', error)
-      setError('Erreur lors du chargement des tickets SAV')
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors du chargement des tickets SAV'
+      setError(errorMessage)
       setLoading(false)
     }
   }

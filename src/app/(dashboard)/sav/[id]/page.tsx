@@ -12,6 +12,7 @@ import {
   XMarkIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
+import { PageHeader } from '@/components/PageHeader'
 import { StatutSAV, LABELS_STATUT_SAV } from '@/types/sav'
 
 type Statut = StatutSAV
@@ -133,79 +134,55 @@ export default function SavDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            {/* Effet de fond subtil avec dégradé rouge/rose (couleur pour SAV) - opacité 60% */}
-            <div className="absolute inset-0 bg-gradient-to-br from-red-600/60 via-rose-700/60 to-pink-800/60 dark:from-red-600/30 dark:via-rose-700/30 dark:to-pink-800/30"></div>
-
-            <div className="relative z-10 p-4 sm:p-6">
-              <div className="flex items-center gap-3 sm:gap-4">
-                {/* Bouton retour rond */}
-                <button 
-                  onClick={() => router.push('/sav')}
-                  className="group relative inline-flex items-center justify-center rounded-full border border-red-200/60 dark:border-red-900/40 bg-white/80 dark:bg-red-950/30 text-red-700 dark:text-red-200 shadow-lg shadow-red-500/10 hover:shadow-red-500/20 hover:border-red-300 dark:hover:border-red-700 transition-all w-8 h-8 flex-shrink-0"
-                >
-                  <span className="absolute inset-0 rounded-full bg-gradient-to-r from-red-100/70 via-red-200/60 to-rose-200/60 dark:from-red-900/30 dark:via-red-800/20 dark:to-rose-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <ArrowLeftIcon className="relative h-4 w-4" />
-                </button>
-
-                {/* Badge icône + Titre */}
-                <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg ring-2 ring-white/30 flex-1 min-w-0">
-                  <div className="flex items-center justify-center rounded-full bg-gradient-to-br from-red-500 via-rose-600 to-pink-600 text-white shadow-lg shadow-red-500/40 w-8 h-8 flex-shrink-0">
-                    <WrenchScrewdriverIcon className="h-4 w-4 drop-shadow-md" />
-                  </div>
-                  <h1 className="text-lg sm:text-xl font-bold text-red-900 dark:text-white truncate">
-                    Ticket #{ticket.numTicket}
-                  </h1>
-                </div>
-
-                {/* Actions à droite */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <select 
-                    className="px-3 py-2 rounded-md bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white outline-none ring-1 ring-inset ring-white/20 dark:ring-gray-700/50 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500 shadow-sm text-sm" 
-                    value={ticket.statut} 
-                    onChange={e=>updateField({ statut: e.target.value as Statut })}
-                  >
-                    {Object.values(StatutSAV).map(statut => (
-                      <option key={statut} value={statut}>
-                        {LABELS_STATUT_SAV[statut]}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    disabled={saving}
-                    onClick={()=> updateField({
-                      titre: form.titre,
-                      description: form.description,
-                      localisation: form.localisation,
-                      adresseIntervention: form.adresseIntervention,
-                      contactNom: form.contactNom,
-                      contactTelephone: form.contactTelephone,
-                      contactEmail: form.contactEmail,
-                    })}
-                    className="px-4 py-2 bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold shadow-lg hover:bg-white/40 transition-all duration-200 text-red-900 dark:text-white border-white/50 disabled:opacity-60"
-                  >
-                    {saving ? 'Enregistrement...' : 'Enregistrer'}
-                  </button>
-                </div>
-              </div>
-              
-              {/* Champ titre en dessous */}
-              <div className="mt-3">
-                <input
-                  className="w-full px-3 py-2 rounded-md bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white outline-none ring-1 ring-inset ring-white/20 dark:ring-gray-700/50 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 shadow-sm text-sm"
-                  name="titre"
-                  value={form.titre}
-                  onChange={onChangeForm}
-                  placeholder="Titre du ticket"
-                />
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-red-50/20 to-rose-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title={`Ticket #${ticket.numTicket}`}
+        subtitle={form.titre || 'Titre du ticket'}
+        icon={WrenchScrewdriverIcon}
+        badgeColor="from-red-600 via-rose-600 to-pink-700"
+        gradientColor="from-red-600/10 via-rose-600/10 to-pink-700/10"
+        leftAction={
+          <button
+            onClick={() => router.push('/sav')}
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            title="Retour à la liste des tickets SAV"
+          >
+            <ArrowLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+        }
+        actions={
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <select 
+              className="px-3 py-2 rounded-md bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white outline-none ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-red-500 shadow-sm text-sm" 
+              value={ticket.statut} 
+              onChange={e=>updateField({ statut: e.target.value as Statut })}
+            >
+              {Object.values(StatutSAV).map(statut => (
+                <option key={statut} value={statut}>
+                  {LABELS_STATUT_SAV[statut]}
+                </option>
+              ))}
+            </select>
+            <button
+              disabled={saving}
+              onClick={()=> updateField({
+                titre: form.titre,
+                description: form.description,
+                localisation: form.localisation,
+                adresseIntervention: form.adresseIntervention,
+                contactNom: form.contactNom,
+                contactTelephone: form.contactTelephone,
+                contactEmail: form.contactEmail,
+              })}
+              className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
           </div>
-        </div>
+        }
+      />
+
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Contenu */}
         {/* Tabs */}
