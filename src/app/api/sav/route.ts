@@ -155,9 +155,7 @@ export async function GET(request: Request) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
     console.error('Détails de l\'erreur:', {
       message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-      whereClause,
-      filtres
+      stack: error instanceof Error ? error.stack : undefined
     })
     return NextResponse.json(
       { error: 'Erreur lors de la récupération des tickets SAV', details: errorMessage },

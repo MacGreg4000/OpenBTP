@@ -17,6 +17,12 @@
 .DS_Store
 *.pem
 
+# Dossiers système Synology (mais on garde default.tsx pour Next.js)
+@eaDir/*
+!@eaDir/default.tsx
+**/@eaDir/*
+!**/@eaDir/default.tsx
+
 # Debug
 npm-debug.log*
 yarn-debug.log*
