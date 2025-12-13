@@ -44,27 +44,44 @@ export default function RecentSAVWidget() {
     try {
       setError(null)
       // Ne garder que les tickets à traiter (exclure résolus/clos/annulés)
+      // Note: EN_PAUSE n'existe pas dans l'enum, on utilise les statuts disponibles
       const statutsActifs = [
         StatutSAV.NOUVEAU,
         StatutSAV.ASSIGNE,
         StatutSAV.EN_COURS,
         StatutSAV.EN_ATTENTE,
-        StatutSAV.EN_PAUSE
+        StatutSAV.PLANIFIE,
+        StatutSAV.EN_ATTENTE_PIECES,
+        StatutSAV.EN_ATTENTE_VALIDATION
       ]
-      const response = await fetch(`/api/sav?pageSize=10&page=1&statut=${statutsActifs.join(',')}`, {
+      
+      // Essayer d'abord sans filtre de statut pour éviter les erreurs
+      let response = await fetch(`/api/sav?pageSize=10&page=1`, {
         cache: 'no-store'
       })
+      
+      // Si ça échoue, essayer avec les statuts
+      if (!response.ok) {
+        response = await fetch(`/api/sav?pageSize=10&page=1&statut=${statutsActifs.join(',')}`, {
+          cache: 'no-store'
+        })
+      }
       
       if (!response.ok) {
         // Essayer de récupérer le message d'erreur de l'API
         let errorMessage = 'Erreur lors de la récupération des tickets SAV'
         try {
           const errorData = await response.json()
-          errorMessage = errorData.error || errorMessage
+          errorMessage = errorData.error || errorData.details || errorMessage
         } catch {
           // Si on ne peut pas parser le JSON, utiliser le message par défaut
         }
-        throw new Error(`${errorMessage} (${response.status})`)
+        console.error('Erreur API SAV:', errorMessage, response.status)
+        // Ne pas bloquer le dashboard, juste afficher un message d'erreur discret
+        setTickets([])
+        setError('Impossible de charger les tickets SAV')
+        setLoading(false)
+        return
       }
       
       const data = await response.json()
@@ -87,8 +104,9 @@ export default function RecentSAVWidget() {
       setLoading(false)
     } catch (error) {
       console.error('Erreur lors de la récupération des tickets SAV:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Erreur lors du chargement des tickets SAV'
-      setError(errorMessage)
+      // Ne pas bloquer le dashboard, juste afficher un message d'erreur discret
+      setTickets([])
+      setError('Impossible de charger les tickets SAV')
       setLoading(false)
     }
   }

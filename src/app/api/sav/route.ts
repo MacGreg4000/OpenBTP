@@ -152,8 +152,15 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error('Erreur lors de la récupération des tickets SAV:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+    console.error('Détails de l\'erreur:', {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      whereClause,
+      filtres
+    })
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération des tickets SAV' },
+      { error: 'Erreur lors de la récupération des tickets SAV', details: errorMessage },
       { status: 500 }
     )
   }
