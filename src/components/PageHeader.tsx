@@ -33,9 +33,35 @@ export function PageHeader({
   const [isCompact, setIsCompact] = useState(false)
 
   useEffect(() => {
+    let ticking = false
+
     const handleScroll = () => {
-      setIsCompact(window.scrollY > compactThreshold)
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY
+
+          // Hystérésis pour éviter les vibrations autour du seuil
+          const enterThreshold = compactThreshold
+          const exitThreshold = compactThreshold * 0.5
+
+          setIsCompact((prev) => {
+            if (!prev && scrollY > enterThreshold) {
+              return true
+            }
+            if (prev && scrollY < exitThreshold) {
+              return false
+            }
+            return prev
+          })
+
+          ticking = false
+        })
+        ticking = true
+      }
     }
+
+    // Initialiser l'état au chargement
+    handleScroll()
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
