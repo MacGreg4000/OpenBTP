@@ -1,5 +1,7 @@
 'use client'
 
+import { useNotification } from '@/hooks/useNotification'
+
 // Export vectoriel avec pdfmake (sans capture écran)
 type PdfMakeLib = { vfs?: unknown; createPdf: (docDef: unknown) => { download: (name?: string) => void } }
 type PdfFontsLib = { vfs: unknown }
@@ -17,6 +19,7 @@ type ApiTask = {
 type ResourceItem = { id: string; title: string; kind: 'I'|'S' }
 
 export default function ExportPdfButton({ title = 'Exporter PDF', fileName = 'planning-ressources.pdf', getPlanningData }: { title?: string; fileName?: string; getPlanningData: () => { days: string[]; resources: ResourceItem[]; tasks: ApiTask[]; periodText: string } }) {
+  const { showNotification, NotificationComponent } = useNotification()
   const getColorForResource = (resourceId: string) => {
     const palette = ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#14b8a6','#06b6d4','#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#f43f5e','#fb7185']
     let h = 0; for (let i=0;i<resourceId.length;i++) { h = (h<<5) - h + resourceId.charCodeAt(i); h|=0 }
@@ -91,16 +94,18 @@ export default function ExportPdfButton({ title = 'Exporter PDF', fileName = 'pl
       pdfMakeLib.createPdf(docDefinition).download(fileName)
     } catch (e) {
       console.error(e)
-      // Note: Ce composant utilise pdfmake chargé dynamiquement, alert() est conservé pour compatibilité
-      alert("Échec de l'export PDF")
+      showNotification('Erreur', "Échec de l'export PDF", 'error')
     }
   }
 
   return (
-    <button onClick={handleExport} className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-white text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75h9m-9 0A2.25 2.25 0 005.25 6v12A2.25 2.25 0 007.5 20.25h9A2.25 2.25 0 0018.75 18V6A2.25 2.25 0 0016.5 3.75m-9 0h9M9 8.25h6M9 12h6m-6 3.75h3" /></svg>
-      {title}
-    </button>
+    <>
+      <button onClick={handleExport} className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-white text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75h9m-9 0A2.25 2.25 0 005.25 6v12A2.25 2.25 0 007.5 20.25h9A2.25 2.25 0 0018.75 18V6A2.25 2.25 0 0016.5 3.75m-9 0h9M9 8.25h6M9 12h6m-6 3.75h3" /></svg>
+        {title}
+      </button>
+      <NotificationComponent />
+    </>
   )
 }
 

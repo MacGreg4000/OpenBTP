@@ -23,7 +23,7 @@ export const generatePDF = async ({
     
     // TODO: Remplacer par une API Puppeteer pour la génération PDF
     console.log('Génération PDF désactivée - migration vers Puppeteer en cours');
-    alert('Fonctionnalité PDF temporairement désactivée - migration vers Puppeteer en cours');
+    throw new Error('Fonctionnalité PDF temporairement désactivée - migration vers Puppeteer en cours');
     
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);

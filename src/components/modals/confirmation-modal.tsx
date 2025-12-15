@@ -109,7 +109,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
           {/* Content */}
           <div className="p-6">
-            <Dialog.Description className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+            <Dialog.Description className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
               {message}
             </Dialog.Description>
           </div>

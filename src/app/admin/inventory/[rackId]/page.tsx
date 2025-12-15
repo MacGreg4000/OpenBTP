@@ -12,6 +12,7 @@ export default function RackDetailPage(props: { params: Promise<{ rackId: string
   const [rack, setRack] = useState<RackWithEmplacements | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
   const [selectedEmplacement, setSelectedEmplacement] = useState<string | null>(null)
   const [materiauData, setMateriauData] = useState({
     nom: '',
@@ -52,10 +53,11 @@ export default function RackDetailPage(props: { params: Promise<{ rackId: string
     e.preventDefault()
     
     if (!selectedEmplacement) {
-      alert('Veuillez sélectionner un emplacement')
+      setFormError('Veuillez sélectionner un emplacement')
       return
     }
     
+    setFormError(null)
     setSubmitting(true)
     try {
       // Créer le matériau avec conversion de la quantité en nombre
@@ -270,6 +272,11 @@ export default function RackDetailPage(props: { params: Promise<{ rackId: string
                 <h3 className="text-lg font-medium mb-3">Ajouter un matériau</h3>
                 {selectedEmplacement ? (
                   <form onSubmit={handleAddMateriau}>
+                    {formError && (
+                      <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {formError}
+                      </div>
+                    )}
                     <div className="space-y-4">
                       <div>
                         <label htmlFor="nom" className="block text-sm font-medium text-gray-700">

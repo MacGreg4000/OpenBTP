@@ -91,7 +91,7 @@ export default function BonRegieDetailPage({ params }: { params: Promise<{ id: s
       document.body.removeChild(a)
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Une erreur est survenue lors de la génération du PDF')
+      setError('Une erreur est survenue lors de la génération du PDF')
     } finally {
       setGenerating(false)
     }

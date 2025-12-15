@@ -11,6 +11,7 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
   const { t } = usePortalI18n()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const signatureRef = useRef<SignatureCanvas>(null)
 
   const [dates, setDates] = useState('')
@@ -26,7 +27,10 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (signatureRef.current?.isEmpty()) return alert(t('signature_required'))
+    if (signatureRef.current?.isEmpty()) {
+      setError(t('signature_required'))
+      return
+    }
     setLoading(true)
     try {
       const signature = signatureRef.current?.toDataURL('image/jpeg', 0.5) || ''
@@ -34,10 +38,11 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
       const res = await fetch('/api/public/bon-regie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error('Erreur')
       setSuccess(true)
+      setError(null)
       setDates(''); setClient(''); setNomChantier(''); setDescription(''); setTempsChantier(''); setNombreTechniciens('1'); setMateriaux(''); setNomSignataire(''); clearSignature()
       window.scrollTo(0, 0)
     } catch {
-      alert(t('error_save_bon'))
+      setError(t('error_save_bon'))
     } finally {
       setLoading(false)
     }
@@ -55,6 +60,11 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
 
         {success && (
           <div className="bg-green-50 rounded-xl p-4 shadow text-green-700 flex items-center"><DocumentCheckIcon className="h-6 w-6 mr-2"/> {t('saved')}</div>
+        )}
+        {error && (
+          <div className="bg-red-50 rounded-xl p-4 shadow text-red-700">
+            {error}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg space-y-4 border-2 border-gray-200 dark:border-gray-600">

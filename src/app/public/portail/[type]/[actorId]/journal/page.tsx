@@ -416,6 +416,7 @@ function JournalForm({
   onSave: () => void
 }) {
   const { t } = usePortalI18n()
+  const [formError, setFormError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     date: entry?.date || new Date().toISOString().split('T')[0],
     heureDebut: entry?.heureDebut || '08:00',
@@ -432,15 +433,16 @@ function JournalForm({
     
     // Validation côté client
     if (!formData.chantierId && !formData.lieuLibre?.trim()) {
-      alert(`⚠️ ${t('error_chantier_required')}`)
+      setFormError(`⚠️ ${t('error_chantier_required')}`)
       return
     }
     
     if (!formData.description?.trim()) {
-      alert(`⚠️ ${t('error_description_required')}`)
+      setFormError(`⚠️ ${t('error_description_required')}`)
       return
     }
     
+    setFormError(null)
     setSaving(true)
 
     try {
@@ -477,6 +479,7 @@ function JournalForm({
 
       if (response.ok) {
         console.log('✅ Sauvegarde réussie')
+        setFormError(null)
         onSave()
       } else {
         const errorData = await response.json()
@@ -492,11 +495,11 @@ function JournalForm({
           errorMessage = `❌ ${errorData.error || t('error_unknown')}`
         }
         
-        alert(errorMessage)
+        setFormError(errorMessage)
       }
     } catch (error) {
       console.error('❌ Erreur lors de la sauvegarde:', error)
-      alert(`❌ ${t('error_connection')}: ${error}`)
+      setFormError(`❌ ${t('error_connection')}: ${error}`)
     } finally {
       setSaving(false)
     }
@@ -508,6 +511,12 @@ function JournalForm({
         <h3 className="text-lg font-semibold mb-4">
           {entry ? t('modal_edit_entry') : t('modal_new_activity')}
         </h3>
+
+        {formError && (
+          <div className="mb-3 rounded-lg bg-red-50 text-red-700 px-3 py-2 text-sm border border-red-200">
+            {formError}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

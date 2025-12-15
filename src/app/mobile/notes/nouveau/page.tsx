@@ -13,6 +13,7 @@ export default function MobileNouvelleNotePage() {
   const { selectedChantier } = useSelectedChantier()
   const [contenu, setContenu] = useState('')
   const [saving, setSaving] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedChantier) {
@@ -27,10 +28,11 @@ export default function MobileNouvelleNotePage() {
     if (!selectedChantier) return
 
     if (!contenu.trim()) {
-      alert('Veuillez saisir une note')
+      setErrorMessage('Veuillez saisir une note')
       return
     }
 
+    setErrorMessage(null)
     setSaving(true)
 
     try {
@@ -52,7 +54,7 @@ export default function MobileNouvelleNotePage() {
       router.push('/mobile/notes')
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de l\'enregistrement')
+      setErrorMessage('Erreur lors de l\'enregistrement')
     } finally {
       setSaving(false)
     }
@@ -83,6 +85,11 @@ export default function MobileNouvelleNotePage() {
 
       {/* Formulaire */}
       <div className="max-w-md mx-auto px-4 py-6">
+        {errorMessage && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

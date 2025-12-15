@@ -23,6 +23,7 @@ export default function BonRegiePage() {
   const [nombreTechniciens, setNombreTechniciens] = useState('')
   const [materiaux, setMateriaux] = useState('')
   const [nomSignataire, setNomSignataire] = useState('')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   
   const clearSignature = () => {
     if (signatureRef.current) {
@@ -49,10 +50,11 @@ export default function BonRegiePage() {
     
     // Vérifier si la signature est vide
     if (signatureRef.current?.isEmpty()) {
-      alert('Veuillez signer le bon de régie')
+      setErrorMessage('Veuillez signer le bon de régie')
       return
     }
     
+    setErrorMessage(null)
     setLoading(true)
     
     try {
@@ -103,7 +105,7 @@ export default function BonRegiePage() {
       window.scrollTo(0, 0)
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Une erreur est survenue lors de l\'enregistrement du bon de régie')
+      setErrorMessage('Une erreur est survenue lors de l\'enregistrement du bon de régie')
     } finally {
       setLoading(false)
     }
@@ -128,6 +130,12 @@ export default function BonRegiePage() {
             </div>
           </div>
           
+          {errorMessage && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {errorMessage}
+            </div>
+          )}
+
           {success ? (
             <div className="bg-green-50 dark:bg-green-900/30 p-6 rounded-lg text-center mb-6">
               <DocumentCheckIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />

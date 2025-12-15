@@ -26,6 +26,7 @@ export default function MobilePhotosPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [compressing, setCompressing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedPhotos, setSelectedPhotos] = useState<Array<{ id: string; file: File; preview: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -138,6 +139,7 @@ export default function MobilePhotosPage() {
 
     try {
       setUploading(true)
+      setErrorMessage(null)
 
       // Uploader les photos par batch de 3 pour éviter de surcharger la connexion
       const BATCH_SIZE = 3
@@ -189,7 +191,7 @@ export default function MobilePhotosPage() {
       await loadPhotos()
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error)
-      alert(error instanceof Error ? error.message : 'Erreur lors de l\'upload des photos')
+      setErrorMessage(error instanceof Error ? error.message : 'Erreur lors de l\'upload des photos')
     } finally {
       setUploading(false)
     }
@@ -234,6 +236,11 @@ export default function MobilePhotosPage() {
 
       {/* Contenu */}
       <div className="max-w-md mx-auto px-4 py-6">
+        {errorMessage && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        )}
         {/* Bouton d'upload */}
         <div className="mb-6">
           {/* Input pour la photothèque (multiple) */}

@@ -57,6 +57,7 @@ export default function MobileNouveauRapportPage() {
   const [personnesSectionOpen, setPersonnesSectionOpen] = useState(true)
   const [saving, setSaving] = useState(false)
   const [compressing, setCompressing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
@@ -275,10 +276,11 @@ export default function MobileNouveauRapportPage() {
     if (!selectedChantier) return
 
     if (notes.length === 0 && photos.length === 0) {
-      alert('Veuillez ajouter au moins une note ou une photo')
+      setErrorMessage('Veuillez ajouter au moins une note ou une photo')
       return
     }
 
+    setErrorMessage(null)
     setSaving(true)
 
     try {
@@ -356,7 +358,7 @@ export default function MobileNouveauRapportPage() {
       router.push('/mobile/documents')
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de l\'enregistrement du rapport')
+      setErrorMessage('Erreur lors de l\'enregistrement du rapport')
     } finally {
       setSaving(false)
     }
@@ -387,6 +389,11 @@ export default function MobileNouveauRapportPage() {
 
       {/* Formulaire */}
       <div className="max-w-md mx-auto px-4 py-6">
+        {errorMessage && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Date */}
           <div>

@@ -7,6 +7,7 @@ import { CalendarIcon, PlusIcon, UserIcon, BuildingOfficeIcon, DocumentArrowDown
 import ResourceScheduler from '@/components/planning/ResourceScheduler'
 import TaskModal from '@/components/planning/TaskModal'
 import { useNotification } from '@/hooks/useNotification'
+import { useConfirmation } from '@/components/modals/confirmation-modal'
 
 interface Chantier {
   chantierId: string
@@ -78,6 +79,7 @@ interface Task {
 export default function PlanningRessourcesPage() {
   const router = useRouter()
   const { showNotification, NotificationComponent } = useNotification()
+  const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState<TaskData | null>(null)
   const [chantiers, setChantiers] = useState<Chantier[]>([])
@@ -177,69 +179,78 @@ export default function PlanningRessourcesPage() {
     // Si c'est une tâche individualisée (multi-jours), on demande confirmation spécifique
     const isIndividualTask = taskId.includes('-') && taskId.split('-').length > 1;
     
+    let confirmTitle = 'Supprimer la tâche';
     let confirmMessage = 'Êtes-vous sûr de vouloir supprimer cette tâche ?';
     if (isIndividualTask) {
+      confirmTitle = 'Supprimer la journée';
       confirmMessage = 'Êtes-vous sûr de vouloir supprimer cette journée de la tâche ?\n\nCela ne supprimera que ce jour spécifique, pas toute la tâche multi-jours.';
     }
     
-    if (!confirm(confirmMessage)) {
-      return
-    }
+    showConfirmation({
+      title: confirmTitle,
+      message: confirmMessage,
+      type: 'warning',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          // Si c'est une tâche individualisée, on supprime seulement cette journée
+          if (isIndividualTask) {
+            // Extraire l'ID de la tâche originale et la date
+            // Format: originalTaskId-YYYY-MM-DD
+            const lastDashIndex = taskId.lastIndexOf('-');
+            const secondLastDashIndex = taskId.lastIndexOf('-', lastDashIndex - 1);
+            const thirdLastDashIndex = taskId.lastIndexOf('-', secondLastDashIndex - 1);
+            
+            const originalTaskId = taskId.substring(0, thirdLastDashIndex);
+            const date = taskId.substring(thirdLastDashIndex + 1); // YYYY-MM-DD
+            
+            console.log('Suppression de journée:', { originalTaskId, date, taskId })
+            
+            const response = await fetch(`/api/planning/tasks/${originalTaskId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                action: 'removeDay',
+                date: date
+              })
+            })
 
-    try {
-      // Si c'est une tâche individualisée, on supprime seulement cette journée
-      if (isIndividualTask) {
-        // Extraire l'ID de la tâche originale et la date
-        // Format: originalTaskId-YYYY-MM-DD
-        const lastDashIndex = taskId.lastIndexOf('-');
-        const secondLastDashIndex = taskId.lastIndexOf('-', lastDashIndex - 1);
-        const thirdLastDashIndex = taskId.lastIndexOf('-', secondLastDashIndex - 1);
-        
-        const originalTaskId = taskId.substring(0, thirdLastDashIndex);
-        const date = taskId.substring(thirdLastDashIndex + 1); // YYYY-MM-DD
-        
-        console.log('Suppression de journée:', { originalTaskId, date, taskId })
-        
-        const response = await fetch(`/api/planning/tasks/${originalTaskId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'removeDay',
-            date: date
+            if (response.ok) {
+              // Recharger le planning
+              router.refresh()
+              // Force le rechargement complet de la page après un court délai
+              setTimeout(() => window.location.reload(), 100)
+            } else {
+              const errorData = await response.json()
+              console.error('Erreur lors de la suppression de la journée:', errorData.error)
+              showNotification('Erreur', 'Erreur lors de la suppression de la journée: ' + errorData.error, 'error')
+            }
+            return
+          }
+
+          // Sinon, suppression normale de la tâche complète
+          const response = await fetch(`/api/planning/tasks/${taskId}`, {
+            method: 'DELETE',
           })
-        })
 
-      if (response.ok) {
-        // Recharger le planning
-        router.refresh()
-        // Force le rechargement complet de la page après un court délai
-        setTimeout(() => window.location.reload(), 100)
-      } else {
-        const errorData = await response.json()
-        console.error('Erreur lors de la suppression de la journée:', errorData.error)
-        showNotification('Erreur', 'Erreur lors de la suppression de la journée: ' + errorData.error, 'error')
+          if (response.ok) {
+            // Recharger le planning
+            router.refresh()
+            // Force le rechargement complet de la page après un court délai
+            setTimeout(() => window.location.reload(), 100)
+          } else {
+            console.error('Erreur lors de la suppression de la tâche')
+            showNotification('Erreur', 'Erreur lors de la suppression de la tâche', 'error')
+          }
+        } catch (error) {
+          console.error('Erreur lors de la suppression de la tâche:', error)
+          showNotification('Erreur', 'Une erreur est survenue lors de la suppression.', 'error')
+        }
       }
-      return
-    }
-
-    // Sinon, suppression normale de la tâche complète
-    const response = await fetch(`/api/planning/tasks/${taskId}`, {
-      method: 'DELETE',
     })
-
-    if (response.ok) {
-      // Recharger le planning
-      router.refresh()
-      // Force le rechargement complet de la page après un court délai
-      setTimeout(() => window.location.reload(), 100)
-    } else {
-      console.error('Erreur lors de la suppression de la tâche')
-    }
-    } catch (error) {
-      console.error('Erreur lors de la suppression de la tâche:', error)
-    }
   }
 
   const handleAddTask = (resourceId: string, date: string) => {
@@ -402,6 +413,7 @@ export default function PlanningRessourcesPage() {
         soustraitants={soustraitants}
       />
       <NotificationComponent />
+      {ConfirmationModalComponent}
     </div>
   )
 }

@@ -46,6 +46,7 @@ export default function InventoryScannerPage() {
   const [racks, setRacks] = useState<RackWithEmplacements[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [foundEmplacement, setFoundEmplacement] = useState<{
     id: string
     ligne: number
@@ -130,6 +131,7 @@ export default function InventoryScannerPage() {
     
     try {
       setProcessingAction(true)
+      setSuccessMessage(null)
       
       // Appel à l'API pour supprimer le matériau
       const response = await fetch(`/api/inventory/materiaux/${scannedMateriau.id}`, {
@@ -140,7 +142,7 @@ export default function InventoryScannerPage() {
         throw new Error('Erreur lors de la suppression du matériau')
       }
       
-      alert(`Le matériau ${scannedMateriau.nom} a été retiré avec succès de l\'emplacement ${foundEmplacement.position}`)
+      setSuccessMessage(`Le matériau ${scannedMateriau.nom} a été retiré avec succès de l'emplacement ${foundEmplacement.position}`)
       
       // Réinitialiser pour permettre un nouveau scan
       setFoundEmplacement(null)
@@ -193,6 +195,12 @@ export default function InventoryScannerPage() {
       <div className="flex flex-col items-center pb-12">
         <h1 className="text-2xl font-bold mb-6">Scanner un QR code d&apos;emplacement</h1>
         
+        {successMessage && (
+          <div className="w-full max-w-md bg-green-50 text-green-700 p-4 rounded-lg mb-4 border border-green-200">
+            {successMessage}
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-10">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
