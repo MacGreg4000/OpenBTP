@@ -4,84 +4,98 @@ import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { 
-  ChevronDownIcon, 
-  ChevronRightIcon, 
+  ChevronLeftIcon,
+  ChevronRightIcon,
   PlusIcon, 
   TrashIcon,
   TruckIcon,
   CheckIcon,
-  ArrowRightIcon
+  XMarkIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
 import { Pays, Usine, Chargement } from '@/types/planification'
+import { useNotification } from '@/hooks/useNotification'
+import { useConfirmation } from '@/components/modals/confirmation-modal'
 
-interface ChargementCumule {
-  usineId: string
-  usine: Usine
-  contenu: string
-  semaine: number
-  estCharge: boolean
-  dateCreation: Date
-  dateChargement?: Date
+interface UsineAvecChargements extends Usine {
+  chargements: Chargement[]
 }
 
-interface PaysAvecChargements extends Pays {
-  usines: (Usine & {
-    chargementsParSemaine: Record<number, Chargement[]>
-  })[]
+// Fonction pour obtenir le numéro de semaine ISO 8601 correct
+function getWeekNumber(date: Date): { week: number; year: number } {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const dayNum = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+  return { week: weekNo, year: d.getUTCFullYear() }
+}
+
+// Fonction pour obtenir le lundi d'une semaine donnée
+function getMondayOfWeek(weekNumber: number, year: number): Date {
+  const jan4 = new Date(year, 0, 4)
+  const jan4DayOfWeek = jan4.getDay() || 7
+  const jan4Monday = new Date(jan4)
+  jan4Monday.setDate(jan4.getDate() - jan4DayOfWeek + 1)
+  const targetMonday = new Date(jan4Monday)
+  targetMonday.setDate(jan4Monday.getDate() + (weekNumber - 1) * 7)
+  return targetMonday
+}
+
+// Fonction pour formater une semaine
+function formatWeek(weekNumber: number, year: number): string {
+  const monday = getMondayOfWeek(weekNumber, year)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  
+  return `S${weekNumber} (${monday.getDate()}/${monday.getMonth() + 1} - ${sunday.getDate()}/${sunday.getMonth() + 1}/${year})`
 }
 
 export default function PlanificationChargementsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [pays, setPays] = useState<PaysAvecChargements[]>([])
+  const { showNotification, NotificationComponent } = useNotification()
+  const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
+  
+  const [usines, setUsines] = useState<UsineAvecChargements[]>([])
+  const [pays, setPays] = useState<Pays[]>([])
   const [loading, setLoading] = useState(true)
-  const [paysExpanded, setPaysExpanded] = useState<Record<string, boolean>>({})
-  const [usinesExpanded, setUsinesExpanded] = useState<Record<string, boolean>>({})
-  const [showAddPays, setShowAddPays] = useState(false)
-  const [showAddUsine, setShowAddUsine] = useState<string | null>(null)
-  const [showAddChargement, setShowAddChargement] = useState<string | null>(null)
+  const [currentWeek, setCurrentWeek] = useState(() => getWeekNumber(new Date()))
+  const [showAddUsineModal, setShowAddUsineModal] = useState(false)
+  const [showAddPaysModal, setShowAddPaysModal] = useState(false)
+  const [showAddChargementModal, setShowAddChargementModal] = useState(false)
+  const [selectedUsineForChargement, setSelectedUsineForChargement] = useState<string | null>(null)
+  const [selectedWeekForChargement, setSelectedWeekForChargement] = useState<{ week: number; year: number } | null>(null)
+  
   const [newPays, setNewPays] = useState({ nom: '', code: '', icone: '' })
   const [newUsine, setNewUsine] = useState({ nom: '', paysId: '' })
-  const [newChargement, setNewChargement] = useState({ contenu: '', semaine: 1, usineId: '' })
+  const [newChargement, setNewChargement] = useState({ contenu: '', usineId: '', weekNumber: 1, year: new Date().getFullYear() })
 
-  // Calculer les semaines de l'année
-  const getSemainesAnnee = () => {
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const semaines = []
+  // Calculer les 8 prochaines semaines à partir de la semaine actuelle
+  const getWeeksToDisplay = () => {
+    const weeks: Array<{ week: number; year: number; label: string; isPast: boolean }> = []
+    const today = new Date()
+    const todayWeek = getWeekNumber(today)
     
-    for (let i = 0; i < 8; i++) { // 8 semaines à venir
-      const date = new Date(now)
-      date.setDate(now.getDate() + (i * 7))
+    for (let i = 0; i < 8; i++) {
+      const targetDate = new Date(today)
+      targetDate.setDate(today.getDate() + (i * 7))
+      const { week, year } = getWeekNumber(targetDate)
+      const label = formatWeek(week, year)
+      const isPast = year < todayWeek.year || (year === todayWeek.year && week < todayWeek.week)
       
-      // Calculer le numéro de semaine ISO
-      const startOfYear = new Date(currentYear, 0, 1)
-      const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-      const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7)
-      
-      const startOfWeek = new Date(date)
-      startOfWeek.setDate(date.getDate() - date.getDay() + 1) // Lundi
-      
-      const endOfWeek = new Date(startOfWeek)
-      endOfWeek.setDate(startOfWeek.getDate() + 6) // Dimanche
-      
-      semaines.push({
-        numero: weekNumber,
-        debut: startOfWeek,
-        fin: endOfWeek,
-        label: `S${weekNumber} (${startOfWeek.getDate()}/${startOfWeek.getMonth() + 1} - ${endOfWeek.getDate()}/${endOfWeek.getMonth() + 1})`
-      })
+      weeks.push({ week, year, label, isPast })
     }
     
-    return semaines
+    return weeks
   }
 
-  const semainesAnnee = getSemainesAnnee()
+  const weeks = getWeeksToDisplay()
 
   // Vérifier les permissions
   useEffect(() => {
-    if (status === 'loading') return // Attendre le chargement de la session
+    if (status === 'loading') return
     
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
       router.push('/dashboard')
@@ -92,54 +106,72 @@ export default function PlanificationChargementsPage() {
   // Charger les données
   const loadData = async () => {
     try {
+      setLoading(true)
+      
+      // Charger les pays
+      const paysResponse = await fetch('/api/planification-chargements/pays')
+      if (paysResponse.ok) {
+        const paysData = await paysResponse.json()
+        setPays(paysData)
+      }
+      
+      // Charger les usines avec leurs chargements
       const response = await fetch('/api/planification-chargements')
       if (response.ok) {
         const data = await response.json()
-        setPays(data)
-        
-        // Initialiser les états d'expansion
-        const paysExpanded: Record<string, boolean> = {}
-        const usinesExpanded: Record<string, boolean> = {}
-        
-        data.forEach((pays: PaysAvecChargements) => {
-          paysExpanded[pays.id] = true // Ouvrir par défaut
+        // Transformer les données en structure plate
+        const allUsines: UsineAvecChargements[] = []
+        data.forEach((pays: Pays & { usines: UsineAvecChargements[] }) => {
           pays.usines.forEach(usine => {
-            usinesExpanded[usine.id] = true // Ouvrir par défaut
+            allUsines.push({
+              ...usine,
+              pays,
+              chargements: []
+            })
           })
         })
         
-        setPaysExpanded(paysExpanded)
-        setUsinesExpanded(usinesExpanded)
+        // Charger tous les chargements et les associer aux usines
+        for (const usine of allUsines) {
+          // Les chargements sont déjà dans la structure retournée
+          const paysData = data.find((p: Pays & { usines: any[] }) => 
+            p.usines.some(u => u.id === usine.id)
+          )
+          if (paysData) {
+            const usineData = paysData.usines.find((u: any) => u.id === usine.id)
+            if (usineData && usineData.chargementsParSemaine) {
+              const chargements: Chargement[] = []
+              Object.values(usineData.chargementsParSemaine).forEach((chargementsArray: any) => {
+                chargements.push(...chargementsArray)
+              })
+              usine.chargements = chargements
+            }
+          }
+        }
+        
+        setUsines(allUsines)
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error)
+      showNotification('Erreur', 'Impossible de charger les données', 'error')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadData()
-  }, [])
-
-  // Toggle expansion pays
-  const togglePays = (paysId: string) => {
-    setPaysExpanded(prev => ({
-      ...prev,
-      [paysId]: !prev[paysId]
-    }))
-  }
-
-  // Toggle expansion usine
-  const toggleUsine = (usineId: string) => {
-    setUsinesExpanded(prev => ({
-      ...prev,
-      [usineId]: !prev[usineId]
-    }))
-  }
+    if (session) {
+      loadData()
+    }
+  }, [session])
 
   // Ajouter un pays
   const handleAddPays = async () => {
+    if (!newPays.nom || !newPays.code) {
+      showNotification('Erreur', 'Veuillez remplir tous les champs', 'error')
+      return
+    }
+    
     try {
       const response = await fetch('/api/planification-chargements/pays', {
         method: 'POST',
@@ -148,17 +180,26 @@ export default function PlanificationChargementsPage() {
       })
       
       if (response.ok) {
+        showNotification('Succès', 'Pays ajouté avec succès', 'success')
         setNewPays({ nom: '', code: '', icone: '' })
-        setShowAddPays(false)
+        setShowAddPaysModal(false)
         loadData()
+      } else {
+        showNotification('Erreur', 'Erreur lors de l\'ajout du pays', 'error')
       }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout du pays:', error)
+      console.error('Erreur:', error)
+      showNotification('Erreur', 'Erreur lors de l\'ajout du pays', 'error')
     }
   }
 
   // Ajouter une usine
   const handleAddUsine = async () => {
+    if (!newUsine.nom || !newUsine.paysId) {
+      showNotification('Erreur', 'Veuillez remplir tous les champs', 'error')
+      return
+    }
+    
     try {
       const response = await fetch('/api/planification-chargements/usines', {
         method: 'POST',
@@ -167,36 +208,54 @@ export default function PlanificationChargementsPage() {
       })
       
       if (response.ok) {
+        showNotification('Succès', 'Usine ajoutée avec succès', 'success')
         setNewUsine({ nom: '', paysId: '' })
-        setShowAddUsine(null)
+        setShowAddUsineModal(false)
         loadData()
+      } else {
+        showNotification('Erreur', 'Erreur lors de l\'ajout de l\'usine', 'error')
       }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout de l\'usine:', error)
+      console.error('Erreur:', error)
+      showNotification('Erreur', 'Erreur lors de l\'ajout de l\'usine', 'error')
     }
   }
 
   // Ajouter un chargement
   const handleAddChargement = async () => {
+    if (!newChargement.contenu || !newChargement.usineId) {
+      showNotification('Erreur', 'Veuillez remplir tous les champs', 'error')
+      return
+    }
+    
     try {
       const response = await fetch('/api/planification-chargements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newChargement)
+        body: JSON.stringify({
+          ...newChargement,
+          semaine: newChargement.weekNumber
+        })
       })
       
       if (response.ok) {
-        setNewChargement({ contenu: '', semaine: 1, usineId: '' })
-        setShowAddChargement(null)
+        showNotification('Succès', 'Chargement ajouté avec succès', 'success')
+        setNewChargement({ contenu: '', usineId: '', weekNumber: 1, year: new Date().getFullYear() })
+        setShowAddChargementModal(false)
+        setSelectedUsineForChargement(null)
+        setSelectedWeekForChargement(null)
         loadData()
+      } else {
+        showNotification('Erreur', 'Erreur lors de l\'ajout du chargement', 'error')
       }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout du chargement:', error)
+      console.error('Erreur:', error)
+      showNotification('Erreur', 'Erreur lors de l\'ajout du chargement', 'error')
     }
   }
 
   // Marquer comme chargé
-  const handleCharger = async (chargementId: string) => {
+  const handleMarquerCharge = async (chargementId: string) => {
     try {
       const response = await fetch(`/api/planification-chargements/${chargementId}`, {
         method: 'PUT',
@@ -205,109 +264,114 @@ export default function PlanificationChargementsPage() {
       })
       
       if (response.ok) {
+        showNotification('Succès', 'Chargement marqué comme effectué', 'success')
         loadData()
       }
     } catch (error) {
-      console.error('Erreur lors du chargement:', error)
+      console.error('Erreur:', error)
+      showNotification('Erreur', 'Erreur lors de la mise à jour', 'error')
     }
   }
 
-  // Reporter
+  // Reporter à la semaine suivante
   const handleReporter = async (chargementId: string) => {
-    try {
-      const response = await fetch(`/api/planification-chargements/${chargementId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reporter' })
-      })
-      
-      if (response.ok) {
-        loadData()
-      }
-    } catch (error) {
-      console.error('Erreur lors du report:', error)
-    }
-  }
-
-  // Supprimer
-  const handleSupprimer = async (chargementId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce chargement ?')) {
-      try {
-        const response = await fetch(`/api/planification-chargements/${chargementId}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          loadData()
+    showConfirmation({
+      title: 'Reporter le chargement',
+      message: 'Voulez-vous reporter ce chargement à la semaine suivante ?',
+      type: 'warning',
+      confirmText: 'Reporter',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/planification-chargements/${chargementId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'reporter' })
+          })
+          
+          if (response.ok) {
+            showNotification('Succès', 'Chargement reporté', 'success')
+            loadData()
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+          showNotification('Erreur', 'Erreur lors du report', 'error')
         }
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error)
-      }
-    }
-  }
-
-  // Supprimer usine
-  const handleSupprimerUsine = async (usineId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette usine ?')) {
-      try {
-        const response = await fetch(`/api/planification-chargements/usines?id=${usineId}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          loadData()
-        }
-      } catch (error) {
-        console.error('Erreur lors de la suppression de l\'usine:', error)
-      }
-    }
-  }
-
-  // Cumuler les chargements par semaine
-  const cumulerChargements = (chargements: Chargement[]): ChargementCumule[] => {
-    const cumules: ChargementCumule[] = []
-    const groupes = chargements.reduce((acc, chargement) => {
-      const key = `${chargement.usineId}-${chargement.semaine}`
-      if (!acc[key]) {
-        acc[key] = []
-      }
-      acc[key].push(chargement)
-      return acc
-    }, {} as Record<string, Chargement[]>)
-
-    Object.values(groupes).forEach(groupe => {
-      if (groupe.length > 0) {
-        const premier = groupe[0]
-        const contenuCumule = groupe.map(c => c.contenu).join(' + ')
-        cumules.push({
-          usineId: premier.usineId,
-          usine: premier.usine!,
-          contenu: contenuCumule,
-          semaine: premier.semaine,
-          estCharge: premier.estCharge,
-          dateCreation: premier.dateCreation,
-          dateChargement: premier.dateChargement
-        })
       }
     })
-
-    return cumules.sort((a, b) => a.semaine - b.semaine)
   }
 
-  // Afficher un message de chargement ou de redirection
+  // Supprimer un chargement
+  const handleSupprimer = async (chargementId: string) => {
+    showConfirmation({
+      title: 'Supprimer le chargement',
+      message: 'Êtes-vous sûr de vouloir supprimer ce chargement ?',
+      type: 'error',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/planification-chargements/${chargementId}`, {
+            method: 'DELETE'
+          })
+          
+          if (response.ok) {
+            showNotification('Succès', 'Chargement supprimé', 'success')
+            loadData()
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+          showNotification('Erreur', 'Erreur lors de la suppression', 'error')
+        }
+      }
+    })
+  }
+
+  // Supprimer une usine
+  const handleSupprimerUsine = async (usineId: string) => {
+    showConfirmation({
+      title: 'Supprimer l\'usine',
+      message: 'Êtes-vous sûr de vouloir supprimer cette usine et tous ses chargements ?',
+      type: 'error',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/planification-chargements/usines?id=${usineId}`, {
+            method: 'DELETE'
+          })
+          
+          if (response.ok) {
+            showNotification('Succès', 'Usine supprimée', 'success')
+            loadData()
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+          showNotification('Erreur', 'Erreur lors de la suppression', 'error')
+        }
+      }
+    })
+  }
+
+  // Obtenir les chargements d'une usine pour une semaine donnée
+  const getChargementsForWeek = (usine: UsineAvecChargements, week: number, year: number): Chargement[] => {
+    return usine.chargements.filter(c => c.semaine === week)
+  }
+
+  // Affichage du chargement
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-[1600px] mx-auto">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-6"></div>
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white rounded-lg p-4">
-                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
                   <div className="space-y-2">
                     {[1, 2].map(j => (
-                      <div key={j} className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      <div key={j} className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                     ))}
                   </div>
                 </div>
@@ -319,7 +383,7 @@ export default function PlanificationChargementsPage() {
     )
   }
 
-  // Vérifier les permissions avant d'afficher le contenu
+  // Vérifier les permissions
   if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -333,39 +397,17 @@ export default function PlanificationChargementsPage() {
     )
   }
 
-  // Calculer les statistiques pour les KPIs
-  const totalPays = pays.length
-  const totalUsines = pays.reduce((total, p) => total + p.usines.length, 0)
-  const totalChargements = pays.reduce((total, p) => 
-    total + p.usines.reduce((sum, u) => 
-      sum + Object.values(u.chargementsParSemaine || {}).flat().length, 0
-    ), 0
-  )
-  const chargementsCharges = pays.reduce((total, p) => 
-    total + p.usines.reduce((sum, u) => 
-      sum + Object.values(u.chargementsParSemaine || {}).flat().filter(c => c.estCharge).length, 0
-    ), 0
-  )
+  // Stats
+  const totalUsines = usines.length
+  const totalChargements = usines.reduce((sum, u) => sum + u.chargements.length, 0)
+  const chargementsCharges = usines.reduce((sum, u) => sum + u.chargements.filter(c => c.estCharge).length, 0)
+  const chargementsEnAttente = totalChargements - chargementsCharges
 
-  // Stats cards pour le header
   const statsCards = (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-            <TruckIcon className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Pays</div>
-            <div className="text-sm font-black text-gray-900 dark:text-white">{totalPays}</div>
-          </div>
-        </div>
-      </div>
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-            <CheckIcon className="h-4 w-4 text-white" />
-          </div>
+          <TruckIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <div>
             <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Usines</div>
             <div className="text-sm font-black text-gray-900 dark:text-white">{totalUsines}</div>
@@ -374,100 +416,80 @@ export default function PlanificationChargementsPage() {
       </div>
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center">
-            <ArrowRightIcon className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Total</div>
-            <div className="text-sm font-black text-gray-900 dark:text-white">{totalChargements}</div>
-          </div>
-        </div>
-      </div>
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-            <CheckIcon className="h-4 w-4 text-white" />
-          </div>
+          <CheckIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
           <div>
             <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Chargés</div>
             <div className="text-sm font-black text-gray-900 dark:text-white">{chargementsCharges}</div>
           </div>
         </div>
       </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <XMarkIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">En attente</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white">{chargementsEnAttente}</div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-amber-50/20 to-orange-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
-      <PageHeader
-        title="Planification des Chargements"
-        subtitle="Gérez vos chargements par pays et usine avec report automatique"
-        icon={TruckIcon}
-        badgeColor="from-amber-600 via-orange-600 to-red-700"
-        gradientColor="from-amber-600/10 via-orange-600/10 to-red-700/10"
-        stats={statsCards}
-        actions={
-          <button
-            onClick={() => setShowAddPays(true)}
-            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white rounded-md shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
-          >
-            <PlusIcon className="h-4 w-4 mr-1.5" />
-            <span className="hidden sm:inline">Ajouter un pays</span>
-            <span className="sm:hidden">Ajouter</span>
-          </button>
-        }
-      />
-
-      {/* Contenu principal */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-        {/* Modal ajouter pays */}
-        {showAddPays && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-96">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ajouter un pays</h3>
+  // Renderer pour les modaux
+  const renderModals = () => {
+    return (
+      <>
+        {/* Modal Ajouter Pays */}
+        {showAddPaysModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Ajouter un pays</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom du pays *</label>
                   <input
                     type="text"
                     value={newPays.nom}
                     onChange={(e) => setNewPays({ ...newPays, nom: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
                     placeholder="Espagne"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Code pays *</label>
                   <input
                     type="text"
                     value={newPays.code}
-                    onChange={(e) => setNewPays({ ...newPays, code: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
+                    onChange={(e) => setNewPays({ ...newPays, code: e.target.value.toUpperCase() })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
                     placeholder="ES"
+                    maxLength={2}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icône</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icône (emoji)</label>
                   <input
                     type="text"
                     value={newPays.icone}
                     onChange={(e) => setNewPays({ ...newPays, icone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
                     placeholder="🇪🇸"
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button
-                  onClick={() => setShowAddPays(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                  onClick={() => {
+                    setShowAddPaysModal(false)
+                    setNewPays({ nom: '', code: '', icone: '' })
+                  }}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddPays}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
                   Ajouter
                 </button>
@@ -476,202 +498,51 @@ export default function PlanificationChargementsPage() {
           </div>
         )}
 
-        {/* Liste des pays */}
-        <div className="space-y-6">
-          {pays.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-              <TruckIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Aucun pays trouvé</h3>
-              <p className="text-gray-600 dark:text-gray-400">Ajoutez un nouveau pays pour commencer à gérer vos chargements.</p>
-            </div>
-          ) : (
-            pays.map((pays) => (
-              <div key={pays.id} className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-                {/* En-tête pays */}
-                <div
-                  className="flex items-center justify-between px-6 py-4 cursor-pointer border-b border-gray-200 dark:border-gray-700"
-                  onClick={() => togglePays(pays.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    {paysExpanded[pays.id] ? (
-                      <ChevronDownIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                    ) : (
-                      <ChevronRightIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                    )}
-                    <div>
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{pays.nom}</h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Code : {pays.code}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setNewUsine({ nom: '', paysId: pays.id })
-                      setShowAddUsine(pays.id)
-                    }}
-                    className="inline-flex items-center px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-1" />
-                    Ajouter usine
-                  </button>
-                </div>
-
-                {/* Contenu pays */}
-                {paysExpanded[pays.id] && (
-                  <div className="border-t border-gray-200 dark:border-gray-700">
-                    <div className="p-4 space-y-4">
-                      {pays.usines.map((usine) => (
-                        <div key={usine.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                          {/* En-tête usine */}
-                          <div
-                            className="flex items-center justify-between mb-3 cursor-pointer"
-                            onClick={() => toggleUsine(usine.id)}
-                          >
-                            <div className="flex items-center gap-2">
-                              {usinesExpanded[usine.id] ? (
-                                <ChevronDownIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                              ) : (
-                                <ChevronRightIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                              )}
-                              <h3 className="font-medium text-gray-900 dark:text-gray-100">{usine.nom}</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setNewChargement({ contenu: '', semaine: 1, usineId: usine.id })
-                                  setShowAddChargement(usine.id)
-                                }}
-                                className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-800/40"
-                              >
-                                <PlusIcon className="h-3 w-3 mr-1" />
-                                Ajouter
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleSupprimerUsine(usine.id)
-                                }}
-                                className="inline-flex items-center px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-800/40"
-                              >
-                                <TrashIcon className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Tableau des chargements */}
-                          {usinesExpanded[usine.id] && (
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm text-gray-900 dark:text-gray-100">
-                                <thead className="bg-gray-50 dark:bg-gray-800">
-                                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                                    <th className="text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Usine</th>
-                                    {semainesAnnee.slice(0, 4).map((semaine) => (
-                                      <th key={semaine.numero} className="text-center py-2 px-3 font-medium text-gray-700 dark:text-gray-300">
-                                        <div className="text-xs">{semaine.label}</div>
-                                      </th>
-                                    ))}
-                                    <th className="text-center py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Actions</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-900">
-                                  {Object.entries(usine.chargementsParSemaine).map(([semaine, chargements]) => {
-                                    const cumules = cumulerChargements(chargements)
-                                    return cumules.map((cumule, index) => (
-                                      <tr key={`${semaine}-${index}`} className="border-b border-gray-100 dark:border-gray-800">
-                                        <td className="py-2 px-3 text-gray-900 dark:text-gray-100">{usine.nom}</td>
-                                        {semainesAnnee.slice(0, 4).map((semaineAnnee) => (
-                                          <td key={semaineAnnee.numero} className="py-2 px-3 text-center">
-                                            {cumule.semaine === semaineAnnee.numero ? (
-                                              <div className="flex items-center justify-center gap-1">
-                                                {cumule.estCharge ? (
-                                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200">
-                                                    ✅ {cumule.contenu}
-                                                  </span>
-                                                ) : (
-                                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200">
-                                                    ⏳ {cumule.contenu}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <span className="text-gray-300 dark:text-gray-600">-</span>
-                                            )}
-                                          </td>
-                                        ))}
-                                        <td className="py-2 px-3 text-center">
-                                          <div className="flex items-center justify-center gap-1">
-                                            {!cumule.estCharge && (
-                                              <>
-                                                <button
-                                                  onClick={() => handleCharger(chargements[0].id)}
-                                                  className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors dark:bg-green-900/30 dark:text-green-200 dark:hover:bg-green-800/40"
-                                                  title="Marquer comme chargé"
-                                                >
-                                                  <CheckIcon className="h-3 w-3" />
-                                                </button>
-                                                <button
-                                                  onClick={() => handleReporter(chargements[0].id)}
-                                                  className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-800/40"
-                                                  title="Reporter à la semaine suivante"
-                                                >
-                                                  <ArrowRightIcon className="h-3 w-3" />
-                                                </button>
-                                              </>
-                                            )}
-                                            <button
-                                              onClick={() => handleSupprimer(chargements[0].id)}
-                                              className="inline-flex items-center px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-800/40"
-                                              title="Supprimer"
-                                            >
-                                              <TrashIcon className="h-3 w-3" />
-                                            </button>
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    ))
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Modal ajouter usine */}
-        {showAddUsine && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-96">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ajouter une usine</h3>
+        {/* Modal Ajouter Usine */}
+        {showAddUsineModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Ajouter une usine</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'usine</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de l'usine *</label>
                   <input
                     type="text"
                     value={newUsine.nom}
                     onChange={(e) => setNewUsine({ ...newUsine, nom: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-gray-800 dark:text-white"
                     placeholder="Tau"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pays *</label>
+                  <select
+                    value={newUsine.paysId}
+                    onChange={(e) => setNewUsine({ ...newUsine, paysId: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="">Sélectionner un pays</option>
+                    {pays.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.icone} {p.nom}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button
-                  onClick={() => setShowAddUsine(null)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                  onClick={() => {
+                    setShowAddUsineModal(false)
+                    setNewUsine({ nom: '', paysId: '' })
+                  }}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddUsine}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
                 >
                   Ajouter
                 </button>
@@ -680,44 +551,50 @@ export default function PlanificationChargementsPage() {
           </div>
         )}
 
-        {/* Modal ajouter chargement */}
-        {showAddChargement && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-96">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ajouter un chargement</h3>
+        {/* Modal Ajouter Chargement */}
+        {showAddChargementModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Ajouter un chargement</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contenu</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Usine</label>
+                  <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-900 dark:text-white font-medium">
+                    {usines.find(u => u.id === selectedUsineForChargement)?.nom}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Semaine</label>
+                  <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-900 dark:text-white font-medium">
+                    {selectedWeekForChargement && formatWeek(selectedWeekForChargement.week, selectedWeekForChargement.year)}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contenu *</label>
                   <input
                     type="text"
                     value={newChargement.contenu}
                     onChange={(e) => setNewChargement({ ...newChargement, contenu: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
-                    placeholder="Matériel"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Semaine</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={52}
-                    value={newChargement.semaine}
-                    onChange={(e) => setNewChargement({ ...newChargement, semaine: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-400"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:text-white"
+                    placeholder="Ex: Carrelage 20 tonnes"
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button
-                  onClick={() => setShowAddChargement(null)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                  onClick={() => {
+                    setShowAddChargementModal(false)
+                    setNewChargement({ contenu: '', usineId: '', weekNumber: 1, year: new Date().getFullYear() })
+                    setSelectedUsineForChargement(null)
+                    setSelectedWeekForChargement(null)
+                  }}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddChargement}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
                 >
                   Ajouter
                 </button>
@@ -725,7 +602,188 @@ export default function PlanificationChargementsPage() {
             </div>
           </div>
         )}
+      </>
+    )
+  }
+
+  return (
+    <>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-amber-50/20 to-orange-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Planification des Chargements"
+        subtitle="Gérez les chargements de vos usines par semaine"
+        icon={TruckIcon}
+        badgeColor="from-amber-600 via-orange-600 to-red-700"
+        gradientColor="from-amber-600/10 via-orange-600/10 to-red-700/10"
+        stats={statsCards}
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAddPaysModal(true)}
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            >
+              <PlusIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Ajouter un pays</span>
+            </button>
+            <button
+              onClick={() => setShowAddUsineModal(true)}
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
+            >
+              <PlusIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Ajouter une usine</span>
+            </button>
+          </div>
+        }
+      />
+
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Planning en grille */}
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-amber-600/10 via-orange-600/10 to-red-700/10 dark:from-amber-600/5 dark:via-orange-600/5 dark:to-red-700/5">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-bold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 sticky left-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm z-10 min-w-[200px]">
+                    Usine / Pays
+                  </th>
+                  {weeks.map(({ week, year, label, isPast }) => (
+                    <th
+                      key={`${week}-${year}`}
+                      className={`px-3 py-3 text-center text-xs font-semibold border-r border-gray-200 dark:border-gray-700 min-w-[150px] ${
+                        isPast 
+                          ? 'text-gray-500 dark:text-gray-500 bg-gray-50/50 dark:bg-gray-900/50' 
+                          : 'text-gray-900 dark:text-white'
+                      }`}
+                    >
+                      {label}
+                      {isPast && <div className="text-[9px] text-red-500 dark:text-red-400">Passée</div>}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-center text-sm font-bold text-gray-900 dark:text-white min-w-[100px]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {usines.length === 0 ? (
+                  <tr>
+                    <td colSpan={weeks.length + 2} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                      <TruckIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                      <p className="text-lg font-medium">Aucune usine configurée</p>
+                      <p className="text-sm mt-1">Ajoutez une usine pour commencer la planification</p>
+                    </td>
+                  </tr>
+                ) : (
+                  usines.map((usine) => (
+                    <tr key={usine.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
+                      <td className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 sticky left-0 bg-white dark:bg-gray-800 z-10">
+                        <div className="font-medium text-gray-900 dark:text-white">{usine.nom}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {usine.pays?.icone} {usine.pays?.nom}
+                        </div>
+                      </td>
+                      {weeks.map(({ week, year, isPast }) => {
+                        const chargements = getChargementsForWeek(usine, week, year)
+                        return (
+                          <td
+                            key={`${week}-${year}`}
+                            className={`px-2 py-2 border-r border-gray-200 dark:border-gray-700 ${
+                              isPast ? 'bg-gray-50/30 dark:bg-gray-900/30' : ''
+                            }`}
+                          >
+                            {chargements.length > 0 ? (
+                              <div className="space-y-1">
+                                {chargements.map((chargement) => (
+                                  <div
+                                    key={chargement.id}
+                                    className={`text-xs px-2 py-1 rounded cursor-pointer hover:shadow-md transition-all ${
+                                      chargement.estCharge
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
+                                    }`}
+                                    onClick={() => {
+                                      if (!chargement.estCharge && !isPast) {
+                                        handleMarquerCharge(chargement.id)
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className="truncate">{chargement.contenu}</span>
+                                      {chargement.estCharge ? (
+                                        <CheckIcon className="h-3 w-3 flex-shrink-0" />
+                                      ) : (
+                                        <div className="flex gap-0.5 flex-shrink-0">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              handleReporter(chargement.id)
+                                            }}
+                                            className="hover:bg-orange-200 dark:hover:bg-orange-800/50 rounded p-0.5"
+                                            title="Reporter"
+                                          >
+                                            <ChevronRightIcon className="h-3 w-3" />
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              handleSupprimer(chargement.id)
+                                            }}
+                                            className="hover:bg-red-200 dark:hover:bg-red-800/50 rounded p-0.5"
+                                            title="Supprimer"
+                                          >
+                                            <TrashIcon className="h-3 w-3" />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedUsineForChargement(usine.id)
+                                  setSelectedWeekForChargement({ week, year })
+                                  setNewChargement({ 
+                                    contenu: '', 
+                                    usineId: usine.id, 
+                                    weekNumber: week, 
+                                    year 
+                                  })
+                                  setShowAddChargementModal(true)
+                                }}
+                                className="w-full py-2 text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors"
+                                disabled={isPast}
+                              >
+                                <PlusIcon className="h-4 w-4 mx-auto" />
+                              </button>
+                            )}
+                          </td>
+                        )
+                      })}
+                      <td className="px-2 py-3 text-center">
+                        <button
+                          onClick={() => handleSupprimerUsine(usine.id)}
+                          className="inline-flex items-center px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-200 rounded hover:bg-red-200 dark:hover:bg-red-800/50 transition-colors"
+                          title="Supprimer l'usine"
+                        >
+                          <TrashIcon className="h-3 w-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
+      {renderModals()}
+      
+      <NotificationComponent />
+      {ConfirmationModalComponent}
     </div>
+    </>
   )
 }
