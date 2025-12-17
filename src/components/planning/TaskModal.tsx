@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { XMarkIcon, CalendarIcon, UserIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
-import SearchableSelect from '@/components/ui/SearchableSelect';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 interface TaskModalProps {
   isOpen: boolean;

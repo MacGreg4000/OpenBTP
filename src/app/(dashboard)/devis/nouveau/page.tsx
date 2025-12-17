@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
 import { useConfirmation } from '@/components/modals/confirmation-modal'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 
 interface Client {
   id: string
@@ -462,36 +463,32 @@ export default function NouveauDevisPage() {
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Client *
               </label>
-              <select
+              <SearchableSelect
+                options={clients.map(client => ({
+                  value: client.id,
+                  label: client.nom
+                }))}
                 value={selectedClientId}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-                className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium"
-              >
-                <option value="">Sélectionner un client</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.nom}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedClientId}
+                placeholder="Sélectionner un client"
+                emptyMessage="Aucun client trouvé"
+              />
             </div>
           ) : (
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Chantier *
               </label>
-              <select
+              <SearchableSelect
+                options={chantiers.map(chantier => ({
+                  value: chantier.chantierId,
+                  label: `${chantier.nomChantier} - ${chantier.clientNom}`
+                }))}
                 value={selectedChantierId}
-                onChange={(e) => handleChantierChange(e.target.value)}
-                className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium"
-              >
-                <option value="">Sélectionner un chantier</option>
-                {chantiers.map((chantier) => (
-                  <option key={chantier.chantierId} value={chantier.chantierId}>
-                    {chantier.nomChantier} - {chantier.clientNom}
-                  </option>
-                ))}
-              </select>
+                onChange={handleChantierChange}
+                placeholder="Sélectionner un chantier"
+                emptyMessage="Aucun chantier trouvé"
+              />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Le client sera automatiquement déduit du chantier
               </p>
