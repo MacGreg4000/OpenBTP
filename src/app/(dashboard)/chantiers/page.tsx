@@ -353,14 +353,30 @@ export default function ChantiersPage() {
     }
   }, [clientIdFromUrl, clients])
 
+  // Réinitialiser la page à 1 quand les filtres changent
+  useEffect(() => {
+    setPage(1)
+  }, [filtreNom, filtreClient, filtreEtat, filtreClientId])
+
   useEffect(() => {
     const fetchChantiers = async () => {
       try {
         const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-        // Ajouter le filtre d'état si sélectionné
+        
+        // Ajouter tous les filtres
         if (filtreEtat && filtreEtat !== '') {
           params.append('etat', filtreEtat)
         }
+        if (filtreNom && filtreNom.trim() !== '') {
+          params.append('nomChantier', filtreNom.trim())
+        }
+        if (filtreClient && filtreClient.trim() !== '') {
+          params.append('nomClient', filtreClient.trim())
+        }
+        if (filtreClientId) {
+          params.append('clientId', filtreClientId)
+        }
+        
         const res = await fetch(`/api/chantiers?${params.toString()}`)
         const json = await res.json()
         // L'API retourne { chantiers: [...], meta: {...} }
@@ -385,7 +401,7 @@ export default function ChantiersPage() {
     }
     
     fetchChantiers()
-  }, [clientIdFromUrl, page, filtreEtat])
+  }, [clientIdFromUrl, page, filtreEtat, filtreNom, filtreClient, filtreClientId])
 
   // Fonction pour gérer le clic sur un en-tête de colonne
   const handleSort = (field: SortField) => {
@@ -449,16 +465,8 @@ export default function ChantiersPage() {
     })
   }
   
-  // Filtrer les chantiers selon les critères de recherche
-  const chantiersFiltrés = sortChantiers(
-    chantiers.filter(chantier => {
-      const matchNom = !filtreNom || chantier.nomChantier.toLowerCase().includes(filtreNom.toLowerCase())
-      const matchClient = !filtreClient || (chantier.clientNom && chantier.clientNom.toLowerCase().includes(filtreClient.toLowerCase()))
-      const matchEtat = !filtreEtat || chantier.etatChantier.toLowerCase().includes(filtreEtat.toLowerCase())
-      const matchClientId = !filtreClientId || chantier.clientId === filtreClientId
-      return matchNom && matchClient && matchEtat && matchClientId
-    })
-  )
+  // Le filtrage est maintenant fait côté serveur, on applique juste le tri
+  const chantiersFiltrés = sortChantiers(chantiers)
   
   // Fonction pour supprimer le filtre client
   const clearClientFilter = () => {

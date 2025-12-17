@@ -34,10 +34,12 @@ export async function GET(request: Request) {
       const page = Math.max(1, Number(searchParams.get('page') || '1'))
       const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('pageSize') || '25')))
       const filtreEtat = searchParams.get('etat')
+      const filtreNomChantier = searchParams.get('nomChantier')
+      const filtreNomClient = searchParams.get('nomClient')
 
       // Construire le filtre de statut selon le paramètre fourni
       // Par défaut et "Tous les états" = actifs seulement (en préparation et en cours)
-      const whereClause: { statut?: { in: string[] }, clientId?: string } = {
+      const whereClause: any = {
         statut: {
           in: ['EN_PREPARATION', 'EN_COURS']
         }
@@ -45,6 +47,24 @@ export async function GET(request: Request) {
       const filterClientId = searchParams.get('clientId')
       if (filterClientId) {
         whereClause.clientId = filterClientId
+      }
+      
+      // Filtre par nom de chantier
+      if (filtreNomChantier && filtreNomChantier.trim() !== '') {
+        whereClause.nomChantier = {
+          contains: filtreNomChantier,
+          mode: 'insensitive'
+        }
+      }
+      
+      // Filtre par nom de client
+      if (filtreNomClient && filtreNomClient.trim() !== '') {
+        whereClause.client = {
+          nom: {
+            contains: filtreNomClient,
+            mode: 'insensitive'
+          }
+        }
       }
       
       if (filtreEtat && filtreEtat !== '' && filtreEtat !== 'Tous les états') {
