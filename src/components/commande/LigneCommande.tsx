@@ -106,7 +106,7 @@ export default function LigneCommande({
       data-handler-id={handlerId}
       className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${isSectionHeader ? (type === 'TITRE' ? 'bg-blue-50/60 dark:bg-blue-900/30' : 'bg-gray-100/60 dark:bg-gray-800/40') : ''}`}
     >
-      <td className="hidden sm:table-cell px-3 py-2 whitespace-nowrap align-top w-32">
+      <td className="hidden sm:table-cell px-3 py-2 whitespace-nowrap align-top w-8">
         <div
           ref={dragIconRef}
           className="inline-flex items-center justify-center cursor-move hover:bg-gray-200 dark:hover:bg-gray-600 rounded p-1 transition-colors"
@@ -115,7 +115,7 @@ export default function LigneCommande({
           <BarsArrowUpIcon className={`h-5 w-5 ${isSectionHeader ? 'text-blue-500 dark:text-blue-300' : 'text-gray-400'}`} />
         </div>
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top">
+      <td className="hidden sm:table-cell px-3 py-2 whitespace-nowrap align-top w-32">
         {isSectionHeader ? (
           <span className="inline-flex items-center px-2 py-1 text-xs font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-200 bg-blue-100/70 dark:bg-blue-900/40 rounded">
             {sectionLabel}
@@ -144,7 +144,7 @@ export default function LigneCommande({
           placeholder={isSectionHeader ? (type === 'TITRE' ? 'Titre de section' : 'Sous-titre de section') : undefined}
         />
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-24">
         {isSectionHeader ? (
           <span className="inline-flex px-2 py-1 text-xs font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-200">
             {sectionLabel}
@@ -162,7 +162,7 @@ export default function LigneCommande({
           </select>
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-[70px]">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
@@ -182,7 +182,7 @@ export default function LigneCommande({
           </SelectField>
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-28">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
@@ -196,7 +196,7 @@ export default function LigneCommande({
           />
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-32">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
@@ -210,14 +210,14 @@ export default function LigneCommande({
           />
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap text-right align-top">
+      <td className="px-3 py-2 whitespace-nowrap text-right align-top w-32">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
           <span className="font-semibold text-gray-900 dark:text-gray-100">{total.toFixed(2)} €</span>
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top">
+      <td className="px-3 py-2 whitespace-nowrap text-center align-top w-12">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
@@ -230,7 +230,7 @@ export default function LigneCommande({
           />
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap text-right align-top">
+      <td className="px-3 py-2 whitespace-nowrap text-center align-top w-12">
         <button
           type="button"
           onClick={() => deleteLigne(id)}
