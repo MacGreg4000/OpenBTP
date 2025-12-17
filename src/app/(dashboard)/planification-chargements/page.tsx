@@ -255,22 +255,31 @@ export default function PlanificationChargementsPage() {
   }
 
   // Marquer comme chargé
-  const handleMarquerCharge = async (chargementId: string) => {
-    try {
-      const response = await fetch(`/api/planification-chargements/${chargementId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'charger' })
-      })
-      
-      if (response.ok) {
-        showNotification('Succès', 'Chargement marqué comme effectué', 'success')
-        loadData()
+  const handleMarquerCharge = async (chargementId: string, contenu: string) => {
+    showConfirmation({
+      title: 'Confirmer le chargement',
+      message: `Voulez-vous marquer ce chargement comme effectué ?\n\n"${contenu}"`,
+      type: 'info',
+      confirmText: 'Marquer comme chargé',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/planification-chargements/${chargementId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'charger' })
+          })
+          
+          if (response.ok) {
+            showNotification('Succès', 'Chargement marqué comme effectué', 'success')
+            loadData()
+          }
+        } catch (error) {
+          console.error('Erreur:', error)
+          showNotification('Erreur', 'Erreur lors de la mise à jour', 'error')
+        }
       }
-    } catch (error) {
-      console.error('Erreur:', error)
-      showNotification('Erreur', 'Erreur lors de la mise à jour', 'error')
-    }
+    })
   }
 
   // Reporter à la semaine suivante
@@ -696,21 +705,23 @@ export default function PlanificationChargementsPage() {
                                 {chargements.map((chargement) => (
                                   <div
                                     key={chargement.id}
-                                    className={`text-xs px-2 py-1 rounded cursor-pointer hover:shadow-md transition-all ${
+                                    className={`text-xs px-2 py-1 rounded transition-all ${
                                       chargement.estCharge
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
+                                        ? 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-500 opacity-60 cursor-default'
+                                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 cursor-pointer hover:shadow-md'
                                     }`}
                                     onClick={() => {
                                       if (!chargement.estCharge && !isPast) {
-                                        handleMarquerCharge(chargement.id)
+                                        handleMarquerCharge(chargement.id, chargement.contenu)
                                       }
                                     }}
                                   >
                                     <div className="flex items-center justify-between gap-1">
-                                      <span className="truncate">{chargement.contenu}</span>
+                                      <span className={`truncate ${chargement.estCharge ? 'line-through' : ''}`}>
+                                        {chargement.contenu}
+                                      </span>
                                       {chargement.estCharge ? (
-                                        <CheckIcon className="h-3 w-3 flex-shrink-0" />
+                                        <CheckIcon className="h-3 w-3 flex-shrink-0 text-green-600 dark:text-green-500" />
                                       ) : (
                                         <div className="flex gap-0.5 flex-shrink-0">
                                           <button
