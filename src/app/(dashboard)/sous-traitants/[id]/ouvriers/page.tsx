@@ -1,17 +1,19 @@
 'use client'
 import { useState, useEffect, use } from 'react';
-// import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { 
   PencilSquareIcon,
   DocumentIcon,
   TrashIcon,
-  PlusIcon
+  PlusIcon,
+  UserGroupIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Breadcrumb } from '@/components/Breadcrumb'
+import PageHeader from '@/components/PageHeader'
 
 interface Ouvrier {
   id: string
@@ -48,23 +50,23 @@ function DeleteModal({
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Confirmer la suppression</h3>
-        <p className="text-sm text-gray-500 mb-4">
+    <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Confirmer la suppression</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Êtes-vous sûr de vouloir supprimer l'ouvrier {ouvrierName} ? Cette action est irréversible.
         </p>
         <div className="flex justify-end space-x-3">
           <button
             type="button"
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
             onClick={onClose}
           >
             Annuler
           </button>
           <button
             type="button"
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-500 border border-transparent rounded-md hover:bg-red-700 dark:hover:bg-red-600"
             onClick={onConfirm}
           >
             Supprimer
@@ -81,7 +83,7 @@ export default function OuvriersPage(
   }
 ) {
   const params = use(props.params);
-  // const router = useRouter()
+  const router = useRouter()
   const { data: session } = useSession()
   const [sousTraitant, setSousTraitant] = useState<SousTraitant | null>(null)
   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([])
@@ -159,111 +161,124 @@ export default function OuvriersPage(
     setDeleteModalOpen(true)
   }
 
-  if (loading) return <div className="p-8">Chargement...</div>
-  if (error) return <div className="p-8 text-red-500">{error}</div>
-  if (!sousTraitant) return <div className="p-8">Sous-traitant non trouvé</div>
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    </div>
+  )
+  if (error) return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-red-500 dark:text-red-400">{error}</div>
+      </div>
+    </div>
+  )
+  if (!sousTraitant) return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-gray-500 dark:text-gray-400">Sous-traitant non trouvé</div>
+      </div>
+    </div>
+  )
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Breadcrumb
-        items={[
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        title={`Ouvriers de ${sousTraitant.nom}`}
+        icon={UserGroupIcon}
+        breadcrumbs={[
           { label: 'Sous-traitants', href: '/sous-traitants' },
           { label: sousTraitant.nom, href: `/sous-traitants/${params.id}/ouvriers` },
           { label: 'Ouvriers' }
         ]}
+        actions={[
+          {
+            label: 'Retour',
+            icon: ArrowLeftIcon,
+            onClick: () => router.push('/sous-traitants'),
+            variant: 'secondary' as const
+          },
+          {
+            label: 'Ajouter un ouvrier',
+            icon: PlusIcon,
+            onClick: () => router.push(`/sous-traitants/${params.id}/ouvriers/nouveau`),
+            variant: 'primary' as const
+          }
+        ]}
       />
 
-      <div className="md:flex md:items-center md:justify-between mb-6">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:tracking-tight">
-            Ouvriers de {sousTraitant.nom}
-          </h2>
-        </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
-          <Link
-            href="/sous-traitants"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Retour à la liste
-          </Link>
-          <Link
-            href={`/sous-traitants/${params.id}/ouvriers/nouveau`}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Ajouter un ouvrier
-          </Link>
-        </div>
-      </div>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {ouvriers.length === 0 ? (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 text-center">
-          <p className="text-gray-500">Aucun ouvrier trouvé pour ce sous-traitant.</p>
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 text-center">
+          <p className="text-gray-500 dark:text-gray-400">Aucun ouvrier trouvé pour ce sous-traitant.</p>
         </div>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Nom
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Poste
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Contact
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Date d'entrée
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Documents
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {ouvriers.map((ouvrier) => (
-                <tr key={ouvrier.id} className="hover:bg-gray-50">
+                <tr key={ouvrier.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Link href={`/sous-traitants/${params.id}/ouvriers/${ouvrier.id}`} className="text-blue-600 hover:text-blue-900">
+                    <Link href={`/sous-traitants/${params.id}/ouvriers/${ouvrier.id}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
                       {ouvrier.prenom} {ouvrier.nom}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {ouvrier.poste}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {ouvrier.email || ouvrier.telephone || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {format(new Date(ouvrier.dateEntree), 'dd/MM/yyyy', { locale: fr })}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {ouvrier._count?.DocumentOuvrier ?? 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
                       <Link
                         href={`/sous-traitants/${params.id}/ouvriers/${ouvrier.id}/documents`}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                         title="Documents"
                       >
                         <DocumentIcon className="h-5 w-5" />
                       </Link>
                       <Link
                         href={`/sous-traitants/${params.id}/ouvriers/${ouvrier.id}/edit`}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
                         title="Modifier"
                       >
                         <PencilSquareIcon className="h-5 w-5" />
                       </Link>
                       <button
                         onClick={() => openDeleteModal(ouvrier)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                         title="Supprimer"
                       >
                         <TrashIcon className="h-5 w-5" />
@@ -284,6 +299,7 @@ export default function OuvriersPage(
         onConfirm={handleDeleteOuvrier}
         ouvrierName={ouvrierToDelete ? `${ouvrierToDelete.prenom} ${ouvrierToDelete.nom}` : ''}
       />
+      </div>
     </div>
   )
 } 

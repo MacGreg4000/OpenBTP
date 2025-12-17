@@ -3,6 +3,8 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { FormInput, Button } from '@/components/ui'
+import PageHeader from '@/components/PageHeader'
+import { PencilSquareIcon } from '@heroicons/react/24/outline'
 
 interface FormData {
   nom: string
@@ -34,6 +36,7 @@ export default function EditOuvrierPage(
   const [loading, setLoading] = useState(true)
   const [pin, setPin] = useState('')
   const [savingPin, setSavingPin] = useState(false)
+  const [sousTraitantNom, setSousTraitantNom] = useState('')
   const portalLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/public/portail/ouvrier/${params.ouvrierId}` 
     : `/public/portail/ouvrier/${params.ouvrierId}`
@@ -51,6 +54,9 @@ export default function EditOuvrierPage(
             dateEntree: new Date(data.dateEntree).toISOString().split('T')[0],
             poste: data.poste
           })
+          if (data.sousTraitant?.nom) {
+            setSousTraitantNom(data.sousTraitant.nom)
+          }
           setLoading(false)
         })
         .then(async ()=>{
@@ -104,19 +110,29 @@ export default function EditOuvrierPage(
     }))
   }
 
-  if (loading) return <div className="p-8">Chargement...</div>
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    </div>
+  )
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
-            Modifier l'Ouvrier
-          </h2>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        title={`Modifier ${formData.prenom} ${formData.nom}`}
+        icon={PencilSquareIcon}
+        breadcrumbs={[
+          { label: 'Sous-traitants', href: '/sous-traitants' },
+          { label: sousTraitantNom, href: `/sous-traitants/${params.id}/ouvriers` },
+          { label: `${formData.prenom} ${formData.nom}`, href: `/sous-traitants/${params.id}/ouvriers/${params.ouvrierId}` },
+          { label: 'Modifier' }
+        ]}
+      />
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
             <div className="flex">
@@ -242,6 +258,7 @@ export default function EditOuvrierPage(
           </Button>
         </div>
       </form>
+      </div>
     </div>
   )
 } 

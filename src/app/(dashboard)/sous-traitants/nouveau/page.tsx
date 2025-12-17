@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FormInput, Button } from '@/components/ui'
+import PageHeader from '@/components/PageHeader'
+import { BuildingOffice2Icon } from '@heroicons/react/24/outline'
 
 export const dynamic = 'force-dynamic'
 
@@ -137,16 +139,18 @@ export default function NouveauSousTraitantPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
-            Nouveau Sous-Traitant
-          </h2>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        title="Nouveau Sous-Traitant"
+        icon={BuildingOffice2Icon}
+        breadcrumbs={[
+          { label: 'Sous-traitants', href: '/sous-traitants' },
+          { label: 'Nouveau', href: '/sous-traitants/nouveau' }
+        ]}
+      />
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
             <div className="flex">
@@ -274,6 +278,7 @@ export default function NouveauSousTraitantPage() {
           </Button>
         </div>
       </form>
+      </div>
     </div>
   )
 } 
