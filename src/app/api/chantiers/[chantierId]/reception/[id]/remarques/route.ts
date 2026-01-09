@@ -292,7 +292,6 @@ export async function POST(
       );
     }
     const userId = session.user.id;
-    console.log("API POST Remarques - Tentative de création par userId:", userId, "Type:", typeof userId); // DEBUG
 
     // Vérification active de l'existence de l'utilisateur avant la transaction
     const userExists = await prisma.user.findUnique({ where: { id: userId } });
@@ -391,26 +390,19 @@ export async function POST(
       const photosFiles = formData.getAll('photos') as File[];
       const photosDataToCreate: Array<{ id: string; remarqueId: string; url: string; estPreuve: boolean }> = [];
 
-      console.log('API POST Remarques - photosFiles:', photosFiles); // DEBUG
-
       if (photosFiles && photosFiles.length > 0) {
         const uploadsDir = path.join(process.cwd(), "public", "uploads", chantierId, receptionId);
-        console.log('API POST Remarques - uploadsDir:', uploadsDir); // DEBUG
-        await ensureDirectoryExists(uploadsDir); // Appel direct ici aussi pour test
-        console.log('API POST Remarques - ensureDirectoryExists pour uploadsDir appelé.'); // DEBUG
+        await ensureDirectoryExists(uploadsDir);
 
         for (const photo of photosFiles) {
-          console.log('API POST Remarques - Traitement photo:', photo.name, photo instanceof File); // DEBUG
           if (photo instanceof File) {
             const photoId = crypto.randomUUID();
             const extension = path.extname(photo.name);
             const filename = `${photoId}${extension}`;
             const savePath = path.join(uploadsDir, filename);
-            console.log('API POST Remarques - savePath:', savePath); // DEBUG
             
             try {
               await saveFileToServer(photo, savePath); 
-              console.log(`API POST Remarques - Photo ${filename} sauvegardée (tentative).`); // DEBUG
               const photoUrl = `/uploads/${chantierId}/${receptionId}/${filename}`;
               photosDataToCreate.push({
                 id: photoId,
@@ -419,10 +411,8 @@ export async function POST(
                 estPreuve: false, 
               });
             } catch (saveError) {
-              console.error('API POST Remarques - ERREUR saveFileToServer:', saveError); // DEBUG
+              console.error('API POST Remarques - ERREUR saveFileToServer:', saveError);
             }
-          } else {
-            console.warn('API POST Remarques - Élément non File dans photosFiles:', photo); // DEBUG
           }
         }
         if (photosDataToCreate.length > 0) {

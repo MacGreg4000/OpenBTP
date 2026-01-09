@@ -224,9 +224,21 @@ export default function EtatAvancementUnifie({
     }
 
     const totalAvenants = {
-      precedent: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0)),
-      actuel: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0)),
-      total: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0))
+      precedent: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => {
+        // Exclure les TITRE et SOUS_TITRE des calculs
+        if (avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE') return sum;
+        return sum + avenant.montantPrecedent;
+      }, 0)),
+      actuel: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => {
+        // Exclure les TITRE et SOUS_TITRE des calculs
+        if (avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE') return sum;
+        return sum + avenant.montantActuel;
+      }, 0)),
+      total: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => {
+        // Exclure les TITRE et SOUS_TITRE des calculs
+        if (avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE') return sum;
+        return sum + avenant.montantTotal;
+      }, 0))
     }
 
     setSummary({
@@ -926,6 +938,25 @@ export default function EtatAvancementUnifie({
               {memoizedCalculatedAvenants.map((avenant, index) => {
                 // Un avenant provient d'un état précédent si quantitePrecedente > 0
                 const isFromPreviousState = avenant.quantitePrecedente > 0
+                const isSectionHeader = avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE';
+
+                // Si c'est un titre ou sous-titre, afficher sur toute la largeur
+                if (isSectionHeader) {
+                  return (
+                    <tr
+                      key={`avenant-${avenant.id}-section`}
+                      className={`${avenant.type === 'TITRE' ? 'bg-blue-50/80 dark:bg-blue-900/30' : 'bg-gray-100/80 dark:bg-gray-800/40'}`}
+                    >
+                      <td
+                        colSpan={13}
+                        className="px-3 py-4 text-sm font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-100"
+                      >
+                        {avenant.description || avenant.article}
+                      </td>
+                    </tr>
+                  );
+                }
+
                 return (
                 <tr key={`avenant-${avenant.id}`} className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group`}>
                   <td className="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
@@ -972,6 +1003,8 @@ export default function EtatAvancementUnifie({
                         <option value="QP">QP</option>
                         <option value="FF">FF</option>
                         <option value="FG">FG</option>
+                        <option value="TITRE">TITRE</option>
+                        <option value="SOUS_TITRE">SOUS-TITRE</option>
                       </select>
                     ) : (
                       <span className="text-gray-700 dark:text-gray-300">{avenant.type}</span>

@@ -170,9 +170,21 @@ export default function EtatAvancementClient({
     }
 
     const totalAvenants = {
-      precedent: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantPrecedent, 0)),
-      actuel: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantActuel, 0)),
-      total: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => sum + avenant.montantTotal, 0))
+      precedent: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => {
+        // Exclure les TITRE et SOUS_TITRE des calculs
+        if (avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE') return sum;
+        return sum + avenant.montantPrecedent;
+      }, 0)),
+      actuel: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => {
+        // Exclure les TITRE et SOUS_TITRE des calculs
+        if (avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE') return sum;
+        return sum + avenant.montantActuel;
+      }, 0)),
+      total: roundToTwoDecimals(memoizedCalculatedAvenants.reduce((sum, avenant) => {
+        // Exclure les TITRE et SOUS_TITRE des calculs
+        if (avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE') return sum;
+        return sum + avenant.montantTotal;
+      }, 0))
     }
 
     setSummary({
@@ -644,6 +656,25 @@ export default function EtatAvancementClient({
                 {memoizedCalculatedAvenants.map((avenant) => {
                   // Un avenant provient d'un état précédent si quantitePrecedente > 0
                   const isFromPreviousState = avenant.quantitePrecedente > 0
+                  const isSectionHeader = avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE';
+
+                  // Si c'est un titre ou sous-titre, afficher sur toute la largeur
+                  if (isSectionHeader) {
+                    return (
+                      <tr
+                        key={`avenant-${avenant.id}-section`}
+                        className={`${avenant.type === 'TITRE' ? 'bg-blue-50/80 dark:bg-blue-900/30' : 'bg-gray-100/80 dark:bg-gray-800/40'}`}
+                      >
+                        <td
+                          colSpan={14}
+                          className="px-3 py-4 text-sm font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-100"
+                        >
+                          {avenant.description || avenant.article}
+                        </td>
+                      </tr>
+                    );
+                  }
+
                   return (
                   <tr key={avenant.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/10">
                     <td className="w-24 px-2 py-3 text-xs text-gray-900 dark:text-gray-200">
@@ -680,6 +711,8 @@ export default function EtatAvancementClient({
                           <option value="QP">QP</option>
                           <option value="TS">TS</option>
                           <option value="TF">TF</option>
+                          <option value="TITRE">TITRE</option>
+                          <option value="SOUS_TITRE">SOUS-TITRE</option>
                         </select>
                       ) : (
                         avenant.type

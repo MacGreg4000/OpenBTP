@@ -205,15 +205,10 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
       if (metadataStr) {
         try {
           metadata = JSON.parse(metadataStr) as JsonValue;
-          
-          // 🔍 DEBUG: Log pour vérifier la source
           const metadataObj = metadata as { source?: string };
-          console.log('🔍 POST documents - metadata.source:', metadataObj?.source);
           
           // Si la source est 'photo-interne', forcer le tag "Interne" et supprimer "Rapport"
           if (metadataObj?.source === 'photo-interne') {
-            console.log('✅ POST documents - Photo interne détectée, forçage du tag "Interne"');
-            console.log('🔍 Tags AVANT nettoyage:', tagsToConnect.map(t => t.nom));
             // Supprimer "Rapport" des tags s'il est présent
             tagsToConnect = tagsToConnect.filter(tag => tag.nom.toLowerCase() !== 'rapport');
             // Ajouter "Interne" s'il n'est pas déjà présent
@@ -221,7 +216,6 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
             if (!hasInterne) {
               tagsToConnect.push({ nom: 'Interne' });
             }
-            console.log('🔍 Tags APRÈS nettoyage:', tagsToConnect.map(t => t.nom));
           }
         } catch (e) {
           console.error('Erreur lors du parsing des métadonnées:', e);
@@ -296,13 +290,11 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
           const metadataObj = metadata as { source?: string };
           if (metadataObj.source === 'photo-interne') {
             shouldForceInterne = true;
-            console.log('🔧 POST documents - Source photo-interne détectée, forçage du tag "Interne"');
           }
         }
         // Vérifier aussi si "Interne" est déjà dans les tags à connecter
         if (tagsToConnect.some(t => t.nom.toLowerCase() === 'interne')) {
           shouldForceInterne = true;
-          console.log('🔧 POST documents - Tag "Interne" présent dans tagsToConnect, forçage');
         }
       }
 
@@ -319,12 +311,10 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
           update: {},
           select: { id: true, nom: true }
         });
-        console.log('✅ Tag "Interne" obtenu:', tagInterne);
         
         // Vérifier qu'on n'a pas accidentellement récupéré un tag "Rapport"
         if (tagInterne.nom.toLowerCase() === 'rapport') {
           console.error('🚨 ERREUR CRITIQUE: Le tag "Interne" retourné est en fait "Rapport" !');
-          // Créer un nouveau tag "Interne" avec un nom légèrement différent pour éviter le conflit
           const tagInterneCorrect = await prisma.tag.create({
             data: { nom: 'Interne' },
             select: { id: true, nom: true }
@@ -346,16 +336,13 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
         }
       }
 
-      console.log('🔍 POST documents - Tags finaux avec IDs:', tagsToConnectFinal.map(t => t.id));
-      
-      // 🔍 DEBUG : Vérifier les tags qui vont être connectés
+      // Vérifier les tags qui vont être connectés pour détecter les erreurs critiques
       if (tagsToConnectFinal.length > 0) {
         for (const tagRef of tagsToConnectFinal) {
           const tagCheck = await prisma.tag.findUnique({
             where: { id: tagRef.id },
             select: { id: true, nom: true }
           });
-          console.log('🔍 POST documents - Tag vérifié:', tagCheck);
           if (tagCheck && tagCheck.nom.toLowerCase() === 'rapport') {
             console.error('🚨 ERREUR CRITIQUE: Le tag avec cet ID est "Rapport" et non "Interne" !');
           }
@@ -393,8 +380,7 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
         }
       });
 
-      console.log('POST documents - document créé avec succès:', document.id)
-      console.log('🔍 POST documents - Tags créés dans le document:', document.tags.map(t => t.nom));
+      console.log('POST documents - document créé avec succès:', document.id);
       
       // 🔍 Vérification finale OBLIGATOIRE pour TOUTES les photos-chantier avec source 'photo-interne'
       // TOUJOURS forcer le tag "Interne" et supprimer "Rapport", même si on pense qu'on a déjà fait le bon tag
@@ -403,11 +389,8 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
         const hasPhotoInterneSource = metadata && typeof metadata === 'object' && (metadata as { source?: string }).source === 'photo-interne';
         const shouldCheckFinal = shouldForceInterne || hasPhotoInterneSource;
         
-        console.log('🔍 POST documents - shouldCheckFinal:', shouldCheckFinal, 'hasPhotoInterneSource:', hasPhotoInterneSource, 'shouldForceInterne:', shouldForceInterne);
-        
         // TOUJOURS vérifier si metadata.source === 'photo-interne', même si shouldForceInterne est false
         if (hasPhotoInterneSource || shouldCheckFinal) {
-          console.log('🔍 POST documents - Vérification finale OBLIGATOIRE pour photo-chantier');
           
           // Récupérer le document avec ses tags IMMÉDIATEMENT après création
           const docWithTags = await prisma.document.findUnique({
@@ -421,13 +404,8 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
             const hasRapport = tagNamesLower.includes('rapport');
             const hasInterne = tagNamesLower.includes('interne');
             
-            console.log('🔍 POST documents - Tags actuels après création:', tagNames);
-            console.log('🔍 POST documents - hasRapport:', hasRapport, 'hasInterne:', hasInterne);
-            
             // SI "Rapport" est présent OU si les tags ne sont pas exactement ["Interne"], corriger
             if (hasRapport || !hasInterne || tagNames.length !== 1 || tagNames[0] !== 'Interne') {
-              console.log('🚨 POST documents - PROBLÈME DÉTECTÉ: Tags incorrects, correction FORCÉE');
-              console.log('🔧 POST documents - Suppression de tous les tags, ajout de "Interne" uniquement');
               
               // Créer ou obtenir le tag "Interne"
               const tagInterne = await prisma.tag.upsert({
@@ -437,10 +415,8 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
                 select: { id: true, nom: true }
               });
               
-              console.log('✅ Tag "Interne" créé/trouvé:', tagInterne);
-              
               // Supprimer TOUS les tags et ajouter SEULEMENT "Interne" en utilisant l'ID
-              const updateResult = await prisma.document.update({
+              await prisma.document.update({
                 where: { id: document.id },
                 data: {
                   tags: {
@@ -448,8 +424,6 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
                   }
                 }
               });
-              
-              console.log('✅ POST documents - Document mis à jour:', updateResult.id);
               
               // Récupérer le document corrigé avec TOUS les champs
               const correctedDoc = await prisma.document.findUnique({
@@ -467,14 +441,10 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
               });
               
               if (correctedDoc) {
-                console.log('✅ POST documents - Tags corrigés:', correctedDoc.tags.map(t => t.nom));
-                console.log('✅ POST documents - Nombre de tags:', correctedDoc.tags.length);
                 return NextResponse.json(correctedDoc);
               } else {
                 console.error('❌ POST documents - Impossible de récupérer le document corrigé');
               }
-            } else {
-              console.log('✅ POST documents - Tags déjà corrects (["Interne"] uniquement), pas de correction nécessaire');
             }
           } else {
             console.error('❌ POST documents - Impossible de récupérer le document avec tags');

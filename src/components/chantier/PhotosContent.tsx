@@ -182,13 +182,7 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
             User?: { name?: string }
             tags?: { nom: string }[]
           }) => {
-            // 🔍 DEBUG : Log des tags pour chaque photo
             const metadata = typeof doc.metadata === 'string' ? JSON.parse(doc.metadata) : doc.metadata as PhotoMetadata | null
-            console.log(`🔍 PhotosContent - Photo ${doc.nom}:`, {
-              tags: doc.tags?.map(t => t.nom) || [],
-              metadataTags: metadata?.tags || [],
-              metadataSource: metadata?.source
-            });
             
             return {
               id: doc.id.toString(),

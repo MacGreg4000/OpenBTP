@@ -140,11 +140,17 @@ export default function EtatAvancementSoustraitant({
       total: roundToTwoDecimals(totalCommandeInitialeRaw.total)
     }
 
-    const totalAvenantsRaw = memoizedCalculatedAvenants.reduce((acc, avenant) => ({
-      precedent: acc.precedent + avenant.montantPrecedent,
-      actuel: acc.actuel + avenant.montantActuel,
-      total: acc.total + avenant.montantTotal
-    }), { precedent: 0, actuel: 0, total: 0 })
+    const totalAvenantsRaw = memoizedCalculatedAvenants.reduce((acc, avenant) => {
+      // Exclure les TITRE et SOUS_TITRE des calculs
+      if (avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE') {
+        return acc
+      }
+      return {
+        precedent: acc.precedent + avenant.montantPrecedent,
+        actuel: acc.actuel + avenant.montantActuel,
+        total: acc.total + avenant.montantTotal
+      }
+    }, { precedent: 0, actuel: 0, total: 0 })
 
     const totalAvenants = {
       precedent: roundToTwoDecimals(totalAvenantsRaw.precedent),
@@ -609,6 +615,25 @@ export default function EtatAvancementSoustraitant({
                 {memoizedCalculatedAvenants.map((avenant, index) => {
                   // Un avenant provient d'un état précédent si quantitePrecedente > 0
                   const isFromPreviousState = avenant.quantitePrecedente > 0
+                  const isSectionHeader = avenant.type === 'TITRE' || avenant.type === 'SOUS_TITRE';
+
+                  // Si c'est un titre ou sous-titre, afficher sur toute la largeur
+                  if (isSectionHeader) {
+                    return (
+                      <tr
+                        key={`avenant-${avenant.id}-section`}
+                        className={`${avenant.type === 'TITRE' ? 'bg-green-50/80 dark:bg-green-900/30' : 'bg-gray-100/80 dark:bg-gray-800/40'}`}
+                      >
+                        <td
+                          colSpan={13}
+                          className="px-3 py-4 text-sm font-semibold uppercase tracking-wide text-green-900 dark:text-green-100"
+                        >
+                          {avenant.description || avenant.article}
+                        </td>
+                      </tr>
+                    );
+                  }
+
                   return (
                   <tr
                     key={`avenant-${avenant.id}-${index}`}
@@ -658,6 +683,8 @@ export default function EtatAvancementSoustraitant({
                           <option value="QP">QP</option>
                           <option value="FF">FF</option>
                           <option value="DF">DF</option>
+                          <option value="TITRE">TITRE</option>
+                          <option value="SOUS_TITRE">SOUS-TITRE</option>
                         </select>
                       ) : (
                         <span className="inline-flex px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-200 rounded-full">

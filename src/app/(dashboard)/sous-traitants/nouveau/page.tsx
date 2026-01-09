@@ -142,11 +142,8 @@ export default function NouveauSousTraitantPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader
         title="Nouveau Sous-Traitant"
+        subtitle="Créer un nouveau sous-traitant"
         icon={BuildingOffice2Icon}
-        breadcrumbs={[
-          { label: 'Sous-traitants', href: '/sous-traitants' },
-          { label: 'Nouveau', href: '/sous-traitants/nouveau' }
-        ]}
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

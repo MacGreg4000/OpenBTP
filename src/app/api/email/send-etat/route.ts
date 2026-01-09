@@ -49,22 +49,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Debug: Vérifier les données récupérées
-    console.log('🔍 Debug - etatAvancement trouvé:', !!etatAvancement);
-    if (etatAvancement) {
-      console.log('🔍 Debug - données:', {
-        id: etatAvancement.id,
-        chantierId: etatAvancement.chantierId,
-        numero: etatAvancement.numero,
-        hasChantier: !!etatAvancement.Chantier,
-        chantierData: etatAvancement.Chantier ? {
-          id: etatAvancement.Chantier.id,
-          chantierId: etatAvancement.Chantier.chantierId,
-          nomChantier: etatAvancement.Chantier.nomChantier
-        } : 'CHANTIER_NON_TROUVÉ'
-      });
-    }
-
     if (!etatAvancement) {
       console.error('❌ État d\'avancement non trouvé pour ID:', etatAvancementId);
       return NextResponse.json({ error: `État d'avancement non trouvé (ID: ${etatAvancementId})` }, { status: 404 });

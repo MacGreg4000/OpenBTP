@@ -187,26 +187,26 @@ export default function OuvriersPage(
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader
         title={`Ouvriers de ${sousTraitant.nom}`}
+        subtitle="Gestion des ouvriers du sous-traitant"
         icon={UserGroupIcon}
-        breadcrumbs={[
-          { label: 'Sous-traitants', href: '/sous-traitants' },
-          { label: sousTraitant.nom, href: `/sous-traitants/${params.id}/ouvriers` },
-          { label: 'Ouvriers' }
-        ]}
-        actions={[
-          {
-            label: 'Retour',
-            icon: ArrowLeftIcon,
-            onClick: () => router.push('/sous-traitants'),
-            variant: 'secondary' as const
-          },
-          {
-            label: 'Ajouter un ouvrier',
-            icon: PlusIcon,
-            onClick: () => router.push(`/sous-traitants/${params.id}/ouvriers/nouveau`),
-            variant: 'primary' as const
-          }
-        ]}
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push('/sous-traitants')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Retour</span>
+            </button>
+            <button
+              onClick={() => router.push(`/sous-traitants/${params.id}/ouvriers/nouveau`)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              <PlusIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Ajouter un ouvrier</span>
+            </button>
+          </div>
+        }
       />
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -122,13 +122,8 @@ export default function EditOuvrierPage(
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader
         title={`Modifier ${formData.prenom} ${formData.nom}`}
+        subtitle={`Ouvrier chez ${sousTraitantNom}`}
         icon={PencilSquareIcon}
-        breadcrumbs={[
-          { label: 'Sous-traitants', href: '/sous-traitants' },
-          { label: sousTraitantNom, href: `/sous-traitants/${params.id}/ouvriers` },
-          { label: `${formData.prenom} ${formData.nom}`, href: `/sous-traitants/${params.id}/ouvriers/${params.ouvrierId}` },
-          { label: 'Modifier' }
-        ]}
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
