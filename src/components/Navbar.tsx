@@ -80,7 +80,7 @@ export function Navbar() {
         { name: 'Devis', href: '/devis', icon: DocumentTextIcon, moduleCode: 'devis' },
         { name: 'Sous-traitants et ouvriers', href: '/sous-traitants', icon: UserGroupIcon, moduleCode: 'sous_traitants' },
         { name: 'Chantiers', href: '/chantiers', icon: BuildingOfficeIcon, moduleCode: 'chantiers' },
-        { name: 'Planning chantiers', href: '/planning', icon: CalendarIcon, moduleCode: 'planning' },
+        { name: 'Planning chantiers', href: '/planning-v2', icon: CalendarIcon, moduleCode: 'planning' },
         { name: 'Planning ressources', href: '/planning-ressources', icon: CalendarIcon, moduleCode: 'planning' },
         { name: 'Journal', href: '/journal', icon: CalendarDaysIcon, moduleCode: 'journal' },
       ]
