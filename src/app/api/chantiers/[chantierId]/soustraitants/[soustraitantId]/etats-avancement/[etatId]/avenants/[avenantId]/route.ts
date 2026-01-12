@@ -18,17 +18,9 @@ export async function PUT(
     const { chantierId, soustraitantId, etatId, avenantId } = await context.params
     const body = await request.json()
 
-    // Valider que etatId n'est pas 0 (nouvel état)
-    if (etatId === '0') {
-      return NextResponse.json(
-        { error: 'Cannot update avenant for state with ID 0. Create state first.' },
-        { status: 400 }
-      )
-    }
-
     const etatIdNum = parseInt(etatId)
     const avenantIdNum = parseInt(avenantId)
-    
+
     if (isNaN(etatIdNum) || isNaN(avenantIdNum)) {
       return NextResponse.json({ error: 'ID invalide' }, { status: 400 })
     }
@@ -83,20 +75,22 @@ export async function PUT(
 
     // Mettre à jour l'avenant
     const avenantMisAJour = await prisma.avenant_soustraitant_etat_avancement.update({
-      where: { id: avenantIdNum },
+      where: {
+        id: avenantIdNum
+      },
       data: {
-        article: body.article !== undefined ? body.article : avenantExistant.article,
-        description: body.description !== undefined ? body.description : avenantExistant.description,
-        type: body.type !== undefined ? body.type : avenantExistant.type,
-        unite: body.unite !== undefined ? body.unite : avenantExistant.unite,
-        prixUnitaire: body.prixUnitaire !== undefined ? body.prixUnitaire : avenantExistant.prixUnitaire,
-        quantite: body.quantite !== undefined ? body.quantite : avenantExistant.quantite,
-        quantitePrecedente: body.quantitePrecedente !== undefined ? body.quantitePrecedente : avenantExistant.quantitePrecedente,
-        quantiteActuelle: body.quantiteActuelle !== undefined ? body.quantiteActuelle : avenantExistant.quantiteActuelle,
-        quantiteTotale: body.quantiteTotale !== undefined ? body.quantiteTotale : avenantExistant.quantiteTotale,
-        montantPrecedent: body.montantPrecedent !== undefined ? body.montantPrecedent : avenantExistant.montantPrecedent,
-        montantActuel: body.montantActuel !== undefined ? body.montantActuel : avenantExistant.montantActuel,
-        montantTotal: body.montantTotal !== undefined ? body.montantTotal : avenantExistant.montantTotal,
+        article: body.article,
+        description: body.description,
+        type: body.type,
+        unite: body.unite,
+        prixUnitaire: body.prixUnitaire,
+        quantite: body.quantite,
+        quantitePrecedente: body.quantitePrecedente,
+        quantiteActuelle: body.quantiteActuelle,
+        quantiteTotale: body.quantiteTotale,
+        montantPrecedent: body.montantPrecedent,
+        montantActuel: body.montantActuel,
+        montantTotal: body.montantTotal,
         updatedAt: new Date()
       }
     })
@@ -123,13 +117,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const { soustraitantId, etatId, avenantId } = await context.params
+    const { chantierId, soustraitantId, etatId, avenantId } = await context.params
 
     const etatIdNum = parseInt(etatId)
     const avenantIdNum = parseInt(avenantId)
-    
+
     if (isNaN(etatIdNum) || isNaN(avenantIdNum)) {
       return NextResponse.json({ error: 'ID invalide' }, { status: 400 })
+    }
+
+    // Récupérer l'ID interne du chantier
+    const chantierData = await prisma.chantier.findUnique({
+      where: { chantierId },
+      select: { id: true }
+    })
+
+    if (!chantierData) {
+      return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 404 })
     }
 
     // Vérifier que l'état existe et appartient au bon sous-traitant
@@ -155,12 +159,29 @@ export async function DELETE(
       )
     }
 
-    // Supprimer l'avenant
-    await prisma.avenant_soustraitant_etat_avancement.delete({
-      where: { id: avenantIdNum }
+    // Vérifier que l'avenant existe et appartient à cet état
+    const avenantExistant = await prisma.avenant_soustraitant_etat_avancement.findFirst({
+      where: {
+        id: avenantIdNum,
+        soustraitantEtatAvancementId: etatIdNum
+      }
     })
 
-    return NextResponse.json({ success: true })
+    if (!avenantExistant) {
+      return NextResponse.json(
+        { error: 'Avenant non trouvé' },
+        { status: 404 }
+      )
+    }
+
+    // Supprimer l'avenant
+    await prisma.avenant_soustraitant_etat_avancement.delete({
+      where: {
+        id: avenantIdNum
+      }
+    })
+
+    return NextResponse.json({ success: true, message: 'Avenant supprimé avec succès' })
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'avenant:', error)
     return NextResponse.json(
