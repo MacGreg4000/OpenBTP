@@ -17,6 +17,8 @@ export async function GET(
 
     const { chantierId, soustraitantId, etatId } = await context.params
 
+    console.log('[GET État Soustraitant] Paramètres:', { chantierId, soustraitantId, etatId })
+
     // Récupérer l'ID interne du chantier
     const chantierData = await prisma.chantier.findUnique({
       where: { chantierId },
@@ -24,28 +26,56 @@ export async function GET(
     })
 
     if (!chantierData) {
+      console.error('[GET État Soustraitant] Chantier non trouvé:', chantierId)
       return NextResponse.json({ error: 'Chantier non trouvé' }, { status: 404 })
     }
 
-    // Récupérer l'état d'avancement sous-traitant
+    console.log('[GET État Soustraitant] Chantier ID interne:', chantierData.id)
+
+    // Récupérer d'abord l'état sans filtre sur le chantier
     const etat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
         id: parseInt(etatId),
-        soustraitantId,
-        etat_avancement: {
-          chantierId: chantierData.id
-        }
+        soustraitantId
       },
       include: {
-        ligne_soustraitant_etat_avancement: true,
-        avenant_soustraitant_etat_avancement: true,
-        soustraitant: true
+        ligne_soustraitant_etat_avancement: {
+          orderBy: { id: 'asc' }
+        },
+        avenant_soustraitant_etat_avancement: {
+          orderBy: { id: 'asc' }
+        },
+        soustraitant: true,
+        etat_avancement: {
+          select: {
+            id: true,
+            chantierId: true,
+            numero: true
+          }
+        }
       }
     })
 
+    console.log('[GET État Soustraitant] État trouvé:', etat ? `ID ${etat.id}, Numéro ${etat.numero}` : 'null')
+
     if (!etat) {
+      console.error('[GET État Soustraitant] État non trouvé pour:', { etatId, soustraitantId })
       return NextResponse.json({ error: 'État d\'avancement non trouvé' }, { status: 404 })
     }
+
+    // Vérifier que l'état appartient bien au bon chantier
+    if (etat.etat_avancement.chantierId !== chantierData.id) {
+      console.error('[GET État Soustraitant] Chantier mismatch:', { 
+        expected: chantierData.id, 
+        actual: etat.etat_avancement.chantierId 
+      })
+      return NextResponse.json({ error: 'État d\'avancement non trouvé pour ce chantier' }, { status: 404 })
+    }
+
+    console.log('[GET État Soustraitant] État récupéré avec succès:', {
+      lignes: etat.ligne_soustraitant_etat_avancement.length,
+      avenants: etat.avenant_soustraitant_etat_avancement.length
+    })
 
     return NextResponse.json({
       id: etat.id,
@@ -55,11 +85,12 @@ export async function GET(
       soustraitantNom: etat.soustraitant.nom,
       commentaires: etat.commentaires,
       estFinalise: etat.estFinalise,
+      commandeSousTraitantId: etat.commandeSousTraitantId,
       lignes: etat.ligne_soustraitant_etat_avancement,
       avenants: etat.avenant_soustraitant_etat_avancement
     })
   } catch (error) {
-    console.error('Erreur:', error)
+    console.error('[GET État Soustraitant] Erreur:', error)
     return NextResponse.json(
       { error: 'Erreur lors de la récupération de l\'état d\'avancement' },
       { status: 500 }
