@@ -52,8 +52,8 @@ export async function GET(request: Request) {
       // Filtre par nom de chantier
       if (filtreNomChantier && filtreNomChantier.trim() !== '') {
         whereClause.nomChantier = {
-          contains: filtreNomChantier,
-          mode: 'insensitive'
+          contains: filtreNomChantier
+          // mode: 'insensitive' n'existe pas en MySQL/MariaDB (insensible par défaut)
         }
       }
       
@@ -62,8 +62,8 @@ export async function GET(request: Request) {
         console.log('[FILTRE CLIENT] Recherche de:', filtreNomClient.trim())
         whereClause.client = {
           nom: {
-            contains: filtreNomClient.trim(),
-            mode: 'insensitive'
+            contains: filtreNomClient.trim()
+            // mode: 'insensitive' n'existe pas en MySQL/MariaDB (insensible par défaut)
           }
         }
       }
