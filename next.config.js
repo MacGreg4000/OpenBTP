@@ -38,7 +38,22 @@ const nextConfig = {
     return config;
   },
   // Configuration Turbopack (Next.js 16+)
-  turbopack: {},
+  turbopack: {
+    rules: {
+      // Ignorer les dossiers @eaDir (Synology NAS)
+      '**/@eaDir/**': {
+        loaders: [],
+        as: '*.ignored',
+      },
+    },
+  },
+  // Exclure les dossiers système du NAS
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  exclude: [
+    '**/node_modules/**',
+    '**/@eaDir/**',
+    '**/\\.next/**',
+  ],
   // Ajouter des règles de réécriture pour servir correctement les fichiers statiques
   async rewrites() {
     return [

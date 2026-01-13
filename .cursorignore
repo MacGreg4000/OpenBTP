@@ -1,0 +1,15 @@
+# Dossiers système Synology NAS
+@eaDir
+**/@eaDir
+
+# Build et cache
+.next
+out
+node_modules
+dist
+
+# Fichiers temporaires
+*.log
+*.tmp
+*.bak
+*.swp
