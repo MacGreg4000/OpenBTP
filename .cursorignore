@@ -1,6 +1,8 @@
-# Dossiers système Synology NAS
-@eaDir
-**/@eaDir
+# Dossiers système Synology NAS (sauf default.tsx nécessaire pour Next.js)
+@eaDir/*
+!@eaDir/default.tsx
+**/@eaDir/*
+!**/@eaDir/default.tsx
 
 # Build et cache
 .next
