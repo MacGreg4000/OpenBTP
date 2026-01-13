@@ -361,7 +361,20 @@ export default function ChantiersPage() {
   useEffect(() => {
     const fetchChantiers = async () => {
       try {
-        const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+        // Si des filtres sont actifs, récupérer TOUTES les données (pas de pagination)
+        const hasActiveFilters = 
+          (filtreNom && filtreNom.trim() !== '') || 
+          (filtreClient && filtreClient.trim() !== '') || 
+          (filtreEtat && filtreEtat !== '') ||
+          filtreClientId
+        
+        const effectivePageSize = hasActiveFilters ? 10000 : pageSize // 10000 = tous les chantiers si filtré
+        const effectivePage = hasActiveFilters ? 1 : page // Toujours page 1 si filtré
+        
+        const params = new URLSearchParams({ 
+          page: String(effectivePage), 
+          pageSize: String(effectivePageSize) 
+        })
         
         // Ajouter tous les filtres
         if (filtreEtat && filtreEtat !== '') {
@@ -382,7 +395,13 @@ export default function ChantiersPage() {
         // L'API retourne { chantiers: [...], meta: {...} }
         const data = Array.isArray(json) ? json : (json.chantiers || json.data || [])
         setChantiers(Array.isArray(data) ? data : [])
-        if (!Array.isArray(json) && json.meta?.totalPages) setTotalPages(json.meta.totalPages)
+        
+        // Mettre à jour la pagination seulement si pas de filtres actifs
+        if (!hasActiveFilters && !Array.isArray(json) && json.meta?.totalPages) {
+          setTotalPages(json.meta.totalPages)
+        } else if (hasActiveFilters) {
+          setTotalPages(1) // Désactiver la pagination quand filtres actifs
+        }
         
         // Si un filtreClientId est défini, récupérer le nom du client
         if (clientIdFromUrl && Array.isArray(data) && data.length > 0) {
