@@ -182,7 +182,7 @@ export default function LigneCommande({
           </SelectField>
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top w-28">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-36">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
@@ -196,7 +196,7 @@ export default function LigneCommande({
           />
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top w-32">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-44">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
@@ -206,7 +206,7 @@ export default function LigneCommande({
             step="0.01"
             min="0"
             disabled={isLocked}
-            className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus-border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled-bg-gray-600 disabled:text-gray-700 dark:disabled-text-gray-200 disabled-border-gray-300 dark:disabled-border-gray-500 transition-colors"
+            className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus-border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500 transition-colors"
           />
         )}
       </td>
