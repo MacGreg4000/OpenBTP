@@ -59,9 +59,10 @@ export async function GET(request: Request) {
       
       // Filtre par nom de client
       if (filtreNomClient && filtreNomClient.trim() !== '') {
+        console.log('[FILTRE CLIENT] Recherche de:', filtreNomClient.trim())
         whereClause.client = {
           nom: {
-            contains: filtreNomClient,
+            contains: filtreNomClient.trim(),
             mode: 'insensitive'
           }
         }
@@ -160,7 +161,9 @@ export async function GET(request: Request) {
         count: formattedChantiers.length,
         total,
         page,
-        pageSize
+        pageSize,
+        filtreNomClient: filtreNomClient || 'aucun',
+        clientsTrouvés: formattedChantiers.map(c => c.clientNom).filter((v, i, a) => a.indexOf(v) === i).join(', ')
       })
       
       return NextResponse.json(response)
