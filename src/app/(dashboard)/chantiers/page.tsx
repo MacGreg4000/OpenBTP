@@ -646,13 +646,18 @@ export default function ChantiersPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sr-only">
                   Filtrer par état
                 </label>
-                <SearchInput
-                  id="search-etat"
-                  placeholder="Rechercher un état..."
+                <select
+                  id="filter-etat"
                   value={filtreEtat}
                   onChange={(e) => setFiltreEtat(e.target.value)}
-                  className="w-full"
-                />
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                >
+                  <option value="">Tous les états</option>
+                  <option value="En préparation">En préparation</option>
+                  <option value="En cours">En cours</option>
+                  <option value="Terminé">Terminé</option>
+                  <option value="À venir">À venir</option>
+                </select>
               </div>
             </div>
             <div className="flex gap-2">
