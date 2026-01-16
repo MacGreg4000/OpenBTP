@@ -207,7 +207,7 @@ export default function LigneCommande({
           </select>
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top w-36">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-28">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
@@ -221,7 +221,7 @@ export default function LigneCommande({
           />
         )}
       </td>
-      <td className="px-3 py-2 whitespace-nowrap align-top w-44">
+      <td className="px-3 py-2 whitespace-nowrap align-top w-32">
         {isSectionHeader ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
         ) : (
