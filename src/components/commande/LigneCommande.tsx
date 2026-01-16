@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { BarsArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline'
 import NumericInput from '@/components/ui/NumericInput'
@@ -46,8 +46,17 @@ export default function LigneCommande({
 }: LigneCommandeProps) {
   const ref = useRef<HTMLTableRowElement>(null)
   const dragIconRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isSectionHeader = type === 'TITRE' || type === 'SOUS_TITRE'
   const sectionLabel = type === 'TITRE' ? 'Titre' : 'Sous-titre'
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current && !isSectionHeader && !isLocked) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
+    }
+  }, [description, isSectionHeader, isLocked])
 
   const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: unknown }>({
     accept: 'ligne',
@@ -129,19 +138,36 @@ export default function LigneCommande({
           />
         )}
       </td>
-      <td className="px-3 py-2 align-top w-full">
-        <input
-          type="text"
-          className={`w-full px-2 py-1.5 text-sm md:text-base border-2 rounded-md focus:outline-none transition-colors ${
-            isSectionHeader
-              ? 'border-transparent bg-transparent text-blue-900 dark:text-blue-50 font-semibold text-base md:text-lg'
-              : 'border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800'
-          } ${isLocked ? 'disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-700 dark:disabled:text-gray-200 disabled:border-gray-300 dark:disabled:border-gray-500' : ''}`}
-          value={description}
-          onChange={(e) => updateLigne(id, 'description', e.target.value)}
-          disabled={isLocked}
-          placeholder={isSectionHeader ? (type === 'TITRE' ? 'Titre de section' : 'Sous-titre de section') : undefined}
-        />
+      <td className="px-3 py-2 align-top min-w-[200px] max-w-[300px]">
+        {isLocked ? (
+          <div className="w-full px-2 py-1.5 text-sm md:text-base text-gray-900 dark:text-gray-100 whitespace-normal break-words">
+            {description}
+          </div>
+        ) : isSectionHeader ? (
+          <input
+            type="text"
+            className="w-full px-2 py-1.5 text-sm md:text-base border-transparent bg-transparent text-blue-900 dark:text-blue-50 font-semibold text-base md:text-lg focus:outline-none"
+            value={description}
+            onChange={(e) => updateLigne(id, 'description', e.target.value)}
+            placeholder={type === 'TITRE' ? 'Titre de section' : 'Sous-titre de section'}
+          />
+        ) : (
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            className="w-full px-2 py-1.5 text-sm md:text-base border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 resize-none overflow-hidden transition-colors"
+            value={description}
+            onChange={(e) => {
+              updateLigne(id, 'description', e.target.value);
+              // Auto-resize textarea
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              target.style.height = target.scrollHeight + 'px';
+            }}
+            placeholder="Description"
+            style={{ minHeight: '2.5rem' }}
+          />
+        )}
       </td>
       <td className="px-3 py-2 whitespace-nowrap align-top w-24">
         {isSectionHeader ? (
