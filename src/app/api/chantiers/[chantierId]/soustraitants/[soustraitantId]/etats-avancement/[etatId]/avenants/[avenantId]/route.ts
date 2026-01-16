@@ -20,7 +20,7 @@ export async function PUT(
 
     const etatIdNum = parseInt(etatId)
     const avenantIdNum = parseInt(avenantId)
-
+    
     if (isNaN(etatIdNum) || isNaN(avenantIdNum)) {
       return NextResponse.json({ error: 'ID invalide' }, { status: 400 })
     }
@@ -121,7 +121,7 @@ export async function DELETE(
 
     const etatIdNum = parseInt(etatId)
     const avenantIdNum = parseInt(avenantId)
-
+    
     if (isNaN(etatIdNum) || isNaN(avenantIdNum)) {
       return NextResponse.json({ error: 'ID invalide' }, { status: 400 })
     }

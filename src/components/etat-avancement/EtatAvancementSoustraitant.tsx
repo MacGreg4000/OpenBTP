@@ -146,9 +146,9 @@ export default function EtatAvancementSoustraitant({
         return acc
       }
       return {
-        precedent: acc.precedent + avenant.montantPrecedent,
-        actuel: acc.actuel + avenant.montantActuel,
-        total: acc.total + avenant.montantTotal
+      precedent: acc.precedent + avenant.montantPrecedent,
+      actuel: acc.actuel + avenant.montantActuel,
+      total: acc.total + avenant.montantTotal
       }
     }, { precedent: 0, actuel: 0, total: 0 })
 

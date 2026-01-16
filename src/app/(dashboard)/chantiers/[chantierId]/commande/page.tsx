@@ -81,6 +81,7 @@ export default function CommandePage(props: CommandePageProps) {
   })
   const [chantier, setChantier] = useState<{ nomChantier?: string; id?: string } | null>(null)
   const [chantierPrimaryId, setChantierPrimaryId] = useState<string | null>(null)
+  const tempIdCounterRef = useRef(0)
 
   // Force le taux de TVA à 0% au premier rendu
   useEffect(() => {
@@ -368,7 +369,8 @@ export default function CommandePage(props: CommandePageProps) {
   // removed unused handleTVAChange
 
   const addLigne = () => {
-    const tempId = -(commande.lignes.length + 1);
+    tempIdCounterRef.current -= 1;
+    const tempId = tempIdCounterRef.current;
     
     const newLigne: Omit<LigneCommande, 'id' | 'commandeId'> & { id: number } = {
       id: tempId,
@@ -390,7 +392,8 @@ export default function CommandePage(props: CommandePageProps) {
   }
 
   const addSectionLigne = (sectionType: 'TITRE' | 'SOUS_TITRE') => {
-    const tempId = -(commande.lignes.length + 1);
+    tempIdCounterRef.current -= 1;
+    const tempId = tempIdCounterRef.current;
     const isTitre = sectionType === 'TITRE';
 
     const newLigne: Omit<LigneCommande, 'id' | 'commandeId'> & { id: number } = {
@@ -1120,7 +1123,7 @@ export default function CommandePage(props: CommandePageProps) {
                           <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-32">Article</th>
                           <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-full">Description</th>
                           <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Type</th>
-                          <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[70px]">Unité</th>
+                          <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-32">Unité</th>
                           <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-36">Quantité</th>
                           <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-44">Prix Unit. (€)</th>
                           <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-32">Total</th>
@@ -1131,7 +1134,7 @@ export default function CommandePage(props: CommandePageProps) {
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {commande.lignes.map((ligne, index) => (
                           <LigneCommande
-                            key={index}
+                            key={ligne.id}
                             id={ligne.id}
                             index={index}
                             article={ligne.article}
