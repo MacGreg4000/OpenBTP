@@ -308,17 +308,21 @@ export async function POST(request: Request) {
     const dossierCoverPages = await finalPdfDoc.copyPages(dossierCoverPdfDoc, dossierCoverPdfDoc.getPageIndices())
     dossierCoverPages.forEach(page => finalPdfDoc.addPage(page))
 
-    // ===== 2. GÉNÉRER LA TABLE DES MATIÈRES (si demandé) =====
-    if (options?.includeTableOfContents) {
-      // D'abord, calculer le nombre de pages de chaque fiche PDF pour la numérotation
-      const pagesInfo: Array<{ id: string; path: string; startPage: number; pageCount: number; name: string }> = []
-      let pageCount = 2 // Commencer à 2 (après la page de garde et la table des matières)
-      
-      // Première analyse pour calculer les numéros de page
-      const baseDir = getFichesBaseDir(chantierId)
-      for (const ficheId of ficheIds) {
-        const fichePath = await findPdfFile(baseDir, ficheId, chantierId)
-        
+    // ===== 2. PRÉCHARGER LES DONNÉES POUR OPTIMISER LA TABLE DES MATIÈRES =====
+    // OPTIMISATION : Précharger les chemins de fichiers et préparer les données en parallèle
+    const baseDir = getFichesBaseDir(chantierId)
+    console.log('🔍 [API] Préchargement des chemins de fichiers PDF en parallèle...', { timestamp: Date.now() - startTime })
+    const fichePathsPreload = await Promise.all(
+      ficheIds.map(ficheId => findPdfFile(baseDir, ficheId, chantierId))
+    )
+    
+    // OPTIMISATION : Précharger tous les PDFs en parallèle pour la table des matières ET pour le reste
+    // Stocker les bytes ET les infos pour éviter de recharger les fichiers
+    const pagesInfoMap = new Map<string, { path: string; pageCount: number; name: string; bytes?: Buffer }>()
+    const ficheBytesMap = new Map<string, Buffer>()
+    console.log('📄 [API] Préchargement des PDFs en parallèle pour table des matières...', { timestamp: Date.now() - startTime })
+    await Promise.all(
+      fichePathsPreload.map(async (fichePath, index) => {
         if (fichePath) {
           try {
             const ficheBytes = await readFile(fichePath)
@@ -332,29 +336,47 @@ export async function POST(request: Request) {
               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ')
             
-            // Ajouter les informations dans pagesInfo
-            pagesInfo.push({
-              id: ficheId,
-              path: fichePath,
-              startPage: pageCount,
-              pageCount: nbPages,
-              name: ficheName
-            })
+            // Stocker les bytes pour réutilisation ultérieure
+            ficheBytesMap.set(ficheIds[index], ficheBytes)
             
-            // Mise à jour du compteur de pages (une page de couverture + les pages du PDF)
-            pageCount += 1 + nbPages
+            pagesInfoMap.set(ficheIds[index], {
+              path: fichePath,
+              pageCount: nbPages,
+              name: ficheName,
+              bytes: ficheBytes
+            })
           } catch (error) {
             console.error(`Erreur lors de l'analyse de ${fichePath}:`, error)
-            // Ajouter quand même une entrée avec une page estimée
-            pagesInfo.push({
-              id: ficheId,
+            pagesInfoMap.set(ficheIds[index], {
               path: fichePath,
-              startPage: pageCount,
               pageCount: 1,
               name: path.basename(fichePath, '.pdf')
             })
-            pageCount += 2 // Couverture + 1 page estimée
           }
+        }
+      })
+    )
+    console.log('✅ [API] PDFs préchargés pour table des matières', { timestamp: Date.now() - startTime })
+
+    // ===== 3. GÉNÉRER LA TABLE DES MATIÈRES (si demandé) =====
+    if (options?.includeTableOfContents) {
+      // Calculer les numéros de page en utilisant les données préchargées
+      const pagesInfo: Array<{ id: string; path: string; startPage: number; pageCount: number; name: string }> = []
+      let pageCount = 2 // Commencer à 2 (après la page de garde et la table des matières)
+      
+      for (const ficheId of ficheIds) {
+        const info = pagesInfoMap.get(ficheId)
+        if (info) {
+          pagesInfo.push({
+            id: ficheId,
+            path: info.path,
+            startPage: pageCount,
+            pageCount: info.pageCount,
+            name: info.name
+          })
+          
+          // Mise à jour du compteur de pages (une page de couverture + les pages du PDF)
+          pageCount += 1 + info.pageCount
         }
       }
       
@@ -541,18 +563,14 @@ export async function POST(request: Request) {
       tocPages.forEach(page => finalPdfDoc.addPage(page))
     }
 
-    // ===== 3. OPTIMISATION : PRÉCHARGER TOUTES LES DONNÉES EN PARALLÈLE =====
+    // ===== 4. OPTIMISATION : PRÉCHARGER TOUTES LES DONNÉES EN PARALLÈLE =====
     console.log('📚 [API] Début du traitement des fiches techniques...', { timestamp: Date.now() - startTime })
-    const baseDir = getFichesBaseDir(chantierId)
     const isCustom = hasCustomFiches(chantierId || '')
     console.log(`📁 [API] Génération du dossier - BaseDir: ${baseDir}, IsCustom: ${isCustom}, ChantierId: ${chantierId}`)
     console.log(`📋 [API] Fiches à traiter (${ficheIds.length}):`, ficheIds)
     
-    // OPTIMISATION 1: Trouver tous les fichiers PDF en parallèle
-    console.log('🔍 [API] Recherche de tous les fichiers PDF en parallèle...', { timestamp: Date.now() - startTime })
-    const fichePaths = await Promise.all(
-      ficheIds.map(ficheId => findPdfFile(baseDir, ficheId, chantierId))
-    )
+    // OPTIMISATION : Réutiliser les chemins de fichiers déjà trouvés
+    const fichePaths = fichePathsPreload
     
     // OPTIMISATION 2: Précharger tous les sous-traitants nécessaires en une seule requête
     const soustraitantIds = new Set<string>()
@@ -598,7 +616,7 @@ export async function POST(request: Request) {
     }
     console.log('✅ [API] Données préchargées', { timestamp: Date.now() - startTime })
     
-    // ===== 4. GÉNÉRER LES PAGES DE COUVERTURE EN PARALLÈLE =====
+    // ===== 5. GÉNÉRER LES PAGES DE COUVERTURE EN PARALLÈLE =====
     console.log('🖨️ [API] Génération des pages de couverture en parallèle...', { timestamp: Date.now() - startTime })
     
     const ficheCoverPromises = ficheIds.map(async (ficheId, index) => {
@@ -698,16 +716,28 @@ export async function POST(request: Request) {
     const ficheCovers = await Promise.all(ficheCoverPromises)
     console.log('✅ [API] Toutes les pages de couverture générées', { timestamp: Date.now() - startTime })
     
-    // ===== 5. OPTIMISATION : PRÉCHARGER TOUS LES PDFS ORIGINAUX EN PARALLÈLE =====
+    // ===== 6. OPTIMISATION : RÉUTILISER LES PDFS DÉJÀ CHARGÉS =====
     console.log('📄 [API] Préchargement des PDFs originaux en parallèle...', { timestamp: Date.now() - startTime })
     const fichePdfsMap = new Map<string, PDFDocument>()
     
+    // Réutiliser les bytes déjà chargés pour la table des matières pour éviter de relire les fichiers
     await Promise.all(
       ficheCovers
         .filter(fc => !fc.error && fc.fichePath)
         .map(async (ficheCover) => {
           try {
-            const ficheBytes = await readFile(ficheCover.fichePath!)
+            // Vérifier si les bytes ont déjà été chargés pour la table des matières
+            const cachedBytes = ficheBytesMap.get(ficheCover.ficheId)
+            let ficheBytes: Buffer
+            
+            if (cachedBytes) {
+              // OPTIMISATION : Réutiliser les bytes déjà chargés
+              ficheBytes = cachedBytes
+            } else {
+              // Charger normalement si pas encore chargé
+              ficheBytes = await readFile(ficheCover.fichePath!)
+            }
+            
             const fichePdf = await PDFDocument.load(ficheBytes)
             fichePdfsMap.set(ficheCover.ficheId, fichePdf)
           } catch (error) {
@@ -716,9 +746,9 @@ export async function POST(request: Request) {
           }
         })
     )
-    console.log('✅ [API] Tous les PDFs originaux préchargés', { timestamp: Date.now() - startTime })
+    console.log('✅ [API] Tous les PDFs originaux préchargés (réutilisation des bytes)', { timestamp: Date.now() - startTime })
     
-    // ===== 6. AJOUTER LES PAGES AU PDF FINAL =====
+    // ===== 7. AJOUTER LES PAGES AU PDF FINAL =====
     console.log('📄 [API] Ajout des pages au PDF final...', { timestamp: Date.now() - startTime })
     
     for (let index = 0; index < ficheCovers.length; index++) {
@@ -852,9 +882,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // Créer les entrées DossierFiche pour chaque fiche
-    for (let index = 0; index < ficheIds.length; index++) {
-      const ficheId = ficheIds[index]
+    // OPTIMISATION : Créer toutes les entrées DossierFiche en parallèle avec createMany
+    console.log('💾 [API] Création des entrées DossierFiche...', { timestamp: Date.now() - startTime })
+    const dossierFichesData = ficheIds.map((ficheId, index) => {
       const ficheReference = ficheReferences && ficheReferences[ficheId] ? ficheReferences[ficheId] : null
       const ficheStatut = fichesStatuts && fichesStatuts[ficheId] ? fichesStatuts[ficheId] : 'BROUILLON'
       const soustraitantIdRaw = fichesSoustraitants && fichesSoustraitants[ficheId] ? fichesSoustraitants[ficheId] : null
@@ -863,19 +893,23 @@ export async function POST(request: Request) {
         : null
       const remarques = fichesRemarques && fichesRemarques[ficheId] ? fichesRemarques[ficheId] : null
 
-      await prisma.dossierFiche.create({
-        data: {
-          dossierId: dossierTechnique.id,
-          ficheId: ficheId,
-          ficheReference: ficheReference,
-          version: 1,
-          statut: ficheStatut,
-          ordre: index + 1,
-          soustraitantId: soustraitantId,
-          remarques: remarques
-        }
-      })
-    }
+      return {
+        dossierId: dossierTechnique.id,
+        ficheId: ficheId,
+        ficheReference: ficheReference,
+        version: 1,
+        statut: ficheStatut,
+        ordre: index + 1,
+        soustraitantId: soustraitantId,
+        remarques: remarques
+      }
+    })
+
+    // Utiliser createMany pour créer toutes les entrées en une seule requête
+    await prisma.dossierFiche.createMany({
+      data: dossierFichesData
+    })
+    console.log('✅ [API] Toutes les entrées DossierFiche créées', { timestamp: Date.now() - startTime })
 
     // Créer aussi une entrée Document pour la compatibilité
     await prisma.document.create({
