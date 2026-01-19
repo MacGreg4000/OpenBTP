@@ -7,10 +7,27 @@ import { PortalI18nProvider, usePortalI18n } from '../../../../i18n'
 
 type Ticket = {
   id: string; numTicket: string; titre: string; description?: string; priorite: string; statut: string;
-  chantier?: { chantierId: string; nomChantier?: string };
+  localisation?: string | null;
+  adresseIntervention?: string | null;
+  contactNom?: string | null;
+  contactTelephone?: string | null;
+  contactEmail?: string | null;
+  dateDemande?: string;
+  dateInterventionSouhaitee?: string | null;
+  dateIntervention?: string | null;
+  chantier?: { 
+    chantierId: string; 
+    nomChantier?: string | null;
+    clientNom?: string | null;
+    clientTelephone?: string | null;
+    clientEmail?: string | null;
+    clientAdresse?: string | null;
+    adresseChantier?: string | null;
+    villeChantier?: string | null;
+  };
   documents?: Array<{ id: string; nom: string; url: string }>
   photos?: Array<{ id: string; url: string; nomOriginal?: string }>
-  interventions?: Array<{ id: string; titre: string; description?: string; dateDebut: string; dateFin?: string }>
+  interventions?: Array<{ id: string; titre: string; description?: string; dateDebut: string; dateFin?: string | null }>
   commentaires?: Array<{ id: string; contenu: string; createdAt: string }>
 }
 
@@ -63,7 +80,96 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
           </div>
           <div className="p-4">
             {tab==='infos' && (
-              <div className="text-sm text-gray-800 whitespace-pre-wrap">{ticket.description || '—'}</div>
+              <div className="space-y-4 text-sm">
+                {/* Description */}
+                {ticket.description && (
+                  <div>
+                    <div className="font-semibold text-gray-900 mb-1">Description</div>
+                    <div className="text-gray-700 whitespace-pre-wrap">{ticket.description}</div>
+                  </div>
+                )}
+                
+                {/* Informations du chantier */}
+                {ticket.chantier && (
+                  <div className="border-t pt-3">
+                    <div className="font-semibold text-gray-900 mb-2">Chantier</div>
+                    <div className="space-y-1 text-gray-700">
+                      {ticket.chantier.nomChantier && (
+                        <div><span className="font-medium">Nom:</span> {ticket.chantier.nomChantier}</div>
+                      )}
+                      {(ticket.chantier.adresseChantier || ticket.chantier.villeChantier) && (
+                        <div>
+                          <span className="font-medium">Adresse:</span> {[ticket.chantier.adresseChantier, ticket.chantier.villeChantier].filter(Boolean).join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Informations du client */}
+                {(ticket.chantier?.clientNom || ticket.chantier?.clientTelephone || ticket.chantier?.clientEmail || ticket.chantier?.clientAdresse || ticket.contactNom || ticket.contactTelephone || ticket.contactEmail) && (
+                  <div className="border-t pt-3">
+                    <div className="font-semibold text-gray-900 mb-2">Client / Contact</div>
+                    <div className="space-y-1 text-gray-700">
+                      {(ticket.contactNom || ticket.chantier?.clientNom) && (
+                        <div><span className="font-medium">Nom:</span> {ticket.contactNom || ticket.chantier?.clientNom}</div>
+                      )}
+                      {(ticket.contactTelephone || ticket.chantier?.clientTelephone) && (
+                        <div>
+                          <span className="font-medium">Téléphone:</span>{' '}
+                          <a href={`tel:${ticket.contactTelephone || ticket.chantier?.clientTelephone}`} className="text-blue-600 hover:underline">
+                            {ticket.contactTelephone || ticket.chantier?.clientTelephone}
+                          </a>
+                        </div>
+                      )}
+                      {(ticket.contactEmail || ticket.chantier?.clientEmail) && (
+                        <div>
+                          <span className="font-medium">Email:</span>{' '}
+                          <a href={`mailto:${ticket.contactEmail || ticket.chantier?.clientEmail}`} className="text-blue-600 hover:underline">
+                            {ticket.contactEmail || ticket.chantier?.clientEmail}
+                          </a>
+                        </div>
+                      )}
+                      {(ticket.chantier?.clientAdresse) && (
+                        <div><span className="font-medium">Adresse:</span> {ticket.chantier.clientAdresse}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Localisation / Adresse d'intervention */}
+                {(ticket.localisation || ticket.adresseIntervention) && (
+                  <div className="border-t pt-3">
+                    <div className="font-semibold text-gray-900 mb-2">Localisation</div>
+                    <div className="space-y-1 text-gray-700">
+                      {ticket.localisation && (
+                        <div><span className="font-medium">Localisation:</span> {ticket.localisation}</div>
+                      )}
+                      {ticket.adresseIntervention && (
+                        <div><span className="font-medium">Adresse d'intervention:</span> {ticket.adresseIntervention}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Dates */}
+                {(ticket.dateDemande || ticket.dateInterventionSouhaitee || ticket.dateIntervention) && (
+                  <div className="border-t pt-3">
+                    <div className="font-semibold text-gray-900 mb-2">Dates</div>
+                    <div className="space-y-1 text-gray-700">
+                      {ticket.dateDemande && (
+                        <div><span className="font-medium">Date de demande:</span> {new Date(ticket.dateDemande).toLocaleDateString('fr-FR')}</div>
+                      )}
+                      {ticket.dateInterventionSouhaitee && (
+                        <div><span className="font-medium">Date souhaitée:</span> {new Date(ticket.dateInterventionSouhaitee).toLocaleDateString('fr-FR')}</div>
+                      )}
+                      {ticket.dateIntervention && (
+                        <div><span className="font-medium">Date d'intervention:</span> {new Date(ticket.dateIntervention).toLocaleDateString('fr-FR')}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             {tab==='docs' && (
               <div className="space-y-2">

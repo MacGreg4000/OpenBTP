@@ -15,7 +15,18 @@ export async function GET(request: Request, props: { params: Promise<{ type: 'ou
   const ticket = await prisma.ticketSAV.findFirst({
     where: { id: ticketId, ...whereAssignment },
     include: {
-      chantier: { select: { chantierId: true, nomChantier: true } },
+      chantier: { 
+        select: { 
+          chantierId: true, 
+          nomChantier: true,
+          clientNom: true,
+          clientTelephone: true,
+          clientEmail: true,
+          clientAdresse: true,
+          adresseChantier: true,
+          villeChantier: true
+        } 
+      },
       documents: true,
       photos: true,
       interventions: { orderBy: { dateDebut: 'desc' } },
