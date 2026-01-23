@@ -151,7 +151,7 @@ export class PDFGenerator {
       // Configuration de la page (optimisée)
       await page.setContent(html, {
         waitUntil: 'domcontentloaded', // Plus rapide que networkidle0
-        timeout: 60000 // 60 secondes pour les PDFs complexes
+        timeout: 120000 // 120 secondes (2 minutes) pour les PDFs très complexes
       })
 
       // Options par défaut

@@ -10,8 +10,8 @@ import { generateFicheTechniqueCoverHTML, type FicheTechniqueCoverData } from '@
 import { generateDossierTechniqueCoverHTML, type DossierTechniqueCoverData } from '@/lib/pdf/templates/dossier-technique-template'
 import { readFile } from 'fs/promises'
 
-// Configuration du timeout pour cette route (300 secondes = 5 minutes)
-export const maxDuration = 300
+// Configuration du timeout pour cette route (600 secondes = 10 minutes)
+export const maxDuration = 600
 export const dynamic = 'force-dynamic'
 
 // Fonction pour vérifier si un chantier a un dossier personnalisé
@@ -307,6 +307,7 @@ export async function POST(request: Request) {
     const dossierCoverPdfDoc = await PDFDocument.load(dossierCoverPDF)
     const dossierCoverPages = await finalPdfDoc.copyPages(dossierCoverPdfDoc, dossierCoverPdfDoc.getPageIndices())
     dossierCoverPages.forEach(page => finalPdfDoc.addPage(page))
+    // Note: pdf-lib gère automatiquement la mémoire, pas besoin de destroy()
 
     // ===== 2. PRÉCHARGER LES DONNÉES POUR OPTIMISER LA TABLE DES MATIÈRES =====
     // OPTIMISATION : Précharger les chemins de fichiers et préparer les données en parallèle
@@ -561,6 +562,7 @@ export async function POST(request: Request) {
       const tocPdfDoc = await PDFDocument.load(tocPDF)
       const tocPages = await finalPdfDoc.copyPages(tocPdfDoc, tocPdfDoc.getPageIndices())
       tocPages.forEach(page => finalPdfDoc.addPage(page))
+      // Note: pdf-lib gère automatiquement la mémoire, pas besoin de destroy()
     }
 
     // ===== 4. OPTIMISATION : PRÉCHARGER TOUTES LES DONNÉES EN PARALLÈLE =====
@@ -748,7 +750,7 @@ export async function POST(request: Request) {
     )
     console.log('✅ [API] Tous les PDFs originaux préchargés (réutilisation des bytes)', { timestamp: Date.now() - startTime })
     
-    // ===== 7. AJOUTER LES PAGES AU PDF FINAL =====
+    // ===== 7. AJOUTER LES PAGES AU PDF FINAL (avec libération mémoire optimisée) =====
     console.log('📄 [API] Ajout des pages au PDF final...', { timestamp: Date.now() - startTime })
     
     for (let index = 0; index < ficheCovers.length; index++) {
@@ -769,14 +771,22 @@ export async function POST(request: Request) {
         const ficheCoverPdfDoc = await PDFDocument.load(ficheCover.ficheCoverPDF)
         const ficheCoverPages = await finalPdfDoc.copyPages(ficheCoverPdfDoc, ficheCoverPdfDoc.getPageIndices())
         ficheCoverPages.forEach(page => finalPdfDoc.addPage(page))
+        // Note: pdf-lib gère automatiquement la mémoire, pas besoin de destroy()
 
         // Ajouter les pages de la fiche technique originale (déjà chargée)
         const fichePdf = fichePdfsMap.get(ficheCover.ficheId)
         if (fichePdf) {
           const fichePages = await finalPdfDoc.copyPages(fichePdf, fichePdf.getPageIndices())
           fichePages.forEach(page => finalPdfDoc.addPage(page))
+          // Supprimer de la map pour libérer la référence et aider le GC
+          fichePdfsMap.delete(ficheCover.ficheId)
         } else {
           errors.push(`PDF original non trouvé pour la fiche ${ficheCover.ficheId}`)
+        }
+        
+        // Log de progression pour les gros dossiers
+        if ((index + 1) % 10 === 0) {
+          console.log(`📄 [API] Progression: ${index + 1}/${ficheCovers.length} fiches traitées`, { timestamp: Date.now() - startTime })
         }
         
       } catch (pdfError) {
@@ -785,6 +795,8 @@ export async function POST(request: Request) {
       }
     }
     
+    // Nettoyer la map pour libérer la mémoire
+    fichePdfsMap.clear()
     console.log('✅ [API] Toutes les fiches ajoutées au PDF final', { timestamp: Date.now() - startTime })
 
     // Si des erreurs sont survenues, les retourner
@@ -798,7 +810,9 @@ export async function POST(request: Request) {
     // Sauvegarder le PDF final
     console.log('💾 [API] Sauvegarde du PDF final...', { timestamp: Date.now() - startTime })
     const pdfBytes = await finalPdfDoc.save()
-    console.log('✅ [API] PDF final sauvegardé', { timestamp: Date.now() - startTime })
+    const pdfSizeMB = (pdfBytes.length / (1024 * 1024)).toFixed(2)
+    console.log(`✅ [API] PDF final sauvegardé (${pdfSizeMB} MB)`, { timestamp: Date.now() - startTime })
+    // Note: pdf-lib gère automatiquement la mémoire, pas besoin de destroy()
     
     // Créer le dossier Documents du chantier s'il n'existe pas
     const chantierDir = path.join(process.cwd(), 'public', 'chantiers', chantierId, 'documents')

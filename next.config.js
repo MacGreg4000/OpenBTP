@@ -20,9 +20,9 @@ const nextConfig = {
   // Augmenter le timeout des requêtes et la taille des données
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb',
+      bodySizeLimit: '50mb',
     },
-    largePageDataBytes: 10 * 1024 * 1024, // 10MB pour les réponses
+    largePageDataBytes: 50 * 1024 * 1024, // 50MB pour les réponses (dossiers techniques volumineux)
   },
   // Production: activer les vérifications TypeScript
   typescript: {
