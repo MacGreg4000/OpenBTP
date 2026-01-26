@@ -107,14 +107,31 @@ export default function NouvelEtatAvancementPage(
         // 2. Récupérer le dernier état d'avancement
         const etatsResponse = await fetch(`/api/chantiers/${params.chantierId}/soustraitants/${params.soustraitantId}/etats-avancement`)
         
-        let dernierEtat: { numero: number; estFinalise: boolean; lignes?: Array<{ article: string; quantiteTotale: number; montantTotal: number }> } | null = null
+        let dernierEtat: { 
+          numero: number; 
+          estFinalise: boolean; 
+          lignes?: Array<{ 
+            id: number;
+            article: string; 
+            quantiteTotale: number; 
+            montantTotal: number;
+            quantitePrecedente: number;
+            quantiteActuelle: number;
+            montantPrecedent: number;
+            montantActuel: number;
+          }> 
+        } | null = null
         
         if (etatsResponse.ok) {
           const etats = await etatsResponse.json()
+          console.log('📊 États récupérés:', etats)
           
           if (etats && etats.length > 0) {
             dernierEtat = etats.reduce((max: { numero: number }, etat: { numero: number }) => 
               etat.numero > max.numero ? etat : max, etats[0]) as typeof dernierEtat
+            
+            console.log('📋 Dernier état trouvé:', dernierEtat)
+            console.log('📋 Lignes du dernier état:', dernierEtat.lignes)
             
             if (!dernierEtat.estFinalise) {
               setError('L\'état d\'avancement précédent doit être finalisé avant de créer un nouvel état')
@@ -139,10 +156,17 @@ export default function NouvelEtatAvancementPage(
           commandeSousTraitantId: commandeValidee.id,
           avenants: [],
           lignes: commandeValidee.lignes.map((ligne: { article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }, index: number) => {
-            const lignePrecedente = dernierEtat?.lignes?.find((l) => l.article === ligne.article)
+            // Chercher la ligne correspondante dans le dernier état (correspondance par article)
+            const lignePrecedente = dernierEtat?.lignes?.find((l) => 
+              l.article && ligne.article && l.article.trim() === ligne.article.trim()
+            )
+            
+            console.log(`🔍 Ligne commande: ${ligne.article}, Ligne précédente trouvée:`, lignePrecedente)
             
             const quantitePrecedente = lignePrecedente ? lignePrecedente.quantiteTotale : 0
             const montantPrecedent = lignePrecedente ? lignePrecedente.montantTotal : 0
+            
+            console.log(`📊 Quantités pour ${ligne.article}: précédente=${quantitePrecedente}, montant=${montantPrecedent}`)
             
             return {
               id: -(index + 1), // ID temporaire négatif unique (pour éviter conflit avec vrais IDs)
@@ -186,6 +210,7 @@ export default function NouvelEtatAvancementPage(
       setSaving(true)
       
       const dataToSend = {
+        commandeId: etatAvancement.commandeSousTraitantId,
         soustraitantId: params.soustraitantId,
         numero: etatAvancement.numero,
         date: etatAvancement.date,
@@ -207,6 +232,12 @@ export default function NouvelEtatAvancementPage(
         })),
         avenants: etatAvancement.avenants
       }
+      
+      console.log('📤 Données envoyées à l\'API:', {
+        commandeId: dataToSend.commandeId,
+        nombreLignes: dataToSend.lignes.length,
+        premiereLigne: dataToSend.lignes[0]
+      })
       
       let response;
       
