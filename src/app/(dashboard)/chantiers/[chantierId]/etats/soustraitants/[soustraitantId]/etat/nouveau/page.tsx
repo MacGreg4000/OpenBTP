@@ -112,7 +112,10 @@ export default function NouvelEtatAvancementPage(
           estFinalise: boolean; 
           lignes?: Array<{ 
             id: number;
-            article: string; 
+            article: string;
+            description: string;
+            unite: string;
+            prixUnitaire: number;
             quantiteTotale: number; 
             montantTotal: number;
             quantitePrecedente: number;
@@ -155,18 +158,31 @@ export default function NouvelEtatAvancementPage(
           createdBy: session?.user?.email || '',
           commandeSousTraitantId: commandeValidee.id,
           avenants: [],
-          lignes: commandeValidee.lignes.map((ligne: { article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }, index: number) => {
-            // Chercher la ligne correspondante dans le dernier état (correspondance par article)
-            const lignePrecedente = dernierEtat?.lignes?.find((l) => 
-              l.article && ligne.article && l.article.trim() === ligne.article.trim()
-            )
+          lignes: commandeValidee.lignes.map((ligne: { id?: number; article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }, index: number) => {
+            // Chercher la ligne correspondante dans le dernier état
+            // Utiliser une combinaison de description, prixUnitaire et unite pour la correspondance
+            // car article peut être vide
+            const lignePrecedente = dernierEtat?.lignes?.find((l) => {
+              // Correspondance par description + prixUnitaire + unite (plus robuste)
+              const descriptionMatch = l.description && ligne.description && 
+                l.description.trim().toLowerCase() === ligne.description.trim().toLowerCase()
+              const prixMatch = Math.abs(l.prixUnitaire - ligne.prixUnitaire) < 0.01
+              const uniteMatch = l.unite && ligne.unite && 
+                l.unite.trim().toLowerCase() === ligne.unite.trim().toLowerCase()
+              
+              return descriptionMatch && prixMatch && uniteMatch
+            })
             
-            console.log(`🔍 Ligne commande: ${ligne.article}, Ligne précédente trouvée:`, lignePrecedente)
+            console.log(`🔍 Ligne commande: "${ligne.description}" (${ligne.prixUnitaire}€/${ligne.unite})`, {
+              trouvee: !!lignePrecedente,
+              quantiteTotale: lignePrecedente?.quantiteTotale,
+              montantTotal: lignePrecedente?.montantTotal
+            })
             
             const quantitePrecedente = lignePrecedente ? lignePrecedente.quantiteTotale : 0
             const montantPrecedent = lignePrecedente ? lignePrecedente.montantTotal : 0
             
-            console.log(`📊 Quantités pour ${ligne.article}: précédente=${quantitePrecedente}, montant=${montantPrecedent}`)
+            console.log(`📊 Quantités pour "${ligne.description}": précédente=${quantitePrecedente}, montant=${montantPrecedent}`)
             
             return {
               id: -(index + 1), // ID temporaire négatif unique (pour éviter conflit avec vrais IDs)
