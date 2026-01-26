@@ -88,7 +88,8 @@ export async function GET(
         const lignes = await prisma.ligne_soustraitant_etat_avancement.findMany({
           where: {
             soustraitantEtatAvancementId: etat.id
-          }
+          },
+          orderBy: { id: 'asc' } // Trier par ID pour préserver l'ordre de création
         })
 
         const avenants = await prisma.avenant_soustraitant_etat_avancement.findMany({
@@ -334,8 +335,9 @@ export async function POST(
       // Si des lignes sont fournies dans le body (avec des quantités mises à jour), les utiliser
       if (body.lignes && body.lignes.length > 0) {
         console.log('Création des lignes avec les données du body...')
-        await Promise.all(body.lignes.map(ligne =>
-          prisma.ligne_soustraitant_etat_avancement.create({
+        // Créer les lignes séquentiellement pour préserver l'ordre
+        for (const ligne of body.lignes) {
+          await prisma.ligne_soustraitant_etat_avancement.create({
             data: {
               soustraitantEtatAvancementId: etatAvancement.id,
               article: ligne.article,
@@ -353,13 +355,14 @@ export async function POST(
               updatedAt: new Date()
             }
           })
-        ))
+        }
         console.log('Lignes créées avec succès à partir du body')
       } else if (commande.lignes && commande.lignes.length > 0) {
         console.log('Création des lignes à partir de la commande...')
         // Créer les lignes d'état d'avancement à partir des lignes de commande
-        await Promise.all(commande.lignes.map(ligne =>
-          prisma.ligne_soustraitant_etat_avancement.create({
+        // Créer séquentiellement pour préserver l'ordre
+        for (const ligne of commande.lignes) {
+          await prisma.ligne_soustraitant_etat_avancement.create({
             data: {
               soustraitantEtatAvancementId: etatAvancement.id,
               article: ligne.article,
@@ -377,7 +380,7 @@ export async function POST(
               updatedAt: new Date()
             }
           })
-        ))
+        }
         console.log('Lignes créées avec succès')
       } else {
         console.log('La commande ne contient pas de lignes')
@@ -386,8 +389,9 @@ export async function POST(
       // Pour les états suivants, utiliser les lignes du body si fournies, sinon copier du dernier état
       if (body.lignes && body.lignes.length > 0) {
         console.log('Création des lignes avec les données du body...')
-        await Promise.all(body.lignes.map(ligne =>
-          prisma.ligne_soustraitant_etat_avancement.create({
+        // Créer les lignes séquentiellement pour préserver l'ordre
+        for (const ligne of body.lignes) {
+          await prisma.ligne_soustraitant_etat_avancement.create({
             data: {
               soustraitantEtatAvancementId: etatAvancement.id,
               article: ligne.article,
@@ -405,14 +409,15 @@ export async function POST(
               updatedAt: new Date()
             }
           })
-        ))
+        }
         console.log('Lignes créées avec succès à partir du body')
       } else {
         // Copier les lignes du dernier état
         console.log('Copie des lignes du dernier état finalisé...')
         
-        await Promise.all(lastEtat.ligne_soustraitant_etat_avancement.map(ligne =>
-          prisma.ligne_soustraitant_etat_avancement.create({
+        // Créer les lignes séquentiellement pour préserver l'ordre
+        for (const ligne of lastEtat.ligne_soustraitant_etat_avancement) {
+          await prisma.ligne_soustraitant_etat_avancement.create({
             data: {
               soustraitantEtatAvancementId: etatAvancement.id,
               article: ligne.article,
@@ -431,7 +436,7 @@ export async function POST(
               updatedAt: new Date()
             }
           })
-        ))
+        }
         
         console.log('Lignes copiées avec succès')
       }
@@ -527,8 +532,12 @@ export async function POST(
         id: etatAvancement.id
       },
       include: {
-        ligne_soustraitant_etat_avancement: true,
-        avenant_soustraitant_etat_avancement: true,
+        ligne_soustraitant_etat_avancement: {
+          orderBy: { id: 'asc' } // Trier par ID pour préserver l'ordre de création
+        },
+        avenant_soustraitant_etat_avancement: {
+          orderBy: { id: 'asc' }
+        },
         soustraitant: true
       }
     })

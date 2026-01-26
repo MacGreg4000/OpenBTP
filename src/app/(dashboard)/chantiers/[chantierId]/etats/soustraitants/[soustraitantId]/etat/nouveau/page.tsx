@@ -52,11 +52,23 @@ export default function NouvelEtatAvancementPage(
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true)
-        
         // Vérifier si on édite un état existant (paramètre URL)
         const urlParams = new URLSearchParams(window.location.search)
         const etatId = urlParams.get('etatId')
+        
+        // Si on est en mode édition et qu'on a déjà chargé l'état, ne pas réinitialiser
+        if (etatId && etatId !== '0' && etatAvancement && etatAvancement.id > 0) {
+          console.log('⚠️ État déjà chargé, évitement du rechargement')
+          return
+        }
+        
+        // Si on a déjà un état en cours de création (non sauvegardé), ne pas réinitialiser
+        if (etatAvancement && etatAvancement.id === 0 && !etatId) {
+          console.log('⚠️ État en cours de création, évitement du rechargement')
+          return
+        }
+        
+        setLoading(true)
         setEditingEtatId(etatId)
         
         if (etatId && etatId !== '0') {
@@ -158,7 +170,10 @@ export default function NouvelEtatAvancementPage(
           createdBy: session?.user?.email || '',
           commandeSousTraitantId: commandeValidee.id,
           avenants: [],
-          lignes: commandeValidee.lignes.map((ligne: { id?: number; article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }, index: number) => {
+          lignes: commandeValidee.lignes
+            .slice() // Créer une copie pour ne pas modifier l'original
+            .sort((a: { ordre?: number }, b: { ordre?: number }) => (a.ordre || 0) - (b.ordre || 0)) // Trier par ordre
+            .map((ligne: { id?: number; ordre?: number; article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }, index: number) => {
             // Chercher la ligne correspondante dans le dernier état
             // Utiliser une combinaison de description, prixUnitaire et unite pour la correspondance
             // car article peut être vide
