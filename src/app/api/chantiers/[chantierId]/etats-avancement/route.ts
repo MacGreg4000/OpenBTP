@@ -216,8 +216,10 @@ export async function POST(
       if (commande) {
         console.log('Création des lignes à partir de la commande...')
         // Créer les lignes d'état d'avancement à partir des lignes de commande
-        await Promise.all(commande.lignes.map(ligne =>
-          prisma.ligneEtatAvancement.create({
+        // Trier par ordre et créer séquentiellement pour préserver l'ordre
+        const lignesTriees = commande.lignes.slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0))
+        for (const ligne of lignesTriees) {
+          await prisma.ligneEtatAvancement.create({
             data: {
               etatAvancementId: etatAvancement.id,
               ligneCommandeId: ligne.id,
@@ -235,7 +237,7 @@ export async function POST(
               montantTotal: 0
             }
           })
-        ))
+        }
         console.log('Lignes créées avec succès')
       } else {
         console.log('Aucune commande validée trouvée')
@@ -244,8 +246,9 @@ export async function POST(
       // Pour les états suivants, copier les lignes du dernier état
       console.log('Copie des lignes du dernier état finalisé...')
       
-      await Promise.all(lastEtat.lignes.map(ligne =>
-        prisma.ligneEtatAvancement.create({
+      // Créer les lignes séquentiellement pour préserver l'ordre
+      for (const ligne of lastEtat.lignes) {
+        await prisma.ligneEtatAvancement.create({
           data: {
             etatAvancementId: etatAvancement.id,
             ligneCommandeId: ligne.ligneCommandeId,
@@ -263,7 +266,7 @@ export async function POST(
             montantTotal: cleanAndParseFloat(ligne.montantTotal)
           }
         })
-      ))
+      }
       
       console.log('Lignes copiées avec succès')
       
@@ -271,9 +274,9 @@ export async function POST(
       console.log('Copie des avenants du dernier état finalisé...')
       
       if (lastEtat.avenants && lastEtat.avenants.length > 0) {
-        // Créer une copie des avenants pour le nouvel état
-        await Promise.all(lastEtat.avenants.map(avenant =>
-          prisma.avenantEtatAvancement.create({
+        // Créer une copie des avenants pour le nouvel état, séquentiellement
+        for (const avenant of lastEtat.avenants) {
+          await prisma.avenantEtatAvancement.create({
             data: {
               etatAvancementId: etatAvancement.id,
               article: avenant.article,
@@ -290,7 +293,7 @@ export async function POST(
               montantTotal: cleanAndParseFloat(avenant.montantTotal)
             }
           })
-        ))
+        }
         console.log('Avenants copiés avec succès')
       } else {
         console.log('Aucun avenant à copier')

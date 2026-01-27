@@ -36,6 +36,12 @@ export default function EtatAvancementPage(props: PageProps) {
   const [currentCommentaires, setCurrentCommentaires] = useState<string>('')
 
   useEffect(() => {
+    // Éviter le rechargement si l'état est déjà chargé et qu'on n'est pas en train de valider
+    if (etatAvancement && !validating && !loading) {
+      console.log('⚠️ État déjà chargé, évitement du rechargement')
+      return
+    }
+
     const fetchChantier = async () => {
       try {
         const response = await fetch(`/api/chantiers/${params.chantierId}`)
