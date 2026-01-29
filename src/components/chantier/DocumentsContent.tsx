@@ -778,6 +778,15 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                     const pathWithoutUploads = url.replace('/uploads/', '')
                     return `/api/documents/serve/${pathWithoutUploads}`
                   }
+                  // Si l'URL commence par /chantiers/, la convertir pour utiliser l'API
+                  if (url.startsWith('/chantiers/')) {
+                    // Extraire le chantierId et le chemin du fichier
+                    const match = url.match(/^\/chantiers\/([^/]+)\/(.+)$/)
+                    if (match) {
+                      const [, chantierId, filePath] = match
+                      return `/api/chantiers/${chantierId}/documents/serve/${filePath}`
+                    }
+                  }
                   // Si l'URL commence déjà par /api/, la retourner telle quelle
                   if (url.startsWith('/api/')) {
                     return url
