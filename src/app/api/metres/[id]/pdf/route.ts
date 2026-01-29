@@ -118,8 +118,8 @@ export async function GET(
       }
     })
 
-    // Retourner le PDF
-    return new NextResponse(pdfBuffer, {
+    // Retourner le PDF (Uint8Array pour compatibilité BodyInit)
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="metre-${metre.chantier.chantierId}-${metre.soustraitant.nom.replace(/\s+/g, '-')}-${new Date(metre.createdAt).toISOString().split('T')[0]}.pdf"`,
