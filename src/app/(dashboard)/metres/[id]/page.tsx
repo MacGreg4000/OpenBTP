@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/PageHeader'
 import { SearchableSelect } from '@/components/SearchableSelect'
-import { ChartBarIcon, ArrowLeftIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, ArrowLeftIcon, CheckIcon, XMarkIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
 import { toast } from 'react-hot-toast'
 
 interface MetreLigne {
@@ -62,6 +62,7 @@ export default function MetreDetailPage() {
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [selectedChantierId, setSelectedChantierId] = useState<string | null>(null)
   const [loadingChantiers, setLoadingChantiers] = useState(false)
+  const [generatingPDF, setGeneratingPDF] = useState(false)
 
   const isAdminOrManager = session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER'
 
@@ -195,6 +196,36 @@ export default function MetreDetailPage() {
 
   const total = metre?.lignes.reduce((sum, ligne) => sum + (ligne.prixUnitaire * ligne.quantite), 0) || 0
 
+  const generatePDF = async () => {
+    if (!metre) return
+
+    try {
+      setGeneratingPDF(true)
+      const response = await fetch(`/api/metres/${metreId}/pdf`)
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération du PDF')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `metre-${metre.chantier.chantierId}-${metre.soustraitant.nom.replace(/\s+/g, '-')}-${new Date(metre.createdAt).toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      toast.success('PDF généré avec succès')
+    } catch (err) {
+      console.error('Erreur:', err)
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de la génération du PDF')
+    } finally {
+      setGeneratingPDF(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-indigo-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       <PageHeader
@@ -301,6 +332,27 @@ export default function MetreDetailPage() {
                     <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{metre.commentaire}</p>
                   </div>
                 )}
+
+                {/* Bouton génération PDF */}
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={generatePDF}
+                    disabled={generatingPDF}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-semibold text-sm"
+                  >
+                    {generatingPDF ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        Génération...
+                      </>
+                    ) : (
+                      <>
+                        <DocumentArrowDownIcon className="h-5 w-5" />
+                        Télécharger le PDF
+                      </>
+                    )}
+                  </button>
+                </div>
 
                 {/* Actions pour ADMIN/MANAGER */}
                 {isAdminOrManager && (
