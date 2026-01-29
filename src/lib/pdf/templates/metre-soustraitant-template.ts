@@ -1,4 +1,13 @@
-import { CompanySettings } from '../pdf-generator'
+export interface CompanySettings {
+  name: string
+  address: string
+  zipCode: string
+  city: string
+  phone: string
+  email: string
+  tva?: string
+  logo?: string
+}
 
 export interface MetreSoustraitantData {
   // Informations de base
