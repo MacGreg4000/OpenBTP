@@ -86,7 +86,16 @@ export async function POST(
       )
     }
 
-    // Construire le contenu HTML de l'email
+    // Adresse du chantier (pour la phrase d'intro)
+    const adresseChantier = chantier.adresseChantier 
+      ? `${chantier.adresseChantier}${chantier.villeChantier ? `, ${chantier.villeChantier}` : ''}`
+      : 'Non spécifiée'
+
+    const phraseDeclarer = soustraitants.length > 1
+      ? 'Pourriez-vous déclarer nos sous-traitants suivants sur le chantier'
+      : 'Pourriez-vous déclarer notre sous-traitant suivant sur le chantier'
+
+    // Construire le contenu HTML de l'email : Bonjour → demande → liste (nom + n° entreprise/TVA)
     let emailContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">
@@ -94,36 +103,25 @@ export async function POST(
         </h2>
         
         <p>Bonjour,</p>
+        
+        <p style="margin-top: 20px;">
+          ${phraseDeclarer} <strong>${chantier.nomChantier}</strong> situé à <strong>${adresseChantier}</strong> ?
+        </p>
     `
 
-    // Ajouter les informations de chaque sous-traitant
+    // Liste des sous-traitants (nom + numéro d'entreprise/TVA) en dessous de la phrase
     for (const soustraitant of soustraitants) {
+      const tvaDisplay = (soustraitant.tva && soustraitant.tva.trim()) ? soustraitant.tva : 'Non communiqué'
       emailContent += `
-        <div style="margin: 20px 0; padding: 15px; background-color: #f9fafb; border-left: 4px solid #4F46E5; border-radius: 4px;">
-          <h3 style="color: #1f2937; margin-top: 0;">${soustraitant.nom}</h3>
-      `
-
-      if (soustraitant.tva) {
-        emailContent += `<p style="margin: 5px 0;"><strong>Numéro d'entreprise/TVA :</strong> ${soustraitant.tva}</p>`
-      }
-
-      emailContent += `
+        <div style="margin: 12px 0; padding: 15px; background-color: #f9fafb; border-left: 4px solid #4F46E5; border-radius: 4px;">
+          <p style="color: #1f2937; margin: 0 0 6px 0;"><strong>${soustraitant.nom}</strong></p>
+          <p style="margin: 0; color: #4b5563; font-size: 14px;"><strong>Numéro d'entreprise/TVA :</strong> ${tvaDisplay}</p>
         </div>
       `
     }
 
-    // Adresse du chantier
-    const adresseChantier = chantier.adresseChantier 
-      ? `${chantier.adresseChantier}${chantier.villeChantier ? `, ${chantier.villeChantier}` : ''}`
-      : 'Non spécifiée'
-
     emailContent += `
-        <p style="margin-top: 30px;">
-          Pourriez-vous ${soustraitants.length > 1 ? 'les déclarer' : 'le déclarer'} sur le chantier 
-          <strong>${chantier.nomChantier}</strong> situé à <strong>${adresseChantier}</strong> ?
-        </p>
-        
-        <p>Je vous remercie par avance.</p>
+        <p style="margin-top: 30px;">Je vous remercie par avance.</p>
         
         <p style="margin-top: 30px;">
           Cordialement,<br>
