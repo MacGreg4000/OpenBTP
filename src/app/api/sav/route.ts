@@ -47,6 +47,11 @@ export async function GET(request: Request) {
 
     if (filtres.statut && filtres.statut.length > 0) {
       whereClause.statut = { in: filtres.statut }
+    } else {
+      // Par défaut : exclure Résolu, Clos, Annulé pour éviter des listes interminables
+      whereClause.statut = {
+        notIn: [StatutSAV.RESOLU, StatutSAV.CLOS, StatutSAV.ANNULE]
+      }
     }
 
     if (filtres.priorite && filtres.priorite.length > 0) {

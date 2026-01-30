@@ -101,10 +101,18 @@ export default function ChoixClientsPage() {
     }
   }
 
-  const filteredChoixClients = choixClients.filter(choix =>
-    choix.nomClient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    choix.chantier?.nomChantier.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const term = searchTerm.trim().toLowerCase()
+  const filteredChoixClients = choixClients.filter(choix => {
+    if (!term) return true
+    const nomClient = (choix.nomClient ?? '').toLowerCase()
+    const nomChantier = (choix.chantier?.nomChantier ?? '').toLowerCase()
+    const chantierId = (choix.chantier?.chantierId ?? '').toLowerCase()
+    return (
+      nomClient.includes(term) ||
+      nomChantier.includes(term) ||
+      chantierId.includes(term)
+    )
+  })
 
   // Calculer les statistiques pour les KPIs
   const totalChoix = filteredChoixClients.length

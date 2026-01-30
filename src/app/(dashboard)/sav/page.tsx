@@ -125,9 +125,25 @@ export default function SavListPage() {
             </div>
             <div className="flex items-center gap-2">
               <FunnelIcon className="h-5 w-5 text-gray-500" />
-              <select defaultValue={sp.get('statut') || ''} onChange={(e)=> setParam('statut', e.target.value || undefined)} className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2">
-                <option value="">Statut</option>
-                {Object.values(StatutSAV).map(s => <option key={s} value={s}>{s}</option>)}
+              <select
+                value={
+                  sp.get('statut') === Object.values(StatutSAV).join(',')
+                    ? 'TOUS'
+                    : (sp.get('statut') ?? '')
+                }
+                onChange={(e) => {
+                  const v = e.target.value
+                  if (v === '') setParam('statut', undefined)
+                  else if (v === 'TOUS') setParam('statut', Object.values(StatutSAV).join(','))
+                  else setParam('statut', v)
+                }}
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2"
+              >
+                <option value="">Actifs (sans résolus)</option>
+                <option value="TOUS">Tous les statuts</option>
+                {Object.values(StatutSAV).map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
             </div>
             <div>
