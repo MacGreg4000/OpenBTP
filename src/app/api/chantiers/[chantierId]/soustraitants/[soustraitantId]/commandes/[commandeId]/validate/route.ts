@@ -70,36 +70,31 @@ export async function POST(
     }
 
     // Verrouiller la commande
-    await prisma.$executeRaw`
-      UPDATE commande_soustraitant
-      SET 
-        estVerrouillee = true,
-        statut = 'VALIDEE',
-        updatedAt = NOW()
-      WHERE id = ${parseInt(commandeId)}
-    `
+    await prisma.commandeSousTraitant.update({
+      where: { id: parseInt(commandeId) },
+      data: {
+        estVerrouillee: true,
+        statut: 'VALIDEE'
+      }
+    })
 
-    // Récupérer la commande mise à jour
-    const commandeMiseAJour = await prisma.$queryRaw<Array<Record<string, unknown>>>`
-      SELECT 
-        c.*,
-        ch.nomChantier,
-        s.nom as soustraitantNom,
-        s.email as soustraitantEmail
-      FROM commande_soustraitant c
-      JOIN chantier ch ON c.chantierId = ch.id
-      JOIN soustraitant s ON c.soustraitantId = s.id
-      WHERE c.id = ${parseInt(commandeId)}
-    `
+    // Récupérer la commande mise à jour via Prisma (sérialisation JSON fiable, évite BigInt/raw)
+    const commandeMiseAJour = await prisma.commandeSousTraitant.findUnique({
+      where: { id: parseInt(commandeId) },
+      include: {
+        Chantier: { select: { nomChantier: true } },
+        soustraitant: { select: { nom: true, email: true } }
+      }
+    })
 
-    if (!commandeMiseAJour || commandeMiseAJour.length === 0) {
+    if (!commandeMiseAJour) {
       return NextResponse.json(
         { error: 'Erreur lors de la récupération de la commande mise à jour' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json(commandeMiseAJour[0])
+    return NextResponse.json(commandeMiseAJour)
   } catch (error) {
     console.error('Erreur:', error)
     return NextResponse.json(
