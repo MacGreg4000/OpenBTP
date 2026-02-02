@@ -68,6 +68,13 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
 
   // États pour les fiches techniques
 
+  // Réécouter la suppression d'un dossier technique (onglet Fiches) pour rafraîchir la liste
+  useEffect(() => {
+    const onDocumentsChanged = () => { fetchDocuments() }
+    window.addEventListener('documentsChanged', onDocumentsChanged)
+    return () => window.removeEventListener('documentsChanged', onDocumentsChanged)
+  }, [fetchDocuments])
+
   // Charger les documents
   const fetchDocuments = useCallback(async () => {
     try {
@@ -211,7 +218,7 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
         method: 'DELETE'
       })
 
-      if (response.ok) {
+      if (response.ok || response.status === 404) {
         setDocuments(prev => prev.filter(doc => doc.id !== docId))
         setPhotos(prev => prev.filter(doc => doc.id !== docId))
       }
@@ -780,11 +787,11 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
                   }
                   // Si l'URL commence par /chantiers/, la convertir pour utiliser l'API
                   if (url.startsWith('/chantiers/')) {
-                    // Extraire le chantierId et le chemin du fichier
-                    const match = url.match(/^\/chantiers\/([^/]+)\/(.+)$/)
+                    // Format: /chantiers/CH-XXX/documents/fichier.pdf → serve attend seulement le nom sous documents/
+                    const match = url.match(/^\/chantiers\/([^/]+)\/documents\/(.+)$/)
                     if (match) {
-                      const [, chantierId, filePath] = match
-                      return `/api/chantiers/${chantierId}/documents/serve/${filePath}`
+                      const [, cId, filePath] = match
+                      return `/api/chantiers/${cId}/documents/serve/${filePath}`
                     }
                   }
                   // Si l'URL commence déjà par /api/, la retourner telle quelle
@@ -870,11 +877,13 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
             <div className="flex justify-end p-4 border-t-2 border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-50/50 to-blue-50/50 dark:from-blue-900/10 dark:to-blue-900/10">
               <a
                 href={(() => {
-                  // Fonction helper pour convertir l'URL en URL API si nécessaire
                   const url = previewDocument.url
                   if (url.startsWith('/uploads/')) {
-                    const pathWithoutUploads = url.replace('/uploads/', '')
-                    return `/api/documents/serve/${pathWithoutUploads}`
+                    return `/api/documents/serve/${url.replace('/uploads/', '')}`
+                  }
+                  if (url.startsWith('/chantiers/')) {
+                    const match = url.match(/^\/chantiers\/([^/]+)\/documents\/(.+)$/)
+                    if (match) return `/api/chantiers/${match[1]}/documents/serve/${match[2]}`
                   }
                   return url
                 })()}

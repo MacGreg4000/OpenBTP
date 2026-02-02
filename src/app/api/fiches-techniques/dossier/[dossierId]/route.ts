@@ -116,10 +116,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Dossier non trouvé' }, { status: 404 })
     }
 
-    // Supprimer le fichier PDF s'il existe
+    // Supprimer le fichier PDF s'il existe (enlever le / initial pour path.join correct)
     if (dossier.url) {
       try {
-        const filePath = path.join(process.cwd(), 'public', dossier.url)
+        const urlPath = dossier.url.startsWith('/') ? dossier.url.slice(1) : dossier.url
+        const filePath = path.join(process.cwd(), 'public', urlPath)
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath)
         }

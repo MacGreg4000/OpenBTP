@@ -38,6 +38,15 @@ interface DossiersTechniquesManagerProps {
   onReopenDossier: (dossier: DossierTechnique) => void
 }
 
+// Convertit l'URL stockée (ex: /chantiers/CH-XXX/documents/xxx.pdf) en URL API pour servir le fichier
+function getDossierPdfApiUrl(chantierId: string, url: string): string {
+  if (url.startsWith('/chantiers/') && url.includes('/documents/')) {
+    const match = url.match(/^\/chantiers\/[^/]+\/documents\/(.+)$/)
+    if (match) return `/api/chantiers/${chantierId}/documents/serve/${match[1]}`
+  }
+  return url
+}
+
 export default function DossiersTechniquesManager({ chantierId, onReopenDossier }: DossiersTechniquesManagerProps) {
   const [dossiers, setDossiers] = useState<DossierTechnique[]>([])
   const [loading, setLoading] = useState(true)
@@ -156,6 +165,7 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
       showNotification('Succès', 'Dossier technique supprimé avec succès', 'success')
       setDossierToDelete(null)
       fetchDossiers()
+      window.dispatchEvent(new CustomEvent('documentsChanged'))
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
       showNotification('Erreur', 'Erreur lors de la suppression du dossier', 'error')
@@ -324,8 +334,9 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
                 <button
                   onClick={async () => {
                     try {
-                      // Vérifier si le fichier existe en essayant de le télécharger
-                      const response = await fetch(dossier.url)
+                      // Utiliser l'API de service pour les PDF chantiers (évite 404 sur URL relative)
+                      const pdfUrl = getDossierPdfApiUrl(chantierId, dossier.url)
+                      const response = await fetch(pdfUrl)
                       if (response.ok) {
                         // Le fichier existe, le télécharger
                         const blob = await response.blob()
@@ -367,6 +378,9 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
                         })
                         
                         if (!generateResponse.ok) {
+                          if (generateResponse.status === 504) {
+                            throw new Error('La génération a pris trop de temps (timeout). Réduisez le nombre de fiches ou augmentez le délai du proxy (ex. nginx).')
+                          }
                           throw new Error('Erreur lors de la régénération du PDF')
                         }
                         
@@ -387,7 +401,8 @@ export default function DossiersTechniquesManager({ chantierId, onReopenDossier 
                       }
                     } catch (error) {
                       console.error('Erreur lors du téléchargement:', error)
-                      showNotification('Erreur', 'Erreur lors du téléchargement du PDF', 'error')
+                      const message = error instanceof Error ? error.message : 'Erreur lors du téléchargement du PDF'
+                      showNotification('Erreur', message, 'error')
                     }
                   }}
                   className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"

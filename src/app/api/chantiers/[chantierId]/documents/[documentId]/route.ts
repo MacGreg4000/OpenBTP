@@ -243,8 +243,9 @@ export async function DELETE(
       return new NextResponse('Document non trouvé', { status: 404 })
     }
 
-    // Supprimer le fichier physique
-    const filePath = join(process.cwd(), 'public', document.url)
+    // Supprimer le fichier physique (enlever le / initial pour éviter path absolu sous Unix)
+    const urlPath = document.url.startsWith('/') ? document.url.slice(1) : document.url
+    const filePath = join(process.cwd(), 'public', urlPath)
     try {
       await unlink(filePath)
     } catch (error) {
