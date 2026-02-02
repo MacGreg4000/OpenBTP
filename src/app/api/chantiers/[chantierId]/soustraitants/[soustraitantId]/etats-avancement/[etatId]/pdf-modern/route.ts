@@ -58,7 +58,10 @@ export async function GET(
       return NextResponse.json({ error: 'État d\'avancement non trouvé' }, { status: 404 })
     }
     
-    console.log(`✅ État d'avancement trouvé: Situation N°${etatAvancement.numero} (ID:${etatId}) - ${etatAvancement.ligne_soustraitant_etat_avancement.length} lignes, ${etatAvancement.avenant_soustraitant_etat_avancement.length} avenants`)
+    console.log(`✅ État d'avancement trouvé: Situation N°${etatAvancement.numero} (ID:${etatId}) - ${etatAvancement.ligne_soustraitant_etat_avancement.length} lignes, ${etatAvancement.avenant_soustraitant_etat_avancement.length} avenants (estFinalise: ${etatAvancement.estFinalise})`)
+
+    // Helper pour garantir des nombres valides (états non validés peuvent avoir null/undefined)
+    const num = (v: unknown): number => (typeof v === 'number' && !Number.isNaN(v) ? v : 0)
 
     // Récupérer les paramètres de l'entreprise
     const companySettings = await PDFGenerator.getCompanySettings()
@@ -66,9 +69,9 @@ export async function GET(
 
     // Calculer les totaux
     const totalCommandeInitialeRaw = etatAvancement.ligne_soustraitant_etat_avancement.reduce((acc, ligne) => ({
-      precedent: acc.precedent + ligne.montantPrecedent,
-      actuel: acc.actuel + ligne.montantActuel,
-      total: acc.total + ligne.montantTotal
+      precedent: acc.precedent + num(ligne.montantPrecedent),
+      actuel: acc.actuel + num(ligne.montantActuel),
+      total: acc.total + num(ligne.montantTotal)
     }), { precedent: 0, actuel: 0, total: 0 })
 
     const totalCommandeInitiale = {
@@ -78,9 +81,9 @@ export async function GET(
     }
 
     const totalAvenantsRaw = etatAvancement.avenant_soustraitant_etat_avancement.reduce((acc, avenant) => ({
-      precedent: acc.precedent + avenant.montantPrecedent,
-      actuel: acc.actuel + avenant.montantActuel,
-      total: acc.total + avenant.montantTotal
+      precedent: acc.precedent + num(avenant.montantPrecedent),
+      actuel: acc.actuel + num(avenant.montantActuel),
+      total: acc.total + num(avenant.montantTotal)
     }), { precedent: 0, actuel: 0, total: 0 })
 
     const totalAvenants = {
@@ -120,33 +123,33 @@ export async function GET(
       },
       
       lignes: etatAvancement.ligne_soustraitant_etat_avancement.map(ligne => ({
-        article: ligne.article,
-        description: ligne.description,
-        type: ligne.type,
-        unite: ligne.unite,
-        prixUnitaire: ligne.prixUnitaire,
-        quantite: ligne.quantite,
-        quantitePrecedente: ligne.quantitePrecedente,
-        quantiteActuelle: ligne.quantiteActuelle,
-        quantiteTotale: ligne.quantiteTotale,
-        montantPrecedent: ligne.montantPrecedent,
-        montantActuel: ligne.montantActuel,
-        montantTotal: ligne.montantTotal
+        article: ligne.article ?? '',
+        description: ligne.description ?? '',
+        type: ligne.type ?? '',
+        unite: ligne.unite ?? '',
+        prixUnitaire: num(ligne.prixUnitaire),
+        quantite: num(ligne.quantite),
+        quantitePrecedente: num(ligne.quantitePrecedente),
+        quantiteActuelle: num(ligne.quantiteActuelle),
+        quantiteTotale: num(ligne.quantiteTotale),
+        montantPrecedent: num(ligne.montantPrecedent),
+        montantActuel: num(ligne.montantActuel),
+        montantTotal: num(ligne.montantTotal)
       })),
       
       avenants: etatAvancement.avenant_soustraitant_etat_avancement.map(avenant => ({
-        article: avenant.article,
-        description: avenant.description,
-        type: avenant.type,
-        unite: avenant.unite,
-        prixUnitaire: avenant.prixUnitaire,
-        quantite: avenant.quantite,
-        quantitePrecedente: avenant.quantitePrecedente,
-        quantiteActuelle: avenant.quantiteActuelle,
-        quantiteTotale: avenant.quantiteTotale,
-        montantPrecedent: avenant.montantPrecedent,
-        montantActuel: avenant.montantActuel,
-        montantTotal: avenant.montantTotal
+        article: avenant.article ?? '',
+        description: avenant.description ?? '',
+        type: avenant.type ?? '',
+        unite: avenant.unite ?? '',
+        prixUnitaire: num(avenant.prixUnitaire),
+        quantite: num(avenant.quantite),
+        quantitePrecedente: num(avenant.quantitePrecedente),
+        quantiteActuelle: num(avenant.quantiteActuelle),
+        quantiteTotale: num(avenant.quantiteTotale),
+        montantPrecedent: num(avenant.montantPrecedent),
+        montantActuel: num(avenant.montantActuel),
+        montantTotal: num(avenant.montantTotal)
       })),
       
       totalCommandeInitiale,
@@ -186,9 +189,11 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('❌ Erreur génération PDF:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    console.error('❌ Erreur génération PDF:', message, stack)
     return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF' },
+      { error: 'Erreur lors de la génération du PDF', details: process.env.NODE_ENV === 'development' ? message : undefined },
       { status: 500 }
     )
   }

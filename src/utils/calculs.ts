@@ -1,12 +1,14 @@
 import { LigneEtatAvancement, AvenantEtatAvancement, LigneSoustraitantEtat, AvenantSoustraitantEtat } from '@/types/etat-avancement'
 
 /**
- * Arrondit un nombre à 2 décimales
+ * Arrondit un nombre à 2 décimales.
+ * Tolère null/undefined/NaN (retourne 0) pour éviter les erreurs en PDF/calculs.
  * @param value Valeur à arrondir
  * @returns Nombre arrondi à 2 décimales
  */
 export function roundToTwoDecimals(value: number): number {
-  return Math.round(value * 100) / 100;
+  const n = typeof value === 'number' && !Number.isNaN(value) ? value : 0
+  return Math.round(n * 100) / 100
 }
 
 interface MontantsBase {
