@@ -66,16 +66,7 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, left: 0 });
 
-  // États pour les fiches techniques
-
-  // Réécouter la suppression d'un dossier technique (onglet Fiches) pour rafraîchir la liste
-  useEffect(() => {
-    const onDocumentsChanged = () => { fetchDocuments() }
-    window.addEventListener('documentsChanged', onDocumentsChanged)
-    return () => window.removeEventListener('documentsChanged', onDocumentsChanged)
-  }, [fetchDocuments])
-
-  // Charger les documents
+  // Charger les documents (déclaré avant les useEffect qui l'utilisent)
   const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true)
@@ -105,6 +96,13 @@ export default function DocumentsContent({ chantierId }: DocumentsContentProps) 
       setLoading(false)
     }
   }, [chantierId])
+
+  // Réécouter la suppression d'un dossier technique (onglet Fiches) pour rafraîchir la liste
+  useEffect(() => {
+    const onDocumentsChanged = () => { fetchDocuments() }
+    window.addEventListener('documentsChanged', onDocumentsChanged)
+    return () => window.removeEventListener('documentsChanged', onDocumentsChanged)
+  }, [fetchDocuments])
 
   useEffect(() => {
     fetchDocuments()
