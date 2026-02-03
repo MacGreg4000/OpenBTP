@@ -273,7 +273,7 @@ export default function NouvelEtatAvancementPage(
       let response;
       
       if (editingEtatId && editingEtatId !== '0') {
-        // Mode édition : utiliser PUT
+        // Mode édition : utiliser PUT (envoyer aussi les avenants pour créer ceux ajoutés localement)
         response = await fetch(`/api/chantiers/${params.chantierId}/soustraitants/${params.soustraitantId}/etats-avancement/${editingEtatId}`, {
           method: 'PUT',
           headers: {
@@ -281,7 +281,8 @@ export default function NouvelEtatAvancementPage(
           },
           body: JSON.stringify({
             commentaires: etatAvancement.commentaires || '',
-            estFinalise: finalise
+            estFinalise: finalise,
+            avenants: etatAvancement.avenants ?? []
           }),
         })
       } else {

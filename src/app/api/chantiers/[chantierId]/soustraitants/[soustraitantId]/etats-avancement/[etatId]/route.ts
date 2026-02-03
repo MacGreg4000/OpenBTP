@@ -162,6 +162,35 @@ export async function PUT(
       )
     }
 
+    // Créer les avenants "nouveaux" (id manquant ou <= 0) envoyés par le frontend mais pas encore en base
+    if (body.avenants && Array.isArray(body.avenants) && body.avenants.length > 0) {
+      const newAvenants = body.avenants.filter(
+        (a: { id?: number }) => a.id == null || a.id <= 0
+      )
+      if (newAvenants.length > 0) {
+        for (const avenant of newAvenants) {
+          await prisma.avenant_soustraitant_etat_avancement.create({
+            data: {
+              soustraitantEtatAvancementId: etatIdNum,
+              article: avenant.article ?? '',
+              description: avenant.description ?? '',
+              type: avenant.type ?? 'QP',
+              unite: avenant.unite ?? 'U',
+              prixUnitaire: Number(avenant.prixUnitaire) || 0,
+              quantite: Number(avenant.quantite) || 0,
+              quantitePrecedente: Number(avenant.quantitePrecedente) || 0,
+              quantiteActuelle: Number(avenant.quantiteActuelle) || 0,
+              quantiteTotale: Number(avenant.quantiteTotale) || 0,
+              montantPrecedent: Number(avenant.montantPrecedent) || 0,
+              montantActuel: Number(avenant.montantActuel) || 0,
+              montantTotal: Number(avenant.montantTotal) || 0,
+              updatedAt: new Date()
+            }
+          })
+        }
+      }
+    }
+
     // Mettre à jour l'état
     const etatMisAJour = await prisma.soustraitant_etat_avancement.update({
       where: { id: etatIdNum },
@@ -171,8 +200,8 @@ export async function PUT(
         updatedAt: new Date()
       },
       include: {
-        ligne_soustraitant_etat_avancement: true,
-        avenant_soustraitant_etat_avancement: true,
+        ligne_soustraitant_etat_avancement: { orderBy: { id: 'asc' } },
+        avenant_soustraitant_etat_avancement: { orderBy: { id: 'asc' } },
         soustraitant: true
       }
     })
