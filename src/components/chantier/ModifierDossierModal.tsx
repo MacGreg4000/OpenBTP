@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   XMarkIcon,
+  TrashIcon,
   ArrowPathIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
@@ -85,6 +86,7 @@ export default function ModifierDossierModal({
   const [addingFiches, setAddingFiches] = useState(false)
   const [fichesSelectionnees, setFichesSelectionnees] = useState<Set<string>>(new Set())
   const [searchFilterAdd, setSearchFilterAdd] = useState('')
+  const [fichesASupprimer, setFichesASupprimer] = useState<Set<string>>(new Set()) // DossierFiche.id à retirer du dossier
   const { data: _session } = useSession()
 
   useEffect(() => {
@@ -229,17 +231,57 @@ export default function ModifierDossierModal({
           fichesSoustraitants,
           fichesReferences,
           fichesRemarques,
-          fichesAAjouter: fichesAAjouter.length > 0 ? fichesAAjouter : undefined
+          fichesAAjouter: fichesAAjouter.length > 0 ? fichesAAjouter : undefined,
+          fichesASupprimer: fichesASupprimer.size > 0 ? Array.from(fichesASupprimer) : undefined
         })
       })
 
       if (!response.ok) throw new Error('Erreur lors de la sauvegarde')
 
-      // Le statut du dossier sera géré automatiquement
-
-      showNotification('Succès', 'Modifications enregistrées avec succès', 'success')
+      const updatedDossier = await response.json()
+      setFichesASupprimer(new Set())
       setFichesSelectionnees(new Set())
       setAddingFiches(false)
+
+      // Régénérer le PDF pour mettre à jour les tables des matières
+      setGenerating(true)
+      try {
+        const ficheIds = updatedDossier.fiches.map((f: DossierFiche) => f.ficheId)
+        const ficheReferences: Record<string, string> = {}
+        const finalStatuts: Record<string, string> = {}
+        const finalSoustraitants: Record<string, string> = {}
+        const finalRemarques: Record<string, string> = {}
+        updatedDossier.fiches.forEach((f: DossierFiche) => {
+          if (f.ficheReference) ficheReferences[f.ficheId] = f.ficheReference
+          finalStatuts[f.ficheId] = f.statut
+          if (f.soustraitantId) finalSoustraitants[f.ficheId] = String(f.soustraitantId)
+          if (f.remarques) finalRemarques[f.ficheId] = f.remarques
+        })
+        const genRes = await fetch('/api/fiches-techniques/generer-dossier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chantierId,
+            dossierId: updatedDossier.id,
+            ficheIds,
+            ficheReferences,
+            fichesStatuts: finalStatuts,
+            fichesSoustraitants: finalSoustraitants,
+            fichesRemarques: finalRemarques,
+            options: { includeTableOfContents: true }
+          })
+        })
+        if (genRes.ok) {
+          showNotification('Succès', 'Modifications enregistrées et PDF régénéré', 'success')
+        } else {
+          showNotification('Succès', 'Modifications enregistrées (régénération PDF à lancer manuellement si besoin)', 'success')
+        }
+      } catch (regErr) {
+        console.error('Régénération PDF après sauvegarde:', regErr)
+        showNotification('Succès', 'Modifications enregistrées (régénération PDF à lancer manuellement si besoin)', 'success')
+      } finally {
+        setGenerating(false)
+      }
       onRegenerate()
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
@@ -483,7 +525,7 @@ export default function ModifierDossierModal({
             {dossier.nom}
             {hasFiches && (
               <span className="ml-2 text-xs text-gray-500">
-                ({dossier.fiches.filter(f => !replacementMode || f.id !== replacementMode).length} fiche{dossier.fiches.filter(f => !replacementMode || f.id !== replacementMode).length > 1 ? 's' : ''})
+                ({dossier.fiches.filter(f => !fichesASupprimer.has(f.id) && (!replacementMode || f.id !== replacementMode)).length} fiche{dossier.fiches.filter(f => !fichesASupprimer.has(f.id) && (!replacementMode || f.id !== replacementMode)).length > 1 ? 's' : ''})
               </span>
             )}
           </span>
@@ -534,7 +576,7 @@ export default function ModifierDossierModal({
                     Modifier le dossier technique
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Version {dossier.version} • {dossier.fiches.length} fiche{dossier.fiches.length > 1 ? 's' : ''}
+                    Version {dossier.version} • {dossier.fiches.filter(f => !fichesASupprimer.has(f.id)).length} fiche{dossier.fiches.filter(f => !fichesASupprimer.has(f.id)).length !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
@@ -550,7 +592,7 @@ export default function ModifierDossierModal({
         {/* Contenu */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-3">
-            {dossier.fiches.map((fiche) => {
+            {dossier.fiches.filter(f => !fichesASupprimer.has(f.id)).map((fiche) => {
               const currentStatut = fichesStatuts[fiche.ficheId] || fiche.statut
               const isReplaced = fichesRemplacees[fiche.ficheId]
               
@@ -586,9 +628,23 @@ export default function ModifierDossierModal({
                         </p>
                       )}
                     </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ml-2 flex-shrink-0 ${getStatutColor(currentStatut)}`}>
-                      {getStatutLabel(currentStatut)}
-                    </span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatutColor(currentStatut)}`}>
+                        {getStatutLabel(currentStatut)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Retirer cette fiche du dossier ? Le PDF sera régénéré à la prochaine sauvegarde.')) {
+                            setFichesASupprimer(prev => new Set(prev).add(fiche.id))
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        title="Supprimer du dossier"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">

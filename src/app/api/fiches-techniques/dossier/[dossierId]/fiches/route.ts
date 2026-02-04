@@ -15,7 +15,7 @@ export async function PUT(
     }
 
     const { dossierId } = await params
-    const { fichesStatuts, fichesRemplacees, fichesSoustraitants, fichesReferences, fichesRemarques, fichesAAjouter } = await request.json()
+    const { fichesStatuts, fichesRemplacees, fichesSoustraitants, fichesReferences, fichesRemarques, fichesAAjouter, fichesASupprimer } = await request.json()
 
     // Vérifier que le dossier existe
     const dossier = await prisma.dossierTechnique.findUnique({
@@ -27,10 +27,19 @@ export async function PUT(
       return NextResponse.json({ error: 'Dossier non trouvé' }, { status: 404 })
     }
 
-    // Mettre à jour les statuts des fiches existantes
+    // Supprimer les fiches retirées du dossier (sans modifier le schéma)
+    const idsASupprimer = Array.isArray(fichesASupprimer) ? fichesASupprimer.filter((id: unknown) => typeof id === 'string') : []
+    if (idsASupprimer.length > 0) {
+      await prisma.dossierFiche.deleteMany({
+        where: { id: { in: idsASupprimer }, dossierId }
+      })
+    }
+    const idsSupprimes = new Set(idsASupprimer)
+
+    // Mettre à jour les statuts des fiches existantes (sauf celles supprimées)
     if (fichesStatuts) {
       for (const [ficheId, statut] of Object.entries(fichesStatuts)) {
-        const fiche = dossier.fiches.find(f => f.ficheId === ficheId)
+        const fiche = dossier.fiches.find(f => f.ficheId === ficheId && !idsSupprimes.has(f.id))
         if (fiche) {
           const updateData: {
             statut: 'VALIDEE' | 'NOUVELLE_PROPOSITION' | 'BROUILLON'
@@ -68,10 +77,10 @@ export async function PUT(
       }
     }
 
-    // Gérer les fiches remplacées
+    // Gérer les fiches remplacées (sauf celles déjà supprimées)
     if (fichesRemplacees) {
       for (const [ancienneFicheId, nouvelleFicheId] of Object.entries(fichesRemplacees)) {
-        const ancienneFiche = dossier.fiches.find(f => f.ficheId === ancienneFicheId)
+        const ancienneFiche = dossier.fiches.find(f => f.ficheId === ancienneFicheId && !idsSupprimes.has(f.id))
         if (ancienneFiche) {
           // Supprimer l'ancienne fiche (elle est remplacée)
           await prisma.dossierFiche.delete({
@@ -103,8 +112,8 @@ export async function PUT(
 
     // Gérer les fiches à ajouter
     if (fichesAAjouter && Array.isArray(fichesAAjouter) && fichesAAjouter.length > 0) {
-      // Compter le nombre de fiches existantes pour déterminer l'ordre
-      const nombreFichesExistantes = dossier.fiches.length
+      // Compter le nombre de fiches existantes après suppressions pour déterminer l'ordre
+      const nombreFichesExistantes = dossier.fiches.filter(f => !idsSupprimes.has(f.id)).length
       
       for (let index = 0; index < fichesAAjouter.length; index++) {
         const ficheAAjouter = fichesAAjouter[index]
