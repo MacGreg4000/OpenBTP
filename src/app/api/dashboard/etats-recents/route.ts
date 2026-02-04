@@ -16,16 +16,22 @@ export async function GET() {
       take: 15,
       include: {
         lignes: true,
+        avenants: true,
         Chantier: {
           select: { nomChantier: true, chantierId: true }
         }
       }
     })
 
+    const num = (v: unknown): number => (typeof v === 'number' && !Number.isNaN(v) ? v : 0)
     const items = etats.map((e) => {
-      const montant = Array.isArray(e.lignes)
-        ? e.lignes.reduce((sum: number, l) => sum + (Number((l as { montantActuel?: number }).montantActuel) || 0), 0)
+      const totalLignes = Array.isArray(e.lignes)
+        ? e.lignes.reduce((sum: number, l) => sum + num((l as { montantActuel?: number }).montantActuel), 0)
         : 0
+      const totalAvenants = Array.isArray(e.avenants)
+        ? e.avenants.reduce((sum: number, a) => sum + num((a as { montantActuel?: number }).montantActuel), 0)
+        : 0
+      const montant = totalLignes + totalAvenants
       return {
         id: String(e.id),
         titre: `État #${e.numero}`,

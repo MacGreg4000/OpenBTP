@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowTopRightOnSquareIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
+import { ArrowTopRightOnSquareIcon, CurrencyEuroIcon, TableCellsIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
 interface EtatItem {
@@ -40,16 +40,25 @@ export default function RecentEtatsList() {
 
   return (
     <div className="bg-gradient-to-br from-white via-indigo-50/30 to-white dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 h-full flex flex-col overflow-hidden">
-      <div className="px-6 py-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 dark:from-indigo-900/20 dark:to-purple-900/20 border-b-2 border-indigo-200/50 dark:border-indigo-700/50 flex items-center gap-2">
-        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+      <div className="px-6 py-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 dark:from-indigo-900/20 dark:to-purple-900/20 border-b-2 border-indigo-200/50 dark:border-indigo-700/50 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">États d'avancement récents</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Derniers éléments enregistrés</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-black text-gray-900 dark:text-white">États d'avancement récents</h3>
-          <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Derniers éléments enregistrés</p>
-        </div>
+        <Link
+          href="/etats-avancement"
+          className="flex-shrink-0 p-2 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+          title="Voir le tableau complet des états d'avancement"
+        >
+          <TableCellsIcon className="h-5 w-5" />
+        </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto">

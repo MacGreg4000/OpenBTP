@@ -198,6 +198,7 @@ model EtatAvancement {
   updatedAt                    DateTime                       @updatedAt
   createdBy                    String
   mois                         String?
+  factureNumero                String?
   avenants                     AvenantEtatAvancement[]
   Chantier                     Chantier                       @relation(fields: [chantierId], references: [id])
   lignes                       LigneEtatAvancement[]

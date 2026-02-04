@@ -87,7 +87,7 @@ export async function GET() {
       return sum + montantCommandes
     }, 0)
 
-    // 3. Calculer le total des montants déjà facturés (états d'avancement finalisés)
+    // 3. Calculer le total des montants déjà facturés (états d'avancement finalisés : commande de base uniquement, sans avenants)
     const montantsDejFactures = chantiersActifs.reduce((sum, chantier) => {
       const montantEtats = chantier.etatsAvancement.reduce((totalEtat, etat) => {
         const montantLignes = etat.lignes.reduce((totalLignes, ligne) => {
