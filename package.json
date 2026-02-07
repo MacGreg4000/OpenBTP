@@ -12,7 +12,8 @@
     "prisma:migrate": "prisma migrate deploy",
     "production:build": "npm run prisma:generate && npm run build",
     "production:start": "npm run prisma:migrate && npm run start",
-    "sync-template": "node scripts/insert-professional-template.js"
+    "sync-template": "node scripts/insert-professional-template.js",
+    "migrate:mois-annee": "npx ts-node --project tsconfig.scripts.json scripts/migrate-mois-with-year.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

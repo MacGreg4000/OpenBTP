@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useMemo } from 'react';
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { type Chantier } from '@/types/chantier'
@@ -14,6 +14,16 @@ import { EtatAvancement } from '@/types/etat-avancement'
 // imports inutilisés retirés
 import EtatAvancementUnifie from '@/components/etat-avancement/EtatAvancementUnifie'
 import { toast } from 'react-hot-toast'
+
+const MOIS_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+
+/** Extrait ou construit la valeur période pour le select (gère ancien "Janvier" et nouveau "Janvier 2024") */
+function getMoisDisplayValue(mois: string | null | undefined, yearFallback: number): string {
+  if (!mois?.trim()) return ''
+  const trimmed = mois.trim()
+  if (/ \d{4}$/.test(trimmed)) return trimmed
+  return `${trimmed} ${yearFallback}`
+}
 
 interface PageProps {
   params: Promise<{
@@ -65,7 +75,8 @@ export default function EtatAvancementPage(props: PageProps) {
         }
         const data = await response.json()
         setEtatAvancement(data)
-        setMois(data.mois || '')
+        const yearFromDate = data.date ? new Date(data.date).getFullYear() : new Date().getFullYear()
+        setMois(getMoisDisplayValue(data.mois, yearFromDate))
         setCurrentCommentaires(data.commentaires || '')
       } catch (error) {
         console.error('Erreur:', error)
@@ -261,14 +272,20 @@ export default function EtatAvancementPage(props: PageProps) {
     }
   };
 
-  // Ajouter cette fonction pour sauvegarder le mois automatiquement quand il change
+  const yearFromDate = etatAvancement?.date
+    ? new Date(etatAvancement.date).getFullYear()
+    : new Date().getFullYear()
+  const periodeOptions = useMemo(
+    () => MOIS_NAMES.map((m) => `${m} ${yearFromDate}`),
+    [yearFromDate]
+  )
+
   const handleMoisChange = async (newMois: string) => {
     setMois(newMois);
-    
+
     if (!etatAvancement) return;
-    
+
     try {
-      // Mettre à jour seulement le champ mois sans modifier les commentaires
       const response = await fetch(`/api/chantiers/${params.chantierId}/etats-avancement/${params.etatId}`, {
         method: 'PUT',
         headers: {
@@ -276,7 +293,7 @@ export default function EtatAvancementPage(props: PageProps) {
         },
         body: JSON.stringify({
           mois: newMois,
-          commentaires: currentCommentaires, // garder les commentaires actuels
+          commentaires: currentCommentaires,
           estFinalise: etatAvancement.estFinalise
         }),
       });
@@ -345,8 +362,8 @@ export default function EtatAvancementPage(props: PageProps) {
                       className={`bg-white/20 border-0 text-white rounded-full px-3 py-1 focus:outline-none focus:ring-2 focus:ring-white/40 ${etatAvancement?.estFinalise ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                     >
                       <option value="" className="text-gray-900">Période de travaux</option>
-                      {['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((moisOption) => (
-                        <option key={moisOption} value={moisOption} className="text-gray-900">{moisOption}</option>
+                      {periodeOptions.map((opt) => (
+                        <option key={opt} value={opt} className="text-gray-900">{opt}</option>
                       ))}
                     </select>
                   </span>
