@@ -14,49 +14,50 @@ export async function GET() {
       )
     }
 
-    // Calculer les dates pour les 12 derniers mois
+    // Calculer les 12 derniers mois (basé sur la période "mois" des états d'avancement)
+    const MOIS_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
     const derniersMois = []
     const dateActuelle = new Date()
     
     for (let i = 11; i >= 0; i--) {
-      const date = new Date(dateActuelle)
-      date.setMonth(dateActuelle.getMonth() - i)
+      const date = new Date(dateActuelle.getFullYear(), dateActuelle.getMonth() - i, 1)
       
-      const mois = date.toLocaleString('fr-FR', { month: 'short' })
+      const moisCourt = date.toLocaleString('fr-FR', { month: 'short' })
       const annee = date.getFullYear()
+      const moisPeriode = `${MOIS_NAMES[date.getMonth()]} ${annee}`
       
       derniersMois.push({
-        label: `${mois} ${annee}`,
+        label: `${moisCourt} ${annee}`,
+        moisPeriode,
         debut: new Date(date.getFullYear(), date.getMonth(), 1),
         fin: new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999)
       })
     }
 
-    // Récupérer les données de CA par mois basé sur les états d'avancement validés
+    // Récupérer les données de CA par mois basé sur le champ période (mois) des états d'avancement
     const donneesCA = await Promise.all(
       derniersMois.map(async (mois) => {
         try {
-          // Rechercher les états d'avancement validés dans le mois
           const etatsAvancement = await prisma.etatAvancement.findMany({
             where: {
-              date: {
-                gte: mois.debut,
-                lte: mois.fin
-              },
-              estFinalise: true
+              mois: mois.moisPeriode
             },
             include: {
-              lignes: true
+              lignes: true,
+              avenants: true
             }
           })
           
-          // Calculer le montant total des états d'avancement
           const montantTotal = etatsAvancement.reduce((total, etat) => {
-            const montantEtat = etat.lignes.reduce((sum, ligne) => {
+            const montantLignes = etat.lignes.reduce((sum, ligne) => {
               const valeur = Number((ligne as { montantActuel?: number | null }).montantActuel ?? 0)
               return sum + (isNaN(valeur) ? 0 : valeur)
             }, 0)
-            return total + montantEtat
+            const montantAvenants = etat.avenants.reduce((sum, avenant) => {
+              const valeur = Number((avenant as { montantActuel?: number | null }).montantActuel ?? 0)
+              return sum + (isNaN(valeur) ? 0 : valeur)
+            }, 0)
+            return total + montantLignes + montantAvenants
           }, 0)
           
           return isNaN(montantTotal) ? 0 : montantTotal
@@ -67,7 +68,7 @@ export async function GET() {
       })
     )
 
-    // Récupérer les données de dépenses par mois
+    // Récupérer les données de dépenses par mois (les dépenses restent filtrées par date)
     const donneesDépenses = await Promise.all(
       derniersMois.map(async (mois) => {
         try {
