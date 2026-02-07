@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma/client'
-import { sendEmail } from '@/lib/email-sender'
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas'
+import path from 'path'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -110,10 +110,44 @@ async function getAdminEmails(): Promise<string[]> {
 
 // ─── Génération des graphiques ───────────────────────────────────────────────
 
+// Résoudre le chemin vers les polices (fonctionne en dev et en prod)
+const fontsDir = path.join(process.cwd(), 'public', 'fonts')
+
+function createChartCanvas(width: number, height: number) {
+  return new ChartJSNodeCanvas({
+    width,
+    height,
+    backgroundColour: '#ffffff',
+    chartCallback: (ChartJS) => {
+      ChartJS.defaults.font.family = 'Roboto'
+    },
+    plugins: {
+      requireLegacy: [],
+      globalVariableLegacy: [],
+      modern: [],
+    }
+  })
+}
+
+// Enregistrer les polices une seule fois
+let fontsRegistered = false
+function registerFonts(canvas: ChartJSNodeCanvas) {
+  if (fontsRegistered) return
+  try {
+    canvas.registerFont(path.join(fontsDir, 'Roboto-Regular.ttf'), { family: 'Roboto', weight: 'normal' })
+    canvas.registerFont(path.join(fontsDir, 'Roboto-Bold.ttf'), { family: 'Roboto', weight: 'bold' })
+    fontsRegistered = true
+    console.log('✅ Polices Roboto enregistrées pour les graphiques')
+  } catch (err) {
+    console.warn('⚠️ Impossible d\'enregistrer les polices Roboto:', err)
+  }
+}
+
 async function generateBarChart(monthlyData: MonthData[]): Promise<string> {
   const width = 600
   const height = 300
-  const chartCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour: '#ffffff' })
+  const chartCanvas = createChartCanvas(width, height)
+  registerFonts(chartCanvas)
 
   const buffer = await chartCanvas.renderToBuffer({
     type: 'bar',
@@ -163,7 +197,8 @@ async function generateBarChart(monthlyData: MonthData[]): Promise<string> {
 async function generateDoughnutChart(rows: EtatRow[]): Promise<string> {
   const width = 350
   const height = 350
-  const chartCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour: '#ffffff' })
+  const chartCanvas = createChartCanvas(width, height)
+  registerFonts(chartCanvas)
 
   const finalises = rows.filter((r) => r.estFinalise).length
   const enCours = rows.filter((r) => !r.estFinalise).length
