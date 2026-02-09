@@ -3,7 +3,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 
-// POST /api/devis/[devisId]/duplicate - Dupliquer un devis
+interface DuplicateDevisBody {
+  typeDevis?: 'DEVIS' | 'AVENANT'
+  chantierId?: string | null
+}
+
+// POST /api/devis/[devisId]/duplicate - Dupliquer un devis (optionnellement avec une autre nature)
 export async function POST(
   request: NextRequest,
   props: { params: Promise<{ devisId: string }> }
@@ -15,6 +20,13 @@ export async function POST(
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
+
+    let body: DuplicateDevisBody = {}
+    try {
+      body = (await request.json()) as DuplicateDevisBody
+    } catch {
+      // Body optionnel
     }
 
     const originalDevis = await prisma.devis.findUnique({
@@ -32,6 +44,19 @@ export async function POST(
       return NextResponse.json(
         { error: 'Devis introuvable' },
         { status: 404 }
+      )
+    }
+
+    const typeDevis = body.typeDevis ?? originalDevis.typeDevis
+    const chantierId =
+      typeDevis === 'AVENANT'
+        ? (body.chantierId ?? originalDevis.chantierId)
+        : null
+
+    if (typeDevis === 'AVENANT' && !chantierId) {
+      return NextResponse.json(
+        { error: 'Un chantier est obligatoire pour un avenant' },
+        { status: 400 }
       )
     }
 
@@ -60,15 +85,18 @@ export async function POST(
     const dateValidite = new Date()
     dateValidite.setDate(dateValidite.getDate() + 30)
 
-    // Créer la copie
+    // Créer la copie (avec type et chantier optionnels)
     const newDevis = await prisma.devis.create({
       data: {
         numeroDevis,
+        typeDevis,
+        chantierId,
         clientId: originalDevis.clientId,
         dateValidite,
         observations: originalDevis.observations,
         conditionsGenerales: originalDevis.conditionsGenerales,
         remiseGlobale: originalDevis.remiseGlobale,
+        tauxTVA: originalDevis.tauxTVA,
         createdBy: session.user.id,
         statut: 'BROUILLON',
         lignes: {
@@ -87,6 +115,7 @@ export async function POST(
       },
       include: {
         client: true,
+        chantier: true,
         lignes: {
           orderBy: {
             ordre: 'asc'

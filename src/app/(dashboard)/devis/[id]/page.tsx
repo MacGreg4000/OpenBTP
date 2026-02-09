@@ -67,8 +67,10 @@ interface Devis {
 
 interface Chantier {
   id: string
+  chantierId?: string
   nomChantier: string
-  adresse: string | null
+  adresse?: string | null
+  adresseChantier?: string | null
 }
 
 export default function DevisDetailPage() {
@@ -82,6 +84,14 @@ export default function DevisDetailPage() {
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [selectedChantierId, setSelectedChantierId] = useState('')
   const [converting, setConverting] = useState(false)
+  const [showChangeNatureModal, setShowChangeNatureModal] = useState(false)
+  const [changeNatureType, setChangeNatureType] = useState<'DEVIS' | 'AVENANT'>('DEVIS')
+  const [changeNatureChantierId, setChangeNatureChantierId] = useState('')
+  const [changingNature, setChangingNature] = useState(false)
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false)
+  const [duplicateAsType, setDuplicateAsType] = useState<'DEVIS' | 'AVENANT'>('DEVIS')
+  const [duplicateChantierId, setDuplicateChantierId] = useState('')
+  const [duplicating, setDuplicating] = useState(false)
   const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
 
   const loadDevis = useCallback(async () => {
@@ -114,11 +124,129 @@ export default function DevisDetailPage() {
       const response = await fetch(`/api/chantiers?clientId=${devis.client.id}`)
       if (response.ok) {
         const data = (await response.json()) as Chantier[] | { chantiers?: Chantier[] }
-        const chantiersData = Array.isArray(data) ? data : data.chantiers ?? []
+        const raw = Array.isArray(data) ? data : data.chantiers ?? []
+        const chantiersData = raw.map((c: Chantier & { adresseChantier?: string }) => ({
+          id: c.id,
+          chantierId: (c as { chantierId?: string }).chantierId ?? c.id,
+          nomChantier: c.nomChantier,
+          adresse: c.adresse ?? c.adresseChantier ?? null
+        }))
         setChantiers(chantiersData)
       }
     } catch (error) {
       console.error('Erreur lors du chargement des chantiers:', error)
+    }
+  }
+
+  const handleChangeNature = async () => {
+    if (!devis) return
+    const chantierId =
+      changeNatureType === 'AVENANT' ? changeNatureChantierId || null : null
+    if (changeNatureType === 'AVENANT' && !chantierId) {
+      showConfirmation({
+        title: 'Chantier requis',
+        message: 'Veuillez sélectionner un chantier pour un avenant.',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
+      return
+    }
+    try {
+      setChangingNature(true)
+      const response = await fetch(`/api/devis/${devis.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typeDevis: changeNatureType, chantierId })
+      })
+      if (response.ok) {
+        await loadDevis()
+        setShowChangeNatureModal(false)
+        setChangeNatureChantierId('')
+        showConfirmation({
+          title: 'Nature mise à jour',
+          message: `Le document est maintenant un ${changeNatureType === 'DEVIS' ? 'devis' : 'avenant'}.`,
+          type: 'success',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {}
+        })
+      } else {
+        const err = await response.json()
+        showConfirmation({
+          title: 'Erreur',
+          message: err.error || 'Impossible de modifier la nature',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {}
+        })
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      showConfirmation({
+        title: 'Erreur',
+        message: 'Erreur lors de la modification',
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
+    } finally {
+      setChangingNature(false)
+    }
+  }
+
+  const handleDuplicateConfirm = async () => {
+    if (!devis) return
+    const chantierId = duplicateAsType === 'AVENANT' ? duplicateChantierId || undefined : undefined
+    if (duplicateAsType === 'AVENANT' && !chantierId) {
+      showConfirmation({
+        title: 'Chantier requis',
+        message: 'Veuillez sélectionner un chantier pour dupliquer en avenant.',
+        type: 'warning',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
+      return
+    }
+    try {
+      setDuplicating(true)
+      const response = await fetch(`/api/devis/${devis.id}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typeDevis: duplicateAsType, chantierId: chantierId ?? null })
+      })
+      if (response.ok) {
+        const newDevis = await response.json()
+        setShowDuplicateModal(false)
+        setDuplicateChantierId('')
+        router.push(`/devis/${newDevis.id}`)
+      } else {
+        const err = await response.json()
+        showConfirmation({
+          title: 'Erreur',
+          message: err.error || 'Erreur lors de la duplication',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {}
+        })
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      showConfirmation({
+        title: 'Erreur',
+        message: 'Erreur lors de la duplication',
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {}
+      })
+    } finally {
+      setDuplicating(false)
     }
   }
 
@@ -220,48 +348,20 @@ export default function DevisDetailPage() {
     })
   }
 
-  const handleDuplicate = async () => {
+  const openDuplicateModal = () => {
     if (!devis) return
-    
-    showConfirmation({
-      title: 'Dupliquer le devis',
-      message: 'Voulez-vous dupliquer ce devis ?',
-      type: 'info',
-      confirmText: 'Dupliquer',
-      cancelText: 'Annuler',
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/devis/${devis.id}/duplicate`, {
-            method: 'POST'
-          })
+    setDuplicateAsType(devis.typeDevis)
+    setDuplicateChantierId(devis.chantierId ?? '')
+    loadChantiers()
+    setShowDuplicateModal(true)
+  }
 
-          if (response.ok) {
-            const newDevis = await response.json()
-            router.push(`/devis/${newDevis.id}`)
-          } else {
-            const error = await response.json()
-            showConfirmation({
-              title: 'Erreur',
-              message: error.error || 'Erreur lors de la duplication',
-              type: 'error',
-              confirmText: 'OK',
-              showCancel: false,
-              onConfirm: () => {}
-            })
-          }
-        } catch (error) {
-          console.error('Erreur:', error)
-          showConfirmation({
-            title: 'Erreur',
-            message: 'Erreur lors de la duplication',
-            type: 'error',
-            confirmText: 'OK',
-            showCancel: false,
-            onConfirm: () => {}
-          })
-        }
-      }
-    })
+  const openChangeNatureModal = () => {
+    if (!devis) return
+    setChangeNatureType(devis.typeDevis)
+    setChangeNatureChantierId(devis.chantierId ?? '')
+    loadChantiers()
+    setShowChangeNatureModal(true)
   }
 
   const handleDelete = async () => {
@@ -505,12 +605,23 @@ export default function DevisDetailPage() {
             </a>
 
             <button
-              onClick={handleDuplicate}
+              onClick={openDuplicateModal}
               className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
             >
               <DocumentDuplicateIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Dupliquer</span>
             </button>
+
+            {canEdit && (
+              <button
+                onClick={openChangeNatureModal}
+                className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+                title="Changer en devis ou avenant"
+              >
+                <ArrowPathIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Changer la nature</span>
+              </button>
+            )}
 
             {canEdit && (
               <button
@@ -802,6 +913,152 @@ export default function DevisDetailPage() {
             <span className="font-medium">Note :</span> Les conditions générales de vente seront incluses dans le PDF généré, selon le template configuré dans les paramètres de l'entreprise.
           </p>
         </div>
+
+        {/* Modal Changer la nature */}
+        {showChangeNatureModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-orange-600 to-orange-700">
+                <h3 className="text-lg font-semibold text-white">Changer la nature du document</h3>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Ce document sera considéré comme un devis ou un avenant. En brouillon uniquement.
+                </p>
+                <div className="space-y-4 mb-6">
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="changeNatureType"
+                        checked={changeNatureType === 'DEVIS'}
+                        onChange={() => setChangeNatureType('DEVIS')}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="font-medium text-gray-900 dark:text-white">Devis</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="changeNatureType"
+                        checked={changeNatureType === 'AVENANT'}
+                        onChange={() => setChangeNatureType('AVENANT')}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="font-medium text-gray-900 dark:text-white">Avenant</span>
+                    </label>
+                  </div>
+                  {changeNatureType === 'AVENANT' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chantier associé</label>
+                      <select
+                        value={changeNatureChantierId}
+                        onChange={(e) => setChangeNatureChantierId(e.target.value)}
+                        className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="">Choisir un chantier...</option>
+                        {chantiers.map((chantier) => (
+                          <option key={chantier.id} value={chantier.chantierId ?? chantier.id}>
+                            {chantier.nomChantier} {chantier.adresse ? `- ${chantier.adresse}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowChangeNatureModal(false)}
+                    disabled={changingNature}
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleChangeNature}
+                    disabled={changingNature || (changeNatureType === 'AVENANT' && !changeNatureChantierId)}
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {changingNature ? 'Enregistrement...' : 'Enregistrer'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Dupliquer avec choix de nature */}
+        {showDuplicateModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-orange-600 to-orange-700">
+                <h3 className="text-lg font-semibold text-white">Dupliquer en tant que</h3>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Choisissez la nature du nouveau document (devis ou avenant). Le contenu et les lignes seront copiés.
+                </p>
+                <div className="space-y-4 mb-6">
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="duplicateAsType"
+                        checked={duplicateAsType === 'DEVIS'}
+                        onChange={() => setDuplicateAsType('DEVIS')}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="font-medium text-gray-900 dark:text-white">Devis</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="duplicateAsType"
+                        checked={duplicateAsType === 'AVENANT'}
+                        onChange={() => setDuplicateAsType('AVENANT')}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="font-medium text-gray-900 dark:text-white">Avenant</span>
+                    </label>
+                  </div>
+                  {duplicateAsType === 'AVENANT' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chantier associé</label>
+                      <select
+                        value={duplicateChantierId}
+                        onChange={(e) => setDuplicateChantierId(e.target.value)}
+                        className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="">Choisir un chantier...</option>
+                        {chantiers.map((chantier) => (
+                          <option key={chantier.id} value={chantier.chantierId ?? chantier.id}>
+                            {chantier.nomChantier} {chantier.adresse ? `- ${chantier.adresse}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowDuplicateModal(false)}
+                    disabled={duplicating}
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleDuplicateConfirm}
+                    disabled={duplicating || (duplicateAsType === 'AVENANT' && !duplicateChantierId)}
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {duplicating ? 'Duplication...' : 'Dupliquer'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal de conversion */}
         {showConvertModal && (
