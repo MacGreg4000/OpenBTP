@@ -16,7 +16,7 @@ const nextConfig = {
     unoptimized: true,
   },
   // Packages externes pour les composants serveur
-  serverExternalPackages: ['pdf-lib', 'pdfkit'],
+  serverExternalPackages: ['pdf-lib', 'pdfkit', 'chartjs-node-canvas', 'chart.js'],
   // Augmenter le timeout des requêtes et la taille des données
   experimental: {
     serverActions: {

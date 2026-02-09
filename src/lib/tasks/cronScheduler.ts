@@ -1,5 +1,6 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { fullRAGIndexing, incrementalRAGIndexing } from './ragIndexingTasks';
+import { sendMonthlyReport } from '@/lib/email/monthly-report';
 
 // Planificateur de tâches pour l'indexation RAG
 export class RAGIndexingScheduler {
@@ -73,6 +74,30 @@ export class RAGIndexingScheduler {
     return task;
   }
 
+  // Démarrer l'envoi du rapport mensuel le 15 de chaque mois à 8h
+  startMonthlyReport() {
+    const cronExpression = '0 8 15 * *'; // Le 15 à 8h00
+
+    console.log(`🕐 [CRON] Planification du rapport mensuel: ${cronExpression}`);
+
+    const task = cron.schedule(cronExpression, async () => {
+      console.log('⏰ [CRON] Exécution du rapport mensuel des états d\'avancement');
+      try {
+        const result = await sendMonthlyReport();
+        console.log(`📧 [CRON] Rapport mensuel: ${result.message}`);
+      } catch (error) {
+        console.error('❌ [CRON] Erreur rapport mensuel:', error);
+      }
+    }, {
+      timezone: "Europe/Brussels"
+    });
+
+    this.tasks.set('monthly-report', task);
+    task.start();
+
+    return task;
+  }
+
   // Arrêter une tâche spécifique
   stopTask(taskName: string) {
     const task = this.tasks.get(taskName);
@@ -115,8 +140,11 @@ export class RAGIndexingScheduler {
     
     // Indexation incrémentale toutes les 6 heures
     this.startIncrementalIndexing();
+
+    // Rapport mensuel le 15 de chaque mois
+    this.startMonthlyReport();
     
-    console.log('✅ [CRON] Toutes les tâches RAG démarrées');
+    console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport mensuel)');
   }
 }
 

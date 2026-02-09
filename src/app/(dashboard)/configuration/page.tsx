@@ -67,6 +67,11 @@ export default function ConfigurationPage() {
     message: string;
     details?: string;
   } | null>(null)
+  const [monthlyReportLoading, setMonthlyReportLoading] = useState(false)
+  const [monthlyReportResult, setMonthlyReportResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null)
   const [uploadingDesktopIcon, setUploadingDesktopIcon] = useState(false)
   const [uploadingMobileIcon, setUploadingMobileIcon] = useState(false)
   const [desktopIconUrl, setDesktopIconUrl] = useState<string | null>(null)
@@ -373,6 +378,39 @@ export default function ConfigurationPage() {
       })
     } finally {
       setSmtpTestLoading(false)
+    }
+  }
+
+  const sendTestMonthlyReport = async () => {
+    setMonthlyReportLoading(true)
+    setMonthlyReportResult(null)
+
+    try {
+      const response = await fetch('/api/reports/monthly-etats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        setMonthlyReportResult({
+          success: true,
+          message: result.message
+        })
+      } else {
+        setMonthlyReportResult({
+          success: false,
+          message: result.message || result.error || 'Erreur lors de l\'envoi'
+        })
+      }
+    } catch {
+      setMonthlyReportResult({
+        success: false,
+        message: 'Erreur lors de l\'envoi du rapport'
+      })
+    } finally {
+      setMonthlyReportLoading(false)
     }
   }
 
@@ -822,6 +860,64 @@ export default function ConfigurationPage() {
           </button>
         </div>
       </form>
+
+      {/* Section Rapport mensuel */}
+      <div className="mt-12 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-white">
+          <BellIcon className="h-5 w-5 text-indigo-600" />
+          Rapport mensuel automatique
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Un email récapitulatif des états d&apos;avancement du mois précédent est envoyé automatiquement le 15 de chaque mois à 8h00 à tous les administrateurs.
+          Il contient un tableau détaillé, des graphiques d&apos;évolution sur 6 mois et la répartition des statuts.
+        </p>
+
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={sendTestMonthlyReport}
+            disabled={monthlyReportLoading}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {monthlyReportLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                Envoi en cours...
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Envoyer un rapport test (mois précédent)
+              </>
+            )}
+          </button>
+        </div>
+
+        {monthlyReportResult && (
+          <div className={`mt-3 p-3 rounded-md ${
+            monthlyReportResult.success
+              ? 'bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800'
+              : 'bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800'
+          }`}>
+            <div className="flex items-start">
+              {monthlyReportResult.success ? (
+                <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 mt-0.5" />
+              ) : (
+                <XCircleIcon className="h-5 w-5 text-red-600 dark:text-red-400 mr-2 mt-0.5" />
+              )}
+              <p className={`text-sm font-medium ${
+                monthlyReportResult.success
+                  ? 'text-green-800 dark:text-green-200'
+                  : 'text-red-800 dark:text-red-200'
+              }`}>
+                {monthlyReportResult.message}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Section Icônes de l'application */}
       <div className="mt-12 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700">

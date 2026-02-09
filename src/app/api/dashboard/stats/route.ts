@@ -102,18 +102,15 @@ export async function GET() {
     // 4. C.A. à venir = Total commandes base - Montants déjà facturés
     const chiffreAffaires = Math.max(0, totalCommandesBase - montantsDejFactures)
 
-    // Calculer le montant total des états d'avancement du mois précédent
+    // Calculer le montant total des états d'avancement du mois précédent (basé sur le champ période "mois")
+    const MOIS_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
     const maintenant = new Date()
-    const premierJourMoisPrecedent = new Date(maintenant.getFullYear(), maintenant.getMonth() - 1, 1)
-    const dernierJourMoisPrecedent = new Date(maintenant.getFullYear(), maintenant.getMonth(), 0, 23, 59, 59, 999)
+    const moisPrecedent = new Date(maintenant.getFullYear(), maintenant.getMonth() - 1, 1)
+    const moisPrecedentLabel = `${MOIS_NAMES[moisPrecedent.getMonth()]} ${moisPrecedent.getFullYear()}`
 
     const etatsAvancementMoisPrecedent = await prisma.etatAvancement.findMany({
       where: {
-        date: {
-          gte: premierJourMoisPrecedent,
-          lte: dernierJourMoisPrecedent
-        },
-        estFinalise: true
+        mois: moisPrecedentLabel
       },
       include: {
         lignes: {
