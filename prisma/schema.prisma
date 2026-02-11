@@ -821,10 +821,59 @@ model OuvrierInterne {
   @@map("ouvrier_interne")
 }
 
-// Accès public par PIN pour ouvriers internes et sous-traitants
+// Magasinier et tâches logistique
+model Magasinier {
+  id        String   @id @default(uuid())
+  nom       String
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  taches    TacheMagasinier[]
+
+  @@map("magasinier")
+}
+
+model TacheMagasinier {
+  id             String   @id @default(uuid())
+  titre          String
+  description    String?  @db.Text
+  dateEncodage   DateTime @default(now())
+  dateExecution  DateTime @default(now())
+  statut         String   @default("A_FAIRE") // A_FAIRE | VALIDEE
+  magasinierId   String
+  creePar        String
+  dateValidation DateTime?
+  commentaire   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  magasinier    Magasinier @relation(fields: [magasinierId], references: [id], onDelete: Cascade)
+  createur      User     @relation("TacheMagasinierCreateur", fields: [creePar], references: [id], onDelete: Cascade)
+  photos        PhotoTacheMagasinier[]
+
+  @@index([magasinierId])
+  @@index([dateExecution])
+  @@index([statut])
+  @@map("tache_magasinier")
+}
+
+model PhotoTacheMagasinier {
+  id        String   @id @default(uuid())
+  tacheId   String
+  type      String   // A_FAIRE | PREUVE
+  url       String
+  ordre     Int      @default(0)
+  createdAt DateTime @default(now())
+  tache     TacheMagasinier @relation(fields: [tacheId], references: [id], onDelete: Cascade)
+
+  @@index([tacheId])
+  @@map("photo_tache_magasinier")
+}
+
+// Accès public par PIN pour ouvriers internes, sous-traitants et magasiniers
 enum PublicSubjectType {
   OUVRIER_INTERNE
   SOUSTRAITANT
+  MAGASINIER
 }
 
 model PublicAccessPIN {
@@ -902,6 +951,9 @@ model User {
   
   // Dossiers techniques
   dossiersTechniques        DossierTechnique[]
+  
+  // Tâches logistique (magasinier)
+  tachesMagasinierCrees     TacheMagasinier[] @relation("TacheMagasinierCreateur")
 }
 
 model BonRegie {

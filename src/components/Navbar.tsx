@@ -98,6 +98,7 @@ export function Navbar() {
     {
       name: 'Organisation',
       items: [
+        { name: 'Logistique', href: '/logistique', icon: TruckIcon, moduleCode: 'logistique' },
         { name: 'Outillage', href: '/outillage', icon: WrenchScrewdriverIcon, moduleCode: 'outillage' },
         { name: 'Inventaire', href: '/inventory', icon: CubeIcon, moduleCode: 'inventory' },
         ...(session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER' 
