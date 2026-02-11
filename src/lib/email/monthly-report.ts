@@ -456,14 +456,15 @@ function buildEmailHTML(
 // ─── Fonction principale ─────────────────────────────────────────────────────
 
 /**
- * Génère et envoie le rapport mensuel des états d'avancement.
- * @param targetDate Date de référence (par défaut : aujourd'hui → récap du mois précédent)
+ * Génère et envoie le rapport des états d'avancement (mois en cours).
+ * Envoi chaque vendredi à midi pour suivre l'évolution semaine après semaine.
+ * @param targetDate Date de référence (par défaut : aujourd'hui → récap du mois en cours)
  * @returns Objet avec succès, nombre de destinataires, et période concernée
  */
 export async function sendMonthlyReport(targetDate?: Date) {
   const now = targetDate ?? new Date()
-  // Mois précédent
-  const refDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  // Mois en cours
+  const refDate = new Date(now.getFullYear(), now.getMonth(), 1)
   const moisLabel = toMoisLabel(refDate)
 
   console.log(`📧 [RAPPORT MENSUEL] Génération du rapport pour ${moisLabel}...`)

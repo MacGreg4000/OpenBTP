@@ -74,19 +74,19 @@ export class RAGIndexingScheduler {
     return task;
   }
 
-  // Démarrer l'envoi du rapport mensuel le 15 de chaque mois à 8h
+  // Rapport états d'avancement : chaque vendredi à 12h00 (mois en cours)
   startMonthlyReport() {
-    const cronExpression = '0 8 15 * *'; // Le 15 à 8h00
+    const cronExpression = '0 12 * * 5'; // Vendredi à 12h00
 
-    console.log(`🕐 [CRON] Planification du rapport mensuel: ${cronExpression}`);
+    console.log(`🕐 [CRON] Planification rapport états d'avancement: ${cronExpression} (chaque vendredi midi)`);
 
     const task = cron.schedule(cronExpression, async () => {
-      console.log('⏰ [CRON] Exécution du rapport mensuel des états d\'avancement');
+      console.log('⏰ [CRON] Exécution du rapport états d\'avancement (mois en cours)');
       try {
         const result = await sendMonthlyReport();
-        console.log(`📧 [CRON] Rapport mensuel: ${result.message}`);
+        console.log(`📧 [CRON] Rapport états: ${result.message}`);
       } catch (error) {
-        console.error('❌ [CRON] Erreur rapport mensuel:', error);
+        console.error('❌ [CRON] Erreur rapport états:', error);
       }
     }, {
       timezone: "Europe/Brussels"
@@ -141,10 +141,10 @@ export class RAGIndexingScheduler {
     // Indexation incrémentale toutes les 6 heures
     this.startIncrementalIndexing();
 
-    // Rapport mensuel le 15 de chaque mois
+    // Rapport états d'avancement chaque vendredi à midi (mois en cours)
     this.startMonthlyReport();
     
-    console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport mensuel)');
+    console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport vendredi midi)');
   }
 }
 
