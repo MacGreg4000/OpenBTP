@@ -13,6 +13,7 @@ async function initializeFeatureModules() {
     { code: 'sous_traitants', name: 'Sous-traitants', description: 'Gestion des sous-traitants et ouvriers', category: 'commercial', icon: 'UserGroupIcon', isActive: true, isSystem: false, ordre: 4 },
     
     // Modules optionnels
+    { code: 'logistique', name: 'Logistique', description: 'Tâches magasiniers et suivi', category: 'organisation', icon: 'TruckIcon', isActive: true, isSystem: false, ordre: 9 },
     { code: 'inventory', name: 'Inventaire', description: 'Gestion des matériaux', category: 'logistique', icon: 'CubeIcon', isActive: true, isSystem: false, ordre: 10 },
     { code: 'outillage', name: 'Outillage', description: 'Gestion des machines', category: 'logistique', icon: 'WrenchScrewdriverIcon', isActive: true, isSystem: false, ordre: 11 },
     { code: 'planning', name: 'Planning', description: 'Planning des chantiers', category: 'organisation', icon: 'CalendarIcon', isActive: true, isSystem: false, ordre: 20 },

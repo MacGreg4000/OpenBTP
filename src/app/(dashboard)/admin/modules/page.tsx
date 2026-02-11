@@ -35,6 +35,7 @@ const categoryLabels: Record<string, string> = {
   administratif: 'Administratif',
   communication: 'Communication',
   ia: 'Intelligence Artificielle',
+  gestion: 'Gestion',
   general: 'Général'
 }
 
@@ -56,6 +57,7 @@ export default function ModulesAdminPage() {
   const [modules, setModules] = useState<FeatureModule[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -134,6 +136,27 @@ export default function ModulesAdminPage() {
     }
   }
 
+  // Synchroniser les modules (ajoute les modules manquants depuis la liste officielle)
+  const syncModules = async () => {
+    try {
+      setSyncing(true)
+      setError(null)
+      const response = await fetch('/api/modules/init', { method: 'POST' })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Erreur lors de la synchronisation')
+      }
+      setSuccessMessage('Modules synchronisés. Nouveaux modules ajoutés.')
+      await fetchModules()
+      await refreshGlobalModules()
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la synchronisation')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   // Obtenir l'icône dynamiquement
   const getIcon = (iconName: string | null) => {
     if (!iconName) return <Cog6ToothIcon className="h-6 w-6" />
@@ -166,14 +189,25 @@ export default function ModulesAdminPage() {
   }
 
   const actions = (
-    <button
-      onClick={fetchModules}
-      disabled={loading}
-      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:scale-[1.02] hover:shadow-xl disabled:opacity-50"
-    >
-      <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-      Actualiser
-    </button>
+    <div className="flex gap-2">
+      <button
+        onClick={syncModules}
+        disabled={syncing || loading}
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:scale-[1.02] hover:shadow-xl disabled:opacity-50"
+        title="Ajoute les modules manquants (ex: Logistique magasiniers)"
+      >
+        <ArrowPathIcon className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+        Synchroniser
+      </button>
+      <button
+        onClick={fetchModules}
+        disabled={loading}
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:scale-[1.02] hover:shadow-xl disabled:opacity-50"
+      >
+        <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        Actualiser
+      </button>
+    </div>
   )
 
   return (
