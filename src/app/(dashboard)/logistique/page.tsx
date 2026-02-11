@@ -73,12 +73,13 @@ export default function LogistiquePage() {
   const loadData = async () => {
     try {
       setLoading(true)
+      const params = new URLSearchParams()
+      if (filterMagasinier) params.set('magasinierId', filterMagasinier)
+      if (filterStatut) params.set('statut', filterStatut)
+      const query = params.toString()
       const [mRes, tRes] = await Promise.all([
         fetch('/api/magasiniers'),
-        fetch('/api/logistique/taches?' + new URLSearchParams({
-          ...(filterMagasinier && { magasinierId: filterMagasinier }),
-          ...(filterStatut && { statut: filterStatut })
-        }).toString()
+        fetch('/api/logistique/taches' + (query ? '?' + query : ''))
       ])
       if (mRes.ok) setMagasiniers(await mRes.json())
       if (tRes.ok) setTaches(await tRes.json())

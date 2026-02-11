@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma/client'
-import { ChartJSNodeCanvas } from 'chartjs-node-canvas'
 import path from 'path'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -113,7 +112,8 @@ async function getAdminEmails(): Promise<string[]> {
 // Résoudre le chemin vers les polices (fonctionne en dev et en prod)
 const fontsDir = path.join(process.cwd(), 'public', 'fonts')
 
-function createChartCanvas(width: number, height: number) {
+async function createChartCanvas(width: number, height: number) {
+  const { ChartJSNodeCanvas } = await import('chartjs-node-canvas')
   return new ChartJSNodeCanvas({
     width,
     height,
@@ -131,7 +131,7 @@ function createChartCanvas(width: number, height: number) {
 
 // Enregistrer les polices une seule fois
 let fontsRegistered = false
-function registerFonts(canvas: ChartJSNodeCanvas) {
+function registerFonts(canvas: Awaited<ReturnType<typeof createChartCanvas>>) {
   if (fontsRegistered) return
   try {
     canvas.registerFont(path.join(fontsDir, 'Roboto-Regular.ttf'), { family: 'Roboto', weight: 'normal' })
@@ -146,7 +146,7 @@ function registerFonts(canvas: ChartJSNodeCanvas) {
 async function generateBarChart(monthlyData: MonthData[]): Promise<string> {
   const width = 600
   const height = 300
-  const chartCanvas = createChartCanvas(width, height)
+  const chartCanvas = await createChartCanvas(width, height)
   registerFonts(chartCanvas)
 
   const buffer = await chartCanvas.renderToBuffer({
@@ -197,7 +197,7 @@ async function generateBarChart(monthlyData: MonthData[]): Promise<string> {
 async function generateDoughnutChart(rows: EtatRow[]): Promise<string> {
   const width = 350
   const height = 350
-  const chartCanvas = createChartCanvas(width, height)
+  const chartCanvas = await createChartCanvas(width, height)
   registerFonts(chartCanvas)
 
   const finalises = rows.filter((r) => r.estFinalise).length
