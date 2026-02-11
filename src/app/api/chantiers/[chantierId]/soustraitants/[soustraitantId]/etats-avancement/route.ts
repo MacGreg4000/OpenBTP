@@ -4,6 +4,23 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 // import { Prisma } from '@prisma/client'
 
+// Helper: retrouve la ligne correspondante dans l'état précédent pour reprendre quantiteTotale/montantTotal
+function findMatchingLignePrecedente<T extends { description?: string | null; prixUnitaire?: number; unite?: string | null }>(
+  ligne: T,
+  lignesPrecedentes: Array<{ description?: string | null; prixUnitaire?: number; unite?: string | null; quantiteTotale?: number; montantTotal?: number }>
+) {
+  const desc = (ligne.description ?? '').trim().toLowerCase()
+  const prix = Number(ligne.prixUnitaire) || 0
+  const unit = (ligne.unite ?? '').trim().toLowerCase()
+
+  return lignesPrecedentes.find((l) => {
+    const lDesc = (l.description ?? '').trim().toLowerCase()
+    const lPrix = Number(l.prixUnitaire) || 0
+    const lUnit = (l.unite ?? '').trim().toLowerCase()
+    return lDesc === desc && Math.abs(lPrix - prix) < 0.01 && lUnit === unit
+  })
+}
+
 // Interface pour les photos
 interface Photo {
   id: number;
@@ -387,10 +404,20 @@ export async function POST(
       }
     } else if (lastEtat) {
       // Pour les états suivants, utiliser les lignes du body si fournies, sinon copier du dernier état
+      // IMPORTANT: reprendre systématiquement quantitePrecedente/montantPrecedent depuis lastEtat (comme états client)
+      const lignesPrecedentes = lastEtat.ligne_soustraitant_etat_avancement
+
       if (body.lignes && body.lignes.length > 0) {
-        console.log('Création des lignes avec les données du body...')
-        // Créer les lignes séquentiellement pour préserver l'ordre
+        console.log('Création des lignes avec les données du body, enrichies par lastEtat...')
         for (const ligne of body.lignes) {
+          const match = findMatchingLignePrecedente(ligne, lignesPrecedentes)
+          const quantitePrecedente = match ? Number(match.quantiteTotale) || 0 : (ligne.quantitePrecedente ?? 0)
+          const montantPrecedent = match ? Number(match.montantTotal) || 0 : (ligne.montantPrecedent ?? 0)
+          const quantiteActuelle = Number(ligne.quantiteActuelle) || 0
+          const montantActuel = Number(ligne.montantActuel) || 0
+          const quantiteTotale = quantitePrecedente + quantiteActuelle
+          const montantTotal = montantPrecedent + montantActuel
+
           await prisma.ligne_soustraitant_etat_avancement.create({
             data: {
               soustraitantEtatAvancementId: etatAvancement.id,
@@ -400,17 +427,17 @@ export async function POST(
               unite: ligne.unite,
               prixUnitaire: ligne.prixUnitaire,
               quantite: ligne.quantite,
-              quantitePrecedente: ligne.quantitePrecedente || 0,
-              quantiteActuelle: ligne.quantiteActuelle || 0,
-              quantiteTotale: ligne.quantiteTotale || 0,
-              montantPrecedent: ligne.montantPrecedent || 0,
-              montantActuel: ligne.montantActuel || 0,
-              montantTotal: ligne.montantTotal || 0,
+              quantitePrecedente,
+              quantiteActuelle,
+              quantiteTotale,
+              montantPrecedent,
+              montantActuel,
+              montantTotal,
               updatedAt: new Date()
             }
           })
         }
-        console.log('Lignes créées avec succès à partir du body')
+        console.log('Lignes créées avec succès à partir du body (précédent repris de lastEtat)')
       } else {
         // Copier les lignes du dernier état
         console.log('Copie des lignes du dernier état finalisé...')
@@ -442,12 +469,22 @@ export async function POST(
       }
       
       // Copier ou créer les avenants selon si des données sont fournies dans le body
+      // Pour les avenants existants, reprendre précédent depuis lastEtat (comme les lignes)
+      const avenantsPrecedents = lastEtat.avenant_soustraitant_etat_avancement || []
+
       if (body.avenants && body.avenants.length > 0) {
-        // Utiliser les avenants du body (nouveaux avenants créés)
-        console.log('Sauvegarde des avenants du body:', body.avenants.length)
+        console.log('Sauvegarde des avenants du body, enrichis par lastEtat...')
         
-        await Promise.all(body.avenants.map(avenant =>
-          prisma.avenant_soustraitant_etat_avancement.create({
+        await Promise.all(body.avenants.map((avenant) => {
+          const match = findMatchingLignePrecedente(avenant, avenantsPrecedents)
+          const quantitePrecedente = match ? Number((match as { quantiteTotale?: number }).quantiteTotale) || 0 : (avenant.quantitePrecedente ?? 0)
+          const montantPrecedent = match ? Number((match as { montantTotal?: number }).montantTotal) || 0 : (avenant.montantPrecedent ?? 0)
+          const quantiteActuelle = Number(avenant.quantiteActuelle) || 0
+          const montantActuel = Number(avenant.montantActuel) || 0
+          const quantiteTotale = quantitePrecedente + quantiteActuelle
+          const montantTotal = montantPrecedent + montantActuel
+
+          return prisma.avenant_soustraitant_etat_avancement.create({
             data: {
               soustraitantEtatAvancementId: etatAvancement.id,
               article: avenant.article || '',
@@ -456,18 +493,18 @@ export async function POST(
               unite: avenant.unite || 'U',
               prixUnitaire: avenant.prixUnitaire || 0,
               quantite: avenant.quantite || 0,
-              quantitePrecedente: avenant.quantitePrecedente || 0,
-              quantiteActuelle: avenant.quantiteActuelle || 0,
-              quantiteTotale: avenant.quantiteTotale || 0,
-              montantPrecedent: avenant.montantPrecedent || 0,
-              montantActuel: avenant.montantActuel || 0,
-              montantTotal: avenant.montantTotal || 0,
+              quantitePrecedente,
+              quantiteActuelle,
+              quantiteTotale,
+              montantPrecedent,
+              montantActuel,
+              montantTotal,
               updatedAt: new Date()
             }
           })
-        ))
+        }))
         
-        console.log('Avenants du body sauvegardés avec succès')
+        console.log('Avenants du body sauvegardés avec succès (précédent repris de lastEtat)')
       } else if (lastEtat.avenant_soustraitant_etat_avancement && lastEtat.avenant_soustraitant_etat_avancement.length > 0) {
         // Copier les avenants du dernier état seulement si aucun avenant n'est fourni dans le body
         console.log('Copie des avenants du dernier état finalisé...')
