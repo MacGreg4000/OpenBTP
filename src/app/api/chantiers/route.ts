@@ -38,9 +38,11 @@ export async function GET(request: Request) {
       const filtreNomClient = searchParams.get('nomClient')
 
       // Construire le filtre de statut selon le paramètre fourni
-      // Par défaut et "Tous les états" = actifs seulement (en préparation et en cours)
-      const whereClause: any = {
-        statut: {
+      // Par défaut = actifs seulement (en préparation et en cours)
+      // "tous" = tous les chantiers sans filtre de statut
+      const whereClause: any = {}
+      if (filtreEtat !== 'tous') {
+        whereClause.statut = {
           in: ['EN_PREPARATION', 'EN_COURS']
         }
       }
@@ -68,7 +70,7 @@ export async function GET(request: Request) {
         }
       }
       
-      if (filtreEtat && filtreEtat !== '' && filtreEtat !== 'Tous les états') {
+      if (filtreEtat && filtreEtat !== '' && filtreEtat !== 'Tous les états' && filtreEtat !== 'tous') {
         // Convertir le libellé d'affichage vers le statut de la DB
         let statutDB = 'EN_PREPARATION' // valeur par défaut
         if (filtreEtat === 'En cours') statutDB = 'EN_COURS'

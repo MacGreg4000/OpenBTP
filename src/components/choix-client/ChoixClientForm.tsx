@@ -104,7 +104,7 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
 
   const fetchChantiers = async () => {
     try {
-      const response = await fetch('/api/chantiers')
+      const response = await fetch('/api/chantiers?etat=tous&pageSize=100')
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`)
       }
