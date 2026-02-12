@@ -157,8 +157,58 @@ export default function NouvelEtatAvancementPage(
         }
         
         // 3. Préparer le nouvel état d'avancement au format unifié
+        // ÉTAT 2+ : utiliser directement les lignes du dernier état (comme le workflow client)
+        // ÉTAT 1 : utiliser les lignes de la commande
+        const useDernierEtat = dernierEtat && dernierEtat.lignes && dernierEtat.lignes.length > 0
+
+        const lignesSource = useDernierEtat
+          ? dernierEtat.lignes!.map((l, index: number) => ({
+              id: -(index + 1),
+              soustraitantEtatId: 0,
+              article: l.article,
+              description: l.description,
+              type: 'QP' as const,
+              unite: l.unite,
+              prixUnitaire: l.prixUnitaire,
+              quantite: l.quantiteTotale ?? 0, // Marché = total précédent
+              quantitePrecedente: l.quantiteTotale ?? 0,
+              quantiteActuelle: 0,
+              quantiteTotale: l.quantiteTotale ?? 0,
+              montantPrecedent: l.montantTotal ?? 0,
+              montantActuel: 0,
+              montantTotal: l.montantTotal ?? 0,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }))
+          : commandeValidee.lignes
+              .slice()
+              .sort((a: { ordre?: number }, b: { ordre?: number }) => (a.ordre || 0) - (b.ordre || 0))
+              .map((ligne: { article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }, index: number) => ({
+                id: -(index + 1),
+                soustraitantEtatId: 0,
+                article: ligne.article,
+                description: ligne.description,
+                type: ligne.type || 'QP',
+                unite: ligne.unite,
+                prixUnitaire: ligne.prixUnitaire,
+                quantite: ligne.quantite,
+                quantitePrecedente: 0,
+                quantiteActuelle: 0,
+                quantiteTotale: 0,
+                montantPrecedent: 0,
+                montantActuel: 0,
+                montantTotal: 0,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              }))
+
+        console.log(`📊 Source lignes: ${useDernierEtat ? 'dernier état (état 2+)' : 'commande (état 1)'}, nb=${lignesSource.length}`)
+        if (useDernierEtat && lignesSource.length > 0) {
+          console.log('📊 Première ligne précédent:', lignesSource[0].quantitePrecedente, lignesSource[0].montantPrecedent)
+        }
+
         const nouvelEtat: SoustraitantEtat = {
-          id: 0, // Temporaire pour la création
+          id: 0,
           chantierId: params.chantierId,
           soustraitantId: params.soustraitantId,
           numero: dernierEtat ? dernierEtat.numero + 1 : 1,
@@ -170,54 +220,7 @@ export default function NouvelEtatAvancementPage(
           createdBy: session?.user?.email || '',
           commandeSousTraitantId: commandeValidee.id,
           avenants: [],
-          lignes: commandeValidee.lignes
-            .slice() // Créer une copie pour ne pas modifier l'original
-            .sort((a: { ordre?: number }, b: { ordre?: number }) => (a.ordre || 0) - (b.ordre || 0)) // Trier par ordre
-            .map((ligne: { id?: number; ordre?: number; article: string; description: string; type?: string; unite: string; prixUnitaire: number; quantite: number }, index: number) => {
-            // Chercher la ligne correspondante dans le dernier état
-            // Utiliser une combinaison de description, prixUnitaire et unite pour la correspondance
-            // car article peut être vide
-            const lignePrecedente = dernierEtat?.lignes?.find((l) => {
-              // Correspondance par description + prixUnitaire + unite (plus robuste)
-              const descriptionMatch = l.description && ligne.description && 
-                l.description.trim().toLowerCase() === ligne.description.trim().toLowerCase()
-              const prixMatch = Math.abs(l.prixUnitaire - ligne.prixUnitaire) < 0.01
-              const uniteMatch = l.unite && ligne.unite && 
-                l.unite.trim().toLowerCase() === ligne.unite.trim().toLowerCase()
-              
-              return descriptionMatch && prixMatch && uniteMatch
-            })
-            
-            console.log(`🔍 Ligne commande: "${ligne.description}" (${ligne.prixUnitaire}€/${ligne.unite})`, {
-              trouvee: !!lignePrecedente,
-              quantiteTotale: lignePrecedente?.quantiteTotale,
-              montantTotal: lignePrecedente?.montantTotal
-            })
-            
-            const quantitePrecedente = lignePrecedente ? lignePrecedente.quantiteTotale : 0
-            const montantPrecedent = lignePrecedente ? lignePrecedente.montantTotal : 0
-            
-            console.log(`📊 Quantités pour "${ligne.description}": précédente=${quantitePrecedente}, montant=${montantPrecedent}`)
-            
-            return {
-              id: -(index + 1), // ID temporaire négatif unique (pour éviter conflit avec vrais IDs)
-              soustraitantEtatId: 0,
-              article: ligne.article,
-              description: ligne.description,
-              type: ligne.type || 'QP',
-              unite: ligne.unite,
-              prixUnitaire: ligne.prixUnitaire,
-              quantite: ligne.quantite,
-              quantitePrecedente: quantitePrecedente,
-              quantiteActuelle: 0,
-              quantiteTotale: quantitePrecedente,
-              montantPrecedent: montantPrecedent,
-              montantActuel: 0,
-              montantTotal: montantPrecedent,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            }
-          })
+          lignes: lignesSource
         }
         
         setEtatAvancement(nouvelEtat)

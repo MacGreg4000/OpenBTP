@@ -4,21 +4,32 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 // import { Prisma } from '@prisma/client'
 
+// Normalise une chaîne pour comparaison (trim, lowercase, espaces multiples → 1)
+function normalizeStr(s: string | null | undefined): string {
+  return (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
 // Helper: retrouve la ligne correspondante dans l'état précédent pour reprendre quantiteTotale/montantTotal
 function findMatchingLignePrecedente<T extends { description?: string | null; prixUnitaire?: number; unite?: string | null }>(
   ligne: T,
-  lignesPrecedentes: Array<{ description?: string | null; prixUnitaire?: number; unite?: string | null; quantiteTotale?: number; montantTotal?: number }>
+  lignesPrecedentes: Array<{ description?: string | null; prixUnitaire?: number; unite?: string | null; quantiteTotale?: number; montantTotal?: number }>,
+  indexFallback?: number
 ) {
-  const desc = (ligne.description ?? '').trim().toLowerCase()
+  const desc = normalizeStr(String(ligne.description ?? ''))
   const prix = Number(ligne.prixUnitaire) || 0
-  const unit = (ligne.unite ?? '').trim().toLowerCase()
+  const unit = normalizeStr(String(ligne.unite ?? ''))
 
-  return lignesPrecedentes.find((l) => {
-    const lDesc = (l.description ?? '').trim().toLowerCase()
+  const byKey = lignesPrecedentes.find((l) => {
+    const lDesc = normalizeStr(String(l.description ?? ''))
     const lPrix = Number(l.prixUnitaire) || 0
-    const lUnit = (l.unite ?? '').trim().toLowerCase()
-    return lDesc === desc && Math.abs(lPrix - prix) < 0.01 && lUnit === unit
+    const lUnit = normalizeStr(String(l.unite ?? ''))
+    return lDesc === desc && Math.abs(lPrix - prix) < 0.02 && lUnit === unit
   })
+  if (byKey) return byKey
+  // Fallback: même index si ordre identique
+  if (indexFallback != null && indexFallback >= 0 && indexFallback < lignesPrecedentes.length)
+    return lignesPrecedentes[indexFallback]
+  return undefined
 }
 
 // Interface pour les photos
@@ -425,16 +436,18 @@ export async function POST(
           montantTotal?: number
         }
 
-        // Trouver la ligne correspondante dans lastEtat pour précédent (description + prix + unite)
+        // Trouver la ligne correspondante dans lastEtat (clé description+prix+unite, puis fallback par index)
+        const prevMapped = lignesPrecedentes.map((l) => ({
+          description: l.description,
+          prixUnitaire: l.prixUnitaire,
+          unite: l.unite,
+          quantiteTotale: l.quantiteTotale,
+          montantTotal: l.montantTotal
+        }))
         const lignePrev = findMatchingLignePrecedente(
           { description: source.description, prixUnitaire: source.prixUnitaire, unite: source.unite },
-          lignesPrecedentes.map((l) => ({
-            description: l.description,
-            prixUnitaire: l.prixUnitaire,
-            unite: l.unite,
-            quantiteTotale: l.quantiteTotale,
-            montantTotal: l.montantTotal
-          }))
+          prevMapped,
+          i
         ) as { quantiteTotale?: number; montantTotal?: number } | undefined
 
         const quantitePrecedente = lignePrev ? Number(lignePrev.quantiteTotale) || 0 : (Number(source.quantitePrecedente) || 0)
