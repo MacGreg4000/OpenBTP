@@ -403,32 +403,60 @@ export async function POST(
         console.log('La commande ne contient pas de lignes')
       }
     } else if (lastEtat) {
-      // Pour les états 2+, TOUJOURS copier les lignes depuis lastEtat (comme états client)
-      // Cela garantit que quantitePrecedente/montantPrecedent = total de l'état précédent
-      console.log('Copie des lignes du dernier état finalisé (colonne précédent = total état 1)...')
+      // Pour les états 2+:
+      // - quantitePrecedente/montantPrecedent = TOUJOURS depuis lastEtat (fiable, comme états client)
+      // - quantiteActuelle/montantActuel = depuis body.lignes si fourni (saisie utilisateur)
+      const lignesPrecedentes = lastEtat.ligne_soustraitant_etat_avancement
+      console.log(`Création état 2+ : ${lignesPrecedentes.length} lignes depuis lastEtat, body.lignes: ${body.lignes?.length || 0}`)
 
-      for (const ligne of lastEtat.ligne_soustraitant_etat_avancement) {
+      for (let i = 0; i < lignesPrecedentes.length; i++) {
+        const lignePrev = lignesPrecedentes[i]
+
+        // Chercher la saisie utilisateur dans body.lignes (par index d'abord, puis par matching)
+        let quantiteActuelle = 0
+        let montantActuel = 0
+        if (body.lignes && body.lignes.length > 0) {
+          // Matching par index (ordre identique commande → état)
+          let bodyLigne = body.lignes[i]
+          // Fallback: matching par description+prix+unite si l'index ne correspond pas
+          if (!bodyLigne || bodyLigne.description?.trim().toLowerCase() !== lignePrev.description?.trim().toLowerCase()) {
+            bodyLigne = body.lignes.find((bl: { description?: string; prixUnitaire?: number; unite?: string }) => {
+              const dMatch = (bl.description ?? '').trim().toLowerCase() === (lignePrev.description ?? '').trim().toLowerCase()
+              const pMatch = Math.abs((Number(bl.prixUnitaire) || 0) - (Number(lignePrev.prixUnitaire) || 0)) < 0.01
+              const uMatch = (bl.unite ?? '').trim().toLowerCase() === (lignePrev.unite ?? '').trim().toLowerCase()
+              return dMatch && pMatch && uMatch
+            })
+          }
+          if (bodyLigne) {
+            quantiteActuelle = Number(bodyLigne.quantiteActuelle) || 0
+            montantActuel = Number(bodyLigne.montantActuel) || 0
+          }
+        }
+
+        const quantitePrecedente = Number(lignePrev.quantiteTotale) || 0
+        const montantPrecedent = Number(lignePrev.montantTotal) || 0
+
         await prisma.ligne_soustraitant_etat_avancement.create({
           data: {
             soustraitantEtatAvancementId: etatAvancement.id,
-            article: ligne.article,
-            description: ligne.description,
-            type: ligne.type,
-            unite: ligne.unite,
-            prixUnitaire: ligne.prixUnitaire,
-            quantite: ligne.quantite,
-            quantitePrecedente: ligne.quantiteTotale,
-            quantiteActuelle: 0,
-            quantiteTotale: ligne.quantiteTotale,
-            montantPrecedent: ligne.montantTotal,
-            montantActuel: 0,
-            montantTotal: ligne.montantTotal,
+            article: lignePrev.article,
+            description: lignePrev.description,
+            type: lignePrev.type,
+            unite: lignePrev.unite,
+            prixUnitaire: lignePrev.prixUnitaire,
+            quantite: lignePrev.quantite,
+            quantitePrecedente,
+            quantiteActuelle,
+            quantiteTotale: quantitePrecedente + quantiteActuelle,
+            montantPrecedent,
+            montantActuel,
+            montantTotal: montantPrecedent + montantActuel,
             updatedAt: new Date()
           }
         })
       }
 
-      console.log('Lignes copiées avec succès')
+      console.log('Lignes créées avec succès (précédent=lastEtat, actuel=body)')
       
       // Copier ou créer les avenants selon si des données sont fournies dans le body
       // Pour les avenants existants, reprendre précédent depuis lastEtat (comme les lignes)
