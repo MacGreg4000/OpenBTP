@@ -95,7 +95,7 @@ export async function GET(
         }
       },
       orderBy: {
-        numero: 'asc'
+        numero: 'desc'
       }
     })
 
