@@ -126,8 +126,10 @@ export default function NouvelEtatAvancementPage(
             id: number;
             article: string;
             description: string;
+            type: string;
             unite: string;
             prixUnitaire: number;
+            quantite: number;
             quantiteTotale: number; 
             montantTotal: number;
             quantitePrecedente: number;
@@ -167,10 +169,10 @@ export default function NouvelEtatAvancementPage(
               soustraitantEtatId: 0,
               article: l.article,
               description: l.description,
-              type: 'QP' as const,
+              type: l.type || 'QP',
               unite: l.unite,
               prixUnitaire: l.prixUnitaire,
-              quantite: l.quantiteTotale ?? 0, // Marché = total précédent
+              quantite: l.quantite ?? l.quantiteTotale ?? 0,
               quantitePrecedente: l.quantiteTotale ?? 0,
               quantiteActuelle: 0,
               quantiteTotale: l.quantiteTotale ?? 0,
