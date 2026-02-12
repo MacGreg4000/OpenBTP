@@ -356,216 +356,132 @@ export async function POST(
 
     console.log('État créé:', etatAvancement)
 
-    // Si c'est le premier état, charger les lignes de la commande
-    if (existingEtats === 0) {
-      console.log('Premier état, chargement de la commande...')
-      
-      // Si des lignes sont fournies dans le body (avec des quantités mises à jour), les utiliser
-      if (body.lignes && body.lignes.length > 0) {
-        console.log('Création des lignes avec les données du body...')
-        // Créer les lignes séquentiellement pour préserver l'ordre
-        for (const ligne of body.lignes) {
-          await prisma.ligne_soustraitant_etat_avancement.create({
-            data: {
-              soustraitantEtatAvancementId: etatAvancement.id,
-              article: ligne.article,
-              description: ligne.description,
-              type: ligne.type || 'QP',
-              unite: ligne.unite,
-              prixUnitaire: ligne.prixUnitaire,
-              quantite: ligne.quantite,
-              quantitePrecedente: ligne.quantitePrecedente || 0,
-              quantiteActuelle: ligne.quantiteActuelle || 0,
-              quantiteTotale: ligne.quantiteTotale || 0,
-              montantPrecedent: ligne.montantPrecedent || 0,
-              montantActuel: ligne.montantActuel || 0,
-              montantTotal: ligne.montantTotal || 0,
-              updatedAt: new Date()
-            }
-          })
-        }
-        console.log('Lignes créées avec succès à partir du body')
-      } else if (commande.lignes && commande.lignes.length > 0) {
-        console.log('Création des lignes à partir de la commande...')
-        // Créer les lignes d'état d'avancement à partir des lignes de commande
-        // Créer séquentiellement pour préserver l'ordre
-        for (const ligne of commande.lignes) {
-          await prisma.ligne_soustraitant_etat_avancement.create({
-            data: {
-              soustraitantEtatAvancementId: etatAvancement.id,
-              article: ligne.article,
-              description: ligne.description,
-              type: ligne.type || 'QP',
-              unite: ligne.unite,
-              prixUnitaire: ligne.prixUnitaire,
-              quantite: ligne.quantite,
-              quantitePrecedente: 0,
-              quantiteActuelle: 0,
-              quantiteTotale: 0,
-              montantPrecedent: 0,
-              montantActuel: 0,
-              montantTotal: 0,
-              updatedAt: new Date()
-            }
-          })
-        }
-        console.log('Lignes créées avec succès')
-      } else {
-        console.log('La commande ne contient pas de lignes')
-      }
-    } else if (lastEtat) {
-      // Pour les états 2+: précédent = lastEtat (fiable), actuel = body (saisie).
-      // On itère sur body.lignes si fourni (ordre et nombre = formulaire), sinon sur lastEtat.
-      const lignesPrecedentes = lastEtat.ligne_soustraitant_etat_avancement || []
-      const sourceLignes = body.lignes && body.lignes.length > 0 ? body.lignes : lignesPrecedentes
-      console.log(`Création état 2+ : source=${body.lignes?.length ? 'body' : 'lastEtat'}, nb lignes=${sourceLignes.length}, lastEtat.lignes=${lignesPrecedentes.length}`)
-
-      for (let i = 0; i < sourceLignes.length; i++) {
-        const source = sourceLignes[i] as {
-          article?: string | null
-          description?: string | null
-          type?: string | null
-          unite?: string | null
-          prixUnitaire?: number
-          quantite?: number
-          quantiteActuelle?: number
-          quantitePrecedente?: number
-          quantiteTotale?: number
-          montantPrecedent?: number
-          montantActuel?: number
-          montantTotal?: number
-        }
-
-        // Trouver la ligne correspondante dans lastEtat (clé description+prix+unite, puis fallback par index)
-        const prevMapped = lignesPrecedentes.map((l) => ({
-          description: l.description,
-          prixUnitaire: l.prixUnitaire,
-          unite: l.unite,
-          quantiteTotale: l.quantiteTotale,
-          montantTotal: l.montantTotal
-        }))
-        const lignePrev = findMatchingLignePrecedente(
-          { description: source.description, prixUnitaire: source.prixUnitaire, unite: source.unite },
-          prevMapped,
-          i
-        ) as { quantiteTotale?: number; montantTotal?: number } | undefined
-
-        const quantitePrecedente = lignePrev ? Number(lignePrev.quantiteTotale) || 0 : (Number(source.quantitePrecedente) || 0)
-        const montantPrecedent = lignePrev ? Number(lignePrev.montantTotal) || 0 : (Number(source.montantPrecedent) || 0)
-        const quantiteActuelle = Number(source.quantiteActuelle) || 0
-        const montantActuel = Number(source.montantActuel) || 0
-
+    // Créer les lignes de l'état d'avancement
+    // PRIORITÉ 1 : body.lignes fourni par le frontend (déjà calculé avec les bons précédents)
+    // PRIORITÉ 2 : commande (état 1 sans données frontend)
+    // PRIORITÉ 3 : copie depuis lastEtat (état 2+ sans données frontend)
+    if (body.lignes && body.lignes.length > 0) {
+      console.log(`Création des ${body.lignes.length} lignes depuis le body (état ${nextNumero})...`)
+      for (const ligne of body.lignes) {
         await prisma.ligne_soustraitant_etat_avancement.create({
           data: {
             soustraitantEtatAvancementId: etatAvancement.id,
-            article: source.article ?? '',
-            description: source.description ?? '',
-            type: (source as { type?: string }).type ?? 'QP',
-            unite: source.unite ?? '',
-            prixUnitaire: Number(source.prixUnitaire) || 0,
-            quantite: Number(source.quantite) || 0,
-            quantitePrecedente,
-            quantiteActuelle,
-            quantiteTotale: quantitePrecedente + quantiteActuelle,
-            montantPrecedent,
-            montantActuel,
-            montantTotal: montantPrecedent + montantActuel,
+            article: ligne.article ?? '',
+            description: ligne.description ?? '',
+            type: ligne.type || 'QP',
+            unite: ligne.unite ?? '',
+            prixUnitaire: Number(ligne.prixUnitaire) || 0,
+            quantite: Number(ligne.quantite) || 0,
+            quantitePrecedente: Number(ligne.quantitePrecedente) || 0,
+            quantiteActuelle: Number(ligne.quantiteActuelle) || 0,
+            quantiteTotale: Number(ligne.quantiteTotale) || 0,
+            montantPrecedent: Number(ligne.montantPrecedent) || 0,
+            montantActuel: Number(ligne.montantActuel) || 0,
+            montantTotal: Number(ligne.montantTotal) || 0,
             updatedAt: new Date()
           }
         })
       }
-
-      console.log('Lignes créées avec succès (précédent=lastEtat, actuel=body)')
-      
-      // Copier ou créer les avenants selon si des données sont fournies dans le body
-      // Pour les avenants existants, reprendre précédent depuis lastEtat (comme les lignes)
-      const avenantsPrecedents = lastEtat.avenant_soustraitant_etat_avancement || []
-
-      if (body.avenants && body.avenants.length > 0) {
-        // Nouveaux avenants ajoutés dans le formulaire : enrichir avec lastEtat si correspondance
-        console.log('Sauvegarde des avenants du body, enrichis par lastEtat...')
-        await Promise.all(body.avenants.map((avenant) => {
-          const match = findMatchingLignePrecedente(avenant, avenantsPrecedents)
-          const quantitePrecedente = match ? Number((match as { quantiteTotale?: number }).quantiteTotale) || 0 : (avenant.quantitePrecedente ?? 0)
-          const montantPrecedent = match ? Number((match as { montantTotal?: number }).montantTotal) || 0 : (avenant.montantPrecedent ?? 0)
-          const quantiteActuelle = Number(avenant.quantiteActuelle) || 0
-          const montantActuel = Number(avenant.montantActuel) || 0
-          return prisma.avenant_soustraitant_etat_avancement.create({
-            data: {
-              soustraitantEtatAvancementId: etatAvancement.id,
-              article: avenant.article || '',
-              description: avenant.description || '',
-              type: avenant.type || 'QP',
-              unite: avenant.unite || 'U',
-              prixUnitaire: avenant.prixUnitaire || 0,
-              quantite: avenant.quantite || 0,
-              quantitePrecedente,
-              quantiteActuelle,
-              quantiteTotale: quantitePrecedente + quantiteActuelle,
-              montantPrecedent,
-              montantActuel,
-              montantTotal: montantPrecedent + montantActuel,
-              updatedAt: new Date()
-            }
-          })
-        }))
-        console.log('Avenants du body sauvegardés avec succès')
-      } else if (lastEtat.avenant_soustraitant_etat_avancement && lastEtat.avenant_soustraitant_etat_avancement.length > 0) {
-        // Copier les avenants du dernier état seulement si aucun avenant n'est fourni dans le body
-        console.log('Copie des avenants du dernier état finalisé...')
-        console.log('Avenants dans dernier état:', lastEtat.avenant_soustraitant_etat_avancement.length)
-        
-        await Promise.all(lastEtat.avenant_soustraitant_etat_avancement.map(avenant =>
-          prisma.avenant_soustraitant_etat_avancement.create({
-            data: {
-              soustraitantEtatAvancementId: etatAvancement.id,
-              article: avenant.article,
-              description: avenant.description,
-              type: avenant.type,
-              unite: avenant.unite,
-              prixUnitaire: avenant.prixUnitaire,
-              quantite: avenant.quantite,
-              // Mettre à jour les valeurs précédentes avec les totales de l'état précédent
-              quantitePrecedente: avenant.quantiteTotale,
-              quantiteActuelle: 0,
-              quantiteTotale: avenant.quantiteTotale, // Commencer avec le total précédent
-              montantPrecedent: avenant.montantTotal,
-              montantActuel: 0,
-              montantTotal: avenant.montantTotal, // Commencer avec le total précédent
-              updatedAt: new Date()
-            }
-          })
-        ))
-        console.log('Avenants copiés avec succès')
-      } else {
-        console.log('Aucun avenant à copier ou à créer')
+      console.log('Lignes créées avec succès à partir du body')
+    } else if (existingEtats === 0 && commande.lignes && commande.lignes.length > 0) {
+      console.log('Premier état sans body, création depuis la commande...')
+      for (const ligne of commande.lignes) {
+        await prisma.ligne_soustraitant_etat_avancement.create({
+          data: {
+            soustraitantEtatAvancementId: etatAvancement.id,
+            article: ligne.article,
+            description: ligne.description,
+            type: ligne.type || 'QP',
+            unite: ligne.unite,
+            prixUnitaire: ligne.prixUnitaire,
+            quantite: ligne.quantite,
+            quantitePrecedente: 0,
+            quantiteActuelle: 0,
+            quantiteTotale: 0,
+            montantPrecedent: 0,
+            montantActuel: 0,
+            montantTotal: 0,
+            updatedAt: new Date()
+          }
+        })
       }
-    } else if (body.avenants && body.avenants.length > 0) {
-      // Pour le premier état, sauvegarder les nouveaux avenants créés (s'il y en a dans le body)
-      console.log('Sauvegarde des nouveaux avenants créés (premier état):', body.avenants.length)
-      
-      await Promise.all(body.avenants.map(avenant =>
-        prisma.avenant_soustraitant_etat_avancement.create({
+      console.log('Lignes créées depuis la commande')
+    } else if (lastEtat) {
+      console.log('État 2+ sans body, copie depuis lastEtat...')
+      for (const ligne of lastEtat.ligne_soustraitant_etat_avancement) {
+        await prisma.ligne_soustraitant_etat_avancement.create({
+          data: {
+            soustraitantEtatAvancementId: etatAvancement.id,
+            article: ligne.article,
+            description: ligne.description,
+            type: ligne.type,
+            unite: ligne.unite,
+            prixUnitaire: ligne.prixUnitaire,
+            quantite: ligne.quantite,
+            quantitePrecedente: ligne.quantiteTotale,
+            quantiteActuelle: 0,
+            quantiteTotale: ligne.quantiteTotale,
+            montantPrecedent: ligne.montantTotal,
+            montantActuel: 0,
+            montantTotal: ligne.montantTotal,
+            updatedAt: new Date()
+          }
+        })
+      }
+      console.log('Lignes copiées depuis lastEtat')
+    } else {
+      console.log('Aucune source de lignes disponible')
+    }
+
+    // Créer les avenants
+    // PRIORITÉ 1 : body.avenants (envoyés par le frontend, valeurs déjà calculées)
+    // PRIORITÉ 2 : copie depuis lastEtat (état 2+ sans données frontend)
+    if (body.avenants && body.avenants.length > 0) {
+      console.log(`Création des ${body.avenants.length} avenants depuis le body...`)
+      for (const avenant of body.avenants) {
+        await prisma.avenant_soustraitant_etat_avancement.create({
           data: {
             soustraitantEtatAvancementId: etatAvancement.id,
             article: avenant.article || '',
             description: avenant.description || '',
             type: avenant.type || 'QP',
             unite: avenant.unite || 'U',
-            prixUnitaire: avenant.prixUnitaire || 0,
-            quantite: avenant.quantite || 0,
-            quantitePrecedente: avenant.quantitePrecedente || 0,
-            quantiteActuelle: avenant.quantiteActuelle || 0,
-            quantiteTotale: avenant.quantiteTotale || 0,
-            montantPrecedent: avenant.montantPrecedent || 0,
-            montantActuel: avenant.montantActuel || 0,
-            montantTotal: avenant.montantTotal || 0,
+            prixUnitaire: Number(avenant.prixUnitaire) || 0,
+            quantite: Number(avenant.quantite) || 0,
+            quantitePrecedente: Number(avenant.quantitePrecedente) || 0,
+            quantiteActuelle: Number(avenant.quantiteActuelle) || 0,
+            quantiteTotale: Number(avenant.quantiteTotale) || 0,
+            montantPrecedent: Number(avenant.montantPrecedent) || 0,
+            montantActuel: Number(avenant.montantActuel) || 0,
+            montantTotal: Number(avenant.montantTotal) || 0,
             updatedAt: new Date()
           }
         })
-      ))
-      
-      console.log('Nouveaux avenants sauvegardés avec succès (premier état)')
+      }
+      console.log('Avenants créés depuis le body')
+    } else if (lastEtat && lastEtat.avenant_soustraitant_etat_avancement && lastEtat.avenant_soustraitant_etat_avancement.length > 0) {
+      console.log(`Copie des ${lastEtat.avenant_soustraitant_etat_avancement.length} avenants depuis lastEtat...`)
+      for (const avenant of lastEtat.avenant_soustraitant_etat_avancement) {
+        await prisma.avenant_soustraitant_etat_avancement.create({
+          data: {
+            soustraitantEtatAvancementId: etatAvancement.id,
+            article: avenant.article,
+            description: avenant.description,
+            type: avenant.type,
+            unite: avenant.unite,
+            prixUnitaire: avenant.prixUnitaire,
+            quantite: avenant.quantite,
+            quantitePrecedente: avenant.quantiteTotale,
+            quantiteActuelle: 0,
+            quantiteTotale: avenant.quantiteTotale,
+            montantPrecedent: avenant.montantTotal,
+            montantActuel: 0,
+            montantTotal: avenant.montantTotal,
+            updatedAt: new Date()
+          }
+        })
+      }
+      console.log('Avenants copiés depuis lastEtat')
     }
 
     // Retourner l'état d'avancement complet avec ses lignes
