@@ -242,17 +242,48 @@ export default function ChantierEtatsPage(props: PageProps) {
     }
   }
 
-  const handleCreateSoustraitantEtat = (sousTraitantId: string) => {
-    console.log('handleCreateSoustraitantEtat appelé avec:', { chantierId, sousTraitantId });
-    if (!chantierId) {
-      console.log('chantierId manquant, abandon');
+  const handleCreateSoustraitantEtat = async (sousTraitantId: string) => {
+    if (!chantierId) return;
+
+    // Trouver la commande verrouillée pour ce sous-traitant
+    const st = sousTraitants.find(s => s.soustraitantId === sousTraitantId);
+    if (!st || !st.commande || !st.commande.estVerrouillee) {
+      toast.error('Commande sous-traitant non trouvée ou non verrouillée');
       return;
     }
-    
-    setShowSelectModal(false);
-    const url = `/chantiers/${chantierId}/etats/soustraitants/${sousTraitantId}/etat/nouveau`;
-    console.log('Redirection vers:', url);
-    router.push(url);
+
+    try {
+      setIsCreating(true);
+      setShowSelectModal(false);
+
+      // Créer l'état directement en DB (comme le workflow client)
+      const response = await fetch(`/api/chantiers/${chantierId}/soustraitants/${sousTraitantId}/etats-avancement`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commandeId: st.commande.id,
+          soustraitantId: sousTraitantId,
+          date: new Date(),
+          estFinalise: false,
+          commentaires: ''
+        })
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Erreur lors de la création');
+      }
+
+      toast.success(`État d'avancement n°${responseData.numero} créé`);
+      // Rediriger vers la page d'édition de l'état créé
+      router.push(`/chantiers/${chantierId}/etats/soustraitants/${sousTraitantId}/etat/nouveau?etatId=${responseData.id}`);
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la création');
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   
