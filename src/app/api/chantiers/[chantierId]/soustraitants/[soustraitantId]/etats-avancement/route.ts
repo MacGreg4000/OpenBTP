@@ -403,48 +403,54 @@ export async function POST(
         console.log('La commande ne contient pas de lignes')
       }
     } else if (lastEtat) {
-      // Pour les états 2+:
-      // - quantitePrecedente/montantPrecedent = TOUJOURS depuis lastEtat (fiable, comme états client)
-      // - quantiteActuelle/montantActuel = depuis body.lignes si fourni (saisie utilisateur)
-      const lignesPrecedentes = lastEtat.ligne_soustraitant_etat_avancement
-      console.log(`Création état 2+ : ${lignesPrecedentes.length} lignes depuis lastEtat, body.lignes: ${body.lignes?.length || 0}`)
+      // Pour les états 2+: précédent = lastEtat (fiable), actuel = body (saisie).
+      // On itère sur body.lignes si fourni (ordre et nombre = formulaire), sinon sur lastEtat.
+      const lignesPrecedentes = lastEtat.ligne_soustraitant_etat_avancement || []
+      const sourceLignes = body.lignes && body.lignes.length > 0 ? body.lignes : lignesPrecedentes
+      console.log(`Création état 2+ : source=${body.lignes?.length ? 'body' : 'lastEtat'}, nb lignes=${sourceLignes.length}, lastEtat.lignes=${lignesPrecedentes.length}`)
 
-      for (let i = 0; i < lignesPrecedentes.length; i++) {
-        const lignePrev = lignesPrecedentes[i]
-
-        // Chercher la saisie utilisateur dans body.lignes (par index d'abord, puis par matching)
-        let quantiteActuelle = 0
-        let montantActuel = 0
-        if (body.lignes && body.lignes.length > 0) {
-          // Matching par index (ordre identique commande → état)
-          let bodyLigne = body.lignes[i]
-          // Fallback: matching par description+prix+unite si l'index ne correspond pas
-          if (!bodyLigne || bodyLigne.description?.trim().toLowerCase() !== lignePrev.description?.trim().toLowerCase()) {
-            bodyLigne = body.lignes.find((bl: { description?: string; prixUnitaire?: number; unite?: string }) => {
-              const dMatch = (bl.description ?? '').trim().toLowerCase() === (lignePrev.description ?? '').trim().toLowerCase()
-              const pMatch = Math.abs((Number(bl.prixUnitaire) || 0) - (Number(lignePrev.prixUnitaire) || 0)) < 0.01
-              const uMatch = (bl.unite ?? '').trim().toLowerCase() === (lignePrev.unite ?? '').trim().toLowerCase()
-              return dMatch && pMatch && uMatch
-            })
-          }
-          if (bodyLigne) {
-            quantiteActuelle = Number(bodyLigne.quantiteActuelle) || 0
-            montantActuel = Number(bodyLigne.montantActuel) || 0
-          }
+      for (let i = 0; i < sourceLignes.length; i++) {
+        const source = sourceLignes[i] as {
+          article?: string | null
+          description?: string | null
+          type?: string | null
+          unite?: string | null
+          prixUnitaire?: number
+          quantite?: number
+          quantiteActuelle?: number
+          quantitePrecedente?: number
+          quantiteTotale?: number
+          montantPrecedent?: number
+          montantActuel?: number
+          montantTotal?: number
         }
 
-        const quantitePrecedente = Number(lignePrev.quantiteTotale) || 0
-        const montantPrecedent = Number(lignePrev.montantTotal) || 0
+        // Trouver la ligne correspondante dans lastEtat pour précédent (description + prix + unite)
+        const lignePrev = findMatchingLignePrecedente(
+          { description: source.description, prixUnitaire: source.prixUnitaire, unite: source.unite },
+          lignesPrecedentes.map((l) => ({
+            description: l.description,
+            prixUnitaire: l.prixUnitaire,
+            unite: l.unite,
+            quantiteTotale: l.quantiteTotale,
+            montantTotal: l.montantTotal
+          }))
+        ) as { quantiteTotale?: number; montantTotal?: number } | undefined
+
+        const quantitePrecedente = lignePrev ? Number(lignePrev.quantiteTotale) || 0 : (Number(source.quantitePrecedente) || 0)
+        const montantPrecedent = lignePrev ? Number(lignePrev.montantTotal) || 0 : (Number(source.montantPrecedent) || 0)
+        const quantiteActuelle = Number(source.quantiteActuelle) || 0
+        const montantActuel = Number(source.montantActuel) || 0
 
         await prisma.ligne_soustraitant_etat_avancement.create({
           data: {
             soustraitantEtatAvancementId: etatAvancement.id,
-            article: lignePrev.article,
-            description: lignePrev.description,
-            type: lignePrev.type,
-            unite: lignePrev.unite,
-            prixUnitaire: lignePrev.prixUnitaire,
-            quantite: lignePrev.quantite,
+            article: source.article ?? '',
+            description: source.description ?? '',
+            type: (source as { type?: string }).type ?? 'QP',
+            unite: source.unite ?? '',
+            prixUnitaire: Number(source.prixUnitaire) || 0,
+            quantite: Number(source.quantite) || 0,
             quantitePrecedente,
             quantiteActuelle,
             quantiteTotale: quantitePrecedente + quantiteActuelle,
