@@ -108,28 +108,32 @@ export async function PUT(
     })
     const ancienStatut = ancienChantier?.statut
 
-    // Mise à jour du chantier avec gestion des différents formats de champs
+    // Mise à jour du chantier – seuls les champs EXPLICITEMENT fournis dans le body sont modifiés.
+    // Cela évite d'écraser des champs (ex: clientId) quand on ne met à jour que le statut.
+    const data: Record<string, unknown> = {}
+
+    if (body.nomChantier !== undefined)              data.nomChantier = body.nomChantier
+    if (body.numeroIdentification !== undefined)     data.numeroIdentification = body.numeroIdentification || null
+    if (dateDebut !== undefined && dateDebut !== null) data.dateDebut = dateDebut
+    else if (body.dateDebut === null || body.dateCommencement === null) data.dateDebut = null
+    if (statut !== undefined && statut !== null)      data.statut = statut
+    if (body.adresseChantier !== undefined)           data.adresseChantier = body.adresseChantier
+    if (body.villeChantier !== undefined)             data.villeChantier = body.villeChantier
+    if (body.dureeEnJours !== undefined)              data.dureeEnJours = body.dureeEnJours ? parseInt(body.dureeEnJours) : null
+    if (body.clientId !== undefined)                  data.clientId = body.clientId || null
+    if (body.contactId !== undefined)                 data.contactId = body.contactId || null
+    if (body.budget !== undefined)                    data.budget = body.budget ? parseFloat(body.budget) : null
+    if (body.typeDuree !== undefined)                 data.typeDuree = body.typeDuree || 'CALENDRIER'
+    if (body.maitreOuvrageNom !== undefined)          data.maitreOuvrageNom = body.maitreOuvrageNom || null
+    if (body.maitreOuvrageAdresse !== undefined)      data.maitreOuvrageAdresse = body.maitreOuvrageAdresse || null
+    if (body.maitreOuvrageLocalite !== undefined)     data.maitreOuvrageLocalite = body.maitreOuvrageLocalite || null
+    if (body.bureauArchitectureNom !== undefined)     data.bureauArchitectureNom = body.bureauArchitectureNom || null
+    if (body.bureauArchitectureAdresse !== undefined) data.bureauArchitectureAdresse = body.bureauArchitectureAdresse || null
+    if (body.bureauArchitectureLocalite !== undefined) data.bureauArchitectureLocalite = body.bureauArchitectureLocalite || null
+
     const chantier = await prisma.chantier.update({
       where: { chantierId: chantierId },
-      data: {
-        nomChantier: body.nomChantier,
-        numeroIdentification: body.numeroIdentification || null,
-        dateDebut: dateDebut,
-        statut: statut,
-        adresseChantier: body.adresseChantier,
-        villeChantier: body.villeChantier,
-        dureeEnJours: body.dureeEnJours ? parseInt(body.dureeEnJours) : null,
-        clientId: body.clientId || null,
-        contactId: body.contactId || null,
-        budget: body.budget ? parseFloat(body.budget) : null,
-        typeDuree: body.typeDuree || 'CALENDRIER',
-        maitreOuvrageNom: body.maitreOuvrageNom || null,
-        maitreOuvrageAdresse: body.maitreOuvrageAdresse || null,
-        maitreOuvrageLocalite: body.maitreOuvrageLocalite || null,
-        bureauArchitectureNom: body.bureauArchitectureNom || null,
-        bureauArchitectureAdresse: body.bureauArchitectureAdresse || null,
-        bureauArchitectureLocalite: body.bureauArchitectureLocalite || null
-      }
+      data
     })
 
     console.log("Chantier mis à jour:", chantier);
