@@ -692,6 +692,14 @@ export default function NouveauDevisPage() {
   )
 }
 
+// Normalise une saisie décimale (virgule → point) et retourne le float ou null si invalide
+function parseDecimalInput(raw: string): number | null {
+  const normalized = raw.replace(',', '.').trim()
+  if (normalized === '' || normalized === '.' || normalized === '-') return null
+  const n = parseFloat(normalized)
+  return isNaN(n) ? null : n
+}
+
 // Composant pour une ligne de devis
 function LigneDevisRow({ 
   index,
@@ -709,6 +717,16 @@ function LigneDevisRow({
   const ref = useRef<HTMLTableRowElement>(null)
   const dragRef = useRef<HTMLDivElement>(null)
   const isSectionHeader = ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE'
+
+  // États locaux pour la saisie brute des champs numériques (autorise virgule + saisie intermédiaire)
+  const [rawQuantite, setRawQuantite] = useState(String(ligne.quantite))
+  const [rawPrix, setRawPrix] = useState(String(ligne.prixUnitaire))
+  const [rawRemise, setRawRemise] = useState(String(ligne.remise))
+
+  // Synchroniser si le parent modifie la valeur depuis l'extérieur
+  useEffect(() => { setRawQuantite(String(ligne.quantite)) }, [ligne.quantite])
+  useEffect(() => { setRawPrix(String(ligne.prixUnitaire)) }, [ligne.prixUnitaire])
+  useEffect(() => { setRawRemise(String(ligne.remise)) }, [ligne.remise])
 
   type DragItem = { id: string; index: number; type: 'ligne-devis' }
 
@@ -846,30 +864,43 @@ function LigneDevisRow({
       </td>
       <td className="px-3 py-2">
         <input
-          type="number"
-          step="0.01"
-          value={ligne.quantite}
-          onChange={(e) => onUpdate(ligne.id, 'quantite', parseFloat(e.target.value) || 0)}
+          type="text"
+          inputMode="decimal"
+          value={rawQuantite}
+          onChange={(e) => setRawQuantite(e.target.value)}
+          onBlur={() => {
+            const n = parseDecimalInput(rawQuantite) ?? 0
+            setRawQuantite(String(n))
+            onUpdate(ligne.id, 'quantite', n)
+          }}
           className="w-full px-2 py-1.5 text-sm text-center border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
         />
       </td>
       <td className="px-3 py-2">
         <input
-          type="number"
-          step="0.01"
-          value={ligne.prixUnitaire}
-          onChange={(e) => onUpdate(ligne.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
+          type="text"
+          inputMode="decimal"
+          value={rawPrix}
+          onChange={(e) => setRawPrix(e.target.value)}
+          onBlur={() => {
+            const n = parseDecimalInput(rawPrix) ?? 0
+            setRawPrix(String(n))
+            onUpdate(ligne.id, 'prixUnitaire', n)
+          }}
           className="w-full px-2 py-1.5 text-sm text-right border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
         />
       </td>
       <td className="px-3 py-2">
         <input
-          type="number"
-          step="0.01"
-          min="0"
-          max="100"
-          value={ligne.remise}
-          onChange={(e) => onUpdate(ligne.id, 'remise', e.target.value)}
+          type="text"
+          inputMode="decimal"
+          value={rawRemise}
+          onChange={(e) => setRawRemise(e.target.value)}
+          onBlur={() => {
+            const n = Math.min(100, Math.max(0, parseDecimalInput(rawRemise) ?? 0))
+            setRawRemise(String(n))
+            onUpdate(ligne.id, 'remise', n)
+          }}
           className="w-20 px-2 py-1 text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-orange-500"
         />
       </td>
