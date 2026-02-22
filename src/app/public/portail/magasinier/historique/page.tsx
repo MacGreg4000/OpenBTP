@@ -65,15 +65,15 @@ export default function MagasinierHistoriquePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-amber-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-100">
-      <header className="bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <header className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
         <div className="p-4 flex items-center justify-between">
           <button onClick={handleLogout} className="inline-flex items-center text-white/90 hover:text-white">
             <ArrowLeftIcon className="h-5 w-5 mr-1" />
@@ -84,17 +84,17 @@ export default function MagasinierHistoriquePage() {
         </div>
       </header>
 
-      <nav className="flex border-b border-amber-200/50 bg-white/80">
+      <nav className="flex border-b border-gray-200 bg-white shadow-sm">
         <button
           onClick={() => router.push('/public/portail/magasinier/taches')}
-          className="flex-1 py-3 font-medium text-gray-600 hover:text-amber-600"
+          className="flex-1 py-3 font-medium text-gray-600 hover:text-blue-600 transition-colors"
         >
           <ClipboardDocumentListIcon className="h-5 w-5 inline mr-2" />
           Mes tâches
         </button>
         <button
           onClick={() => router.push('/public/portail/magasinier/historique')}
-          className="flex-1 py-3 font-medium text-amber-700 border-b-2 border-amber-600"
+          className="flex-1 py-3 font-medium text-blue-700 border-b-2 border-blue-600"
         >
           <ClockIcon className="h-5 w-5 inline mr-2" />
           Historique
@@ -107,7 +107,7 @@ export default function MagasinierHistoriquePage() {
           {taches.map((t) => (
             <div
               key={t.id}
-              className="bg-white rounded-xl p-4 shadow border border-amber-100"
+              className="bg-white rounded-xl p-4 shadow border border-gray-100"
             >
               <div className="flex items-start gap-2">
                 <CheckCircleIcon className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
@@ -137,7 +137,7 @@ export default function MagasinierHistoriquePage() {
             </div>
           ))}
           {taches.length === 0 && (
-            <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-amber-100">
+            <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-100">
               Aucune tâche validée
             </div>
           )}

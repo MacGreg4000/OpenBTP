@@ -53,20 +53,20 @@ export default function MagasinierLoginPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-600 to-orange-700 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-blue-600 to-indigo-700 text-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-600 to-orange-700 text-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-b from-blue-600 to-indigo-700 text-white flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white/10 backdrop-blur rounded-2xl p-6">
         <div className="flex items-center mb-4">
           <LockClosedIcon className="h-6 w-6 mr-2" />
           <h1 className="text-xl font-semibold">Portail Magasinier</h1>
         </div>
-        <p className="text-sm text-amber-100 mb-4">{t('enter_pin')}</p>
+        <p className="text-sm text-blue-100 mb-4">{t('enter_pin')}</p>
         <form onSubmit={onSubmit} className="space-y-3">
           <input
             inputMode="numeric"
@@ -81,7 +81,7 @@ export default function MagasinierLoginPage() {
           <button
             type="submit"
             disabled={loading || pin.length < 4}
-            className="w-full bg-white text-amber-700 rounded-lg py-3 font-medium disabled:opacity-60"
+            className="w-full bg-white text-blue-700 rounded-lg py-3 font-medium disabled:opacity-60"
           >
             {loading ? '...' : t('connect')}
           </button>

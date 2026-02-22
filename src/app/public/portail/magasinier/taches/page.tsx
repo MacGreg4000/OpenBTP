@@ -1,15 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeftIcon,
   ClipboardDocumentListIcon,
   ClockIcon,
   CheckCircleIcon,
-  CameraIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon
+  CameraIcon
 } from '@heroicons/react/24/outline'
 import { usePortalI18n } from '../../i18n'
 import Image from 'next/image'
@@ -28,9 +26,7 @@ export default function MagasinierTachesPage() {
   const { t } = usePortalI18n()
   const [me, setMe] = useState<{ magasinier: { id: string; nom: string }; tachesAFaire: number } | null>(null)
   const [taches, setTaches] = useState<Tache[]>([])
-  const [dateDebut, setDateDebut] = useState<Date | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedDate, setSelectedDate] = useState(() => new Date())
   const [validatingId, setValidatingId] = useState<string | null>(null)
   const [modalTache, setModalTache] = useState<Tache | null>(null)
   const [modalPhotos, setModalPhotos] = useState<File[]>([])
@@ -47,7 +43,8 @@ export default function MagasinierTachesPage() {
         const meData = await meRes.json()
         setMe(meData)
 
-        const dateStr = selectedDate.toISOString().slice(0, 10)
+        const today = new Date()
+        const dateStr = today.toISOString().slice(0, 10)
         const tRes = await fetch(
           `/api/public/portail/magasinier/taches?vue=a_faire&date=${dateStr}&jours=14`,
           { credentials: 'include' }
@@ -55,7 +52,6 @@ export default function MagasinierTachesPage() {
         if (tRes.ok) {
           const data = await tRes.json()
           setTaches(data.taches || [])
-          if (data.dateDebut) setDateDebut(new Date(data.dateDebut))
         }
       } catch {
         router.replace('/public/portail/magasinier')
@@ -64,35 +60,43 @@ export default function MagasinierTachesPage() {
       }
     }
     load()
-  }, [router, selectedDate])
+  }, [router])
 
   const handleLogout = () => {
     fetch('/api/public/portail/logout', { method: 'POST' })
     router.replace('/public/portail/magasinier')
   }
 
-  const formatDate = (d: Date) => d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-  const isToday = (d: Date) =>
-    d.getDate() === new Date().getDate() &&
-    d.getMonth() === new Date().getMonth() &&
-    d.getFullYear() === new Date().getFullYear()
-
-  const changeDay = (delta: number) => {
-    setSelectedDate((prev) => {
-      const next = new Date(prev)
-      next.setDate(next.getDate() + delta)
-      return next
-    })
+  const today = new Date()
+  const locale = 'fr-FR'
+  const localDateKey = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${dd}`
   }
+  const weekdayOf = (d: Date) => d.toLocaleDateString(locale, { weekday: 'long' })
+  const monthYearOf = (d: Date) => d.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
 
-  const tachesForDay = taches.filter((t) => {
-    const exec = new Date(t.dateExecution)
-    return (
-      exec.getDate() === selectedDate.getDate() &&
-      exec.getMonth() === selectedDate.getMonth() &&
-      exec.getFullYear() === selectedDate.getFullYear()
-    )
-  })
+  // Regrouper les tâches par jour.
+  // Les tâches dont la dateExecution est dans le passé sont remontées à aujourd'hui.
+  const groupsMap = useMemo(() => {
+    const todayKey = localDateKey(today)
+    const map = new Map<string, Tache[]>()
+    taches.forEach((t) => {
+      const exec = new Date(t.dateExecution)
+      const key = localDateKey(exec)
+      // Si la date est passée (avant aujourd'hui), on regroupe sous aujourd'hui
+      const effectiveKey = key < todayKey ? todayKey : key
+      const arr = map.get(effectiveKey) || []
+      arr.push(t)
+      map.set(effectiveKey, arr)
+    })
+    for (const [, arr] of map.entries()) {
+      arr.sort((a, b) => new Date(a.dateExecution).getTime() - new Date(b.dateExecution).getTime())
+    }
+    return map
+  }, [taches])
 
   const handleOpenValider = (tache: Tache) => {
     setModalTache(tache)
@@ -152,15 +156,15 @@ export default function MagasinierTachesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-amber-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-100">
-      <header className="bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <header className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
         <div className="p-4 flex items-center justify-between">
           <button onClick={handleLogout} className="inline-flex items-center text-white/90 hover:text-white">
             <ArrowLeftIcon className="h-5 w-5 mr-1" />
@@ -176,17 +180,17 @@ export default function MagasinierTachesPage() {
         </div>
       </header>
 
-      <nav className="flex border-b border-amber-200/50 bg-white/80">
+      <nav className="flex border-b border-gray-200 bg-white shadow-sm">
         <button
           onClick={() => router.push('/public/portail/magasinier/taches')}
-          className="flex-1 py-3 font-medium text-amber-700 border-b-2 border-amber-600"
+          className="flex-1 py-3 font-medium text-blue-700 border-b-2 border-blue-600"
         >
           <ClipboardDocumentListIcon className="h-5 w-5 inline mr-2" />
           Mes tâches
         </button>
         <button
           onClick={() => router.push('/public/portail/magasinier/historique')}
-          className="flex-1 py-3 font-medium text-gray-600 hover:text-amber-600"
+          className="flex-1 py-3 font-medium text-gray-600 hover:text-blue-600 transition-colors"
         >
           <ClockIcon className="h-5 w-5 inline mr-2" />
           Historique
@@ -194,62 +198,76 @@ export default function MagasinierTachesPage() {
       </nav>
 
       <div className="p-4 max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => changeDay(-1)}
-            className="p-2 rounded-full bg-white shadow hover:bg-amber-50"
-          >
-            <ChevronLeftIcon className="h-6 w-6 text-amber-700" />
-          </button>
-          <div className="text-center">
-            <div className={`font-bold ${isToday(selectedDate) ? 'text-amber-700' : 'text-gray-800'}`}>
-              {formatDate(selectedDate)}
-            </div>
-            {isToday(selectedDate) && (
-              <div className="text-sm text-amber-600 font-medium">Aujourd&apos;hui</div>
-            )}
-          </div>
-          <button
-            onClick={() => changeDay(1)}
-            className="p-2 rounded-full bg-white shadow hover:bg-amber-50"
-          >
-            <ChevronRightIcon className="h-6 w-6 text-amber-700" />
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {tachesForDay.map((t) => (
-            <div
-              key={t.id}
-              className="bg-white rounded-xl p-4 shadow border border-amber-100"
-            >
-              <h3 className="font-semibold text-gray-900">{t.titre}</h3>
-              {t.description && (
-                <p className="text-sm text-gray-600 mt-1">{t.description}</p>
-              )}
-              {t.photos?.length > 0 && (
-                <div className="flex gap-1 mt-2 overflow-x-auto">
-                  {t.photos.map((p) => (
-                    <div key={p.id} className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={p.url} alt="" fill className="object-cover" sizes="56px" />
-                    </div>
-                  ))}
+        <div className="space-y-4">
+          {Array.from({ length: 14 }).map((_, idx) => {
+            const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + idx)
+            const key = localDateKey(d)
+            const dayTasks = groupsMap.get(key) || []
+            const isTodayDate =
+              d.getDate() === today.getDate() &&
+              d.getMonth() === today.getMonth() &&
+              d.getFullYear() === today.getFullYear()
+            return (
+              <div key={key} className="flex items-stretch gap-3">
+                {/* Colonne gauche: carte calendrier */}
+                <div className="flex-shrink-0 bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+                  <div
+                    className={`px-3 py-2 text-center text-[10px] uppercase tracking-wide text-white ${
+                      isTodayDate ? 'bg-blue-600' : 'bg-blue-400'
+                    }`}
+                  >
+                    {weekdayOf(d)}
+                  </div>
+                  <div className="px-4 py-2 text-center">
+                    <div className="text-4xl font-bold text-gray-900 leading-none">{d.getDate()}</div>
+                    <div className="text-[11px] text-gray-500 -mt-0.5">{monthYearOf(d)}</div>
+                    {isTodayDate && (
+                      <div className="text-[10px] font-medium text-blue-600 mt-0.5">Aujourd&apos;hui</div>
+                    )}
+                  </div>
                 </div>
-              )}
-              <button
-                onClick={() => handleOpenValider(t)}
-                className="mt-3 w-full py-3 bg-amber-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-amber-700"
-              >
-                <CheckCircleIcon className="h-5 w-5" />
-                Marquer comme fait
-              </button>
-            </div>
-          ))}
-          {tachesForDay.length === 0 && (
-            <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-amber-100">
-              Aucune tâche pour ce jour
-            </div>
-          )}
+                {/* Colonne droite: tâches du jour */}
+                <div className="flex-1 space-y-2">
+                  {dayTasks.length === 0 ? (
+                    <div className="bg-white rounded-xl p-4 shadow border border-gray-100 text-gray-400 text-sm min-h-[80px] flex items-center justify-center">
+                      —
+                    </div>
+                  ) : (
+                    dayTasks.map((t) => (
+                      <div
+                        key={t.id}
+                        className="bg-white rounded-xl p-4 shadow border border-gray-100"
+                      >
+                        <h3 className="font-semibold text-gray-900">{t.titre}</h3>
+                        {t.description && (
+                          <p className="text-sm text-gray-600 mt-1">{t.description}</p>
+                        )}
+                        {t.photos?.length > 0 && (
+                          <div className="flex gap-1 mt-2 overflow-x-auto">
+                            {t.photos.map((p) => (
+                              <div
+                                key={p.id}
+                                className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"
+                              >
+                                <Image src={p.url} alt="" fill className="object-cover" sizes="56px" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleOpenValider(t)}
+                          className="mt-3 w-full py-3 bg-blue-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-[0.99] transition"
+                        >
+                          <CheckCircleIcon className="h-5 w-5" />
+                          Marquer comme fait
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -287,7 +305,7 @@ export default function MagasinierTachesPage() {
                 />
                 <label
                   htmlFor="mag-photo-input"
-                  className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-amber-300 rounded-lg text-amber-700 cursor-pointer hover:bg-amber-50"
+                  className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-blue-300 rounded-lg text-blue-700 cursor-pointer hover:bg-blue-50 transition-colors"
                 >
                   <CameraIcon className="h-5 w-5" />
                   {modalPhotos.length > 0 ? `${modalPhotos.length} photo(s)` : 'Photo (appareil ou bibliothèque)'}
@@ -303,7 +321,7 @@ export default function MagasinierTachesPage() {
                 <button
                   onClick={handleValider}
                   disabled={validatingId === modalTache.id}
-                  className="flex-1 py-3 rounded-lg bg-amber-600 text-white font-medium disabled:opacity-60"
+                  className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium disabled:opacity-60 hover:bg-blue-700 transition-colors"
                 >
                   {validatingId === modalTache.id ? '...' : 'Valider'}
                 </button>
