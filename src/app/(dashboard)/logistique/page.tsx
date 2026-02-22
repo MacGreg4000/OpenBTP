@@ -14,7 +14,11 @@ import {
   ListBulletIcon,
   TrashIcon,
   LockClosedIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  KeyIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
 import Image from 'next/image'
@@ -56,6 +60,11 @@ export default function LogistiquePage() {
   const [filterMagasinier, setFilterMagasinier] = useState('')
   const [filterStatut, setFilterStatut] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Gestion PIN magasinier inline
+  const [pinState, setPinState] = useState<Record<string, {pin: string; visible: boolean; loading: boolean; saving: boolean; loaded: boolean}>>({})
+  const [editMagId, setEditMagId] = useState<string | null>(null)
+  const [editMagNom, setEditMagNom] = useState('')
+  const [savingMagNom, setSavingMagNom] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -176,6 +185,65 @@ export default function LogistiquePage() {
     e.target.value = ''
   }
 
+  const loadPin = async (magId: string) => {
+    if (pinState[magId]?.loaded) return
+    setPinState(prev => ({...prev, [magId]: {pin:'', visible:false, loading:true, saving:false, loaded:false}}))
+    try {
+      const res = await fetch(`/api/magasiniers/${magId}/pin`)
+      const data = await res.json()
+      setPinState(prev => ({...prev, [magId]: {pin: data.pin || '', visible:false, loading:false, saving:false, loaded:true}}))
+    } catch {
+      setPinState(prev => ({...prev, [magId]: {pin:'', visible:false, loading:false, saving:false, loaded:true}}))
+    }
+  }
+
+  const savePin = async (magId: string) => {
+    const ps = pinState[magId]
+    if (!ps) return
+    const pin = ps.pin.replace(/\D/g,'')
+    if (pin.length < 4) { alert('PIN doit contenir au moins 4 chiffres'); return }
+    setPinState(prev => ({...prev, [magId]: {...prev[magId], saving:true}}))
+    try {
+      const res = await fetch(`/api/magasiniers/${magId}/pin`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ pin })
+      })
+      if (res.ok) {
+        setPinState(prev => ({...prev, [magId]: {...prev[magId], saving:false, pin}}))
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Erreur PIN')
+        setPinState(prev => ({...prev, [magId]: {...prev[magId], saving:false}}))
+      }
+    } catch {
+      alert('Erreur réseau')
+      setPinState(prev => ({...prev, [magId]: {...prev[magId], saving:false}}))
+    }
+  }
+
+  const handleSaveMagNom = async (magId: string) => {
+    if (!editMagNom.trim()) return
+    setSavingMagNom(true)
+    try {
+      const res = await fetch(`/api/magasiniers/${magId}`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ nom: editMagNom.trim() })
+      })
+      if (res.ok) {
+        setMagasiniers(prev => prev.map(m => m.id === magId ? {...m, nom: editMagNom.trim()} : m))
+        setEditMagId(null)
+      } else {
+        alert('Erreur lors de la mise à jour')
+      }
+    } catch {
+      alert('Erreur réseau')
+    } finally {
+      setSavingMagNom(false)
+    }
+  }
+
   const formatDate = (s: string) => new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 
   const portailUrl = typeof window !== 'undefined' ? `${window.location.origin}/public/portail/magasinier` : ''
@@ -283,30 +351,128 @@ export default function LogistiquePage() {
                 </form>
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
                   <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Liste des magasiniers</h2>
-                  <div className="space-y-3">
-                    {magasiniers.map((m) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50"
-                      >
-                        <div>
-                          <span className="font-medium text-gray-900 dark:text-white">{m.nom}</span>
-                          {m._count != null && (
-                            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                              {m._count.taches} tâche(s)
-                            </span>
+                  <div className="space-y-4">
+                    {magasiniers.map((m) => {
+                      const ps = pinState[m.id]
+                      return (
+                        <div key={m.id} className="rounded-xl bg-gray-50 dark:bg-gray-700/50 overflow-hidden">
+                          {/* En-tête magasinier */}
+                          <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {editMagId === m.id ? (
+                                <div className="flex items-center gap-2 flex-1">
+                                  <input
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-600 dark:bg-gray-700 dark:text-white text-sm"
+                                    value={editMagNom}
+                                    onChange={e => setEditMagNom(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') handleSaveMagNom(m.id); if (e.key === 'Escape') setEditMagId(null) }}
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleSaveMagNom(m.id)}
+                                    disabled={savingMagNom}
+                                    className="px-3 py-1.5 text-xs bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                                  >
+                                    {savingMagNom ? '...' : 'OK'}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditMagId(null)}
+                                    className="px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="font-medium text-gray-900 dark:text-white">{m.nom}</span>
+                                  {m._count != null && (
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">{m._count.taches} tâche(s)</span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                              {editMagId !== m.id && (
+                                <button
+                                  onClick={() => { setEditMagId(m.id); setEditMagNom(m.nom) }}
+                                  className="p-1.5 text-gray-400 hover:text-amber-600 rounded transition-colors"
+                                  title="Renommer"
+                                >
+                                  <PencilSquareIcon className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  if (ps?.loaded) {
+                                    setPinState(prev => {
+                                      const next = {...prev}
+                                      delete next[m.id]
+                                      return next
+                                    })
+                                  } else {
+                                    loadPin(m.id)
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                                title="Gérer le PIN"
+                              >
+                                <KeyIcon className="h-3.5 w-3.5" />
+                                PIN
+                              </button>
+                              <a
+                                href={portailUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-amber-600 dark:text-amber-400 hover:underline"
+                              >
+                                Portail
+                              </a>
+                            </div>
+                          </div>
+
+                          {/* Section PIN (visible si ouvert) */}
+                          {ps && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 px-4 py-3 bg-amber-50/50 dark:bg-amber-900/10">
+                              {ps.loading ? (
+                                <p className="text-sm text-gray-500">Chargement du PIN...</p>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <KeyIcon className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                                  <div className="relative flex-1 max-w-xs">
+                                    <input
+                                      type={ps.visible ? 'text' : 'password'}
+                                      inputMode="numeric"
+                                      maxLength={8}
+                                      value={ps.pin}
+                                      onChange={e => setPinState(prev => ({...prev, [m.id]: {...prev[m.id], pin: e.target.value.replace(/\D/g,'') }}))}
+                                      placeholder="4-8 chiffres"
+                                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm pr-8"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => setPinState(prev => ({...prev, [m.id]: {...prev[m.id], visible: !prev[m.id].visible}}))}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                      {ps.visible
+                                        ? <EyeSlashIcon className="h-4 w-4" />
+                                        : <EyeIcon className="h-4 w-4" />
+                                      }
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => savePin(m.id)}
+                                    disabled={ps.saving}
+                                    className="px-3 py-1.5 text-xs bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 whitespace-nowrap"
+                                  >
+                                    {ps.saving ? '...' : 'Sauver PIN'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
-                        <a
-                          href={`${portailUrl}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-amber-600 dark:text-amber-400 hover:underline"
-                        >
-                          Portail
-                        </a>
-                      </div>
-                    ))}
+                      )
+                    })}
                     {magasiniers.length === 0 && (
                       <p className="text-gray-500 dark:text-gray-400 py-4">Aucun magasinier</p>
                     )}

@@ -146,8 +146,20 @@ export default function SousTraitantsPage() {
   })
   const [generatingContract, setGeneratingContract] = useState<string | null>(null)
   const [sendingContract, setSendingContract] = useState<string | null>(null)
-  const [ouvriersInternes, setOuvriersInternes] = useState<Array<{id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string}>>([])
+  const [ouvriersInternes, setOuvriersInternes] = useState<Array<{id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean}>>([])
   const [newOuvrier, setNewOuvrier] = useState({ prenom:'', nom:'', email:'', telephone:'', poste:'', actif:true })
+  // Modal édition ouvrier interne
+  const [editOuvrierModal, setEditOuvrierModal] = useState<{open: boolean; ouvrier: {id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean} | null}>({open: false, ouvrier: null})
+  const [editOuvrierForm, setEditOuvrierForm] = useState({prenom:'', nom:'', poste:'', email:'', telephone:'', actif:true})
+  const [savingOuvrier, setSavingOuvrier] = useState(false)
+  // Magasiniers
+  const [magasiniers, setMagasiniers] = useState<Array<{id:string; nom:string; actif:boolean; _count?:{taches:number}}>>([])
+  const [newMagasinierNomST, setNewMagasinierNomST] = useState('')
+  const [newMagasinierPinST, setNewMagasinierPinST] = useState('')
+  const [savingMagasinierST, setSavingMagasinierST] = useState(false)
+  const [editMagModal, setEditMagModal] = useState<{open: boolean; mag: {id:string; nom:string; actif:boolean} | null; pin:string; pinVisible:boolean; loadingPin:boolean; savingPin:boolean}>({open:false, mag:null, pin:'', pinVisible:false, loadingPin:false, savingPin:false})
+  const [editMagForm, setEditMagForm] = useState({nom:'', actif:true})
+  const [savingMag, setSavingMag] = useState(false)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [sortField, setSortField] = useState<SortField | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -175,7 +187,12 @@ export default function SousTraitantsPage() {
       // Charger ouvriers internes
       fetch('/api/ouvriers-internes')
         .then(r=>r.json())
-        .then(setOuvriersInternes)
+        .then(data => setOuvriersInternes(Array.isArray(data) ? data : []))
+        .catch(()=>{})
+      // Charger magasiniers
+      fetch('/api/magasiniers')
+        .then(r=>r.json())
+        .then(data => setMagasiniers(Array.isArray(data) ? data : []))
         .catch(()=>{})
     }
   }, [session])
@@ -267,6 +284,145 @@ export default function SousTraitantsPage() {
       showNotification('Erreur', error instanceof Error ? error.message : 'Erreur lors de l\'envoi du contrat', 'error')
     } finally {
       setSendingContract(null)
+    }
+  }
+
+  // Ouvrier interne – édition
+  const openEditOuvrier = (o: {id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean}) => {
+    setEditOuvrierForm({ prenom: o.prenom||'', nom: o.nom||'', poste: o.poste||'', email: o.email||'', telephone: o.telephone||'', actif: o.actif !== false })
+    setEditOuvrierModal({open: true, ouvrier: o})
+  }
+  const handleSaveOuvrier = async () => {
+    if (!editOuvrierModal.ouvrier) return
+    setSavingOuvrier(true)
+    try {
+      const res = await fetch(`/api/ouvriers-internes/${editOuvrierModal.ouvrier.id}`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(editOuvrierForm)
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setOuvriersInternes(prev => prev.map(o => o.id === updated.id ? updated : o))
+        setEditOuvrierModal({open:false, ouvrier:null})
+        showNotification('Succès', 'Ouvrier mis à jour', 'success')
+      } else {
+        showNotification('Erreur', 'Erreur lors de la mise à jour', 'error')
+      }
+    } catch {
+      showNotification('Erreur', 'Erreur réseau', 'error')
+    } finally {
+      setSavingOuvrier(false)
+    }
+  }
+  const handleDeleteOuvrier = async (id: string) => {
+    if (!confirm('Désactiver cet ouvrier ?')) return
+    try {
+      const res = await fetch(`/api/ouvriers-internes/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setOuvriersInternes(prev => prev.filter(o => o.id !== id))
+        showNotification('Succès', 'Ouvrier désactivé', 'success')
+      }
+    } catch {
+      showNotification('Erreur', 'Erreur réseau', 'error')
+    }
+  }
+
+  // Magasinier – création
+  const handleAddMagasinierST = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newMagasinierNomST.trim()) return
+    setSavingMagasinierST(true)
+    try {
+      const res = await fetch('/api/magasiniers', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ nom: newMagasinierNomST.trim(), pin: newMagasinierPinST || undefined })
+      })
+      if (res.ok) {
+        const created = await res.json()
+        setMagasiniers(prev => [...prev, created])
+        setNewMagasinierNomST('')
+        setNewMagasinierPinST('')
+        showNotification('Succès', 'Magasinier ajouté', 'success')
+      } else {
+        const err = await res.json()
+        showNotification('Erreur', err.error || 'Erreur lors de l\'ajout', 'error')
+      }
+    } catch {
+      showNotification('Erreur', 'Erreur réseau', 'error')
+    } finally {
+      setSavingMagasinierST(false)
+    }
+  }
+
+  // Magasinier – ouverture modal édition + chargement PIN
+  const openEditMag = async (mag: {id:string; nom:string; actif:boolean}) => {
+    setEditMagForm({nom: mag.nom, actif: mag.actif})
+    setEditMagModal({open:true, mag, pin:'', pinVisible:false, loadingPin:true, savingPin:false})
+    try {
+      const res = await fetch(`/api/magasiniers/${mag.id}/pin`)
+      const data = await res.json()
+      setEditMagModal(prev => ({...prev, pin: data.pin || '', loadingPin:false}))
+    } catch {
+      setEditMagModal(prev => ({...prev, loadingPin:false}))
+    }
+  }
+  const handleSaveMag = async () => {
+    if (!editMagModal.mag) return
+    setSavingMag(true)
+    try {
+      const res = await fetch(`/api/magasiniers/${editMagModal.mag.id}`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(editMagForm)
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setMagasiniers(prev => prev.map(m => m.id === updated.id ? {...m, ...updated} : m))
+        showNotification('Succès', 'Magasinier mis à jour', 'success')
+      } else {
+        showNotification('Erreur', 'Erreur lors de la mise à jour', 'error')
+      }
+    } catch {
+      showNotification('Erreur', 'Erreur réseau', 'error')
+    } finally {
+      setSavingMag(false)
+    }
+  }
+  const handleSaveMagPin = async () => {
+    if (!editMagModal.mag) return
+    const pin = editMagModal.pin.replace(/\D/g,'')
+    if (pin.length < 4) { showNotification('Erreur', 'PIN doit contenir au moins 4 chiffres', 'error'); return }
+    setEditMagModal(prev => ({...prev, savingPin:true}))
+    try {
+      const res = await fetch(`/api/magasiniers/${editMagModal.mag!.id}/pin`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ pin })
+      })
+      if (res.ok) {
+        showNotification('Succès', 'PIN enregistré', 'success')
+      } else {
+        const err = await res.json()
+        showNotification('Erreur', err.error || 'Erreur PIN', 'error')
+      }
+    } catch {
+      showNotification('Erreur', 'Erreur réseau', 'error')
+    } finally {
+      setEditMagModal(prev => ({...prev, savingPin:false}))
+    }
+  }
+  const handleDeleteMag = async (id: string) => {
+    if (!confirm('Désactiver ce magasinier ?')) return
+    try {
+      const res = await fetch(`/api/magasiniers/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setMagasiniers(prev => prev.filter(m => m.id !== id))
+        showNotification('Succès', 'Magasinier désactivé', 'success')
+      }
+    } catch {
+      showNotification('Erreur', 'Erreur réseau', 'error')
     }
   }
 
@@ -1235,7 +1391,7 @@ export default function SousTraitantsPage() {
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div className="flex space-x-1 justify-end">
                               <a
-                                href={`/public/portail/ouvrier/${o.id}`}
+                                href={`/public/portail/OUVRIER_INTERNE/${o.id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
@@ -1246,24 +1402,141 @@ export default function SousTraitantsPage() {
                               </a>
                               <button
                                 type="button"
-                                className="p-2 text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900 rounded transition-colors"
-                                title="Définir le PIN"
-                                onClick={async (e) => {
-                                  e.stopPropagation()
-                                  const pin = prompt('Nouveau PIN (au moins 4 chiffres)') || ''
-                                  if (pin && pin.replace(/\D/g,'').length>=4) {
-                                    await fetch(`/api/ouvriers-internes/${o.id}/pin`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pin: pin.replace(/\D/g,'') }) })
-                                    showNotification('Succès', 'PIN enregistré', 'success')
-                                  }
-                                }}
+                                className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors"
+                                title="Modifier"
+                                onClick={(e) => { e.stopPropagation(); openEditOuvrier(o) }}
                               >
-                                <KeyIcon className="h-4 w-4" />
+                                <PencilSquareIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900 rounded transition-colors"
+                                title="Désactiver"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteOuvrier(o.id) }}
+                              >
+                                <TrashIcon className="h-4 w-4" />
                               </button>
                             </div>
                           </td>
                         </tr>
                       ))
                     })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+        {/* Magasiniers */}
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Magasiniers</h2>
+
+          {/* Formulaire d'ajout */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+            <form className="flex flex-wrap gap-2 items-end" onSubmit={handleAddMagasinierST}>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom *</label>
+                <input
+                  className="p-2 border rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
+                  placeholder="Nom du magasinier"
+                  value={newMagasinierNomST}
+                  onChange={e => setNewMagasinierNomST(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Code PIN (optionnel)</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={8}
+                  className="p-2 border rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 w-36"
+                  placeholder="4-8 chiffres"
+                  value={newMagasinierPinST}
+                  onChange={e => setNewMagasinierPinST(e.target.value.replace(/\D/g,''))}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={savingMagasinierST || !newMagasinierNomST.trim()}
+                className="px-3 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors disabled:opacity-50"
+              >
+                {savingMagasinierST ? 'Ajout...' : 'Ajouter'}
+              </button>
+            </form>
+          </div>
+
+          {/* Tableau des magasiniers */}
+          {magasiniers.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
+              <UsersIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Aucun magasinier</p>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Nom</th>
+                      <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Statut</th>
+                      <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Tâches</th>
+                      <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Portail</th>
+                      <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-200 pr-4 sm:pr-6">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                    {magasiniers.map((m) => (
+                      <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-200 sm:pl-6">
+                          {m.nom}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            m.actif
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                              : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                          }`}>
+                            {m.actif ? 'Actif' : 'Inactif'}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {m._count?.taches ?? 0}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <a
+                            href="/public/portail/magasinier"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-xs font-medium hover:underline"
+                          >
+                            <GlobeAltIcon className="h-4 w-4" />
+                            Ouvrir
+                          </a>
+                        </td>
+                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          <div className="flex space-x-1 justify-end">
+                            <button
+                              type="button"
+                              className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors"
+                              title="Modifier / gérer le PIN"
+                              onClick={() => openEditMag(m)}
+                            >
+                              <PencilSquareIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900 rounded transition-colors"
+                              title="Désactiver"
+                              onClick={() => handleDeleteMag(m.id)}
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -1279,6 +1552,175 @@ export default function SousTraitantsPage() {
         onConfirm={deleteModal.onConfirm}
         isDeleting={deleteModal.isDeleting}
       />
+
+      {/* Modal édition ouvrier interne */}
+      {editOuvrierModal.open && editOuvrierModal.ouvrier && (
+        <div className="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full shadow-xl space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Modifier l&apos;ouvrier</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prénom</label>
+                <input
+                  className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  value={editOuvrierForm.prenom}
+                  onChange={e => setEditOuvrierForm(prev => ({...prev, prenom: e.target.value}))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
+                <input
+                  className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  value={editOuvrierForm.nom}
+                  onChange={e => setEditOuvrierForm(prev => ({...prev, nom: e.target.value}))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Poste</label>
+                <input
+                  className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  value={editOuvrierForm.poste}
+                  onChange={e => setEditOuvrierForm(prev => ({...prev, poste: e.target.value}))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                <input
+                  type="email"
+                  className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  value={editOuvrierForm.email}
+                  onChange={e => setEditOuvrierForm(prev => ({...prev, email: e.target.value}))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
+                <input
+                  className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  value={editOuvrierForm.telephone}
+                  onChange={e => setEditOuvrierForm(prev => ({...prev, telephone: e.target.value}))}
+                />
+              </div>
+              <div className="flex items-end pb-1">
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editOuvrierForm.actif}
+                    onChange={e => setEditOuvrierForm(prev => ({...prev, actif: e.target.checked}))}
+                    className="rounded border-gray-300 text-blue-600"
+                  />
+                  Actif
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditOuvrierModal({open:false, ouvrier:null})}
+                className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveOuvrier}
+                disabled={savingOuvrier}
+                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {savingOuvrier ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal édition magasinier + PIN */}
+      {editMagModal.open && editMagModal.mag && (
+        <div className="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-xl space-y-5">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Modifier le magasinier</h3>
+
+            {/* Infos générales */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
+                <input
+                  className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  value={editMagForm.nom}
+                  onChange={e => setEditMagForm(prev => ({...prev, nom: e.target.value}))}
+                />
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editMagForm.actif}
+                  onChange={e => setEditMagForm(prev => ({...prev, actif: e.target.checked}))}
+                  className="rounded border-gray-300 text-amber-600"
+                />
+                Actif
+              </label>
+              <button
+                type="button"
+                onClick={handleSaveMag}
+                disabled={savingMag}
+                className="w-full py-2 text-sm text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50"
+              >
+                {savingMag ? 'Enregistrement...' : 'Enregistrer les infos'}
+              </button>
+            </div>
+
+            {/* Gestion PIN */}
+            <div className="border-t dark:border-gray-600 pt-4 space-y-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <KeyIcon className="h-4 w-4 text-amber-600" />
+                Code PIN du portail
+              </h4>
+              {editMagModal.loadingPin ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Chargement...</p>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type={editMagModal.pinVisible ? 'text' : 'password'}
+                      inputMode="numeric"
+                      maxLength={8}
+                      className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white pr-10"
+                      placeholder="4-8 chiffres"
+                      value={editMagModal.pin}
+                      onChange={e => setEditMagModal(prev => ({...prev, pin: e.target.value.replace(/\D/g,'')}))}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditMagModal(prev => ({...prev, pinVisible: !prev.pinVisible}))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <EyeIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveMagPin}
+                    disabled={editMagModal.savingPin}
+                    className="px-3 py-2 text-sm text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {editMagModal.savingPin ? '...' : 'Sauver PIN'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setEditMagModal({open:false, mag:null, pin:'', pinVisible:false, loadingPin:false, savingPin:false})}
+                className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <NotificationComponent />
     </div>
   )
