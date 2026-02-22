@@ -11,7 +11,9 @@ import {
   ArrowRightIcon,
   MagnifyingGlassIcon,
   ArrowRightOnRectangleIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline'
+import { useSession } from 'next-auth/react'
 
 interface Chantier {
   id: string
@@ -26,7 +28,9 @@ interface Chantier {
 
 export default function MobileHomePage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const { selectedChantier, setSelectedChantier } = useSelectedChantier()
+  const isManagerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER'
   const [chantiers, setChantiers] = useState<Chantier[]>([])
   const [filteredChantiers, setFilteredChantiers] = useState<Chantier[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -138,14 +142,26 @@ export default function MobileHomePage() {
               <h1 className="text-2xl font-black">OpenBTP Mobile</h1>
               <p className="text-sm text-blue-100 mt-1">Sélectionnez un chantier</p>
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login?callbackUrl=/mobile' })}
-              className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-white transition-colors duration-200 border border-white/30"
-              title="Déconnexion"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              <span className="text-sm font-medium hidden sm:inline">Déconnexion</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {isManagerOrAdmin && (
+                <button
+                  onClick={() => router.push('/mobile/logistique/tache-rapide')}
+                  className="flex items-center gap-2 px-3 py-2 bg-amber-500/80 hover:bg-amber-500 backdrop-blur-sm rounded-lg text-white transition-colors duration-200 border border-amber-400/50"
+                  title="Nouvelle tâche magasinier"
+                >
+                  <TruckIcon className="h-5 w-5" />
+                  <span className="text-sm font-medium hidden sm:inline">Logistique</span>
+                </button>
+              )}
+              <button
+                onClick={() => signOut({ callbackUrl: '/login?callbackUrl=/mobile' })}
+                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-white transition-colors duration-200 border border-white/30"
+                title="Déconnexion"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                <span className="text-sm font-medium hidden sm:inline">Déconnexion</span>
+              </button>
+            </div>
           </div>
 
           {/* Chantier actuellement sélectionné */}
