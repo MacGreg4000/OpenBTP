@@ -1427,7 +1427,6 @@ export default function SousTraitantsPage() {
             </div>
           )}
         </div>
-      </div>
 
         {/* Magasiniers */}
         <div className="mt-12">

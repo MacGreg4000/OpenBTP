@@ -108,6 +108,7 @@
     "@types/signature_pad": "^2.3.6",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "10.4.21",
+    "baseline-browser-mapping": "^2.10.0",
     "eslint": "9.27.0",
     "eslint-config-next": "15.2.4",
     "glob": "^11.1.0",
