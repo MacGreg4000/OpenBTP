@@ -535,7 +535,6 @@ export default function LogistiquePage() {
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
-                      capture="environment"
                       multiple
                       onChange={handlePhotoCapture}
                       className="hidden"

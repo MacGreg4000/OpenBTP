@@ -280,7 +280,6 @@ export default function MagasinierTachesPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   multiple
                   onChange={addPhoto}
                   className="hidden"
@@ -291,7 +290,7 @@ export default function MagasinierTachesPage() {
                   className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-amber-300 rounded-lg text-amber-700 cursor-pointer hover:bg-amber-50"
                 >
                   <CameraIcon className="h-5 w-5" />
-                  {modalPhotos.length > 0 ? `${modalPhotos.length} photo(s)` : 'Prendre une photo'}
+                  {modalPhotos.length > 0 ? `${modalPhotos.length} photo(s)` : 'Photo (appareil ou bibliothèque)'}
                 </label>
               </div>
               <div className="flex gap-2">

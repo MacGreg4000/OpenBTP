@@ -269,7 +269,6 @@ export default function TacheRapidePage() {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               multiple
               onChange={handlePhotoChange}
               className="hidden"
