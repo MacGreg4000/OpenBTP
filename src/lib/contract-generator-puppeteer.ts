@@ -48,10 +48,10 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
     const companyInfo = await getCompanyInfo()
     console.log('Informations de l\'entreprise récupérées:', companyInfo.nom)
     
-    // Récupérer le template actif
+    // Récupérer le template actif (catégorie CONTRAT)
     console.log('Récupération du template actif...')
     const activeTemplate = await prisma.contractTemplate.findFirst({
-      where: { isActive: true }
+      where: { isActive: true, category: 'CONTRAT' }
     })
     
     if (!activeTemplate) {
@@ -198,9 +198,9 @@ export async function signerContrat(
     
     console.log('Contrat trouvé:', contrat.url)
     
-    // Récupérer le template actif pour la version signée
+    // Récupérer le template actif pour la version signée (catégorie CONTRAT)
     const activeTemplate = await prisma.contractTemplate.findFirst({
-      where: { isActive: true }
+      where: { isActive: true, category: 'CONTRAT' }
     })
     
     if (!activeTemplate) {

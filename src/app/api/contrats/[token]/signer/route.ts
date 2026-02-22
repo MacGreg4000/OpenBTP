@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { signerContrat } from '@/lib/contract-generator-simple'
+import { signerContrat } from '@/lib/contrat-generator'
 import { prisma } from '@/lib/prisma/client'
 import { notifier } from '@/lib/services/notificationService'
 

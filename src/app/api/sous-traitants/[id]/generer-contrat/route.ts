@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { generateContratSoustraitance } from '@/lib/contract-generator-simple'
+import { generateContratSoustraitance } from '@/lib/contrat-generator'
 
 export async function POST(
   request: Request,

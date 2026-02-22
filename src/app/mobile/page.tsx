@@ -11,7 +11,7 @@ import {
   ArrowRightIcon,
   MagnifyingGlassIcon,
   ArrowRightOnRectangleIcon,
-  TruckIcon,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/outline'
 import { useSession } from 'next-auth/react'
 
@@ -149,7 +149,7 @@ export default function MobileHomePage() {
                   className="flex items-center gap-2 px-3 py-2 bg-amber-500/80 hover:bg-amber-500 backdrop-blur-sm rounded-lg text-white transition-colors duration-200 border border-amber-400/50"
                   title="Nouvelle tâche magasinier"
                 >
-                  <TruckIcon className="h-5 w-5" />
+                  <ArchiveBoxIcon className="h-5 w-5" />
                   <span className="text-sm font-medium hidden sm:inline">Logistique</span>
                 </button>
               )}

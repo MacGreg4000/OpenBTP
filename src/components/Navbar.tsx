@@ -23,6 +23,7 @@ import {
   SwatchIcon,
   CalendarDaysIcon,
   TruckIcon,
+  ArchiveBoxIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
@@ -98,7 +99,7 @@ export function Navbar() {
     {
       name: 'Organisation',
       items: [
-        { name: 'Logistique', href: '/logistique', icon: TruckIcon, moduleCode: 'logistique' },
+        { name: 'Logistique', href: '/logistique', icon: ArchiveBoxIcon, moduleCode: 'logistique' },
         { name: 'Outillage', href: '/outillage', icon: WrenchScrewdriverIcon, moduleCode: 'outillage' },
         { name: 'Inventaire', href: '/inventory', icon: CubeIcon, moduleCode: 'inventory' },
         ...(session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER' 

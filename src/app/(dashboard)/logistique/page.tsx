@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import {
-  TruckIcon,
+  ArchiveBoxIcon,
   PlusIcon,
   UserGroupIcon,
   CheckCircleIcon,
@@ -253,7 +253,7 @@ export default function LogistiquePage() {
       <PageHeader
         title="Logistique"
         subtitle="Tâches magasiniers"
-        icon={TruckIcon}
+        icon={ArchiveBoxIcon}
         badgeColor="from-amber-600 via-orange-600 to-red-600"
         gradientColor="from-amber-600/10 via-orange-600/10 to-red-600/10"
         actions={
