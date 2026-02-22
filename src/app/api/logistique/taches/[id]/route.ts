@@ -46,10 +46,11 @@ export async function PATCH(
 
     const { id } = await props.params
     const body = await request.json()
-    const { titre, description, dateExecution } = body as {
+    const { titre, description, dateExecution, magasinierId } = body as {
       titre?: string
       description?: string
       dateExecution?: string
+      magasinierId?: string
     }
 
     const tache = await prisma.tacheMagasinier.update({
@@ -57,7 +58,8 @@ export async function PATCH(
       data: {
         ...(titre !== undefined && { titre: String(titre).trim() }),
         ...(description !== undefined && { description: description?.trim() || null }),
-        ...(dateExecution !== undefined && { dateExecution: new Date(dateExecution) })
+        ...(dateExecution !== undefined && { dateExecution: new Date(dateExecution) }),
+        ...(magasinierId !== undefined && { magasinierId })
       },
       include: {
         magasinier: { select: { id: true, nom: true } },

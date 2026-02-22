@@ -65,6 +65,14 @@ export default function LogistiquePage() {
   const [editMagId, setEditMagId] = useState<string | null>(null)
   const [editMagNom, setEditMagNom] = useState('')
   const [savingMagNom, setSavingMagNom] = useState(false)
+  // Édition de tâche
+  const [editTache, setEditTache] = useState<Tache | null>(null)
+  const [editTitre, setEditTitre] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editMagasinierId, setEditMagasinierId] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -104,6 +112,13 @@ export default function LogistiquePage() {
       loadData()
     }
   }, [filterMagasinier, filterStatut])
+
+  // Pré-sélectionner le magasinier s'il n'y en a qu'un
+  useEffect(() => {
+    if (magasiniers.length === 1 && !newTacheMagasinierId) {
+      setNewTacheMagasinierId(magasiniers[0].id)
+    }
+  }, [magasiniers, newTacheMagasinierId])
 
   const handleAddMagasinier = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -241,6 +256,59 @@ export default function LogistiquePage() {
       alert('Erreur réseau')
     } finally {
       setSavingMagNom(false)
+    }
+  }
+
+  const handleOpenEdit = (tache: Tache) => {
+    setEditTache(tache)
+    setEditTitre(tache.titre)
+    setEditDesc(tache.description || '')
+    setEditDate(new Date(tache.dateExecution).toISOString().slice(0, 10))
+    setEditMagasinierId(tache.magasinier.id)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editTache || !editTitre.trim()) return
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/logistique/taches/${editTache.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titre: editTitre.trim(),
+          description: editDesc.trim() || undefined,
+          dateExecution: editDate,
+          magasinierId: editMagasinierId
+        })
+      })
+      if (res.ok) {
+        setEditTache(null)
+        loadData()
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Erreur')
+      }
+    } catch {
+      alert('Erreur réseau')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const handleDeleteTache = async (id: string) => {
+    if (!confirm('Supprimer cette tâche ?')) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/logistique/taches/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setTaches((prev) => prev.filter((t) => t.id !== id))
+      } else {
+        alert('Erreur lors de la suppression')
+      }
+    } catch {
+      alert('Erreur réseau')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -602,7 +670,7 @@ export default function LogistiquePage() {
                     <option value="VALIDEE">Validée</option>
                   </select>
                 </div>
-                <div className="space-y-3">
+                  <div className="space-y-3">
                   {taches.map((t) => (
                     <div
                       key={t.id}
@@ -630,21 +698,43 @@ export default function LogistiquePage() {
                             </span>
                           </div>
                         </div>
-                        {t.photos?.length > 0 && (
-                          <div className="flex gap-1 flex-shrink-0">
-                            {t.photos.slice(0, 3).map((p) => (
-                              <div key={p.id} className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                                <Image
-                                  src={p.url}
-                                  alt=""
-                                  fill
-                                  className="object-cover"
-                                  sizes="48px"
-                                />
-                              </div>
-                            ))}
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          {t.photos?.length > 0 && (
+                            <div className="flex gap-1">
+                              {t.photos.slice(0, 3).map((p) => (
+                                <div key={p.id} className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                                  <Image
+                                    src={p.url}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                    sizes="48px"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEdit(t)}
+                              className="p-1.5 text-gray-400 hover:text-amber-600 rounded-lg transition-colors"
+                              title="Modifier"
+                            >
+                              <PencilSquareIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTache(t.id)}
+                              disabled={deletingId === t.id}
+                              className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50"
+                              title="Supprimer"
+                            >
+                              {deletingId === t.id
+                                ? <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-red-600" />
+                                : <TrashIcon className="h-4 w-4" />
+                              }
+                            </button>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -657,6 +747,75 @@ export default function LogistiquePage() {
           </>
         )}
       </div>
+
+      {/* Modale d'édition de tâche */}
+      {editTache && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-xl">
+            <div className="p-5 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="font-bold text-lg text-gray-900 dark:text-white">Modifier la tâche</h3>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
+                <input
+                  type="text"
+                  value={editTitre}
+                  onChange={(e) => setEditTitre(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-3"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date d&apos;exécution</label>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Magasinier</label>
+                  <select
+                    value={editMagasinierId}
+                    onChange={(e) => setEditMagasinierId(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-3"
+                  >
+                    {magasiniers.map((m) => (
+                      <option key={m.id} value={m.id}>{m.nom}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setEditTache(null)}
+                className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={savingEdit || !editTitre.trim()}
+                className="flex-1 py-3 rounded-xl bg-amber-600 text-white font-medium disabled:opacity-50 hover:bg-amber-700 transition-colors"
+              >
+                {savingEdit ? 'Enregistrement...' : 'Sauvegarder'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
