@@ -101,6 +101,23 @@ export default function TemplatesContratsPage() {
     }
   }
 
+  const deactivateTemplate = async (templateId: string) => {
+    try {
+      const response = await fetch(`/api/admin/contract-templates/${templateId}/deactivate`, {
+        method: 'POST'
+      })
+      
+      if (response.ok) {
+        await fetchTemplates(selectedCategory)
+      } else {
+        setError('Erreur lors de la désactivation du template')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      setError('Erreur lors de la désactivation du template')
+    }
+  }
+
   const deleteTemplate = async (templateId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce template ?')) return
 
@@ -263,7 +280,15 @@ export default function TemplatesContratsPage() {
                       >
                         <DocumentTextIcon className="h-5 w-5" />
                       </button>
-                      {!template.isActive && (
+                      {template.isActive ? (
+                        <button
+                          onClick={() => deactivateTemplate(template.id)}
+                          className="rounded-lg border border-transparent p-2 text-gray-400 transition hover:border-amber-200 hover:text-amber-600 dark:hover:border-amber-400/40 dark:hover:text-amber-300"
+                          title="Désactiver (ne sera plus inclus dans les PDFs)"
+                        >
+                          <XMarkIcon className="h-5 w-5" />
+                        </button>
+                      ) : (
                         <button
                           onClick={() => activateTemplate(template.id)}
                           className="rounded-lg border border-transparent p-2 text-gray-400 transition hover:border-emerald-200 hover:text-emerald-600 dark:hover:border-emerald-400/40 dark:hover:text-emerald-300"
@@ -281,8 +306,8 @@ export default function TemplatesContratsPage() {
                       </button>
                       <button
                         onClick={() => deleteTemplate(template.id)}
-                        className="rounded-lg border border-transparent p-2 text-gray-400 transition hover:border-rose-200 hover:text-rose-600 disabled:cursor-not-allowed disabled:border-transparent disabled:text-gray-300 dark:hover:border-rose-400/40 dark:hover:text-rose-300"
-                        title="Supprimer"
+                        className="rounded-lg border border-transparent p-2 text-gray-400 transition hover:border-rose-200 hover:text-rose-600 dark:hover:border-rose-400/40 dark:hover:text-rose-300"
+                        title={template.isActive ? 'Désactivez d\'abord ce template avant de le supprimer' : 'Supprimer'}
                         disabled={template.isActive}
                       >
                         <TrashIcon className="h-5 w-5" />

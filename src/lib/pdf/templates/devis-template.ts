@@ -43,40 +43,71 @@ export interface DevisData {
 }
 
 /**
+ * Supprime les règles @page, html{} et body{} d'une chaîne CSS
+ */
+function stripPageRules(css: string): string {
+  // Supprimer les règles @page { ... }
+  css = css.replace(/@page\s*[^{]*\{[^}]*\}/gi, '')
+  // Supprimer les règles html { ... } et body { ... } qui forcent des dimensions de page
+  css = css.replace(/(?:^|[,\s])(?:html|body)\s*\{[^}]*\}/gi, '')
+  return css
+}
+
+/**
+ * Supprime les attributs style inline qui contiennent des dimensions en mm/cm/in/pt
+ * (typique des templates PDF A4 qui forcent width: 210mm, height: 297mm…)
+ */
+function stripPageSizeInlineStyles(html: string): string {
+  // Retirer width/height en mm|cm|in|pt des attributs style="" inline
+  return html.replace(
+    /(<[^>]+\s)style="([^"]*)"/gi,
+    (match, prefix, styleContent) => {
+      const cleaned = styleContent
+        .replace(/\b(?:width|height|min-width|min-height|max-width|max-height)\s*:\s*[\d.]+(?:mm|cm|in|pt)\s*;?/gi, '')
+        .replace(/\bpage-break[^;]*;?/gi, '')
+        .trim()
+        .replace(/;+$/, '')
+      return cleaned ? `${prefix}style="${cleaned}"` : prefix.trimEnd()
+    }
+  )
+}
+
+/**
  * Extrait le contenu du body d'un HTML complet et nettoie les styles qui pourraient interférer
  */
 function extractBodyContent(html: string): string {
-  // Si le HTML ne contient pas de balises html/head/body, le retourner tel quel
-  if (!html.includes('<html') && !html.includes('<head') && !html.includes('<body')) {
-    return html
+  let content = html
+
+  // Extraire le contenu entre <body> et </body> si présent
+  if (html.includes('<body')) {
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+    if (bodyMatch?.[1]) {
+      content = bodyMatch[1]
+    } else {
+      // Supprimer tout ce qui est avant le body ouvrant
+      content = html
+        .replace(/<!doctype[^>]*>/gi, '')
+        .replace(/<html[^>]*>/gi, '')
+        .replace(/<\/html>/gi, '')
+        .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+        .replace(/<body[^>]*>/gi, '')
+        .replace(/<\/body>/gi, '')
+    }
   }
 
-  // Extraire le contenu entre <body> et </body>
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  if (bodyMatch && bodyMatch[1]) {
-    let bodyContent = bodyMatch[1]
-    
-    // Supprimer les balises <style> qui pourraient contenir des styles @page ou globaux
-    bodyContent = bodyContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    
-    // Supprimer les balises <script>
-    bodyContent = bodyContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    
-    return bodyContent.trim()
-  }
+  // Supprimer les balises <script>
+  content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
 
-  // Si on ne trouve pas de body, essayer d'extraire juste le contenu sans les balises html/head
-  let cleaned = html
-  cleaned = cleaned.replace(/<!doctype[^>]*>/gi, '')
-  cleaned = cleaned.replace(/<html[^>]*>/gi, '')
-  cleaned = cleaned.replace(/<\/html>/gi, '')
-  cleaned = cleaned.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
-  cleaned = cleaned.replace(/<body[^>]*>/gi, '')
-  cleaned = cleaned.replace(/<\/body>/gi, '')
-  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-  
-  return cleaned.trim()
+  // Nettoyer les balises <style> inline : supprimer @page, html{}, body{}
+  content = content.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (_, cssContent) => {
+    const cleaned = stripPageRules(cssContent).trim()
+    return cleaned ? `<style>${cleaned}</style>` : ''
+  })
+
+  // Supprimer les dimensions A4 dans les styles inline
+  content = stripPageSizeInlineStyles(content)
+
+  return content.trim()
 }
 
 export function generateDevisHTML(data: DevisData): string {
@@ -544,9 +575,16 @@ export function generateDevisHTML(data: DevisData): string {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             /* Neutraliser les styles de page et de taille */
             width: auto !important;
+            min-width: 0 !important;
             max-width: 100% !important;
             height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
             box-sizing: border-box !important;
+            /* Empêcher les décalages de positionnement (templates A4 embed) */
+            position: static !important;
+            float: none !important;
+            transform: none !important;
             /* Empêcher les sauts de page dans les éléments */
             page-break-inside: avoid;
             break-inside: avoid;
@@ -559,6 +597,20 @@ export function generateDevisHTML(data: DevisData): string {
             padding: 0 !important;
             width: 100% !important;
             height: auto !important;
+        }
+
+        /* Neutraliser les conteneurs page courants dans les templates PDF */
+        .cgv-content .page,
+        .cgv-content .container,
+        .cgv-content .doc,
+        .cgv-content .wrapper,
+        .cgv-content .content,
+        .cgv-content .document {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
         }
 
         .cgv-content strong {
@@ -1275,9 +1327,16 @@ export function generateDevisHTMLWithoutPrices(data: DevisData): string {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             /* Neutraliser les styles de page et de taille */
             width: auto !important;
+            min-width: 0 !important;
             max-width: 100% !important;
             height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
             box-sizing: border-box !important;
+            /* Empêcher les décalages de positionnement (templates A4 embed) */
+            position: static !important;
+            float: none !important;
+            transform: none !important;
             /* Empêcher les sauts de page dans les éléments */
             page-break-inside: avoid;
             break-inside: avoid;
@@ -1290,6 +1349,20 @@ export function generateDevisHTMLWithoutPrices(data: DevisData): string {
             padding: 0 !important;
             width: 100% !important;
             height: auto !important;
+        }
+
+        /* Neutraliser les conteneurs page courants dans les templates PDF */
+        .cgv-content .page,
+        .cgv-content .container,
+        .cgv-content .doc,
+        .cgv-content .wrapper,
+        .cgv-content .content,
+        .cgv-content .document {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
         }
 
         .cgv-content strong {
