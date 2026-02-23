@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contrat-cadre de sous-traitance - {{nomSousTraitant}}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.5; color: #333; }
+    h1 { text-align: center; margin-bottom: 20px; color: #2c3e50; font-size: 1.4em; }
+    h2 { color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px; font-size: 1.1em; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .logo { max-width: 200px; margin-bottom: 20px; }
+    .parties { margin-bottom: 30px; }
+    .article { margin-bottom: 18px; }
+    .article p { margin: 8px 0; text-align: justify; }
+    .article ul { padding-left: 20px; margin: 8px 0; }
+    .article li { margin: 4px 0; text-align: justify; }
+    .signature { margin-top: 40px; }
+    .signature-box { margin-bottom: 30px; }
+    .signature-line { border-top: 1px solid black; margin-top: 40px; width: 100%; max-width: 250px; }
+    .date { margin-top: 30px; font-style: italic; }
+    .signature-url { font-size: 0.9em; color: #666; margin-top: 15px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="data:image/png;base64,{{logoBase64}}" alt="Logo" class="logo">
+  </div>
+
+  <h1>CONTRAT-CADRE DE SOUS-TRAITANCE</h1>
+
+  <div class="parties">
+    <p><strong>Entre:</strong></p>
+    <p><strong>1. {{nomEntreprise}}</strong><br>
+    dont le siège social est établi à {{adresseEntreprise}} {{zipCodeEntreprise}} {{villeEntreprise}}.<br>
+    Inscrite à la BCE sous le numéro {{tvaEntreprise}}.<br>
+    Tél : {{telephoneEntreprise}} | Email : {{emailEntreprise}}<br>
+    ici valablement représentée par {{representantEntreprise}} ;<br>
+    Ci-après dénommé « l'Entrepreneur principal »</p>
+
+    <p><strong>ET</strong></p>
+
+    <p><strong>2. {{nomSousTraitant}}</strong><br>
+    dont le siège social est établi à {{adresseSousTraitant}}.<br>
+    Inscrite à la BCE sous le numéro {{tvaSousTraitant}}.<br>
+    Tél : {{telephoneSousTraitant}} | Email : {{emailSousTraitant}}<br>
+    ici valablement représentée par {{representantSousTraitant}}.<br>
+    ci-après dénommé « le Sous-traitant »,</p>
+
+    <p>ci-après dénommées conjointement « les Parties » ;</p>
+  </div>
+
+  <p><strong>Il a été convenu ce qui suit :</strong></p>
+
+  <div class="article">
+    <h2>DESCRIPTION DU CONTRAT-CADRE</h2>
+    <p>Dans le cadre d'une relation commerciale suivie entre eux, l'entrepreneur principal et le sous-traitant concluent un contrat-cadre et conviennent que les contrats de sous-traitance conclus entre eux à partir de ce jour sont soumis aux conditions fixées ci-après. Ces conditions font intégralement partie de la ou des convention(s) de sous-traitance signée(s) entre eux à dater du {{dateDebut}}.</p>
+    <p>Les conditions générales du sous-traitant, même transmises ultérieurement à la conclusion du présent accord, ne peuvent trouver à s'appliquer au regard de la primauté du présent contrat. Toute modification aux conditions du présent contrat cadre n'est valable que moyennant l'accord écrit des Parties.</p>
+    <p>Dans l'hypothèse de modifications des dispositions légales ayant un caractère impératif, les parties négocieront de bonne foi l'adaptation du contrat pour le mettre en conformité à ces dispositions à la demande de la partie la plus diligente.</p>
+  </div>
+
+  <div class="article">
+    <h2>1. Description de la sous-entreprise</h2>
+    <p>L'entrepreneur principal charge le sous-traitant, qui l'accepte, d'exécuter les travaux qui seront décrits dans les conventions de sous-traitance particulières qui seront signées ultérieurement entre eux.</p>
+    <p>Les travaux sont exécutés conformément aux dispositions du présent contrat-cadre et aux conditions techniques du contrat de sous-traitance et documents auxquels celui-ci se réfère. Une liste reprenant tous les documents contractuels et leur hiérarchie est jointe en annexe du contrat de sous-traitance particulier. En cas de contradictions, les conditions particulières du contrat de sous-traitance ont priorité sur le contrat-cadre.</p>
+    <p>Il est interdit au sous-traitant de sous-traiter l'entièreté du contenu du contrat de sous-traitance qui lui est confié.</p>
+  </div>
+
+  <div class="article">
+    <h2>2. Prix et paiement de la sous-entreprise</h2>
+    <p><strong>2.1. Prix</strong><br>Le contrat de sous-traitance indiquera le mode de fixation du prix des travaux.</p>
+
+    <p><strong>2.2. Paiement</strong></p>
+    <p><strong>2.2.1.</strong> La convention de sous-traitance particulière mentionne :</p>
+    <ul>
+      <li>Les moments où les états d'avancement sont transmis.</li>
+      <li>Le délai d'approbation des états d'avancement. À défaut, ce délai est fixé à 10 jours.</li>
+      <li>L'expiration du délai d'approbation n'équivaut pas à une acceptation, cette dernière devant être expresse.</li>
+      <li>Par conséquent, à défaut de réaction dans le délai précité, le sous-traitant relancera l'entrepreneur pour qu'il se positionne sans retard, le cas échéant, par une approbation partielle.</li>
+      <li>La facture sera établie après correction et/ou approbation, le cas échéant sur la base de l'incontestablement dû.</li>
+    </ul>
+
+    <p><strong>2.2.2.</strong> La facture, accompagnée des pièces justificatives ou des états d'avancement approuvés, est payable dans un délai de 30 jours à dater du jour de la réception de la facture. Le sous-traitant peut demander un paiement immédiat (sous 3 jours) avec la déduction d'un escompte de 3%. L'Entrepreneur dispose toutefois toujours du choix de payer sous 30 jours sans escompte.</p>
+    <p>Lorsque la sous-entreprise s'exécute dans le cadre d'un marché public auquel l'AR du 14 janvier 2013 est applicable, le sous-traitant a le droit d'exiger le paiement des sommes qui lui sont dues selon les modalités applicables au marché principal, à moins que les conditions particulières ne prévoient un délai plus court. Cette réduction du délai de paiement n'est toutefois valable que pour autant que l'Entrepreneur général soit lui-même payé.</p>
+
+    <p><strong>2.2.3.</strong> Le paiement des acomptes est considéré comme une avance à valoir sur le règlement du prix total et ne diminue en rien, jusqu'à la réception, la responsabilité du sous-traitant. De même, le paiement n'exclut pas une remise en cause des travaux réalisés ou des quantités réellement mises en œuvre.</p>
+
+    <p><strong>2.2.4.</strong> Le Sous-Traitant ne se verra accorder aucun supplément de prix pour des modifications ou suppléments aux Travaux sous-traités initialement prévus s'il n'y a eu d'accord préalable et écrit de l'Entrepreneur sur le travail modificatif et sur son prix.</p>
+
+    <p><strong>2.2.5.</strong> En cas de retard de paiement, une indemnité forfaitaire de 40 € pour les frais de recouvrement encourus ainsi que des intérêts au taux fixé par la loi du 2 août 2002 relative au retard de paiement dans les transactions commerciales seront dus après mise en demeure. Il en ira de même dans l'hypothèse où le Sous-Traitant serait redevable à l'Entrepreneur de sommes à quelque titre que ce soit.</p>
+
+    <p><strong>2.2.6.</strong> Sauf meilleur accord des parties ou exigences complémentaires liées au contrat d'entreprise principal, le sous-traitant ne sera pas tenu de constituer un cautionnement, mais l'Entrepreneur pourra formaliser une retenue sur facture à concurrence de 5% libérale pour moitié à la réception provisoire.</p>
+    <p>Il est expressément convenu que la retenue couvre l'achèvement et la bonne tenue de tous les travaux faisant l'objet du contrat, y compris les travaux modificatifs ou supplémentaires qui seront confiés au sous-traitant en cours de marché. Il couvre en outre toutes les conséquences qui résulteraient d'un retard dans l'exécution des travaux à l'égard de l'entrepreneur, mais également du maître de l'ouvrage.</p>
+
+    <p><strong>2.3. Révision de prix</strong><br>Le marché est conclu à prix fermes et non révisables.</p>
+  </div>
+
+  <div class="article">
+    <h2>3. Programme et délai d'exécution</h2>
+    <p><strong>3.1.</strong> L'Entrepreneur principal donnera en temps utile l'ordre de commencer les travaux à exécuter par le sous-traitant, tenant compte des délais d'approvisionnement et des temps de fabrication qui sont nécessaires avant la mise en œuvre sur chantier.</p>
+    <p><strong>3.2.</strong> Le sous-traitant commence, sauf dispositions contractuelles contraires, ses travaux 10 jours après l'ordre écrit donné par l'entrepreneur principal ; il s'engage à les exécuter dans le délai fixé dans les conventions de sous-traitance ou dans le planning joint au contrat.</p>
+    <p><strong>3.3.</strong> Lorsqu'un planning général des travaux a été établi, celui-ci est tenu à la disposition du sous-traitant. Par la signature du contrat particulier de sous-traitance, le sous-traitant reconnaît avoir pris connaissance et avoir accepté ce planning. Le sous-traitant est averti en temps utile des modifications projetées au planning initial et un nouveau planning est établi de commun accord avec les parties tenant compte du planning général tel que fixé avec le maître de l'ouvrage.</p>
+    <p><strong>3.4.</strong> Le sous-traitant s'engage à assister aux réunions de chantier ou à s'y faire représenter par un délégué dûment mandaté pendant l'exécution de ses travaux et chaque fois qu'il a été avisé de ce que ses travaux ou des travaux en lien avec les siens seront discutés. Le sous-traitant recevra, pour autant qu'il soit concerné, une copie du rapport des réunions de chantier.</p>
+  </div>
+
+  <div class="article">
+    <h2>4. Indemnité pour non-respect de l'ordre de commencement des travaux, du planning et du délai</h2>
+    <p><strong>4.1.</strong> Lorsque les parties ne sont convenues d'aucune clause pénale, l'entrepreneur principal a droit, en cas de retard d'exécution imputable au sous-traitant, à la réparation du préjudice qu'il a subi, conformément au droit commun.</p>
+    <p><strong>4.2.</strong> Ce préjudice pourra être fixé par l'Entrepreneur Général en référence aux pénalités qui s'appliquent à lui en vertu du contrat le liant au maître de l'Ouvrage.</p>
+  </div>
+
+  <div class="article">
+    <h2>5. Exécution des travaux sous-traités</h2>
+    <p><strong>5.1.</strong> Le prix s'entend pour un travail exécuté strictement tel que prévu dans la convention de sous-traitance, tant au point de vue des matériaux que de leur mise en œuvre, et conformément aux règles de l'art. Il comprend tous les travaux se rapportant à la présente sous-entreprise, tels que mentionnés dans les postes spécifiques des travaux à exécuter.</p>
+    <p><strong>5.2.</strong> Le sous-traitant s'engage à faire disparaître, au fur et à mesure de l'avancement des travaux, les souillures qui ont été faites et les débris qui ont été laissés par son personnel.</p>
+    <p><strong>5.3.</strong> L'entrepreneur principal peut à tout moment faire arrêter tout travail non conforme, rebuter tous matériaux qui ne seraient point de la qualité prescrite. Ces ordres doivent être donnés ou confirmés par écrit et justifiés.</p>
+    <p><strong>5.4.</strong> La sous-entreprise est exécutée conformément aux indications écrites données en cours d'œuvre par l'entrepreneur principal, pour tous détails d'exécution et pour tous éclaircissements des plans et du devis descriptif des travaux.</p>
+    <p><strong>5.5.</strong> Sauf convention contraire, il est interdit au sous-traitant d'utiliser tout outil ou matériel appartenant à l'entrepreneur principal et vice versa.</p>
+    <p><strong>5.6.</strong> Le sous-traitant n'emploie sur le chantier que du personnel ou de la main-d'œuvre compétents, en nombre suffisant, compte tenu des possibilités du chantier, pour assurer en rapport avec l'importance de la sous-entreprise, l'exécution des ouvrages dans le délai prévu. Il veillera à avoir en permanence l'approvisionnement en matériaux nécessaires à cette fin.</p>
+    <p><strong>5.7.</strong> Le sous-traitant veille à ce que le personnel qu'il emploie sur le chantier dispose en tout temps des instructions nécessaires à la bonne exécution des travaux, notamment celles visées au paragraphe 5.4. du présent article.</p>
+    <p><strong>5.8.</strong> Sans porter atteinte en aucune manière à l'autorité du sous-traitant, l'entrepreneur principal se réserve le droit de donner des instructions aux travailleurs que le sous-traitant emploie sur le chantier selon les modalités et dans les matières suivantes : (a) l'organisation générale du chantier ; (b) les mesures urgentes et provisoires nécessaires à la prévention des dommages à l'ouvrage ; (c) l'exécution correcte et précise des travaux. La nature et le contenu des instructions pouvant être données aux travailleurs du sous-traitant en application du point c sont déterminées dans les conditions particulières du présent contrat.</p>
+    <p><strong>5.9.</strong> Lorsque la sous-entreprise s'exécute dans le cadre d'un marché public auquel l'AR du 14 janvier 2013 est applicable, et en cas d'interruption des travaux par le pouvoir adjudicateur, le sous-traitant peut se prévaloir de l'application de l'article 55 de l'AR.</p>
+  </div>
+
+  <div class="article">
+    <h2>6. Obligation réciproque de renseignement et de bonne collaboration</h2>
+    <p>Les parties s'engagent à s'informer immédiatement l'une l'autre de toute difficulté qui se révélerait au cours de l'exécution des travaux et qui serait de nature à en perturber le bon déroulement dans les délais prévus.</p>
+    <p>En particulier, l'entrepreneur principal et le sous-traitant s'engagent à s'échanger tous les renseignements de nature technique et administrative en leur possession ou qui viendraient à leur connaissance et dont dépend l'exécution des travaux du contrat principal et du contrat de sous-entreprise.</p>
+  </div>
+
+  <div class="article">
+    <h2>7. Sécurité et Santé</h2>
+    <p><strong>7.1.</strong> Le sous-traitant est tenu de respecter dans l'exécution de sa part d'entreprise, toutes les obligations qui le concernent en matière de sécurité et santé sur les chantiers temporaires ou mobiles, qui résultent notamment de la loi du 4 août 1996 et de ses arrêtés d'exécution, tel que l'arrêté royal du 25 janvier 2001 relatif aux chantiers temporaires ou mobiles, ainsi que celles découlant du Codex sur le bien-être au travail et du Règlement général pour la protection du travail (RGPT). Les mesures de protection collective sont à charge de l'entrepreneur principal. Les mesures de protection individuelle sont à charge du sous-traitant. Les parties sont ensemble responsables de la bonne conservation des équipements collectifs.</p>
+    <p><strong>7.2.</strong> L'entrepreneur principal se réserve le droit, dans le cadre des obligations qui lui sont imposées par la législation relative au bien-être au travail, de donner aux travailleurs que le sous-traitant emploie sur le chantier des instructions destinées à assurer leur sécurité et leur santé ou celles des autres travailleurs occupés sur le chantier.</p>
+    <p><strong>7.3.</strong> En cas d'inobservation par l'une des parties de ses obligations en matière de sécurité et de santé, l'autre partie prendra, après mise en demeure et conformément à l'article 29 de la loi du 4 août 1996, toutes les mesures qui s'imposent et ce aux frais de la partie défaillante.</p>
+    <p><strong>7.4.</strong> Les parties collaboreront activement et efficacement aux mesures communes de protection et de sécurité pour l'ensemble du chantier et veilleront à leur stricte observation par leur personnel.</p>
+  </div>
+
+  <div class="article">
+    <h2>8. Personnel et situation du sous-traitant</h2>
+    <p>Le sous-traitant est tenu de respecter vis-à-vis de son personnel, toutes dispositions légales, réglementaires ou conventionnelles, en matière de conditions générales de travail, en matière fiscale et de sécurité sociale et de les faire respecter par ses sous-traitants éventuels et par toute personne mettant du personnel à sa disposition.</p>
+    <p><strong>8.1. Conditions générales de travail du personnel occupé</strong> – Le sous-traitant certifie qu'il respecte et respectera son obligation de payer dans les délais la rémunération due à ses travailleurs. L'entrepreneur principal communique au sous-traitant que les informations relatives à la rémunération due sont reprises sur le site internet: http://www.emploi.belgique.be. Le sous-traitant confirme qu'il a bien reçu de l'entrepreneur principal la communication relative au site internet sur lequel sont reprises les informations relatives à la rémunération due. A cet effet, le sous-traitant et l'entrepreneur principal signent l'annexe au contrat, nommé « Déclaration relative à la responsabilité solidaire du contractant direct pour le paiement de la rémunération ».</p>
+    <p><strong>8.2. Dettes sociales et fiscales</strong> – Le sous-traitant déclare qu'au moment de la conclusion du présent contrat, il n'est pas fait mention dans la banque de données accessible au public de l'ONSS et du fisc qu'il y a obligation de retenue en raison de dettes sociales et/ou fiscales dans son chef. Dans l'hypothèse de la survenance de dettes sociales et/ou fiscales, l'entrepreneur principal imputera sur chaque paiement dû au sous-traitant les retenues prévues par la loi.</p>
+    <p><strong>8.3. Occupation de ressortissants non européens en séjour illégal</strong> – Le sous-traitant ne peut en aucun cas occuper des ressortissants de pays tiers en séjour illégal et s'engage formellement par le présent contrat à respecter cette interdiction.</p>
+    <p><strong>8.4. Recours à des sous-traitants ou à des tiers</strong> – Sauf accord préalable et écrit de l'entrepreneur principal, le sous-traitant ne peut sous-traiter ou faire appel à des travailleurs intérimaires pour tout ou partie du marché. Les dispositions détaillées sont reprises dans le contrat complet.</p>
+    <p><strong>8.5 à 8.7</strong> – Dispositions spécifiques pour sous-traitants étrangers, enregistrement des présences, manquements aux obligations. (Voir contrat original pour le détail complet.)</p>
+  </div>
+
+  <div class="article">
+    <h2>9. Gardiennage, responsabilité civile, assurance RC et autres assurances</h2>
+    <p><strong>9.1. Gardiennage</strong> – Chaque partie assume le gardiennage de ses propres travaux. <strong>9.2. Responsabilité civile et assurance RC</strong> – Le sous-traitant supporte personnellement la responsabilité résultant de son fait ou de celui de son personnel. Chaque partie déclare avoir souscrit un contrat d'assurance couvrant sa responsabilité civile à hauteur de € 200 000 par sinistre. <strong>9.3. Autres assurances</strong> – Chacune des parties souscrira avant le début des travaux toutes les assurances nécessaires.</p>
+  </div>
+
+  <div class="article">
+    <h2>10. Travaux supplémentaires commandés par le maître de l'ouvrage</h2>
+    <p>Le sous-traitant s'interdit de soumettre d'initiative ou sur invitation tout devis ou proposition supplémentaire au maître de l'ouvrage sans passer par l'intermédiaire de l'entrepreneur principal.</p>
+  </div>
+
+  <div class="article">
+    <h2>11. Force majeure et circonstances extraordinaires imprévisibles</h2>
+    <p>L'imprévision et la force majeure sont définies conformément au Code civil. Le sous-traitant doit informer l'entrepreneur principal du changement de circonstances. Les stipulations du Contrat principal relatives aux délais, pénalités, modalités de réception, garanties, responsabilités et sanctions sont réputées intégrées au présent contrat.</p>
+  </div>
+
+  <div class="article">
+    <h2>12. Réception</h2>
+    <p>La réception des travaux sous-traités a lieu dans les conditions et aux époques prévues. Le sous-traitant nettoie ses travaux et les met en état de réception. Les fiches techniques, dessins techniques et plans « as built » seront remis en temps utile par le sous-traitant sur simple demande de l'entrepreneur principal.</p>
+  </div>
+
+  <div class="article">
+    <h2>13. Manquements contractuels</h2>
+    <p>Si une partie vient à manquer gravement à l'une de ses obligations, l'autre partie a le droit de résoudre la convention aux torts de la partie défaillante. La partie défaillante est tenue d'indemniser l'autre partie des dommages résultant de l'inexécution du présent contrat.</p>
+  </div>
+
+  <div class="article">
+    <h2>14. Décès de l'une des parties</h2>
+    <p>Lorsque le marché est confié à une seule personne physique, il prend fin de plein droit en cas de décès, sauf continuation convenue avec les héritiers. Le paiement des travaux exécutés a lieu conformément à l'article 1796 du Code civil.</p>
+  </div>
+
+  <div class="article">
+    <h2>15. Résiliation</h2>
+    <p>L'entrepreneur principal peut résilier par sa seule volonté tout ou partie des contrats de sous-traitance, en dédommageant le sous-traitant conformément à l'article 1794 du Code civil (manque à gagner valorisé à 5% du marché).</p>
+  </div>
+
+  <div class="article">
+    <h2>16. Responsabilité contractuelle et garanties</h2>
+    <p>Le sous-traitant est tenu de garantir l'entrepreneur principal pour ses travaux contre tous recours en vertu des articles 1792 et 2270 du Code civil. Il est seul responsable de ses travaux, matériaux et équipements.</p>
+  </div>
+
+  <div class="article">
+    <h2>17. Contestations</h2>
+    <p>Tous les différends sont de la compétence du tribunal de Liège, division LIEGE. Le présent contrat est régi par le droit belge. Les juridictions du siège de l'entrepreneur sont compétentes (arrondissement de Liège, division Liège).</p>
+  </div>
+
+  <div class="article">
+    <h2>18. Nullité/divisibilité</h2>
+    <p>La nullité d'une ou plusieurs clauses ne pourra entraîner la nullité de l'ensemble du contrat. La clause nulle sera réputée non écrite dans la seule mesure de son illicéité.</p>
+  </div>
+
+  <p class="date">Fait en triple exemplaire, le {{dateGeneration}}.</p>
+
+  <div class="signature">
+    <div class="signature-box">
+      <p><strong>L'Entrepreneur principal</strong></p>
+      <p>{{representantEntreprise}}</p>
+      <img src="data:image/png;base64,{{signatureBase64}}" alt="Signature" style="max-width: 150px; margin-top: 10px;">
+    </div>
+
+    <div class="signature-box">
+      <p><strong>Le Sous-traitant</strong></p>
+      <p>{{representantSousTraitant}}</p>
+      <div class="signature-line"></div>
+      <p class="signature-url">Pour signer électroniquement : {{urlSignature}}</p>
+    </div>
+  </div>
+
+  <div class="article" style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #ddd;">
+    <h2>Annexe : Déclaration relative à la responsabilité solidaire du contractant direct</h2>
+    <p>En application de l'article 35/6/3, § 2 de la loi du 12 avril 1965 concernant la protection de la rémunération des travailleurs, l'entrepreneur principal et le sous-traitant font la déclaration suivante :</p>
+    <ul>
+      <li>L'entrepreneur principal déclare avoir communiqué au sous-traitant que les informations relatives à la rémunération due sont reprises sur http://www.emploi.belgique.be. Le sous-traitant confirme avoir reçu cette communication.</li>
+      <li>Le sous-traitant certifie qu'il respecte et respectera son obligation de payer dans les délais la rémunération due à ses travailleurs.</li>
+    </ul>
+    <p class="date">Fait le {{dateGeneration}}.</p>
+    <p><strong>L'Entrepreneur principal</strong> : {{representantEntreprise}}</p>
+    <p><strong>Le Sous-traitant</strong> : {{representantSousTraitant}}</p>
+  </div>
+</body>
+</html>

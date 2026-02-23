@@ -491,18 +491,16 @@ export default function ChantierEtatsPage(props: PageProps) {
                       <DocumentArrowDownIcon className="h-5 w-5 inline" />
                     </button>
                     
-                    {etat.estFinalise && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEmailModal(etat);
-                        }}
-                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 ml-2"
-                        title="Envoyer par e-mail"
-                      >
-                        <EnvelopeIcon className="h-5 w-5 inline" />
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEmailModal(etat);
+                      }}
+                      className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 ml-2"
+                      title="Envoyer par e-mail"
+                    >
+                      <EnvelopeIcon className="h-5 w-5 inline" />
+                    </button>
 
                     {canDeleteEtat(etat, etats) && (
                       <button
