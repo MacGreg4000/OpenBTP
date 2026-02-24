@@ -7,18 +7,22 @@ export default function DynamicManifest() {
   const pathname = usePathname()
 
   useEffect(() => {
-    // Déterminer quel manifest utiliser selon l'URL
-    const isMobilePath = pathname?.startsWith('/mobile')
-    const manifestHref = isMobilePath ? '/manifest-mobile.json' : '/manifest.json'
-    
-    // Vérifier si le lien manifest existe déjà
+    let manifestHref: string
+
+    if (pathname?.startsWith('/public/portail')) {
+      // Portail ouvrier/sous-traitant : start_url = URL actuelle pour "Ajouter à l'écran d'accueil"
+      const startUrl = pathname + (typeof window !== 'undefined' && window.location.search ? window.location.search : '')
+      manifestHref = `/api/manifest-portail?start_url=${encodeURIComponent(startUrl)}`
+    } else if (pathname?.startsWith('/mobile')) {
+      manifestHref = '/manifest-mobile.json'
+    } else {
+      manifestHref = '/manifest.json'
+    }
+
     const existingLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null
-    
     if (existingLink) {
-      // Mettre à jour le manifest existant
       existingLink.href = manifestHref
     } else {
-      // Créer un nouveau lien manifest
       const link = document.createElement('link')
       link.rel = 'manifest'
       link.href = manifestHref

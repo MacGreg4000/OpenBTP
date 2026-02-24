@@ -136,14 +136,27 @@ export default function MobileCommandePDFPage() {
         </div>
       </div>
 
-      {/* PDF Viewer avec padding pour le header */}
-      <div className="flex-1 overflow-hidden mt-[64px]">
-        <iframe
-          src={`${pdfUrl}#toolbar=1`}
-          className="w-full h-full border-0"
-          title="PDF Commande"
-          style={{ minHeight: 'calc(100vh - 64px)' }}
-        />
+      {/* PDF Viewer - iOS Safari ne permet pas le défilement dans iframe, on propose d'ouvrir en plein écran */}
+      <div className="flex-1 mt-[64px] overflow-hidden flex flex-col">
+        <div className="flex-shrink-0 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+          <button
+            onClick={() => window.open(pdfUrl.startsWith('http') ? pdfUrl : `${window.location.origin}${pdfUrl}`, '_blank', 'noopener')}
+            className="w-full py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2"
+          >
+            Ouvrir le PDF en plein écran
+          </button>
+          <p className="text-xs text-amber-800 dark:text-amber-200 mt-1 text-center">
+            Sur iPhone, ouvrez en plein écran pour faire défiler toutes les pages
+          </p>
+        </div>
+        <div className="flex-1 min-h-0">
+          <iframe
+            src={`${pdfUrl}#toolbar=1`}
+            className="w-full h-full border-0"
+            title="PDF Commande"
+            style={{ minHeight: 'calc(100vh - 180px)' }}
+          />
+        </div>
       </div>
 
       {/* Bouton flottant de retour - visible même si le header est caché */}

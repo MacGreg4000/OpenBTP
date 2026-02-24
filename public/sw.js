@@ -1,13 +1,14 @@
 // Service Worker pour PWA - Méthode officielle Next.js avec support hors ligne
-const CACHE_NAME = 'openbtp-v2'
-const STATIC_CACHE = 'openbtp-static-v2'
-const DYNAMIC_CACHE = 'openbtp-dynamic-v2'
+const CACHE_NAME = 'openbtp-v3'
+const STATIC_CACHE = 'openbtp-static-v3'
+const DYNAMIC_CACHE = 'openbtp-dynamic-v3'
 
 // URLs à cacher au démarrage (ressources critiques)
 const urlsToCache = [
   '/',
   '/mobile',
   '/manifest.json',
+  '/manifest-mobile.json',
   '/favicon.svg',
   '/favicon-192.png',
   '/favicon-512.png',
@@ -39,16 +40,25 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Supprimer les anciens caches
           if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE && cacheName !== CACHE_NAME) {
             console.log('[SW] Suppression de l\'ancien cache:', cacheName)
             return caches.delete(cacheName)
           }
         })
       )
-    }).then(() => {
-      // Prendre le contrôle de toutes les pages
-      return self.clients.claim()
+    }).then(() => self.clients.claim())
+    .then(() => {
+      // Cacher la page actuelle si c'est le portail (pour usage hors ligne sur chantier)
+      return self.clients.matchAll().then((clients) => {
+        return Promise.all(clients.map((client) => {
+          const url = client.url
+          if (url && (url.includes('/public/portail') || url.includes('/mobile'))) {
+            return caches.open(DYNAMIC_CACHE).then((cache) => {
+              return cache.add(url).catch(() => {})
+            })
+          }
+        }))
+      })
     })
   )
 })

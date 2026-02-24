@@ -131,14 +131,28 @@ export default function MobileDocumentPDFPage() {
         </div>
       </div>
 
-      {/* Viewer avec padding pour le header */}
-      <div className="flex-1 overflow-hidden mt-[64px]">
+      {/* Viewer - iOS Safari : bouton pour ouvrir le PDF en plein écran (défilement des pages) */}
+      <div className="flex-1 mt-[64px] overflow-hidden flex flex-col">
+        {isPDF && (
+          <div className="flex-shrink-0 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+            <button
+              onClick={() => window.open(documentUrl.startsWith('http') ? documentUrl : `${window.location.origin}${documentUrl}`, '_blank', 'noopener')}
+              className="w-full py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm"
+            >
+              Ouvrir le PDF en plein écran
+            </button>
+            <p className="text-xs text-amber-800 dark:text-amber-200 mt-1 text-center">
+              Sur iPhone, ouvrez en plein écran pour faire défiler toutes les pages
+            </p>
+          </div>
+        )}
+        <div className="flex-1 min-h-0 overflow-hidden">
         {isPDF ? (
           <iframe
             src={`${documentUrl}#toolbar=1`}
             className="w-full h-full border-0"
             title={documentName}
-            style={{ minHeight: 'calc(100vh - 64px)' }}
+            style={{ minHeight: 'calc(100vh - 180px)' }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-black">
@@ -149,6 +163,7 @@ export default function MobileDocumentPDFPage() {
             />
           </div>
         )}
+        </div>
       </div>
 
       {/* Bouton flottant de retour - visible même si le header est caché */}
