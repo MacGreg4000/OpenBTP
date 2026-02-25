@@ -173,24 +173,40 @@ const ChatWindow: React.FC = () => {
         onMouseDown={isMobile ? undefined : handleMouseDown}
         style={{ 
           borderTopLeftRadius: isMobile ? '0' : '11px', 
-          borderTopRightRadius: isMobile ? '0' : '11px' 
+          borderTopRightRadius: isMobile ? '0' : '11px',
+          paddingTop: isMobile ? 'max(env(safe-area-inset-top), 0.5rem)' : undefined
         }}
       >
-        {/* Bouton fermer - mobile en haut à gauche */}
-        <button 
-          onClick={closeChat}
-          className={`absolute text-white/90 hover:text-white p-2 rounded-full hover:bg-white/20 transition-colors ${
-            isMobile ? 'top-2 left-2' : 'top-2 right-2'
-          }`}
-          aria-label="Fermer le chat"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-        </button>
+        {/* Bouton fermer - mobile: barre dédiée bien visible ; desktop: icône en haut à droite */}
+        {isMobile ? (
+          <div className="flex items-center justify-between px-3 pb-2">
+            <button 
+              onClick={closeChat}
+              className="flex items-center gap-2 min-h-[44px] min-w-[44px] text-white/95 hover:text-white p-2 rounded-xl hover:bg-white/20 transition-colors -ml-1"
+              aria-label="Fermer le chat"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="font-semibold text-base">Fermer</span>
+            </button>
+            <span className="text-white/90 text-sm font-medium">Chat</span>
+            <div className="w-[72px]" />
+          </div>
+        ) : (
+          <button 
+            onClick={closeChat}
+            className="absolute text-white/90 hover:text-white p-2 rounded-full hover:bg-white/20 transition-colors top-2 right-2"
+            aria-label="Fermer le chat"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </button>
+        )}
 
         {/* Onglets */}
-        <div className={`flex ${isMobile ? 'pt-12' : ''}`}>
+        <div className={`flex ${isMobile ? 'pt-0' : ''}`}>
           {isMessagerieEnabled && (
             <button
               onClick={() => setActiveTab('chat')}
