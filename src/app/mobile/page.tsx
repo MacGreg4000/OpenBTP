@@ -110,7 +110,7 @@ export default function MobileHomePage() {
       clientNom: chantier.clientNom,
       clientId: undefined,
     })
-    router.push('/mobile/dashboard')
+    router.push('/mobile/documents')
   }
 
   const getStatusBadge = (statut: string | undefined, etatChantier?: string | undefined) => {

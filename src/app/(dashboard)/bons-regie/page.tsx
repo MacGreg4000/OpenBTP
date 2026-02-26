@@ -75,7 +75,7 @@ export default function BonsRegiePage() {
           throw new Error('Erreur lors de la récupération des chantiers')
         }
         const chantiersJson = await chantiersResponse.json()
-        const chantiersData = Array.isArray(chantiersJson) ? chantiersJson : chantiersJson.data
+        const chantiersData = Array.isArray(chantiersJson) ? chantiersJson : (chantiersJson.chantiers ?? chantiersJson.data ?? [])
         
         // Formater les données des chantiers
         type RawChantier = { chantierId: string; nomChantier: string }

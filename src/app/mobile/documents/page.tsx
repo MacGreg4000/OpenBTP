@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
 import { BottomNav } from '@/components/mobile/BottomNav'
 import {
@@ -24,11 +25,14 @@ interface Document {
 
 export default function MobileDocumentsPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const { selectedChantier } = useSelectedChantier()
   const [documents, setDocuments] = useState<Document[]>([])
   const [photos, setPhotos] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'photos' | 'documents'>('all')
+
+  const isUser = session?.user?.role === 'USER'
 
   useEffect(() => {
     if (!selectedChantier) {
@@ -36,30 +40,43 @@ export default function MobileDocumentsPage() {
       return
     }
     loadDocuments()
-  }, [selectedChantier, router]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedChantier, router, isUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadDocuments = async () => {
     if (!selectedChantier) return
 
     try {
       setLoading(true)
-      const response = await fetch(
-        `/api/chantiers/${selectedChantier.chantierId}/documents`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        const allDocs = Array.isArray(data) ? data : []
-        
-        // Séparer photos et documents
-        const photosList = allDocs.filter(
-          (doc: Document) => doc.type === 'photo-chantier'
-        )
-        const documentsList = allDocs.filter(
-          (doc: Document) => doc.type !== 'photo-chantier'
-        )
-        
-        setDocuments(documentsList)
+
+      if (isUser) {
+        // Ouvriers : charger uniquement Plans (tag) + Photos
+        const [plansRes, photosRes] = await Promise.all([
+          fetch(`/api/chantiers/${selectedChantier.chantierId}/documents?tag=Plans`),
+          fetch(`/api/chantiers/${selectedChantier.chantierId}/documents?type=photo-chantier`),
+        ])
+        const plans = plansRes.ok ? (await plansRes.json()) : []
+        const photosData = photosRes.ok ? (await photosRes.json()) : []
+        const plansList = Array.isArray(plans) ? plans : []
+        const photosList = Array.isArray(photosData) ? photosData : []
+        setDocuments(plansList)
         setPhotos(photosList)
+      } else {
+        // Admin/Manager : tous les documents
+        const response = await fetch(
+          `/api/chantiers/${selectedChantier.chantierId}/documents`
+        )
+        if (response.ok) {
+          const data = await response.json()
+          const allDocs = Array.isArray(data) ? data : []
+          const photosList = allDocs.filter(
+            (doc: Document) => doc.type === 'photo-chantier'
+          )
+          const documentsList = allDocs.filter(
+            (doc: Document) => doc.type !== 'photo-chantier'
+          )
+          setDocuments(documentsList)
+          setPhotos(photosList)
+        }
       }
     } catch (error) {
       console.error('Erreur lors du chargement des documents:', error)
@@ -108,7 +125,7 @@ export default function MobileDocumentsPage() {
             >
               <ArrowLeftIcon className="h-6 w-6" />
             </button>
-            <h1 className="text-xl font-black">Documents & Photos</h1>
+            <h1 className="text-xl font-black">{isUser ? 'Plans & Photos' : 'Documents & Photos'}</h1>
             <div className="w-10"></div>
           </div>
           <p className="text-sm text-blue-100">{selectedChantier.nomChantier}</p>
@@ -146,7 +163,7 @@ export default function MobileDocumentsPage() {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Docs ({documents.length})
+            {isUser ? 'Plans' : 'Docs'} ({documents.length})
           </button>
         </div>
       </div>
