@@ -146,7 +146,12 @@ const ChatWindow: React.FC = () => {
   // Si la fenêtre n'est pas ouverte, ne rien afficher
   if (!isOpen) return null;
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  // Détection mobile: viewport < 768px OU appareil tactile (ex: "version bureau" sur téléphone)
+  const isMobile = typeof window !== 'undefined' && (
+    window.innerWidth < 768 ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0)
+  );
 
   return (
     <div 

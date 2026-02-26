@@ -107,6 +107,16 @@ export default function DocumentsAdministratifsPage() {
     return () => clearTimeout(debounceTimer)
   }, [selectedTagFilter, searchTerm, fetchDocuments])
 
+  // Fermer la prévisualisation avec la touche Escape
+  useEffect(() => {
+    if (!previewDocument) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePreview()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [previewDocument])
+
   const handleFileUpload = async () => {
     if (!fileToUpload) return
 
@@ -227,13 +237,23 @@ export default function DocumentsAdministratifsPage() {
     const isText = ['txt', 'md', 'csv'].includes(fileType)
 
     return (
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={closePreview}
+        role="button"
+        tabIndex={-1}
+        aria-label="Fermer la prévisualisation (cliquez ou appuyez sur Échap)"
+      >
+        <div
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 max-w-4xl w-full max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex justify-between items-center p-4 border-b-2 border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-900/10 dark:to-indigo-900/10">
-            <h3 className="text-lg font-black text-gray-900 dark:text-white">{previewDocument.nom}</h3>
+            <h3 className="text-lg font-black text-gray-900 dark:text-white truncate pr-4">{previewDocument.nom}</h3>
             <button
               onClick={closePreview}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+              className="flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 touch-manipulation"
+              aria-label="Fermer"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
