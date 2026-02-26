@@ -21,8 +21,8 @@ export async function GET(request: Request) {
       const portalSession = readPortalSessionFromCookie(cookieHeader)
       console.log('🔍 Session portail extraite:', portalSession)
       
-      if (portalSession && (portalSession.t === 'OUVRIER_INTERNE' || portalSession.t === 'SOUSTRAITANT')) {
-        console.log('🔐 Authentification portail détectée pour chantiers:', portalSession)
+      if (portalSession && (portalSession.t === 'OUVRIER_INTERNE' || portalSession.t === 'SOUSTRAITANT' || portalSession.t === 'MAGASINIER')) {
+        console.log('🔐 Authentification portail détectée pour chantiers:', portalSession.t)
       } else {
         console.log('❌ Authentification portail échouée')
         return NextResponse.json([], { status: 401 })

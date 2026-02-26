@@ -6,7 +6,8 @@ import {
   ArrowLeftIcon,
   ClipboardDocumentListIcon,
   ClockIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline'
 import { usePortalI18n } from '../../i18n'
 import Image from 'next/image'
@@ -79,25 +80,38 @@ export default function MagasinierHistoriquePage() {
             <ArrowLeftIcon className="h-5 w-5 mr-1" />
             {t('logout')}
           </button>
-          <div className="font-semibold">{me?.magasinier?.nom || ''}</div>
-          <div className="w-16" />
+          <div className="font-semibold flex-1 text-center">{me?.magasinier?.nom || ''}</div>
+          <a
+            href="/public/portail/magasinier/journal"
+            className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium flex items-center gap-1"
+          >
+            <CalendarDaysIcon className="h-4 w-4" />
+            Journal
+          </a>
         </div>
       </header>
 
-      <nav className="flex border-b border-gray-200 bg-white shadow-sm">
+      <nav className="flex border-b border-gray-200 bg-white shadow-sm overflow-x-auto">
         <button
           onClick={() => router.push('/public/portail/magasinier/taches')}
-          className="flex-1 py-3 font-medium text-gray-600 hover:text-blue-600 transition-colors"
+          className="flex-1 min-w-0 py-3 px-2 font-medium text-gray-600 hover:text-blue-600 transition-colors text-sm flex items-center justify-center gap-1"
         >
-          <ClipboardDocumentListIcon className="h-5 w-5 inline mr-2" />
-          Mes tâches
+          <ClipboardDocumentListIcon className="h-5 w-5 flex-shrink-0" />
+          <span>Tâches</span>
         </button>
         <button
           onClick={() => router.push('/public/portail/magasinier/historique')}
-          className="flex-1 py-3 font-medium text-blue-700 border-b-2 border-blue-600"
+          className="flex-1 min-w-0 py-3 px-2 font-medium text-blue-700 border-b-2 border-blue-600 text-sm flex items-center justify-center gap-1"
         >
-          <ClockIcon className="h-5 w-5 inline mr-2" />
-          Historique
+          <ClockIcon className="h-5 w-5 flex-shrink-0" />
+          <span>Historique</span>
+        </button>
+        <button
+          onClick={() => router.push('/public/portail/magasinier/journal')}
+          className="flex-1 min-w-0 py-3 px-2 font-medium text-gray-600 hover:text-blue-600 transition-colors text-sm flex items-center justify-center gap-1"
+        >
+          <CalendarDaysIcon className="h-5 w-5 flex-shrink-0" />
+          <span>Journal</span>
         </button>
       </nav>
 

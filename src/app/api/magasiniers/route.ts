@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import { ensureOuvrierInterneForMagasinier } from '@/lib/journalMagasinier'
 
 export async function GET() {
   try {
@@ -45,6 +46,9 @@ export async function POST(request: NextRequest) {
         actif: true
       }
     })
+
+    // Créer l'OuvrierInterne correspondant pour le journal (même id)
+    await ensureOuvrierInterneForMagasinier(magasinier.id)
 
     // Créer l'accès PIN si fourni
     if (pin && String(pin).replace(/\D/g, '').length >= 4) {

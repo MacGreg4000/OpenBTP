@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { readPortalSessionFromCookie } from '@/app/public/portail/auth'
+import { ensureOuvrierInterneForMagasinier } from '@/lib/journalMagasinier'
 
 // GET - Récupérer le journal d'un ouvrier
 export async function GET(request: Request) {
@@ -10,25 +11,40 @@ export async function GET(request: Request) {
     // Essayer d'abord l'authentification normale
     const session = await getServerSession(authOptions)
     let isPortalAuth = false
-    
+    let portalActorId: string | null = null
+
     // Si pas de session normale, essayer l'authentification portail
     if (!session) {
       const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
-      if (portalSession && portalSession.t === 'OUVRIER_INTERNE') {
+      if (portalSession && (portalSession.t === 'OUVRIER_INTERNE' || portalSession.t === 'MAGASINIER')) {
         isPortalAuth = true
-        console.log('🔐 Authentification portail détectée:', portalSession)
+        portalActorId = portalSession.id
       } else {
         return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
       }
     }
 
     const { searchParams } = new URL(request.url)
-    const ouvrierId = searchParams.get('ouvrierId')
+    let ouvrierId = searchParams.get('ouvrierId')
     const date = searchParams.get('date')
     const mois = searchParams.get('mois') // Format YYYY-MM
 
     if (!ouvrierId) {
       return NextResponse.json({ error: 'ID ouvrier requis' }, { status: 400 })
+    }
+
+    // Portail magasinier : ouvrierId = magasinierId, créer OuvrierInterne si besoin
+    const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
+    if (portalSession?.t === 'MAGASINIER') {
+      if (ouvrierId !== portalSession.id) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      }
+      const ok = await ensureOuvrierInterneForMagasinier(ouvrierId)
+      if (!ok) {
+        return NextResponse.json({ error: 'Magasinier introuvable' }, { status: 404 })
+      }
+    } else if (isPortalAuth && portalActorId && ouvrierId !== portalActorId) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
     // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
@@ -89,13 +105,12 @@ export async function POST(request: Request) {
     // Essayer d'abord l'authentification normale
     const session = await getServerSession(authOptions)
     let isPortalAuth = false
-    
+
     // Si pas de session normale, essayer l'authentification portail
     if (!session) {
       const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
-      if (portalSession && portalSession.t === 'OUVRIER_INTERNE') {
+      if (portalSession && (portalSession.t === 'OUVRIER_INTERNE' || portalSession.t === 'MAGASINIER')) {
         isPortalAuth = true
-        console.log('🔐 Authentification portail détectée pour POST:', portalSession)
       } else {
         return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
       }
@@ -104,19 +119,28 @@ export async function POST(request: Request) {
     const body = await request.json()
     console.log('📝 Données reçues pour création journal:', body)
     
-    const { 
-      ouvrierId, 
-      date, 
-      heureDebut, 
-      heureFin, 
-      chantierId, 
-      lieuLibre, 
-      description, 
-      photos 
+    const {
+      ouvrierId,
+      date,
+      heureDebut,
+      heureFin,
+      chantierId,
+      lieuLibre,
+      description,
+      photos
     } = body
 
-    // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
-    if (!isPortalAuth && session && session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
+    // Portail : vérifier que l'acteur ne crée que pour lui-même
+    if (isPortalAuth) {
+      const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
+      if (portalSession && ouvrierId !== portalSession.id) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      }
+      if (portalSession?.t === 'MAGASINIER') {
+        const ok = await ensureOuvrierInterneForMagasinier(ouvrierId)
+        if (!ok) return NextResponse.json({ error: 'Magasinier introuvable' }, { status: 404 })
+      }
+    } else if (session && session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.role !== 'OUVRIER_INTERNE') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 

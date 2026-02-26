@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import { checkJournalEntryAuth } from '@/lib/journalAuth'
 
 // GET - Récupérer une entrée spécifique
 export async function GET(
@@ -10,11 +9,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
 
     const entree = await prisma.journalOuvrier.findUnique({
       where: { id },
@@ -38,9 +32,9 @@ export async function GET(
       return NextResponse.json({ error: 'Entrée non trouvée' }, { status: 404 })
     }
 
-    // Vérifier les permissions
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER' && session.user.id !== entree.ouvrierId) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    const auth = await checkJournalEntryAuth(request, entree.ouvrierId)
+    if (!auth.allowed) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: auth.status })
     }
 
     return NextResponse.json(entree)
@@ -60,11 +54,6 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
 
     const entree = await prisma.journalOuvrier.findUnique({
       where: { id }
@@ -74,16 +63,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Entrée non trouvée' }, { status: 404 })
     }
 
-    // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
-    const role = session.user.role
-    const isManagerOrAdmin = role === 'ADMIN' || role === 'MANAGER'
-    const isOwner = role === 'OUVRIER_INTERNE'
-
-    if (!isManagerOrAdmin && !isOwner) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    const auth = await checkJournalEntryAuth(request, entree.ouvrierId)
+    if (!auth.allowed) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: auth.status })
     }
 
-    if (!isManagerOrAdmin) {
+    if (auth.isOwner) {
       const maintenant = new Date()
       if (maintenant > entree.modifiableJusquA) {
         return NextResponse.json({ 
@@ -151,11 +136,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
 
     const entree = await prisma.journalOuvrier.findUnique({
       where: { id }
@@ -165,16 +145,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Entrée non trouvée' }, { status: 404 })
     }
 
-    // Vérifier que l'utilisateur est l'ouvrier ou un manager/admin
-    const role = session.user.role
-    const isManagerOrAdmin = role === 'ADMIN' || role === 'MANAGER'
-    const isOwner = role === 'OUVRIER_INTERNE'
-
-    if (!isManagerOrAdmin && !isOwner) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    const auth = await checkJournalEntryAuth(request, entree.ouvrierId)
+    if (!auth.allowed) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: auth.status })
     }
 
-    if (!isManagerOrAdmin) {
+    if (auth.isOwner) {
       const maintenant = new Date()
       if (maintenant > entree.modifiableJusquA) {
         return NextResponse.json({ 
