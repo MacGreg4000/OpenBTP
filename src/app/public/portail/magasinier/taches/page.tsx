@@ -202,13 +202,6 @@ export default function MagasinierTachesPage() {
           <ClockIcon className="h-5 w-5 flex-shrink-0" />
           <span>Historique</span>
         </button>
-        <button
-          onClick={() => router.push('/public/portail/magasinier/journal')}
-          className="flex-1 min-w-0 py-3 px-2 font-medium text-gray-600 hover:text-blue-600 transition-colors text-sm flex items-center justify-center gap-1"
-        >
-          <CalendarDaysIcon className="h-5 w-5 flex-shrink-0" />
-          <span>Journal</span>
-        </button>
       </nav>
 
       <div className="p-4 max-w-lg mx-auto">

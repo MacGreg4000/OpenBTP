@@ -149,7 +149,7 @@ export default function SousTraitantsPage() {
   const [ouvriersInternes, setOuvriersInternes] = useState<Array<{id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean}>>([])
   const [newOuvrier, setNewOuvrier] = useState({ prenom:'', nom:'', email:'', telephone:'', poste:'', actif:true })
   // Modal édition ouvrier interne
-  const [editOuvrierModal, setEditOuvrierModal] = useState<{open: boolean; ouvrier: {id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean} | null}>({open: false, ouvrier: null})
+  const [editOuvrierModal, setEditOuvrierModal] = useState<{open: boolean; ouvrier: {id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean} | null; pin:string; pinVisible:boolean; loadingPin:boolean; savingPin:boolean}>({open: false, ouvrier: null, pin:'', pinVisible:false, loadingPin:false, savingPin:false})
   const [editOuvrierForm, setEditOuvrierForm] = useState({prenom:'', nom:'', poste:'', email:'', telephone:'', actif:true})
   const [savingOuvrier, setSavingOuvrier] = useState(false)
   // Magasiniers
@@ -288,9 +288,39 @@ export default function SousTraitantsPage() {
   }
 
   // Ouvrier interne – édition
-  const openEditOuvrier = (o: {id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean}) => {
+  const openEditOuvrier = async (o: {id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean}) => {
     setEditOuvrierForm({ prenom: o.prenom||'', nom: o.nom||'', poste: o.poste||'', email: o.email||'', telephone: o.telephone||'', actif: o.actif !== false })
-    setEditOuvrierModal({open: true, ouvrier: o})
+    setEditOuvrierModal({open: true, ouvrier: o, pin:'', pinVisible:false, loadingPin:true, savingPin:false})
+    try {
+      const res = await fetch(`/api/ouvriers-internes/${o.id}/pin`)
+      const data = await res.json()
+      setEditOuvrierModal(prev => ({...prev, pin: data.pin || '', loadingPin:false}))
+    } catch {
+      setEditOuvrierModal(prev => ({...prev, loadingPin:false}))
+    }
+  }
+  const handleSaveOuvrierPin = async () => {
+    if (!editOuvrierModal.ouvrier) return
+    const pin = editOuvrierModal.pin.replace(/\D/g,'')
+    if (pin.length < 4) { showNotification('Erreur', 'PIN doit contenir au moins 4 chiffres', 'error'); return }
+    setEditOuvrierModal(prev => ({...prev, savingPin:true}))
+    try {
+      const res = await fetch(`/api/ouvriers-internes/${editOuvrierModal.ouvrier.id}/pin`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ pin })
+      })
+      if (res.ok) {
+        showNotification('Succès', 'PIN enregistré', 'success')
+      } else {
+        const err = await res.json()
+        showNotification('Erreur', err.error || 'Erreur PIN', 'error')
+      }
+    } catch {
+      showNotification('Erreur', 'Erreur réseau', 'error')
+    } finally {
+      setEditOuvrierModal(prev => ({...prev, savingPin:false}))
+    }
   }
   const handleSaveOuvrier = async () => {
     if (!editOuvrierModal.ouvrier) return
@@ -304,7 +334,7 @@ export default function SousTraitantsPage() {
       if (res.ok) {
         const updated = await res.json()
         setOuvriersInternes(prev => prev.map(o => o.id === updated.id ? updated : o))
-        setEditOuvrierModal({open:false, ouvrier:null})
+        setEditOuvrierModal({open:false, ouvrier:null, pin:'', pinVisible:false, loadingPin:false, savingPin:false})
         showNotification('Succès', 'Ouvrier mis à jour', 'success')
       } else {
         showNotification('Erreur', 'Erreur lors de la mise à jour', 'error')
@@ -1611,10 +1641,49 @@ export default function SousTraitantsPage() {
                 </label>
               </div>
             </div>
+            {/* Code PIN du portail */}
+            <div className="border-t dark:border-gray-600 pt-4 space-y-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <KeyIcon className="h-4 w-4 text-amber-600" />
+                Code PIN du portail
+              </h4>
+              {editOuvrierModal.loadingPin ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Chargement...</p>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type={editOuvrierModal.pinVisible ? 'text' : 'password'}
+                      inputMode="numeric"
+                      maxLength={8}
+                      className="w-full p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white pr-10"
+                      placeholder="4-8 chiffres"
+                      value={editOuvrierModal.pin}
+                      onChange={e => setEditOuvrierModal(prev => ({...prev, pin: e.target.value.replace(/\D/g,'')}))}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditOuvrierModal(prev => ({...prev, pinVisible: !prev.pinVisible}))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <EyeIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveOuvrierPin}
+                    disabled={editOuvrierModal.savingPin}
+                    className="px-3 py-2 text-sm text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {editOuvrierModal.savingPin ? '...' : 'Sauver PIN'}
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setEditOuvrierModal({open:false, ouvrier:null})}
+                onClick={() => setEditOuvrierModal({open:false, ouvrier:null, pin:'', pinVisible:false, loadingPin:false, savingPin:false})}
                 className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 Annuler
