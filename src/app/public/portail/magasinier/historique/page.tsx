@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { usePortalI18n } from '../../i18n'
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface TacheHistorique {
   id: string
@@ -81,13 +82,13 @@ export default function MagasinierHistoriquePage() {
             {t('logout')}
           </button>
           <div className="font-semibold flex-1 text-center">{me?.magasinier?.nom || ''}</div>
-          <a
+          <Link
             href="/public/portail/magasinier/journal"
             className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium flex items-center gap-1"
           >
             <CalendarDaysIcon className="h-4 w-4" />
             Journal
-          </a>
+          </Link>
         </div>
       </header>
 

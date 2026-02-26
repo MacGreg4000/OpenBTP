@@ -31,17 +31,17 @@ async function initializeFeatureModules() {
     { code: 'notifications', name: 'Notifications', description: 'Système de notifications email et in-app', category: 'system', icon: 'BellIcon', isActive: true, isSystem: false, ordre: 52 }
   ];
 
-  for (const module of modules) {
+  for (const mod of modules) {
     await prisma.featureModule.upsert({
-      where: { code: module.code },
+      where: { code: mod.code },
       update: {
-        name: module.name,
-        description: module.description,
-        category: module.category,
-        icon: module.icon,
-        ordre: module.ordre
+        name: mod.name,
+        description: mod.description,
+        category: mod.category,
+        icon: mod.icon,
+        ordre: mod.ordre
       },
-      create: module
+      create: mod
     });
   }
 

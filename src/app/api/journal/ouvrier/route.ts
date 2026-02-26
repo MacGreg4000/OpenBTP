@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    let ouvrierId = searchParams.get('ouvrierId')
+    const ouvrierId = searchParams.get('ouvrierId')
     const date = searchParams.get('date')
     const mois = searchParams.get('mois') // Format YYYY-MM
 
