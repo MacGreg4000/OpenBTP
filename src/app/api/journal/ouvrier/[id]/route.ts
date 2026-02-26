@@ -33,7 +33,7 @@ export async function GET(
     }
 
     const auth = await checkJournalEntryAuth(request, entree.ouvrierId)
-    if (!auth.allowed) {
+    if (auth.allowed === false) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: auth.status })
     }
 
@@ -64,7 +64,7 @@ export async function PUT(
     }
 
     const auth = await checkJournalEntryAuth(request, entree.ouvrierId)
-    if (!auth.allowed) {
+    if (auth.allowed === false) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: auth.status })
     }
 
@@ -146,7 +146,7 @@ export async function DELETE(
     }
 
     const auth = await checkJournalEntryAuth(request, entree.ouvrierId)
-    if (!auth.allowed) {
+    if (auth.allowed === false) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: auth.status })
     }
 

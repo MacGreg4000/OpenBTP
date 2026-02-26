@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const auth = await checkJournalEntryAuth(request, entree.ouvrierId)
-    if (!auth.allowed) {
+    if (auth.allowed === false) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: auth.status })
     }
 
