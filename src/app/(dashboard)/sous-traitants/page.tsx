@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { PageHeader } from '@/components/PageHeader'
@@ -167,6 +167,13 @@ export default function SousTraitantsPage() {
   const [ouvrierSortDirection, setOuvrierSortDirection] = useState<'asc' | 'desc'>('asc')
   const [statusMenuOpen, setStatusMenuOpen] = useState<string | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+
+  // Ouvriers internes affichés : on exclut les magasiniers pour éviter le doublon.
+  // Voir docs/OUVRIERS_MAGASINIERS.md pour le contexte et les alternatives.
+  const ouvriersInternesAffichables = useMemo(
+    () => ouvriersInternes.filter(o => !magasiniers.some(m => m.id === o.id)),
+    [ouvriersInternes, magasiniers]
+  )
 
   useEffect(() => {
     if (session) {
@@ -1223,7 +1230,7 @@ export default function SousTraitantsPage() {
           </div>
 
           {/* Tableau des ouvriers internes */}
-          {ouvriersInternes.length === 0 ? (
+          {ouvriersInternesAffichables.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
               <UsersIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-sm text-gray-500 dark:text-gray-400">Aucun ouvrier interne</p>
@@ -1366,7 +1373,7 @@ export default function SousTraitantsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                     {(() => {
-                      const sortedOuvriers = [...ouvriersInternes]
+                      const sortedOuvriers = [...ouvriersInternesAffichables]
                       if (ouvrierSortField) {
                         sortedOuvriers.sort((a, b) => {
                           let aValue: string = ''
