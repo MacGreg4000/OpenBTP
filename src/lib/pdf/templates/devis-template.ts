@@ -865,8 +865,8 @@ export function generateDevisHTML(data: DevisData): string {
                 <thead>
                     <tr>
                         <th style="width: 5%;">#</th>
-                        <th style="width: 15%;">Article</th>
-                        <th style="width: 30%;">Description</th>
+                        <th style="width: 8%;">Article</th>
+                        <th style="width: 37%;">Description</th>
                         <th style="width: 8%;">Unité</th>
                         <th style="width: 8%;" class="text-right">Qté</th>
                         <th style="width: 12%;" class="text-right">Prix U.</th>
@@ -1605,8 +1605,8 @@ export function generateDevisHTMLWithoutPrices(data: DevisData): string {
                 <thead>
                     <tr>
                         <th style="width: 8%;">#</th>
-                        <th style="width: 20%;">Article</th>
-                        <th style="width: 50%;">Description</th>
+                        <th style="width: 10%;">Article</th>
+                        <th style="width: 60%;">Description</th>
                         <th style="width: 10%;">Unité</th>
                         <th style="width: 12%;" class="text-right">Qté</th>
                     </tr>
