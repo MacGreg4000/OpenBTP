@@ -22,6 +22,8 @@ interface UsineAvecChargements extends Usine {
   chargements: Chargement[]
 }
 
+type ChargementAvecRetard = Chargement & { isOverdue?: boolean; originalWeek?: number }
+
 // Fonction pour obtenir le numéro de semaine ISO 8601 correct
 function getWeekNumber(date: Date): { week: number; year: number } {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -363,7 +365,26 @@ export default function PlanificationChargementsPage() {
   }
 
   // Obtenir les chargements d'une usine pour une semaine donnée
-  const getChargementsForWeek = (usine: UsineAvecChargements, week: number, year: number): Chargement[] => {
+  // Pour la semaine courante, on inclut aussi les chargements en retard (semaines passées non effectués)
+  const getChargementsForWeek = (usine: UsineAvecChargements, week: number, year: number): ChargementAvecRetard[] => {
+    const todayWeek = getWeekNumber(new Date())
+    const isCurrentWeek = week === todayWeek.week
+    const displayedWeeks = weeks.map(w => w.week)
+
+    if (isCurrentWeek) {
+      return usine.chargements
+        .filter(c => {
+          if (c.semaine === week) return true
+          // Inclure les chargements de semaines passées non affichées (en retard)
+          return c.semaine < week && !displayedWeeks.includes(c.semaine)
+        })
+        .map(c => ({
+          ...c,
+          isOverdue: c.semaine < week,
+          originalWeek: c.semaine < week ? c.semaine : undefined
+        }))
+    }
+
     return usine.chargements.filter(c => c.semaine === week)
   }
 
@@ -693,6 +714,8 @@ export default function PlanificationChargementsPage() {
                       </td>
                       {weeks.map(({ week, year, isPast }) => {
                         const chargements = getChargementsForWeek(usine, week, year)
+                        const todayWeek = getWeekNumber(new Date())
+                        const isCurrentWeek = week === todayWeek.week
                         return (
                           <td
                             key={`${week}-${year}`}
@@ -708,14 +731,22 @@ export default function PlanificationChargementsPage() {
                                     className={`text-xs px-2 py-1 rounded transition-all ${
                                       chargement.estCharge
                                         ? 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-500 opacity-60 cursor-default'
-                                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 cursor-pointer hover:shadow-md'
+                                        : chargement.isOverdue
+                                          ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 cursor-pointer hover:shadow-md border border-red-300 dark:border-red-700'
+                                          : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 cursor-pointer hover:shadow-md'
                                     }`}
                                     onClick={() => {
-                                      if (!chargement.estCharge && !isPast) {
+                                      if (!chargement.estCharge) {
                                         handleMarquerCharge(chargement.id, chargement.contenu)
                                       }
                                     }}
                                   >
+                                    {chargement.isOverdue && (
+                                      <div className="text-[9px] font-bold text-red-600 dark:text-red-400 mb-0.5 flex items-center gap-1">
+                                        <span>⚠ En retard</span>
+                                        <span className="text-red-400 dark:text-red-500">S{chargement.originalWeek}</span>
+                                      </div>
+                                    )}
                                     <div className="flex items-center justify-between gap-1">
                                       <span className={`truncate ${chargement.estCharge ? 'line-through' : ''}`}>
                                         {chargement.contenu}
@@ -724,16 +755,18 @@ export default function PlanificationChargementsPage() {
                                         <CheckIcon className="h-3 w-3 flex-shrink-0 text-green-600 dark:text-green-500" />
                                       ) : (
                                         <div className="flex gap-0.5 flex-shrink-0">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              handleReporter(chargement.id)
-                                            }}
-                                            className="hover:bg-orange-200 dark:hover:bg-orange-800/50 rounded p-0.5"
-                                            title="Reporter"
-                                          >
-                                            <ChevronRightIcon className="h-3 w-3" />
-                                          </button>
+                                          {!isCurrentWeek && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleReporter(chargement.id)
+                                              }}
+                                              className="hover:bg-orange-200 dark:hover:bg-orange-800/50 rounded p-0.5"
+                                              title="Reporter à la semaine suivante"
+                                            >
+                                              <ChevronRightIcon className="h-3 w-3" />
+                                            </button>
+                                          )}
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation()

@@ -28,29 +28,29 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     if (action === 'reporter') {
-      // Reporter à la semaine suivante (calculer la prochaine semaine de l'année)
-      const chargementActuel = await prisma.chargement.findUnique({
-        where: { id }
-      })
+      const chargementActuel = await prisma.chargement.findUnique({ where: { id } })
 
       if (!chargementActuel) {
         return NextResponse.json({ error: 'Chargement non trouvé' }, { status: 404 })
       }
 
-      // Calculer la prochaine semaine
+      // Calcul de la semaine ISO courante
       const now = new Date()
-      const currentYear = now.getFullYear()
-      const startOfYear = new Date(currentYear, 0, 1)
-      const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-      const _currentWeek = Math.ceil((days + startOfYear.getDay() + 1) / 7)
-      
-      const nextWeek = chargementActuel.semaine + 1
+      const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+      const dayNum = d.getUTCDay() || 7
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+      const currentWeekISO = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+
+      // Si le chargement est déjà dans la semaine courante ou future, reporter à la suivante
+      // Sinon (chargement en retard), ramener à la semaine courante
+      const targetWeek = chargementActuel.semaine < currentWeekISO
+        ? currentWeekISO
+        : chargementActuel.semaine + 1
 
       const chargement = await prisma.chargement.update({
         where: { id },
-        data: {
-          semaine: nextWeek
-        }
+        data: { semaine: targetWeek }
       })
 
       return NextResponse.json(chargement)
