@@ -18,7 +18,10 @@ import {
   KeyIcon,
   EyeIcon,
   EyeSlashIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  ChatBubbleLeftEllipsisIcon,
+  PhotoIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
 import Image from 'next/image'
@@ -37,6 +40,8 @@ interface Tache {
   dateEncodage: string
   dateExecution: string
   statut: string
+  commentaire: string | null
+  dateValidation: string | null
   magasinier: { id: string; nom: string }
   photos: { id: string; url: string; type: string }[]
 }
@@ -58,7 +63,7 @@ export default function LogistiquePage() {
   const [newTachePhotos, setNewTachePhotos] = useState<File[]>([])
   const [savingTache, setSavingTache] = useState(false)
   const [filterMagasinier, setFilterMagasinier] = useState('')
-  const [filterStatut, setFilterStatut] = useState('')
+  const [filterStatut, setFilterStatut] = useState('A_FAIRE')
   const fileInputRef = useRef<HTMLInputElement>(null)
   // Gestion PIN magasinier inline
   const [pinState, setPinState] = useState<Record<string, {pin: string; visible: boolean; loading: boolean; saving: boolean; loaded: boolean}>>({})
@@ -73,6 +78,7 @@ export default function LogistiquePage() {
   const [editMagasinierId, setEditMagasinierId] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -649,6 +655,23 @@ export default function LogistiquePage() {
 
             {activeTab === 'consultation' && (
               <div className="space-y-4">
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow border border-gray-100 dark:border-gray-700 text-center">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{taches.length}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Total</div>
+                  </div>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 shadow border border-amber-100 dark:border-amber-800/30 text-center">
+                    <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{taches.filter(t => t.statut === 'A_FAIRE').length}</div>
+                    <div className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">À faire</div>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 shadow border border-green-100 dark:border-green-800/30 text-center">
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-400">{taches.filter(t => t.statut === 'VALIDEE').length}</div>
+                    <div className="text-xs text-green-600 dark:text-green-500 mt-0.5">Validées</div>
+                  </div>
+                </div>
+
+                {/* Filtres */}
                 <div className="flex flex-wrap gap-2">
                   <select
                     value={filterMagasinier}
@@ -670,76 +693,133 @@ export default function LogistiquePage() {
                     <option value="VALIDEE">Validée</option>
                   </select>
                 </div>
-                  <div className="space-y-3">
-                  {taches.map((t) => (
-                    <div
-                      key={t.id}
-                      className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow border border-gray-100 dark:border-gray-700"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-gray-900 dark:text-white">{t.titre}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                            {t.magasinier.nom} • {formatDate(t.dateExecution)}
-                          </p>
-                          {t.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{t.description}</p>
-                          )}
-                          <div className="flex items-center gap-2 mt-2">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                t.statut === 'VALIDEE'
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                              }`}
-                            >
-                              {t.statut === 'VALIDEE' ? <CheckCircleIcon className="h-3 w-3" /> : <ClockIcon className="h-3 w-3" />}
-                              {t.statut === 'VALIDEE' ? 'Validée' : 'À faire'}
-                            </span>
+
+                {/* Liste */}
+                <div className="space-y-3">
+                  {taches.map((t) => {
+                    const photosAFaire = t.photos?.filter(p => p.type === 'A_FAIRE') ?? []
+                    const photosPreuve = t.photos?.filter(p => p.type === 'PREUVE') ?? []
+                    return (
+                      <div
+                        key={t.id}
+                        className={`bg-white dark:bg-gray-800 rounded-xl shadow border overflow-hidden ${
+                          t.statut === 'VALIDEE'
+                            ? 'border-green-200 dark:border-green-800/40'
+                            : 'border-gray-100 dark:border-gray-700'
+                        }`}
+                      >
+                        <div className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold text-gray-900 dark:text-white">{t.titre}</h3>
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    t.statut === 'VALIDEE'
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                                  }`}
+                                >
+                                  {t.statut === 'VALIDEE' ? <CheckCircleIcon className="h-3 w-3" /> : <ClockIcon className="h-3 w-3" />}
+                                  {t.statut === 'VALIDEE' ? 'Validée' : 'À faire'}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                {t.magasinier.nom} • {formatDate(t.dateExecution)}
+                              </p>
+                              {t.description && (
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{t.description}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                onClick={() => handleOpenEdit(t)}
+                                className="p-1.5 text-gray-400 hover:text-amber-600 rounded-lg transition-colors"
+                                title="Modifier"
+                              >
+                                <PencilSquareIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTache(t.id)}
+                                disabled={deletingId === t.id}
+                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50"
+                                title="Supprimer"
+                              >
+                                {deletingId === t.id
+                                  ? <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-red-600" />
+                                  : <TrashIcon className="h-4 w-4" />
+                                }
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                          {t.photos?.length > 0 && (
-                            <div className="flex gap-1">
-                              {t.photos.slice(0, 3).map((p) => (
-                                <div key={p.id} className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                                  <Image
-                                    src={p.url}
-                                    alt=""
-                                    fill
-                                    className="object-cover"
-                                    sizes="48px"
-                                  />
-                                </div>
-                              ))}
+
+                          {/* Photos de référence (A_FAIRE) */}
+                          {photosAFaire.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                <PhotoIcon className="h-3.5 w-3.5" />
+                                Photos de référence
+                              </p>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {photosAFaire.map((p) => (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => setLightboxUrl(p.url)}
+                                    className="relative w-14 h-14 rounded-lg overflow-hidden bg-gray-100 hover:opacity-80 transition-opacity"
+                                  >
+                                    <Image src={p.url} alt="" fill className="object-cover" sizes="56px" />
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           )}
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(t)}
-                              className="p-1.5 text-gray-400 hover:text-amber-600 rounded-lg transition-colors"
-                              title="Modifier"
-                            >
-                              <PencilSquareIcon className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTache(t.id)}
-                              disabled={deletingId === t.id}
-                              className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50"
-                              title="Supprimer"
-                            >
-                              {deletingId === t.id
-                                ? <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-red-600" />
-                                : <TrashIcon className="h-4 w-4" />
-                              }
-                            </button>
-                          </div>
+
+                          {/* Retour magasinier (si validée) */}
+                          {t.statut === 'VALIDEE' && (
+                            <div className="mt-3 pt-3 border-t border-green-100 dark:border-green-800/30">
+                              <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1 flex items-center gap-1">
+                                <CheckCircleIcon className="h-3.5 w-3.5" />
+                                Validée le {t.dateValidation ? formatDate(t.dateValidation) : '—'}
+                              </p>
+                              {t.commentaire && (
+                                <div className="flex items-start gap-1.5 mt-1">
+                                  <ChatBubbleLeftEllipsisIcon className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 italic">{t.commentaire}</p>
+                                </div>
+                              )}
+                              {photosPreuve.length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                    <CameraIcon className="h-3.5 w-3.5" />
+                                    Photos de preuve
+                                  </p>
+                                  <div className="flex gap-1.5 flex-wrap">
+                                    {photosPreuve.map((p) => (
+                                      <button
+                                        key={p.id}
+                                        onClick={() => setLightboxUrl(p.url)}
+                                        className="relative w-14 h-14 rounded-lg overflow-hidden bg-gray-100 border-2 border-green-300 dark:border-green-700 hover:opacity-80 transition-opacity"
+                                      >
+                                        <Image src={p.url} alt="" fill className="object-cover" sizes="56px" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   {taches.length === 0 && (
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-12">Aucune tâche</p>
+                    <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+                      <ArchiveBoxIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p className="font-medium">Aucune tâche</p>
+                      {filterStatut === 'A_FAIRE' && (
+                        <p className="text-sm mt-1 opacity-70">Toutes les tâches sont validées !</p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -747,6 +827,30 @@ export default function LogistiquePage() {
           </>
         )}
       </div>
+
+      {/* Lightbox photo */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 cursor-zoom-out"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 text-white bg-black/40 rounded-full hover:bg-black/60 transition-colors"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+          <div className="relative max-w-3xl max-h-[90vh] w-full h-full" onClick={e => e.stopPropagation()}>
+            <Image
+              src={lightboxUrl}
+              alt="Photo agrandie"
+              fill
+              className="object-contain cursor-default"
+              sizes="(max-width: 768px) 100vw, 768px"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modale d'édition de tâche */}
       {editTache && (

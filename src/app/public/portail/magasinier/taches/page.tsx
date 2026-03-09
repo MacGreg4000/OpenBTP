@@ -9,6 +9,7 @@ import {
   CheckCircleIcon,
   CameraIcon,
   CalendarDaysIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { usePortalI18n } from '../../i18n'
 import Image from 'next/image'
@@ -33,6 +34,7 @@ export default function MagasinierTachesPage() {
   const [modalTache, setModalTache] = useState<Tache | null>(null)
   const [modalPhotos, setModalPhotos] = useState<File[]>([])
   const [modalCommentaire, setModalCommentaire] = useState('')
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -253,12 +255,13 @@ export default function MagasinierTachesPage() {
                         {t.photos?.length > 0 && (
                           <div className="flex gap-1 mt-2 overflow-x-auto">
                             {t.photos.map((p) => (
-                              <div
+                              <button
                                 key={p.id}
-                                className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"
+                                onClick={() => setLightboxUrl(p.url)}
+                                className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 hover:opacity-80 active:scale-95 transition"
                               >
                                 <Image src={p.url} alt="" fill className="object-cover" sizes="56px" />
-                              </div>
+                              </button>
                             ))}
                           </div>
                         )}
@@ -278,6 +281,31 @@ export default function MagasinierTachesPage() {
           })}
         </div>
       </div>
+
+      {/* Lightbox photo */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 text-white bg-black/50 rounded-full"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+          <div className="relative max-w-full max-h-[90vh] w-full h-full" onClick={e => e.stopPropagation()}>
+            <Image
+              src={lightboxUrl}
+              alt="Photo agrandie"
+              fill
+              className="object-contain"
+              sizes="100vw"
+            />
+          </div>
+          <p className="absolute bottom-4 text-white/60 text-sm">Appuyer pour fermer</p>
+        </div>
+      )}
 
       {modalTache && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
