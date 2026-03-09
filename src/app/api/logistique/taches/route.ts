@@ -115,17 +115,18 @@ export async function POST(request: NextRequest) {
       const path = await import('path')
       const basePath = path.join(process.cwd(), 'public', 'uploads', 'logistique', tache.id)
       await mkdir(basePath, { recursive: true })
-      for (let i = 0; i < photoFiles.length; i++) {
-        const file = photoFiles[i]
-        if (!file.type?.startsWith('image/')) continue
-        const ext = file.name.split('.').pop() || 'jpg'
-        const filename = `photo-${Date.now()}-${i}.${ext}`
-        const relPath = `/uploads/logistique/${tache.id}/${filename}`
-        await writeFile(path.join(basePath, filename), Buffer.from(await file.arrayBuffer()))
-        await prisma.photoTacheMagasinier.create({
-          data: { tacheId: tache.id, type: 'A_FAIRE', url: relPath, ordre: i }
+      await Promise.all(
+        photoFiles.map(async (file, i) => {
+          if (!file.type?.startsWith('image/')) return
+          const ext = file.name.split('.').pop() || 'jpg'
+          const filename = `photo-${Date.now()}-${i}.${ext}`
+          const relPath = `/uploads/logistique/${tache.id}/${filename}`
+          await writeFile(path.join(basePath, filename), Buffer.from(await file.arrayBuffer()))
+          await prisma.photoTacheMagasinier.create({
+            data: { tacheId: tache.id, type: 'A_FAIRE', url: relPath, ordre: i }
+          })
         })
-      }
+      )
       const withPhotos = await prisma.tacheMagasinier.findUnique({
         where: { id: tache.id },
         include: { magasinier: { select: { id: true, nom: true } }, photos: true }
