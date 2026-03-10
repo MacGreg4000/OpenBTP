@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { evaluateFormula, isFormula } from '@/lib/formula'
 
 interface NumericInputProps {
   value: number | null | undefined
@@ -37,62 +38,65 @@ export default function NumericInput({
       ? ''
       : String(value)
 
+  const formulaMode = isFormula(displayValue)
+
   return (
-    <input
-      type="number"
-      name={name}
-      id={id}
-      step={step as string}
-      min={min as string | undefined}
-      className={className}
-      value={displayValue}
-      placeholder={placeholder}
-      disabled={disabled}
-      onFocus={(e) => {
-        // Conserver la valeur actuelle pour édition
-        const current = value ?? 0
-        setEditingValue(String(current))
-        // Sélectionner tout le texte pour édition rapide
-        requestAnimationFrame(() => {
-          try { e.target.select() } catch {}
-        })
-      }}
-      onChange={(e) => {
-        const str = e.target.value
-        setEditingValue(str)
-        
-        // Ne pas déclencher onChangeNumber si la valeur est en cours d'édition
-        if (str === '') {
-          onChangeNumber(0)
-          return
-        }
-        
-        // Parser plus robuste
-        const cleanStr = str.replace(',', '.').replace(/[^\d.-]/g, '')
-        const normalized = parseFloat(cleanStr)
-        if (Number.isFinite(normalized)) {
-          onChangeNumber(normalized)
-        }
-      }}
-      onBlur={(e) => {
-        const str = e.target.value
-        setEditingValue(undefined)
-        
-        // Re-valider la valeur finale au blur
-        if (str !== '') {
-          const cleanStr = str.replace(',', '.').replace(/[^\d.-]/g, '')
-          const normalized = parseFloat(cleanStr)
-          if (Number.isFinite(normalized)) {
-            onChangeNumber(normalized)
+    <div className="relative">
+      <input
+        type="text"
+        inputMode={formulaMode ? 'text' : 'decimal'}
+        name={name}
+        id={id}
+        className={className}
+        value={displayValue}
+        placeholder={placeholder}
+        disabled={disabled}
+        onFocus={(e) => {
+          const current = value ?? 0
+          setEditingValue(String(current))
+          requestAnimationFrame(() => {
+            try { e.target.select() } catch {}
+          })
+        }}
+        onChange={(e) => {
+          const str = e.target.value
+          setEditingValue(str)
+
+          // Mise à jour immédiate uniquement pour les valeurs numériques normales
+          if (!isFormula(str)) {
+            const cleanStr = str.replace(',', '.').replace(/[^\d.-]/g, '')
+            const normalized = parseFloat(cleanStr)
+            if (Number.isFinite(normalized)) {
+              onChangeNumber(normalized)
+            } else if (str === '' || str === '-') {
+              onChangeNumber(0)
+            }
           }
-        }
-        
-        onBlur?.()
-      }}
-      onKeyDown={(e) => {
-        onKeyDown?.(e)
-      }}
-    />
+        }}
+        onBlur={(e) => {
+          const str = e.target.value
+          setEditingValue(undefined)
+
+          const result = evaluateFormula(str)
+          onChangeNumber(result !== null ? result : 0)
+
+          onBlur?.()
+        }}
+        onKeyDown={(e) => {
+          // Valider la formule avec Entrée
+          if (e.key === 'Enter' && isFormula(displayValue)) {
+            const result = evaluateFormula(displayValue)
+            setEditingValue(undefined)
+            onChangeNumber(result !== null ? result : 0)
+          }
+          onKeyDown?.(e)
+        }}
+      />
+      {formulaMode && !disabled && (
+        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-purple-500 dark:text-purple-400 pointer-events-none select-none leading-none">
+          fx
+        </span>
+      )}
+    </div>
   )
 }
-

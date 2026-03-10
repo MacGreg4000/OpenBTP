@@ -1,5 +1,6 @@
 'use client'
 
+import NumericInput from '@/components/ui/NumericInput'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { use } from 'react'
@@ -464,63 +465,33 @@ export default function NouveauMetrePage(props: { params: Promise<{ chantierId: 
                                     />
                                   </td>
                                   <td className="py-2 px-3">
-                                    <input
-                                      type="number"
-                                      step="0.01"
+                                    <NumericInput
+                                      value={ligne.longueur ?? 0}
+                                      onChangeNumber={(val) => updateLigne(categorie.id, ligne.id, { longueur: val || null })}
                                       placeholder="m"
-                                      value={ligne.longueur || ''}
-                                      onChange={(e) =>
-                                        updateLigne(categorie.id, ligne.id, {
-                                          longueur: e.target.value
-                                            ? parseFloat(e.target.value)
-                                            : null,
-                                        })
-                                      }
                                       className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
                                     />
                                   </td>
                                   <td className="py-2 px-3">
-                                    <input
-                                      type="number"
-                                      step="0.01"
+                                    <NumericInput
+                                      value={ligne.largeur ?? 0}
+                                      onChangeNumber={(val) => updateLigne(categorie.id, ligne.id, { largeur: val || null })}
                                       placeholder="m"
-                                      value={ligne.largeur || ''}
-                                      onChange={(e) =>
-                                        updateLigne(categorie.id, ligne.id, {
-                                          largeur: e.target.value
-                                            ? parseFloat(e.target.value)
-                                            : null,
-                                        })
-                                      }
                                       className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
                                     />
                                   </td>
                                   <td className="py-2 px-3">
-                                    <input
-                                      type="number"
-                                      step="0.01"
+                                    <NumericInput
+                                      value={ligne.hauteur ?? 0}
+                                      onChangeNumber={(val) => updateLigne(categorie.id, ligne.id, { hauteur: val || null })}
                                       placeholder="m"
-                                      value={ligne.hauteur || ''}
-                                      onChange={(e) =>
-                                        updateLigne(categorie.id, ligne.id, {
-                                          hauteur: e.target.value
-                                            ? parseFloat(e.target.value)
-                                            : null,
-                                        })
-                                      }
                                       className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
                                     />
                                   </td>
                                   <td className="py-2 px-3">
-                                    <input
-                                      type="number"
-                                      step="0.01"
+                                    <NumericInput
                                       value={ligne.quantite}
-                                      onChange={(e) =>
-                                        updateLigne(categorie.id, ligne.id, {
-                                          quantite: parseFloat(e.target.value) || 0,
-                                        })
-                                      }
+                                      onChangeNumber={(val) => updateLigne(categorie.id, ligne.id, { quantite: val })}
                                       className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white text-right"
                                     />
                                     <span className="text-xs text-gray-500 ml-1">{ligne.unite}</span>

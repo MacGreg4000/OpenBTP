@@ -1,5 +1,6 @@
 'use client'
 
+import { evaluateFormula } from '@/lib/formula'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { DndProvider, useDrag, useDrop } from 'react-dnd'
@@ -694,10 +695,7 @@ export default function NouveauDevisPage() {
 
 // Normalise une saisie décimale (virgule → point) et retourne le float ou null si invalide
 function parseDecimalInput(raw: string): number | null {
-  const normalized = raw.replace(',', '.').trim()
-  if (normalized === '' || normalized === '.' || normalized === '-') return null
-  const n = parseFloat(normalized)
-  return isNaN(n) ? null : n
+  return evaluateFormula(raw)
 }
 
 // Composant pour une ligne de devis
@@ -863,32 +861,56 @@ function LigneDevisRow({
         </select>
       </td>
       <td className="px-3 py-2">
-        <input
-          type="text"
-          inputMode="decimal"
-          value={rawQuantite}
-          onChange={(e) => setRawQuantite(e.target.value)}
-          onBlur={() => {
-            const n = parseDecimalInput(rawQuantite) ?? 0
-            setRawQuantite(String(n))
-            onUpdate(ligne.id, 'quantite', n)
-          }}
-          className="w-full px-2 py-1.5 text-sm text-center border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            inputMode={rawQuantite.startsWith('=') ? 'text' : 'decimal'}
+            value={rawQuantite}
+            onChange={(e) => setRawQuantite(e.target.value)}
+            onBlur={() => {
+              const n = parseDecimalInput(rawQuantite) ?? 0
+              setRawQuantite(String(n))
+              onUpdate(ligne.id, 'quantite', n)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && rawQuantite.startsWith('=')) {
+                const n = parseDecimalInput(rawQuantite) ?? 0
+                setRawQuantite(String(n))
+                onUpdate(ligne.id, 'quantite', n)
+              }
+            }}
+            className="w-full px-2 py-1.5 text-sm text-center border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
+          />
+          {rawQuantite.startsWith('=') && (
+            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-purple-500 dark:text-purple-400 pointer-events-none">fx</span>
+          )}
+        </div>
       </td>
       <td className="px-3 py-2">
-        <input
-          type="text"
-          inputMode="decimal"
-          value={rawPrix}
-          onChange={(e) => setRawPrix(e.target.value)}
-          onBlur={() => {
-            const n = parseDecimalInput(rawPrix) ?? 0
-            setRawPrix(String(n))
-            onUpdate(ligne.id, 'prixUnitaire', n)
-          }}
-          className="w-full px-2 py-1.5 text-sm text-right border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            inputMode={rawPrix.startsWith('=') ? 'text' : 'decimal'}
+            value={rawPrix}
+            onChange={(e) => setRawPrix(e.target.value)}
+            onBlur={() => {
+              const n = parseDecimalInput(rawPrix) ?? 0
+              setRawPrix(String(n))
+              onUpdate(ligne.id, 'prixUnitaire', n)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && rawPrix.startsWith('=')) {
+                const n = parseDecimalInput(rawPrix) ?? 0
+                setRawPrix(String(n))
+                onUpdate(ligne.id, 'prixUnitaire', n)
+              }
+            }}
+            className="w-full px-2 py-1.5 text-sm text-right border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 dark:focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-800 transition-colors"
+          />
+          {rawPrix.startsWith('=') && (
+            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-purple-500 dark:text-purple-400 pointer-events-none">fx</span>
+          )}
+        </div>
       </td>
       <td className="px-3 py-2">
         <input
