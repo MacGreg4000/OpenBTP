@@ -7,7 +7,10 @@ export async function POST(request: NextRequest) {
   try {
     // Vérifier le token d'authentification du cron (optionnel mais recommandé)
     const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET || 'default-secret-change-me'
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
+      return NextResponse.json({ error: 'CRON_SECRET non configuré' }, { status: 500 })
+    }
     
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(

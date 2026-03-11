@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { notifier } from '@/lib/services/notificationService'
+import { readPortalSessionFromCookie, unauthorized } from '@/app/public/portail/auth'
 
 interface MetreLineInput {
   ligneCommandeId?: number
@@ -19,6 +20,11 @@ export async function POST(request: Request, props: { params: Promise<{ type: 'o
   const { type, actorId } = await props.params
   if (type !== 'soustraitant') {
     return NextResponse.json({ error: 'Type non supporté' }, { status: 400 })
+  }
+
+  const session = readPortalSessionFromCookie(request.headers.get('cookie'))
+  if (!session || session.t !== 'SOUSTRAITANT' || session.id !== actorId) {
+    return unauthorized()
   }
 
   try {

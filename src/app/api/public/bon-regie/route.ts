@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
-// Récupérer les bons de régie, avec limite optionnelle
+// Récupérer les bons de régie, avec limite optionnelle (réservé aux utilisateurs connectés)
 export async function GET(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  }
   try {
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get('limit');
@@ -73,20 +79,12 @@ export async function POST(request: Request) {
     console.error('Erreur lors de la création du bon de régie:', error)
     if (typeof error === 'object' && error && 'code' in error) {
       return new NextResponse(
-        JSON.stringify({ 
-          error: `Erreur de base de données. Veuillez vérifier les données soumises.`,
-          details: (error as { message?: string }).message || 'Inconnue'
-        }),
+        JSON.stringify({ error: 'Erreur de base de données. Veuillez vérifier les données soumises.' }),
         { status: 409, headers: { 'Content-Type': 'application/json' } }
       )
-    } else if (error instanceof Error) {
-      return new NextResponse(
-        JSON.stringify({ error: error.message }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
     }
     return new NextResponse(
-      JSON.stringify({ error: 'Erreur inconnue lors de la création du bon de régie' }),
+      JSON.stringify({ error: 'Erreur lors de la création du bon de régie' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { signPortalSession } from '@/app/public/portail/auth'
+import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,13 +13,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'PIN invalide' }, { status: 400 })
     }
 
-    const access = await prisma.publicAccessPIN.findFirst({
-      where: {
-        subjectType: 'MAGASINIER',
-        codePIN,
-        estActif: true
-      }
+    // Avec des PINs hachés, on ne peut pas filtrer par valeur directement.
+    // On récupère tous les PINs MAGASINIER actifs et on compare avec bcrypt.
+    const candidates = await prisma.publicAccessPIN.findMany({
+      where: { subjectType: 'MAGASINIER', estActif: true }
     })
+
+    let access = null
+    for (const candidate of candidates) {
+      if (await bcrypt.compare(codePIN, candidate.codePIN)) {
+        access = candidate
+        break
+      }
+    }
 
     if (!access) {
       return NextResponse.json({ error: 'PIN invalide' }, { status: 401 })
@@ -33,10 +41,10 @@ export async function POST(request: NextRequest) {
     }
 
     const res = NextResponse.json({ ok: true, magasinierId: magasinier.id, nom: magasinier.nom })
-    const value = `MAGASINIER:${magasinier.id}`
+    const value = signPortalSession('MAGASINIER', magasinier.id)
 
     res.cookies.set('portalSession', value, {
-      httpOnly: false,
+      httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',

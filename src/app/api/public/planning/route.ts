@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { readPortalSessionFromCookie, unauthorized } from '@/app/public/portail/auth'
 
 // GET /api/public/planning?subjectType=OUVRIER_INTERNE|SOUSTRAITANT&subjectId&from&to
 export async function GET(request: NextRequest) {
+  const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
+  if (!portalSession) return unauthorized()
+
   try {
     const { searchParams } = new URL(request.url)
     const subjectType = searchParams.get('subjectType')
@@ -10,6 +14,9 @@ export async function GET(request: NextRequest) {
     const from = searchParams.get('from')
     const to = searchParams.get('to')
     if (!subjectType || !subjectId) return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+
+    // Vérifier que l'utilisateur accède uniquement à ses propres données
+    if (portalSession.id !== subjectId) return unauthorized()
 
     const where: Record<string, unknown> = {}
     if (from || to) {

@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import bcrypt from 'bcryptjs'
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   const rec = await prisma.publicAccessPIN.findFirst({ where: { subjectType: 'SOUSTRAITANT', subjectId: id, estActif: true } })
-  return NextResponse.json({ pin: rec?.codePIN || null })
+  return NextResponse.json({ hasPin: !!rec })
 }
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -18,12 +19,12 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     if (!session) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     const body = await request.json().catch(()=> ({})) as { pin?: string }
     if (!body.pin || body.pin.length < 4) return NextResponse.json({ error: 'PIN invalide' }, { status: 400 })
-    // upsert
+    const pinHash = await bcrypt.hash(body.pin, 12)
     const rec = await prisma.publicAccessPIN.findFirst({ where: { subjectType: 'SOUSTRAITANT', subjectId: id } })
     if (rec) {
-      await prisma.publicAccessPIN.update({ where: { id: rec.id }, data: { codePIN: body.pin, estActif: true } })
+      await prisma.publicAccessPIN.update({ where: { id: rec.id }, data: { codePIN: pinHash, estActif: true } })
     } else {
-      await prisma.publicAccessPIN.create({ data: { subjectType: 'SOUSTRAITANT', subjectId: id, codePIN: body.pin, estActif: true } })
+      await prisma.publicAccessPIN.create({ data: { subjectType: 'SOUSTRAITANT', subjectId: id, codePIN: pinHash, estActif: true } })
     }
     return NextResponse.json({ ok: true })
   } catch {

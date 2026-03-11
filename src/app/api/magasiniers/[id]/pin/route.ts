@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
+import bcrypt from 'bcryptjs'
 
 export async function GET(
   _req: NextRequest,
@@ -22,7 +23,7 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({ pin: access?.codePIN ?? '' })
+    return NextResponse.json({ hasPin: !!access })
   } catch (error) {
     console.error('Erreur GET pin magasinier:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
@@ -61,11 +62,13 @@ export async function PUT(
       }
     })
 
+    const codePINHash = await bcrypt.hash(codePIN, 12)
+
     await prisma.publicAccessPIN.create({
       data: {
         subjectType: 'MAGASINIER',
         subjectId: id,
-        codePIN,
+        codePIN: codePINHash,
         estActif: true
       }
     })

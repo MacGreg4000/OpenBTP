@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 import { writeFile } from 'fs/promises'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 const DOCUMENTS_ROOT = process.env.DOCUMENTS_ROOT || path.join(process.cwd(), 'public', 'fiches-techniques')
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
@@ -50,6 +52,10 @@ function getMimeType(filename: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  }
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null

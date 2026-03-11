@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 import { readFile } from 'fs/promises'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 const DOCUMENTS_ROOT = process.env.DOCUMENTS_ROOT || path.join(process.cwd(), 'public', 'fiches-techniques')
 
@@ -49,6 +51,10 @@ function getMimeType(filename: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  }
   try {
     // Récupérer le chemin du fichier à télécharger
     const url = new URL(request.url)

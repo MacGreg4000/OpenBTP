@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/client';
+import { readPortalSessionFromCookie, unauthorized } from '@/app/public/portail/auth';
 
 /**
  * GET /api/public/photos/chantiers
  * Récupère les chantiers disponibles pour l'upload de photos
  */
 export async function GET(request: NextRequest) {
+  const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
+  if (!portalSession) return unauthorized()
+
   try {
     const { searchParams } = new URL(request.url);
     const uploadedBy = searchParams.get('uploadedBy');
@@ -16,6 +20,11 @@ export async function GET(request: NextRequest) {
         { error: 'Paramètres manquants' },
         { status: 400 }
       );
+    }
+
+    // Vérifier que l'utilisateur accède uniquement à ses propres données
+    if (portalSession.id !== uploadedBy) {
+      return unauthorized()
     }
 
     let chantiers = [];

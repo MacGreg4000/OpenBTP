@@ -301,7 +301,7 @@ export default function SousTraitantsPage() {
     try {
       const res = await fetch(`/api/ouvriers-internes/${o.id}/pin`)
       const data = await res.json()
-      setEditOuvrierModal(prev => ({...prev, pin: data.pin || '', loadingPin:false}))
+      setEditOuvrierModal(prev => ({...prev, pin: '', loadingPin:false}))
     } catch {
       setEditOuvrierModal(prev => ({...prev, loadingPin:false}))
     }
@@ -400,7 +400,7 @@ export default function SousTraitantsPage() {
     try {
       const res = await fetch(`/api/magasiniers/${mag.id}/pin`)
       const data = await res.json()
-      setEditMagModal(prev => ({...prev, pin: data.pin || '', loadingPin:false}))
+      setEditMagModal(prev => ({...prev, pin: '', loadingPin:false}))
     } catch {
       setEditMagModal(prev => ({...prev, loadingPin:false}))
     }

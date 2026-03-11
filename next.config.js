@@ -78,7 +78,7 @@ const nextConfig = {
           },
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*',
+            value: process.env.NEXTAUTH_URL || '',
           },
           {
             key: 'Access-Control-Allow-Methods',

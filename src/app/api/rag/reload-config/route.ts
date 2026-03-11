@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function POST() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  }
   try {
     console.log('🔄 Rechargement de la configuration Ollama...');
     
@@ -10,14 +16,9 @@ export async function POST() {
     
     console.log('✅ Configuration Ollama rechargée');
     
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Configuration Ollama rechargée avec succès',
-      config: {
-        baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-        model: process.env.OLLAMA_MODEL || 'phi3:mini',
-        embeddingModel: process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text:latest'
-      }
+    return NextResponse.json({
+      success: true,
+      message: 'Configuration Ollama rechargée avec succès'
     });
   } catch (error) {
     console.error('❌ Erreur lors du rechargement de la configuration:', error);

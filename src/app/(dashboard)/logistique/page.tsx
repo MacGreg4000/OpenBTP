@@ -220,7 +220,7 @@ export default function LogistiquePage() {
     try {
       const res = await fetch(`/api/magasiniers/${magId}/pin`)
       const data = await res.json()
-      setPinState(prev => ({...prev, [magId]: {pin: data.pin || '', visible:false, loading:false, saving:false, loaded:true}}))
+      setPinState(prev => ({...prev, [magId]: {pin: '', visible:false, loading:false, saving:false, loaded:true}}))
     } catch {
       setPinState(prev => ({...prev, [magId]: {pin:'', visible:false, loading:false, saving:false, loaded:true}}))
     }

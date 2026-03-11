@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/client';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { readPortalSessionFromCookie, unauthorized } from '@/app/public/portail/auth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -13,6 +14,9 @@ const PHOTOS_BASE_PATH = join(process.cwd(), 'public', 'uploads', 'photos-extern
  * Upload de photos par les utilisateurs externes (ouvriers et sous-traitants)
  */
 export async function POST(request: NextRequest) {
+  const portalSession = readPortalSessionFromCookie(request.headers.get('cookie'))
+  if (!portalSession) return unauthorized()
+
   try {
     const formData = await request.formData();
     
@@ -30,6 +34,11 @@ export async function POST(request: NextRequest) {
         { error: 'Données manquantes' },
         { status: 400 }
       );
+    }
+
+    // Vérifier que l'utilisateur upload pour lui-même uniquement
+    if (portalSession.id !== uploadedBy) {
+      return unauthorized()
     }
 
     // Vérifier que le chantier existe

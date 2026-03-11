@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { signPortalSession } from '@/app/public/portail/auth'
+import bcrypt from 'bcryptjs'
 
 type SubjectTypeInput = 'ouvrier' | 'soustraitant'
 type SubjectEnumValue = 'OUVRIER_INTERNE' | 'SOUSTRAITANT'
@@ -97,20 +99,19 @@ export async function POST(request: Request) {
       where: {
         subjectType,
         subjectId: actorId,
-        codePIN: pin,
         estActif: true,
       }
     })
 
-    if (!access) {
+    if (!access || !(await bcrypt.compare(pin, access.codePIN))) {
       return NextResponse.json({ error: 'PIN invalide' }, { status: 401 })
     }
 
     const res = NextResponse.json({ ok: true })
-    const value = `${subjectType}:${actorId}`
-    
+    const value = signPortalSession(subjectType, actorId)
+
     res.cookies.set('portalSession', value, {
-      httpOnly: false, // Permettre l'accès depuis JavaScript en développement
+      httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',

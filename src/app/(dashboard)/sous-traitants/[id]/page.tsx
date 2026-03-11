@@ -76,7 +76,7 @@ export default function SousTraitantConsultationPage(
           try {
             const resPin = await fetch(`/api/sous-traitants/${params.id}/pin`)
             const dataPin = await resPin.json()
-            setPin(dataPin.pin || '')
+            setPin('')
           } catch {}
         })
         .catch(error => {

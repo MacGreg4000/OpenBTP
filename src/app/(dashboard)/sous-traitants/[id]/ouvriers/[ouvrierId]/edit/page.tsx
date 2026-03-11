@@ -63,7 +63,7 @@ export default function EditOuvrierPage(
           try {
             const resPin = await fetch(`/api/ouvriers-internes/${params.ouvrierId}/pin`)
             const dataPin = await resPin.json()
-            setPin(dataPin.pin || '')
+            setPin('')
           } catch {}
         })
         .catch(error => {

@@ -269,9 +269,11 @@ export const authOptions: AuthOptions = {
     },
   },
   debug: process.env.NODE_ENV === 'development',
-  secret: process.env.NEXTAUTH_SECRET || (() => {
-    console.error('❌ [NextAuth] NEXTAUTH_SECRET n\'est pas défini! L\'authentification ne fonctionnera pas correctement.')
-    return 'fallback-secret-change-in-production'
+  secret: (() => {
+    if (!process.env.NEXTAUTH_SECRET) {
+      throw new Error('❌ NEXTAUTH_SECRET est manquant. L\'application ne peut pas démarrer sans ce secret.')
+    }
+    return process.env.NEXTAUTH_SECRET
   })(),
   // Gestion des erreurs
   logger: {

@@ -6,7 +6,7 @@ export async function POST() {
     
     // Supprimer le cookie portalSession
     res.cookies.set('portalSession', '', {
-      httpOnly: false,
+      httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
