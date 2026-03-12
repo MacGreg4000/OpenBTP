@@ -1,6 +1,8 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { fullRAGIndexing, incrementalRAGIndexing } from './ragIndexingTasks';
 import { sendMonthlyReport } from '@/lib/email/monthly-report';
+import { spawn } from 'child_process';
+import path from 'path';
 
 // Planificateur de tâches pour l'indexation RAG
 export class RAGIndexingScheduler {
@@ -98,6 +100,46 @@ export class RAGIndexingScheduler {
     return task;
   }
 
+  // Sauvegarde automatique de la base de données chaque jour à 20h00
+  startDailyBackup() {
+    const cronExpression = '0 20 * * *'; // Tous les jours à 20h00
+
+    console.log(`🕐 [CRON] Planification sauvegarde base de données: ${cronExpression} (chaque jour à 20h00)`);
+
+    const task = cron.schedule(cronExpression, () => {
+      console.log('⏰ [CRON] Démarrage de la sauvegarde automatique de la base de données...');
+
+      const scriptPath = path.join(process.cwd(), 'scripts', 'backup-database.js');
+      const proc = spawn('node', [scriptPath], {
+        env: { ...process.env },
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+
+      proc.stdout?.on('data', (data: Buffer) => {
+        console.log(`[BACKUP] ${data.toString().trim()}`);
+      });
+
+      proc.stderr?.on('data', (data: Buffer) => {
+        console.error(`[BACKUP] ⚠️ ${data.toString().trim()}`);
+      });
+
+      proc.on('close', (code: number) => {
+        if (code === 0) {
+          console.log('✅ [CRON] Sauvegarde terminée avec succès');
+        } else {
+          console.error(`❌ [CRON] Sauvegarde échouée (code: ${code})`);
+        }
+      });
+    }, {
+      timezone: "Europe/Brussels"
+    });
+
+    this.tasks.set('daily-backup', task);
+    task.start();
+
+    return task;
+  }
+
   // Arrêter une tâche spécifique
   stopTask(taskName: string) {
     const task = this.tasks.get(taskName);
@@ -143,8 +185,11 @@ export class RAGIndexingScheduler {
 
     // Rapport états d'avancement chaque vendredi à midi (mois en cours)
     this.startMonthlyReport();
-    
-    console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport vendredi midi)');
+
+    // Sauvegarde automatique de la base de données chaque jour à 20h00
+    this.startDailyBackup();
+
+    console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport vendredi midi + sauvegarde 20h00)');
   }
 }
 
