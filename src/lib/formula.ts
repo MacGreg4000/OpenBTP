@@ -19,7 +19,9 @@ export function evaluateFormula(raw: string): number | null {
     const expression = trimmed.slice(1).trim()
     if (!expression) return null
     try {
-      const result = evaluate(expression)
+      // Normaliser les virgules décimales françaises (1,5 → 1.5) sans casser les appels de fonctions
+      const normalizedExpr = expression.replace(/(\d),(\d)/g, '$1.$2')
+      const result = evaluate(normalizedExpr)
       if (typeof result === 'number' && isFinite(result)) {
         // Arrondir à 4 décimales pour éviter les flottants parasites
         return Math.round(result * 10000) / 10000
@@ -31,7 +33,7 @@ export function evaluateFormula(raw: string): number | null {
   }
 
   // Valeur numérique classique (accepte virgule comme séparateur décimal)
-  const normalized = trimmed.replace(',', '.')
+  const normalized = trimmed.replace(/,/g, '.')
   const n = parseFloat(normalized)
   return isNaN(n) ? null : n
 }

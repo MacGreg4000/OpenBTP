@@ -64,7 +64,7 @@ export default function NumericInput({
 
           // Mise à jour immédiate uniquement pour les valeurs numériques normales
           if (!isFormula(str)) {
-            const cleanStr = str.replace(',', '.').replace(/[^\d.-]/g, '')
+            const cleanStr = str.replace(/,/g, '.').replace(/[^\d.-]/g, '')
             const normalized = parseFloat(cleanStr)
             if (Number.isFinite(normalized)) {
               onChangeNumber(normalized)
