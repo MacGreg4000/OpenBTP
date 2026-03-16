@@ -23,8 +23,8 @@ const nextConfig = {
       bodySizeLimit: '50mb',
     },
     largePageDataBytes: 50 * 1024 * 1024, // 50MB pour les réponses (dossiers techniques volumineux)
-    // Limite à 1 worker pour compatibilité Synology NAS (évite SIGSEGV du build worker SWC)
-    cpus: 1,
+    // cpus: 1 — retiré pour utiliser tous les cœurs disponibles (était pour Synology NAS)
+    // cpus: 1,
   },
   // Production: activer les vérifications TypeScript
   typescript: {
