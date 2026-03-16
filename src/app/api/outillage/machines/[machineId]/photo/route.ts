@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma/client'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { mkdir, writeFile, unlink } from 'fs/promises'
+import { validateImageFile } from '@/lib/utils/image-validation'
 
 // GET /api/outillage/machines/[machineId]/photo - Vérifie si une photo existe
 export async function GET(
@@ -101,10 +102,11 @@ export async function POST(
       )
     }
 
-    // Vérifier que c'est une image
-    if (!file.type.startsWith('image/')) {
+    // Vérifier que c'est une image (Content-Type + magic bytes réels)
+    const validation = await validateImageFile(file)
+    if (!validation.isValid) {
       return NextResponse.json(
-        { error: 'Le fichier doit être une image' },
+        { error: 'Le fichier doit être une image valide (JPEG, PNG, WEBP ou HEIC)' },
         { status: 400 }
       )
     }
@@ -124,7 +126,7 @@ export async function POST(
     }
 
     // Supprimer l'ancienne photo si elle existe (toutes les extensions)
-    const extensions = ['jpg', 'jpeg', 'png', 'webp']
+    const extensions = ['jpg', 'jpeg', 'png', 'webp', 'heic']
     for (const ext of extensions) {
       const oldPhotoPath = join(uploadDir, `${machineId}.${ext}`)
       if (existsSync(oldPhotoPath)) {
@@ -132,9 +134,8 @@ export async function POST(
       }
     }
 
-    // Déterminer l'extension du nouveau fichier
-    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const filename = `${machineId}.${fileExtension}`
+    // Extension sécurisée basée sur les magic bytes
+    const filename = `${machineId}.${validation.safeExtension}`
     const filePath = join(uploadDir, filename)
 
     // Sauvegarder le fichier

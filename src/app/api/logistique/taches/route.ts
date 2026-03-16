@@ -115,11 +115,12 @@ export async function POST(request: NextRequest) {
       const path = await import('path')
       const basePath = path.join(process.cwd(), 'public', 'uploads', 'logistique', tache.id)
       await mkdir(basePath, { recursive: true })
+      const { validateImageFile } = await import('@/lib/utils/image-validation')
       await Promise.all(
         photoFiles.map(async (file, i) => {
-          if (!file.type?.startsWith('image/')) return
-          const ext = file.name.split('.').pop() || 'jpg'
-          const filename = `photo-${Date.now()}-${i}.${ext}`
+          const validation = await validateImageFile(file)
+          if (!validation.isValid) return
+          const filename = `photo-${Date.now()}-${i}.${validation.safeExtension}`
           const relPath = `/uploads/logistique/${tache.id}/${filename}`
           await writeFile(path.join(basePath, filename), Buffer.from(await file.arrayBuffer()))
           await prisma.photoTacheMagasinier.create({

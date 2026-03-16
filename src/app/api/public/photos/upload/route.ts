@@ -5,6 +5,7 @@ import { join } from 'path';
 import { readPortalSessionFromCookie, unauthorized } from '@/app/public/portail/auth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { validateImageFile } from '@/lib/utils/image-validation';
 
 // Chemin de base pour les photos externes
 const PHOTOS_BASE_PATH = join(process.cwd(), 'public', 'uploads', 'photos-externes');
@@ -82,19 +83,18 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       
-      // Vérifier le type de fichier
-      if (!file.type.startsWith('image/')) {
-        continue; // Ignorer les fichiers non-images
-      }
+      // Vérifier le type de fichier (Content-Type client, première barrière)
+      // + magic bytes réels (seconde barrière, non falsifiable)
+      const validation = await validateImageFile(file);
+      if (!validation.isValid) continue;
 
       // Vérifier la taille (5MB max par photo)
       if (file.size > 5 * 1024 * 1024) {
         continue; // Ignorer les fichiers trop volumineux
       }
 
-      // Générer un nom de fichier unique
-      const fileExtension = file.name.split('.').pop() || 'jpg';
-      const fileName = `photo-${timestamp}-${i + 1}.${fileExtension}`;
+      // Générer un nom de fichier unique avec extension sécurisée
+      const fileName = `photo-${timestamp}-${i + 1}.${validation.safeExtension}`;
       const filePath = join(fullPath, fileName);
 
       // Convertir le fichier en buffer et l'écrire

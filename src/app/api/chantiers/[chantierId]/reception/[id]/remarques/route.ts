@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma/client';
 import crypto from 'crypto';
 import { ensureDirectoryExists, saveFileToServer } from '@/lib/fileUploadUtils';
 import { notifier } from '@/lib/services/notificationService';
+import { validateImageFile } from '@/lib/utils/image-validation';
 // Remplacer l’usage direct de Prisma types par des types locaux pour la compatibilité
 type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
 type PrismaClientKnownRequestErrorLike = { code: string; message: string }
@@ -396,9 +397,10 @@ export async function POST(
 
         for (const photo of photosFiles) {
           if (photo instanceof File) {
+            const validation = await validateImageFile(photo);
+            if (!validation.isValid) continue;
             const photoId = crypto.randomUUID();
-            const extension = path.extname(photo.name);
-            const filename = `${photoId}${extension}`;
+            const filename = `${photoId}.${validation.safeExtension}`;
             const savePath = path.join(uploadsDir, filename);
             
             try {

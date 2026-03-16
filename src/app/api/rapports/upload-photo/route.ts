@@ -5,6 +5,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { prisma } from '@/lib/prisma/client'
+import { validateImageFile } from '@/lib/utils/image-validation'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,17 +54,25 @@ export async function POST(request: NextRequest) {
       await mkdir(uploadDirDocs, { recursive: true })
     }
 
-    // Générer un nom de fichier unique
+    // Valider le fichier image par magic bytes
+    const validation = await validateImageFile(file)
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { error: 'Le fichier doit être une image valide (JPEG, PNG ou WEBP)' },
+        { status: 400 }
+      )
+    }
+
+    // Générer un nom de fichier unique avec extension sécurisée
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substring(2, 9)
-    const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const filename = `photo-rapport-${timestamp}-${randomId}.${extension}`
-    
-    // Déterminer le mimeType
-    const mimeType = extension === 'png' ? 'image/png' : 
-                     extension === 'webp' ? 'image/webp' :
-                     extension === 'gif' ? 'image/gif' :
-                     'image/jpeg'
+    const filename = `photo-rapport-${timestamp}-${randomId}.${validation.safeExtension}`
+
+    // MimeType basé sur le type réel détecté
+    const mimeTypeMap: Record<string, string> = {
+      jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic'
+    }
+    const mimeType = mimeTypeMap[validation.safeExtension!] ?? 'image/jpeg'
     
     // Sauvegarder dans le dossier temporaire (pour le PDF en cours de création)
     const filepathTemp = join(uploadDirTemp, filename)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { validateImageFile } from '@/lib/utils/image-validation'
 
 const LOGISTIQUE_PHOTOS_PATH = join(process.cwd(), 'public', 'uploads', 'logistique')
 
@@ -75,9 +76,9 @@ export async function POST(
       const count = await prisma.photoTacheMagasinier.count({ where: { tacheId } })
       for (let i = 0; i < photoFiles.length; i++) {
         const file = photoFiles[i]
-        if (!file.type?.startsWith('image/')) continue
-        const ext = file.name.split('.').pop() || 'jpg'
-        const filename = `preuve-${Date.now()}-${i}.${ext}`
+        const validation = await validateImageFile(file)
+        if (!validation.isValid) continue
+        const filename = `preuve-${Date.now()}-${i}.${validation.safeExtension}`
         const relPath = `/uploads/logistique/${tacheId}/${filename}`
         await writeFile(
           join(LOGISTIQUE_PHOTOS_PATH, tacheId, filename),
