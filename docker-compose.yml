@@ -1,0 +1,62 @@
+services:
+
+  # ================================
+  # Base de données MariaDB
+  # ================================
+  openbtp-db:
+    image: mariadb:10.11
+    container_name: openbtp-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: openbtp
+      MYSQL_USER: openbtp_user
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - openbtp-db-data:/var/lib/mysql
+    networks:
+      - openbtp-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ================================
+  # Application Next.js
+  # ================================
+  openbtp-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openbtp-web
+    restart: unless-stopped
+    depends_on:
+      openbtp-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://openbtp_user:${DB_PASSWORD}@openbtp-db:3306/openbtp
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXT_PUBLIC_APP_URL: ${NEXTAUTH_URL}
+      # Email (optionnel)
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+    volumes:
+      # Fichiers uploadés persistants sur le NAS
+      - /volume1/docker/openbtp/uploads:/app/public/uploads
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    networks:
+      - openbtp-network
+
+networks:
+  openbtp-network:
+    driver: bridge
+
+volumes:
+  openbtp-db-data:
+    driver: local

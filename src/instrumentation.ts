@@ -13,6 +13,10 @@ export async function register() {
     // Synchroniser le template professionnel au démarrage
     const { syncProfessionalTemplate } = await import('./lib/services/template-sync')
     await syncProfessionalTemplate()
+
+    // Démarrer les tâches planifiées (cron) côté serveur
+    const { ragScheduler } = await import('./lib/tasks/cronScheduler')
+    ragScheduler.startDefaultTasks()
   }
 }
 
