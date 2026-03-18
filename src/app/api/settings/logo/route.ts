@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { writeFile } from 'fs/promises'
 import path from 'path'
+import { validateImageFile } from '@/lib/utils/image-validation'
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +20,11 @@ export async function POST(request: Request) {
 
     if (!file) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 })
+    }
+
+    const validation = await validateImageFile(file)
+    if (!validation.isValid) {
+      return NextResponse.json({ error: 'Fichier invalide : seules les images sont acceptées.' }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
