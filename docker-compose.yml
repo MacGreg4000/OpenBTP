@@ -59,7 +59,8 @@ services:
       - "nas-host:host-gateway"
     volumes:
       # Fichiers uploadés persistants (chemin configurable via UPLOADS_PATH dans .env)
-      - ${UPLOADS_PATH:-/volume1/docker/openbtp/uploads}:/app/public/uploads
+      # Par défaut ./uploads/ est créé automatiquement à côté du docker-compose.yml
+      - ${UPLOADS_PATH:-./uploads}:/app/public/uploads
     ports:
       - "${APP_PORT:-3000}:3000"
     networks:
