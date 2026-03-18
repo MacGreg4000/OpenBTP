@@ -39,12 +39,24 @@ services:
       DATABASE_URL: mysql://openbtp_user:${DB_PASSWORD}@openbtp-db:3306/openbtp
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXT_PUBLIC_APP_URL: ${NEXTAUTH_URL}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-${NEXTAUTH_URL}}
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Service PDF (browserless sur le NAS)
+      PDF_SERVICE_URL: ${PDF_SERVICE_URL:-http://nas-host:3001}
+      PDF_SERVICE_PROVIDER: ${PDF_SERVICE_PROVIDER:-browserless}
+      # Ollama RAG (sur le NAS)
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://nas-host:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-phi3:mini}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text:latest}
       # Email (optionnel)
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_PORT: ${EMAIL_PORT:-587}
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+    extra_hosts:
+      # Permet d'accéder aux services du NAS (PDF, Ollama) depuis le container
+      - "nas-host:host-gateway"
     volumes:
       # Fichiers uploadés persistants sur le NAS
       - /volume1/docker/openbtp/uploads:/app/public/uploads
