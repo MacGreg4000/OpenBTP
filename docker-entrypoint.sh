@@ -2,7 +2,14 @@
 set -e
 
 echo "🔄 Attente de la base de données..."
-until npx prisma db execute --stdin <<< "SELECT 1" > /dev/null 2>&1; do
+# Extraire les infos de connexion depuis DATABASE_URL
+DB_HOST=$(echo "$DATABASE_URL" | sed 's|mysql://[^:]*:[^@]*@\([^:]*\):.*|\1|')
+DB_PORT=$(echo "$DATABASE_URL" | sed 's|mysql://[^:]*:[^@]*@[^:]*:\([0-9]*\)/.*|\1|')
+DB_USER=$(echo "$DATABASE_URL" | sed 's|mysql://\([^:]*\):.*|\1|')
+DB_PASS=$(echo "$DATABASE_URL" | sed 's|mysql://[^:]*:\([^@]*\)@.*|\1|')
+DB_NAME=$(echo "$DATABASE_URL" | sed 's|.*/\([^?]*\).*|\1|')
+
+until mariadb --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT 1" > /dev/null 2>&1; do
   sleep 2
 done
 

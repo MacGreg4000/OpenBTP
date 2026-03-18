@@ -5,8 +5,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Dépendances système pour bcrypt et autres modules natifs
-RUN apk add --no-cache python3 make g++ openssl
+# Dépendances système pour bcrypt, canvas et autres modules natifs
+RUN apk add --no-cache python3 make g++ openssl pkgconf \
+    cairo-dev pango-dev jpeg-dev giflib-dev pixman-dev
 
 # Installer les dépendances
 COPY package*.json ./
@@ -17,6 +18,12 @@ COPY . .
 
 # Générer le client Prisma
 RUN npx prisma generate
+
+# Variables nécessaires au build (valeurs fictives, remplacées au runtime)
+ARG NEXTAUTH_SECRET=build_placeholder_secret
+ARG DATABASE_URL=mysql://build:build@localhost:3306/build
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV DATABASE_URL=$DATABASE_URL
 
 # Build Next.js
 RUN NODE_OPTIONS="--max-old-space-size=1536" npm run build
@@ -31,7 +38,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Dépendances système runtime
-RUN apk add --no-cache openssl mariadb-client
+RUN apk add --no-cache openssl mariadb-client \
+    cairo pango jpeg giflib pixman
 
 # Créer un utilisateur non-root
 RUN addgroup --system --gid 1001 nodejs && \
