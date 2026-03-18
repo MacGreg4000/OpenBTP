@@ -76,9 +76,19 @@ export async function POST(request: NextRequest) {
     // Créer le dossier parent si nécessaire
     await mkdir(path.dirname(customPath), { recursive: true })
 
-    // Décompresser le ZIP
+    // Décompresser le ZIP avec protection contre Zip Slip (path traversal)
     try {
       const zip = new AdmZip(buffer)
+      const resolvedBase = path.resolve(customPath) + path.sep
+      for (const entry of zip.getEntries()) {
+        const entryPath = path.resolve(customPath, entry.entryName)
+        if (!entryPath.startsWith(resolvedBase)) {
+          return NextResponse.json(
+            { error: 'Fichier ZIP invalide : chemin suspect détecté.' },
+            { status: 400 }
+          )
+        }
+      }
       zip.extractAllTo(customPath, true) // true = overwrite existing files
     } catch (error) {
       console.error('Erreur lors de la décompression du ZIP:', error)

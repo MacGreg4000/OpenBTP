@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma/client'
 import { v4 as uuidv4 } from 'uuid'
 import fs from 'fs'
 import path from 'path'
+import { validateImageFile } from '@/lib/utils/image-validation'
 
 // Fonction pour ajouter automatiquement une photo de remarque dans les documents du chantier
 async function ajouterPhotoAuxDocuments(chantierId: string, remarqueId: string, photoUrl: string, estPreuve: boolean, userId: string = 'system') {
@@ -124,10 +125,16 @@ export async function PATCH(request: Request) {
         // S'assurer que le dossier de destination existe
         await fs.promises.mkdir(uploadDir, { recursive: true });
         
-        // Nom du fichier avec timestamp et extension
-        const fileName = `resolution-${Date.now()}-${photoId.substring(0, 8)}.jpg`;
+        // Valider le type réel du fichier par magic bytes
+        const validation = await validateImageFile(photo);
+        if (!validation.isValid) {
+          return NextResponse.json({ error: 'Fichier invalide : seules les images sont acceptées.' }, { status: 400 });
+        }
+
+        // Nom du fichier avec timestamp et extension sécurisée (basée sur les magic bytes)
+        const fileName = `resolution-${Date.now()}-${photoId.substring(0, 8)}.${validation.safeExtension}`;
         const filePath = path.join(uploadDir, fileName);
-        
+
         // Convertir le blob en buffer et enregistrer le fichier
         const arrayBuffer = await photo.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
