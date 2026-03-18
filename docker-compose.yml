@@ -17,11 +17,11 @@ services:
     networks:
       - openbtp-network
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 30s
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "--silent"]
+      start_period: 60s
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   # ================================
   # Application Next.js
