@@ -58,8 +58,8 @@ services:
       # Permet d'accéder aux services du NAS (PDF, Ollama) depuis le container
       - "nas-host:host-gateway"
     volumes:
-      # Fichiers uploadés persistants sur le NAS
-      - /volume1/docker/openbtp/uploads:/app/public/uploads
+      # Fichiers uploadés persistants (chemin configurable via UPLOADS_PATH dans .env)
+      - ${UPLOADS_PATH:-/volume1/docker/openbtp/uploads}:/app/public/uploads
     ports:
       - "${APP_PORT:-3000}:3000"
     networks:
