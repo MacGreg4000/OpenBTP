@@ -17,11 +17,11 @@ services:
     networks:
       - openbtp-network
     healthcheck:
-      test: ["CMD-SHELL", "mariadb -u root -p$$MYSQL_ROOT_PASSWORD -e 'SELECT 1' 2>/dev/null || exit 1"]
-      start_period: 90s
-      interval: 15s
-      timeout: 10s
-      retries: 10
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "--silent"]
+      start_period: 120s
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   # ================================
   # Application Next.js
