@@ -15,7 +15,23 @@ done
 
 echo "✅ Base de données disponible"
 echo "🔄 Application des migrations Prisma..."
-npx prisma migrate deploy
+
+# Tenter les migrations. Si la base n'est pas vide (P3005 = import SQL existant),
+# faire un baseline automatique puis réessayer.
+migrate_output=$(npx prisma migrate deploy 2>&1) || {
+  if echo "$migrate_output" | grep -q "P3005"; then
+    echo "⚠️  Schéma existant détecté (base importée) - baseline automatique..."
+    for dir in prisma/migrations/*/; do
+      migration_name=$(basename "$dir")
+      npx prisma migrate resolve --applied "$migration_name" 2>/dev/null || true
+    done
+    echo "✅ Baseline terminé - relance des migrations..."
+    npx prisma migrate deploy
+  else
+    echo "$migrate_output"
+    exit 1
+  fi
+}
 
 echo "🚀 Démarrage de l'application..."
 exec npm run start
