@@ -61,6 +61,8 @@ services:
       # Fichiers uploadés persistants (chemin configurable via UPLOADS_PATH dans .env)
       # Par défaut ./uploads/ est créé automatiquement à côté du docker-compose.yml
       - ${UPLOADS_PATH:-./uploads}:/app/public/uploads
+      # Sauvegardes BDD persistantes
+      - ${BACKUP_PATH:-./backups}:/app/backups
     ports:
       - "${APP_PORT:-3000}:3000"
     networks:

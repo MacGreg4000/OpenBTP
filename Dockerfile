@@ -39,7 +39,9 @@ ENV NODE_ENV=production
 
 # Dépendances système runtime
 RUN apk add --no-cache openssl mariadb-client \
-    cairo pango jpeg giflib pixman
+    cairo pango jpeg giflib pixman && \
+    # Créer un alias mysqldump → mariadump pour compatibilité
+    ln -sf /usr/bin/mariadump /usr/bin/mysqldump
 
 # Créer un utilisateur non-root
 RUN addgroup --system --gid 1001 nodejs && \
@@ -51,9 +53,11 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
 
-# Dossier uploads (sera monté via volume)
-RUN mkdir -p ./public/uploads && chown -R nextjs:nodejs ./public/uploads
+# Dossiers persistants (seront montés via volumes)
+RUN mkdir -p ./public/uploads ./backups && \
+    chown -R nextjs:nodejs ./public/uploads ./backups
 
 # Script de démarrage
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
