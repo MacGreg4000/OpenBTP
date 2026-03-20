@@ -72,37 +72,36 @@ export const authOptions: AuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === 'production' 
-        ? '__Secure-next-auth.session-token' 
+      name: shouldUseSecureCookies()
+        ? '__Secure-next-auth.session-token'
         : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        // secure doit être true uniquement si on est vraiment en HTTPS
         secure: shouldUseSecureCookies(),
       },
     },
     callbackUrl: {
-      name: process.env.NODE_ENV === 'production'
+      name: shouldUseSecureCookies()
         ? '__Secure-next-auth.callback-url'
         : 'next-auth.callback-url',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NEXTAUTH_URL?.startsWith('https://') ?? false,
+        secure: shouldUseSecureCookies(),
       },
     },
     csrfToken: {
-      name: process.env.NODE_ENV === 'production'
+      name: shouldUseSecureCookies()
         ? '__Host-next-auth.csrf-token'
         : 'next-auth.csrf-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NEXTAUTH_URL?.startsWith('https://') ?? false,
+        secure: shouldUseSecureCookies(),
       },
     },
   },
