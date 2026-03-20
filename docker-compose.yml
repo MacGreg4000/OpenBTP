@@ -20,7 +20,7 @@ services:
     networks:
       - openbtp-network
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "--silent"]
+      test: ["CMD", "mariadb-admin", "ping", "--silent"]
       start_period: 120s
       interval: 10s
       timeout: 5s
