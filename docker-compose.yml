@@ -14,6 +14,9 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - openbtp-db-data:/var/lib/mysql
+      # Dossier d'initialisation : tout .sql placé ici est importé automatiquement
+      # au premier démarrage (volume vide). Laisser vide = base créée depuis le schéma Prisma.
+      - ./init-db:/docker-entrypoint-initdb.d
     networks:
       - openbtp-network
     healthcheck:

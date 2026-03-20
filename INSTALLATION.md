@@ -45,6 +45,27 @@ mkdir -p backups
 
 ---
 
+## Étape 3b — Base de données : nouvelle installation ou migration ?
+
+### Nouvelle installation (base vide)
+
+Ne rien faire. L'application créera automatiquement toutes les tables au premier démarrage.
+
+### Migration depuis une installation existante
+
+Copie ton fichier de sauvegarde SQL dans le dossier `init-db/` :
+
+```bash
+cp /chemin/vers/ta/sauvegarde.sql init-db/import.sql
+```
+
+C'est tout. Au premier démarrage, MariaDB détectera le fichier et importera automatiquement la base de données. L'application s'adapte ensuite seule selon le cas.
+
+> ⚠️ Ce mécanisme ne fonctionne **qu'au premier démarrage** (volume MariaDB vide).
+> Si le volume existe déjà, le dossier `init-db/` est ignoré.
+
+---
+
 ## Étape 4 — Créer le fichier de configuration
 
 ```bash
@@ -161,26 +182,19 @@ http://192.168.0.XXX:3333
 
 ## Migration depuis une installation existante (import de base de données)
 
-Si tu as déjà une base de données à récupérer :
+La méthode recommandée est décrite à l'**Étape 3b** ci-dessus (dossier `init-db/`).
+
+Si tu as raté cette étape et que les containers tournent déjà, tu peux importer manuellement :
 
 ```bash
-# 1. Démarrer uniquement la base de données
-sudo docker compose up -d openbtp-db
+# 1. Arrêter tout et supprimer le volume de la base
+sudo docker compose down -v
 
-# 2. Attendre que MariaDB soit prête (~2 minutes)
-#    Répéter jusqu'à voir "healthy" dans la colonne STATUS
-sudo docker compose ps
+# 2. Copier la sauvegarde dans init-db/
+cp /chemin/vers/ta/sauvegarde.sql init-db/import.sql
 
-# 3. Importer ta sauvegarde SQL (remplace le mot de passe et le chemin)
-sudo docker exec -i openbtp-db mariadb --skip-ssl \
-  -u openbtp_user -p"TON_DB_PASSWORD" openbtp \
-  < /chemin/vers/ta/sauvegarde.sql
-
-# 4. Démarrer l'application
-sudo docker compose up -d openbtp-web
-
-# 5. Suivre les logs
-sudo docker logs -f openbtp-web
+# 3. Relancer — l'import se fait automatiquement
+sudo docker compose up -d
 ```
 
 ---
@@ -229,6 +243,7 @@ sudo docker exec openbtp-web node scripts/backup-database.js
 ├── .env              ← Configuration (ne jamais partager ce fichier)
 ├── docker-compose.yml
 ├── Dockerfile
+├── init-db/          ← Placer ici le .sql à importer au premier démarrage (laisser vide sinon)
 ├── uploads/          ← Photos, documents, logos uploadés
 └── backups/          ← Sauvegardes automatiques de la base de données
 ```
