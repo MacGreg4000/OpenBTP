@@ -40,8 +40,8 @@ ENV NODE_ENV=production
 # Dépendances système runtime
 RUN apk add --no-cache openssl mariadb-client \
     cairo pango jpeg giflib pixman && \
-    # Créer un alias mysqldump → mariadump pour compatibilité
-    ln -sf /usr/bin/mariadump /usr/bin/mysqldump
+    # Assurer que mysqldump est disponible (nom peut varier selon la version Alpine)
+    which mysqldump || ln -sf "$(which mariadump 2>/dev/null || which mariadb-dump 2>/dev/null)" /usr/local/bin/mysqldump
 
 # Créer un utilisateur non-root
 RUN addgroup --system --gid 1001 nodejs && \
