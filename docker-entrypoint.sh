@@ -14,6 +14,24 @@ until mariadb --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" 
 done
 
 echo "✅ Base de données disponible"
+
+# Vérifier si la base est vide (aucune table)
+TABLE_COUNT=$(mariadb --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" \
+  -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME'" 2>/dev/null | tail -1)
+
+# Chercher un fichier .sql dans /app/init-db/
+SQL_FILE=""
+for f in /app/init-db/*.sql; do
+  [ -f "$f" ] && SQL_FILE="$f" && break
+done
+
+if [ "$TABLE_COUNT" = "0" ] && [ -n "$SQL_FILE" ]; then
+  echo "📥 Base vide détectée — import de $(basename "$SQL_FILE")..."
+  echo "⏳ Cette opération peut prendre plusieurs minutes sur un NAS..."
+  mariadb --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$SQL_FILE"
+  echo "✅ Import SQL terminé"
+fi
+
 echo "🔄 Application des migrations Prisma..."
 
 # Tenter les migrations. Si la base n'est pas vide (P3005 = import SQL existant),

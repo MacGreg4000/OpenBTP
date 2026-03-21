@@ -14,17 +14,14 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - openbtp-db-data:/var/lib/mysql
-      # Dossier d'initialisation : tout .sql placé ici est importé automatiquement
-      # au premier démarrage (volume vide). Laisser vide = base créée depuis le schéma Prisma.
-      - ./init-db:/docker-entrypoint-initdb.d
     networks:
       - openbtp-network
     healthcheck:
       test: ["CMD-SHELL", "mariadb -h 127.0.0.1 -P 3306 -u openbtp_user -p$$MYSQL_PASSWORD -e 'SELECT 1' 2>/dev/null || exit 1"]
-      start_period: 1200s
-      interval: 15s
-      timeout: 10s
-      retries: 5
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   # ================================
   # Application Next.js
@@ -66,6 +63,9 @@ services:
       - ${UPLOADS_PATH:-./uploads}:/app/public/uploads
       # Sauvegardes BDD persistantes
       - ${BACKUP_PATH:-./backups}:/app/backups
+      # Dossier d'import SQL : si un .sql est présent ET la base est vide,
+      # le container web l'importe automatiquement au premier démarrage.
+      - ./init-db:/app/init-db
     ports:
       - "${APP_PORT:-3000}:3000"
     networks:
