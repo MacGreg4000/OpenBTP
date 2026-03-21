@@ -6,14 +6,15 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/PageHeader'
 import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect'
 import { Pagination } from '@/components/Pagination'
-import { 
+import {
   PlusIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
   ArrowPathIcon,
-  EyeIcon
+  EyeIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 
 interface Devis {
@@ -96,13 +97,22 @@ export default function DevisPage() {
   const [allDevisForFilters, setAllDevisForFilters] = useState<DevisForFilter[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingFilters, setLoadingFilters] = useState(true)
-  const [numeroFilter, setNumeroFilter] = useState<string | number | null>(null)
+  const [keywordInput, setKeywordInput] = useState('')
+  const [keywordFilter, setKeywordFilter] = useState('')
   const [clientFilter, setClientFilter] = useState<string | number | null>(null)
   const [statutFilter, setStatutFilter] = useState<string | number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const pageSize = 25
+
+  // Debounce du mot-clé : attend 400ms après la frappe avant de déclencher la recherche
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setKeywordFilter(keywordInput)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [keywordInput])
 
   // Charger les options de filtres (tous les devis)
   const loadFilterOptions = useCallback(async () => {
@@ -134,8 +144,8 @@ export default function DevisPage() {
       if (statutFilter) {
         params.append('statut', statutFilter.toString())
       }
-      if (numeroFilter) {
-        params.append('devisId', numeroFilter.toString())
+      if (keywordFilter.trim()) {
+        params.append('keyword', keywordFilter.trim())
       }
 
       const response = await fetch(`/api/devis?${params}`)
@@ -150,7 +160,7 @@ export default function DevisPage() {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, clientFilter, statutFilter, numeroFilter, allDevisForFilters])
+  }, [currentPage, clientFilter, statutFilter, keywordFilter])
 
   useEffect(() => {
     loadFilterOptions()
@@ -165,7 +175,7 @@ export default function DevisPage() {
   // Réinitialiser à la page 1 quand les filtres changent
   useEffect(() => {
     setCurrentPage(1)
-  }, [clientFilter, statutFilter, numeroFilter])
+  }, [clientFilter, statutFilter, keywordFilter])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -181,15 +191,6 @@ export default function DevisPage() {
       currency: 'EUR'
     }).format(amount)
   }
-
-  // Créer la liste des numéros de devis pour le filtre (depuis tous les devis)
-  const numeroOptions: SearchableSelectOption[] = allDevisForFilters
-    .map(devis => ({
-      value: devis.id,
-      label: devis.numeroDevis,
-      subtitle: `${devis.client.nom} - ${formatCurrency(devis.montantTTC)}`
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
 
   // Créer la liste des clients uniques pour le filtre (depuis tous les devis)
   const clientOptions: SearchableSelectOption[] = allDevisForFilters
@@ -256,18 +257,19 @@ export default function DevisPage() {
       <div className="relative z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">Filtres</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Filtre par numéro de devis */}
-          <SearchableSelect
-            options={numeroOptions}
-            value={numeroFilter}
-            onChange={setNumeroFilter}
-            placeholder="Sélectionner un numéro"
-            searchPlaceholder="Rechercher un numéro de devis..."
-            emptyMessage="Aucun devis trouvé"
-            showAllOption={true}
-            allOptionLabel="Tous les numéros"
-            colorScheme="orange"
-          />
+          {/* Recherche par mot-clé (numéro, référence, client, chantier...) */}
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={keywordInput}
+              onChange={e => setKeywordInput(e.target.value)}
+              placeholder="Rechercher (numéro, référence, client, chantier...)"
+              className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 py-2 pl-9 pr-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            />
+          </div>
 
           {/* Filtre client avec recherche */}
           <SearchableSelect

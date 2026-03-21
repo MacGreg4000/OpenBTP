@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const clientId = searchParams.get('clientId')
     const statut = searchParams.get('statut')
-    const devisId = searchParams.get('devisId') // Filtre par ID de devis (pour le filtre numéro)
-    
+    const keyword = searchParams.get('keyword')
+
     // Paramètres de pagination
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '25')
@@ -52,7 +52,14 @@ export async function GET(request: NextRequest) {
     const where: any = {}
     if (clientId) where.clientId = clientId
     if (statut) where.statut = statut
-    if (devisId) where.id = devisId
+    if (keyword) {
+      where.OR = [
+        { numeroDevis: { contains: keyword } },
+        { reference: { contains: keyword } },
+        { client: { nom: { contains: keyword } } },
+        { chantier: { nomChantier: { contains: keyword } } },
+      ]
+    }
 
     // Compter le total avec les filtres
     const total = await prisma.devis.count({ where })
