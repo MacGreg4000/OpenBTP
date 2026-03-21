@@ -236,6 +236,54 @@ sudo docker exec openbtp-web node scripts/backup-database.js
 
 ---
 
+## Ce qu'il faut sauvegarder
+
+Pour une sauvegarde complète permettant de tout restaurer sur un nouveau serveur :
+
+| Quoi | Chemin sur le NAS | Contenu |
+|---|---|---|
+| **Base de données** | `./backups/backup_YYYY-MM-DD_*.sql.gz` | Toutes les données (chantiers, clients, devis...) |
+| **Fichiers uploadés** | `./uploads/` | Photos de chantier, documents, logos, signatures |
+| **Configuration** | `./.env` | Mots de passe, clés secrètes, URLs |
+
+> ⚠️ Ne jamais partager le fichier `.env` — il contient les mots de passe.
+
+### Procédure de sauvegarde manuelle complète
+
+```bash
+# 1. Déclencher une sauvegarde BDD immédiate
+sudo docker exec openbtp-web node scripts/backup-database.js
+
+# 2. Copier les fichiers importants vers un emplacement sûr
+cp -r /volume1/docker/openbtp/uploads/ /volume1/backup/openbtp-uploads/
+cp -r /volume1/docker/openbtp/backups/ /volume1/backup/openbtp-backups/
+cp /volume1/docker/openbtp/.env /volume1/backup/openbtp.env
+```
+
+### Restaurer sur un nouveau serveur
+
+```bash
+# 1. Cloner le dépôt
+git clone https://github.com/MacGreg4000/OpenBTP.git openbtp
+cd openbtp
+
+# 2. Restaurer la configuration
+cp /volume1/backup/openbtp.env .env
+
+# 3. Restaurer les fichiers uploadés
+cp -r /volume1/backup/openbtp-uploads/ uploads/
+mkdir -p backups
+
+# 4. Décompresser la dernière sauvegarde SQL et la placer dans init-db/
+gunzip -c /volume1/backup/openbtp-backups/backup_YYYY-MM-DD_*.sql.gz > init-db/import.sql
+
+# 5. Builder et démarrer — tout le reste est automatique
+sudo docker compose build
+sudo docker compose up -d
+```
+
+---
+
 ## Structure des fichiers sur le NAS
 
 ```
