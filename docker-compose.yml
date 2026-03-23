@@ -71,6 +71,25 @@ services:
     networks:
       - openbtp-network
 
+  # ================================
+  # phpMyAdmin (interface base de données)
+  # Accessible sur http://NAS-IP:8081
+  # ================================
+  openbtp-pma:
+    image: phpmyadmin:latest
+    container_name: openbtp-pma
+    restart: unless-stopped
+    environment:
+      PMA_HOST: openbtp-db
+      PMA_PORT: 3306
+    ports:
+      - "8081:80"
+    networks:
+      - openbtp-network
+    depends_on:
+      openbtp-db:
+        condition: service_healthy
+
 networks:
   openbtp-network:
     driver: bridge
