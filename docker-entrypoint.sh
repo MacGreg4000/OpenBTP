@@ -16,8 +16,9 @@ done
 echo "✅ Base de données disponible"
 
 # Vérifier si la base est vide (aucune table)
-TABLE_COUNT=$(mariadb --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" \
-  -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME'" 2>/dev/null | tail -1)
+# -sN = silent (pas de bordures) + no column names → retourne juste la valeur
+TABLE_COUNT=$(mariadb --skip-ssl -sN -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" \
+  -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME'" 2>/dev/null)
 
 # Chercher un fichier .sql dans /app/init-db/
 SQL_FILE=""
