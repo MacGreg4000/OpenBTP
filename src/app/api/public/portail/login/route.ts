@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { signPortalSession } from '@/app/public/portail/auth'
+import { signPortalSession, readPortalSessionFromCookie } from '@/app/public/portail/auth'
 import bcrypt from 'bcryptjs'
 
 type SubjectTypeInput = 'ouvrier' | 'soustraitant'
@@ -12,37 +12,18 @@ function toSubjectEnum(type: SubjectTypeInput): SubjectEnumValue {
 
 export async function GET(request: Request) {
   try {
-    const cookieHeader = request.headers.get('cookie')
-    
-    if (!cookieHeader) {
-      return NextResponse.json({ authenticated: false }, { status: 401 })
-    }
+    // Utiliser readPortalSessionFromCookie pour valider correctement le cookie signé HMAC
+    const sess = readPortalSessionFromCookie(request.headers.get('cookie'))
 
-    const cookies = Object.fromEntries(
-      cookieHeader.split(';').map(cookie => {
-        const [key, value] = cookie.trim().split('=')
-        return [key, value]
-      })
-    )
-
-    const portalSession = cookies.portalSession
-    
-    if (!portalSession) {
-      return NextResponse.json({ authenticated: false }, { status: 401 })
-    }
-
-    // Décoder le cookie qui peut être URL-encodé
-    const decodedSession = decodeURIComponent(portalSession)
-    const [subjectType, subjectId] = decodedSession.split(':')
-    if (!subjectType || !subjectId) {
+    if (!sess || (sess.t !== 'OUVRIER_INTERNE' && sess.t !== 'SOUSTRAITANT')) {
       return NextResponse.json({ authenticated: false }, { status: 401 })
     }
 
     // Vérifier que le PIN existe toujours et est actif
     const access = await prisma.publicAccessPIN.findFirst({
       where: {
-        subjectType: subjectType as SubjectEnumValue,
-        subjectId,
+        subjectType: sess.t as SubjectEnumValue,
+        subjectId: sess.id,
         estActif: true,
       }
     })
@@ -53,17 +34,17 @@ export async function GET(request: Request) {
 
     // Récupérer le nom du sujet
     let subjectName = ''
-    if (subjectType === 'OUVRIER_INTERNE') {
+    if (sess.t === 'OUVRIER_INTERNE') {
       const ouvrier = await prisma.ouvrierInterne.findUnique({
-        where: { id: subjectId },
+        where: { id: sess.id },
         select: { nom: true, prenom: true }
       })
       if (ouvrier) {
         subjectName = `${ouvrier.prenom || ''} ${ouvrier.nom || ''}`.trim()
       }
-    } else if (subjectType === 'SOUSTRAITANT') {
+    } else if (sess.t === 'SOUSTRAITANT') {
       const soustraitant = await prisma.soustraitant.findUnique({
-        where: { id: subjectId },
+        where: { id: sess.id },
         select: { nom: true }
       })
       if (soustraitant) {
@@ -74,8 +55,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       authenticated: true,
       token: {
-        subjectType: subjectType as SubjectEnumValue,
-        subjectId,
+        subjectType: sess.t as SubjectEnumValue,
+        subjectId: sess.id,
         subjectName
       }
     })

@@ -66,7 +66,7 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/public/portail/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, actorId, pin }) })
+      const res = await fetch('/api/public/portail/login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, actorId, pin }) })
       const ok = res.ok
       if (!ok) {
         const data = await res.json().catch(() => null)
@@ -119,7 +119,7 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
           <p className="text-sm text-blue-100 mb-4">{t('enter_pin')}</p>
           <form onSubmit={onSubmit} className="space-y-3">
             <input inputMode="numeric" pattern="[0-9]*" maxLength={6} value={pin} onChange={(e)=> setPin(e.target.value.replace(/\D/g, ''))} className="w-full rounded-lg px-3 py-3 text-gray-900" placeholder={t('pin_placeholder')} />
-            {_error && <div className="text-red-200 text-sm">{_error}</div>}
+            {_error && <div className="bg-red-500/30 border border-red-300 text-white text-sm rounded-lg px-3 py-2 font-medium">{_error}</div>}
             <button type="submit" disabled={loading || pin.length<4} className="w-full bg-white text-blue-700 rounded-lg py-3 font-medium disabled:opacity-60">{loading ? '...' : t('connect')}</button>
           </form>
         </div>
