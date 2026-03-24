@@ -306,7 +306,12 @@ export default function LogistiquePage() {
         const fd = new FormData()
         fd.append('type', 'A_FAIRE')
         editPhotos.forEach(f => fd.append('photos', f))
-        await fetch(`/api/logistique/taches/${editTache.id}/photos`, { method: 'POST', body: fd })
+        const photoRes = await fetch(`/api/logistique/taches/${editTache.id}/photos`, { method: 'POST', body: fd })
+        if (!photoRes.ok) {
+          const err = await photoRes.json().catch(() => ({}))
+          alert(err.error || 'Erreur lors de l\'upload des photos')
+          return
+        }
       }
       setEditTache(null)
       setEditPhotos([])
@@ -643,12 +648,20 @@ export default function LogistiquePage() {
                   Ajouter une photo
                 </button>
                 {newTachePhotos.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {newTachePhotos.map((f, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-xs text-amber-800 dark:text-amber-300">
-                        {f.name}
-                        <button type="button" onClick={() => setNewTachePhotos((p) => p.filter((_, j) => j !== i))} className="ml-0.5">×</button>
-                      </span>
+                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 border-2 border-amber-300 dark:border-amber-600 group">
+                        <img
+                          src={URL.createObjectURL(f)}
+                          alt={f.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewTachePhotos((p) => p.filter((_, j) => j !== i))}
+                          className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >×</button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -992,10 +1005,14 @@ export default function LogistiquePage() {
                 {editPhotos.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {editPhotos.map((f, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-xs text-amber-800 dark:text-amber-300">
-                        {f.name}
-                        <button type="button" onClick={() => setEditPhotos(p => p.filter((_, j) => j !== i))}>×</button>
-                      </span>
+                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 border-2 border-amber-300 dark:border-amber-600 group">
+                        <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setEditPhotos(p => p.filter((_, j) => j !== i))}
+                          className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >×</button>
+                      </div>
                     ))}
                   </div>
                 )}

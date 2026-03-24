@@ -18,7 +18,8 @@ export interface ImageValidationResult {
  */
 export async function validateImageFile(file: File): Promise<ImageValidationResult> {
   // Première barrière : Content-Type client (rapide, mais non fiable seule)
-  if (!file.type.startsWith('image/')) {
+  // On accepte les fichiers avec type vide (certains appareils photo Android/iOS renvoient "")
+  if (file.type && !file.type.startsWith('image/')) {
     return { isValid: false, safeExtension: null }
   }
 
@@ -32,13 +33,19 @@ export async function validateImageFile(file: File): Promise<ImageValidationResu
                  buffer[2] === 0x4E && buffer[3] === 0x47
   const isWEBP = buffer.length >= 12 &&
                  buffer.slice(8, 12).toString('ascii') === 'WEBP'
-  const isHEIC = buffer.length >= 12 &&
-                 ['heic', 'heif', 'mif1', 'msf1'].includes(
-                   buffer.slice(8, 12).toString('ascii').toLowerCase()
-                 )
+
+  // HEIC/HEIF : fichiers ISOBMFF (bytes 4-7 = 'ftyp')
+  // Brands acceptés : heic, heif, mif1, msf1 (standard) + hei1, heis, heix (iPhone)
+  const isFtyp = buffer.length >= 8 &&
+                 buffer.slice(4, 8).toString('ascii') === 'ftyp'
+  const majorBrand = buffer.length >= 12
+    ? buffer.slice(8, 12).toString('ascii').toLowerCase()
+    : ''
+  const heicBrands = ['heic', 'heif', 'mif1', 'msf1', 'hei1', 'heis', 'heix']
+  const isHEIC = isFtyp && heicBrands.includes(majorBrand)
 
   if (!isJPEG && !isPNG && !isWEBP && !isHEIC) {
-    console.warn(`⚠️ Fichier rejeté (magic bytes invalides): ${file.name}`)
+    console.warn(`⚠️ Fichier rejeté (magic bytes invalides): ${file.name} type=${file.type} brand=${majorBrand}`)
     return { isValid: false, safeExtension: null }
   }
 
