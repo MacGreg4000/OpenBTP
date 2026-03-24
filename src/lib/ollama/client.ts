@@ -26,7 +26,8 @@ export class OllamaClient {
         options: {
           temperature: this.config.temperature,
           num_predict: this.config.maxTokens,
-        }
+        },
+        think: false,
       };
 
       console.log('🤖 Envoi de la requête à Ollama:', { model: this.config.model, promptLength: prompt.length });
