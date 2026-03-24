@@ -16,6 +16,7 @@ import {
 import { useRouter } from 'next/navigation'
 
 // Components
+import Link from 'next/link'
 import UserNotepad from '@/components/dashboard/UserNotepad'
 import KPICard from '@/components/dashboard/KPICard'
 import ChantiersStatsChart from '@/components/dashboard/ChantiersStatsChart'
@@ -513,13 +514,21 @@ export default function DashboardPage() {
                   icon={<PlayIcon className="w-full h-full" />} 
                   accentColor="green"
                 />
-                <KPICard
-                  title="Chiffre d'affaires à venir"
-                  value={formatEuros(kpis.chiffreAffaires)}
-                  icon={<CurrencyEuroIcon className="w-full h-full" />}
-                  accentColor="purple"
-                  href="/ca-a-venir"
-                />
+                <div className="flex flex-col gap-1.5">
+                  <KPICard
+                    title="Chiffre d'affaires à venir"
+                    value={formatEuros(kpis.chiffreAffaires)}
+                    icon={<CurrencyEuroIcon className="w-full h-full" />}
+                    accentColor="purple"
+                  />
+                  <Link
+                    href="/ca-a-venir"
+                    className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline transition-colors py-0.5"
+                  >
+                    <CurrencyEuroIcon className="w-3.5 h-3.5" />
+                    Voir le détail par chantier →
+                  </Link>
+                </div>
                 <KPICard 
                   title="États Avancement (mois préc.)" 
                   value={formatEuros(kpis.montantEtatsAvancementMoisPrecedent)} 

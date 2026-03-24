@@ -224,14 +224,6 @@ export default function DevisPage() {
     return new Date(devis.dateValidite) < new Date() && devis.statut === 'EN_ATTENTE'
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader
@@ -335,7 +327,16 @@ export default function DevisPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700/50">
-            {devisFiltres.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={9} className="px-6 py-12 text-center">
+                  <div className="inline-flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Chargement…</p>
+                  </div>
+                </td>
+              </tr>
+            ) : devisFiltres.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                   <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
