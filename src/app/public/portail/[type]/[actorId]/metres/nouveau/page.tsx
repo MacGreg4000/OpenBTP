@@ -69,7 +69,7 @@ function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'
 
   useEffect(() => {
     if (params.type !== 'soustraitant') return
-    fetch(`/api/public/portail/${params.type}/${params.actorId}/chantiers-eligibles`)
+    fetch(`/api/public/portail/${params.type}/${params.actorId}/chantiers-eligibles`, { credentials: 'include' })
       .then(r => r.json())
       .then(json => setChantiers(Array.isArray(json?.data) ? json.data : []))
       .catch(() => setChantiers([]))
@@ -78,7 +78,7 @@ function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'
   useEffect(() => {
     if (!chantierId || freeMode) { setLignes([]); setCommandeId(null); return }
     setLoading(true)
-    fetch(`/api/public/portail/${params.type}/${params.actorId}/metres/base?chantierId=${encodeURIComponent(chantierId)}`)
+    fetch(`/api/public/portail/${params.type}/${params.actorId}/metres/base?chantierId=${encodeURIComponent(chantierId)}`, { credentials: 'include' })
       .then(r => r.json())
       .then(json => {
         setCommandeId(json?.commandeId ?? null)
@@ -139,6 +139,7 @@ function NouveauMetrePage({ params }: { params: { type: 'ouvrier'|'soustraitant'
 
       const res = await fetch(`/api/public/portail/${params.type}/${params.actorId}/metres`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       })

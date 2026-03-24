@@ -15,7 +15,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     (async ()=>{
-      const res = await fetch(`/api/public/portail/${type}/${actorId}/sav`)
+      const res = await fetch(`/api/public/portail/${type}/${actorId}/sav`, { credentials: 'include' })
       const data = await res.json()
       console.log('Données SAV reçues:', data)
       setTickets(Array.isArray(data) ? data : [])

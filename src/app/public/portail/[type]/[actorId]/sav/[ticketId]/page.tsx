@@ -38,7 +38,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [tab, setTab] = useState<'infos'|'docs'|'photos'|'interv'|'com'>('infos')
   const [loading, setLoading] = useState(true)
-  useEffect(() => { (async()=>{ const r = await fetch(`/api/public/portail/${type}/${actorId}/sav/${ticketId}`); const d = await r.json(); setTicket(r.ok?d:null); setLoading(false) })() }, [type, actorId, ticketId])
+  useEffect(() => { (async()=>{ const r = await fetch(`/api/public/portail/${type}/${actorId}/sav/${ticketId}`, { credentials: 'include' }); const d = await r.json(); setTicket(r.ok?d:null); setLoading(false) })() }, [type, actorId, ticketId])
 
   if (loading) return <div className="min-h-screen p-4">{t('loading')}</div>
   if (!ticket) return <div className="min-h-screen p-4 text-red-600">{t('error')}</div>

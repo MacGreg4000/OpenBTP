@@ -15,7 +15,7 @@ function InnerPage(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: s
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     (async ()=>{
-      const res = await fetch(`/api/public/portail/${type}/${actorId}/receptions`)
+      const res = await fetch(`/api/public/portail/${type}/${actorId}/receptions`, { credentials: 'include' })
       const data = await res.json()
       setItems(Array.isArray(data) ? data : [])
       setLoading(false)
