@@ -513,11 +513,12 @@ export default function DashboardPage() {
                   icon={<PlayIcon className="w-full h-full" />} 
                   accentColor="green"
                 />
-                <KPICard 
-                  title="Chiffre d'affaires à venir" 
-                  value={formatEuros(kpis.chiffreAffaires)} 
-                  icon={<CurrencyEuroIcon className="w-full h-full" />} 
+                <KPICard
+                  title="Chiffre d'affaires à venir"
+                  value={formatEuros(kpis.chiffreAffaires)}
+                  icon={<CurrencyEuroIcon className="w-full h-full" />}
                   accentColor="purple"
+                  href="/ca-a-venir"
                 />
                 <KPICard 
                   title="États Avancement (mois préc.)" 
