@@ -23,6 +23,9 @@ import {
   PhotoIcon,
   XMarkIcon,
   FunnelIcon,
+  ClipboardDocumentListIcon,
+  DocumentArrowDownIcon,
+  MapPinIcon,
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
 import Image from 'next/image'
@@ -32,6 +35,22 @@ interface Magasinier {
   nom: string
   actif: boolean
   _count?: { taches: number }
+}
+
+interface LigneBonPrep {
+  description: string
+  quantite: string
+  unite: string
+}
+
+interface BonPreparation {
+  id: string
+  client: string
+  localisation: string | null
+  statut: string
+  lignes: LigneBonPrep[]
+  magasinier: { id: string; nom: string }
+  createdAt: string
 }
 
 interface Tache {
@@ -84,6 +103,16 @@ export default function LogistiquePage() {
   // Lightbox & modale détails
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [viewTache, setViewTache] = useState<Tache | null>(null)
+  // Bons de préparation
+  const [bonsPreparation, setBonsPreparation] = useState<BonPreparation[]>([])
+  const [showBonPrep, setShowBonPrep] = useState(false)
+  const [bonPrepClient, setBonPrepClient] = useState('')
+  const [bonPrepLocalisation, setBonPrepLocalisation] = useState('')
+  const [bonPrepMagasinierId, setBonPrepMagasinierId] = useState('')
+  const [bonPrepLignes, setBonPrepLignes] = useState<LigneBonPrep[]>([{ description: '', quantite: '', unite: '' }])
+  const [savingBonPrep, setSavingBonPrep] = useState(false)
+  const [downloadingBonId, setDownloadingBonId] = useState<string | null>(null)
+  const [deletingBonId, setDeletingBonId] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -105,12 +134,14 @@ export default function LogistiquePage() {
       if (filterMagasinier) params.set('magasinierId', filterMagasinier)
       if (filterStatut) params.set('statut', filterStatut)
       const query = params.toString()
-      const [mRes, tRes] = await Promise.all([
+      const [mRes, tRes, bRes] = await Promise.all([
         fetch('/api/magasiniers'),
-        fetch('/api/logistique/taches' + (query ? '?' + query : ''))
+        fetch('/api/logistique/taches' + (query ? '?' + query : '')),
+        fetch('/api/logistique/bons-preparation?statut=A_FAIRE'),
       ])
       if (mRes.ok) setMagasiniers(await mRes.json())
       if (tRes.ok) setTaches(await tRes.json())
+      if (bRes.ok) setBonsPreparation(await bRes.json())
     } catch (e) {
       console.error(e)
     } finally {
@@ -342,6 +373,80 @@ export default function LogistiquePage() {
 
   const formatDate = (s: string) => new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 
+  const handleCreateBonPrep = async () => {
+    const lignesValides = bonPrepLignes.filter(l => l.description.trim())
+    if (!bonPrepClient.trim() || !bonPrepMagasinierId || lignesValides.length === 0) return
+    setSavingBonPrep(true)
+    try {
+      const res = await fetch('/api/logistique/bons-preparation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: bonPrepClient.trim(),
+          localisation: bonPrepLocalisation.trim() || null,
+          magasinierId: bonPrepMagasinierId,
+          lignes: lignesValides.map(l => ({ description: l.description.trim(), quantite: parseFloat(l.quantite) || 0, unite: l.unite.trim() })),
+        }),
+      })
+      if (res.ok) {
+        const bon = await res.json()
+        setShowBonPrep(false)
+        setBonPrepClient('')
+        setBonPrepLocalisation('')
+        setBonPrepMagasinierId('')
+        setBonPrepLignes([{ description: '', quantite: '', unite: '' }])
+        loadData()
+        // Télécharger le PDF immédiatement
+        handleDownloadBonPdf(bon.id)
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Erreur lors de la création')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Erreur réseau')
+    } finally {
+      setSavingBonPrep(false)
+    }
+  }
+
+  const handleDownloadBonPdf = async (bonId: string) => {
+    setDownloadingBonId(bonId)
+    try {
+      const res = await fetch(`/api/logistique/bons-preparation/${bonId}/pdf`)
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `bon-preparation-${bonId.slice(0, 8)}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+      } else {
+        alert('Erreur lors de la génération du PDF')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Erreur réseau')
+    } finally {
+      setDownloadingBonId(null)
+    }
+  }
+
+  const handleDeleteBonPrep = async (bonId: string) => {
+    if (!confirm('Supprimer ce bon de préparation ?')) return
+    setDeletingBonId(bonId)
+    try {
+      const res = await fetch(`/api/logistique/bons-preparation/${bonId}`, { method: 'DELETE' })
+      if (res.ok) loadData()
+      else alert('Erreur lors de la suppression')
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setDeletingBonId(null)
+    }
+  }
+
   const portailUrl = typeof window !== 'undefined' ? `${window.location.origin}/public/portail/magasinier` : ''
 
   const statsCards = !loading ? (
@@ -433,6 +538,13 @@ export default function LogistiquePage() {
           >
             <UserGroupIcon className="h-4 w-4" />
             Magasiniers
+          </button>
+          <button
+            onClick={() => setShowBonPrep(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition-all text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+          >
+            <ClipboardDocumentListIcon className="h-4 w-4" />
+            Préparation commande
           </button>
         </div>
 
@@ -584,6 +696,64 @@ export default function LogistiquePage() {
                 </div>
               </div>
             )}
+          {/* Bons de préparation en cours */}
+          {bonsPreparation.length > 0 && (
+            <div className="mt-6">
+              <div className="flex items-center gap-3 mb-3">
+                <ClipboardDocumentListIcon className="h-5 w-5 text-blue-500" />
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Bons de préparation en cours ({bonsPreparation.length})</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {bonsPreparation.map(bon => (
+                  <div key={bon.id} className="bg-white dark:bg-gray-800 rounded-xl border-2 border-blue-200 dark:border-blue-800 p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white text-sm">{bon.client}</p>
+                        {bon.localisation && (
+                          <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-0.5">
+                            <MapPinIcon className="h-3 w-3" />{bon.localisation}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{bon.magasinier.nom} · {formatDate(bon.createdAt)}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleDownloadBonPdf(bon.id)}
+                          disabled={downloadingBonId === bon.id}
+                          className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
+                          title="Télécharger PDF"
+                        >
+                          {downloadingBonId === bon.id
+                            ? <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-500" />
+                            : <DocumentArrowDownIcon className="h-4 w-4" />
+                          }
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBonPrep(bon.id)}
+                          disabled={deletingBonId === bon.id}
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                          title="Supprimer"
+                        >
+                          {deletingBonId === bon.id
+                            ? <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-red-500" />
+                            : <TrashIcon className="h-4 w-4" />
+                          }
+                        </button>
+                      </div>
+                    </div>
+                    <ul className="space-y-1">
+                      {(bon.lignes as LigneBonPrep[]).map((l, i) => (
+                        <li key={i} className="flex items-baseline justify-between text-xs text-gray-700 dark:text-gray-300">
+                          <span className="truncate flex-1">{l.description}</span>
+                          <span className="ml-2 font-semibold whitespace-nowrap">{l.quantite} {l.unite}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           </>
         )}
 
@@ -819,6 +989,129 @@ export default function LogistiquePage() {
           </div>
         )}
       </div>
+
+      {/* ===== MODALE BON DE PRÉPARATION ===== */}
+      {showBonPrep && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <ClipboardDocumentListIcon className="h-6 w-6 text-blue-500" />
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white">Nouveau bon de préparation</h3>
+              </div>
+              <button onClick={() => setShowBonPrep(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg transition-colors">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Magasinier */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Magasinier *</label>
+                <select
+                  value={bonPrepMagasinierId}
+                  onChange={e => setBonPrepMagasinierId(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Sélectionner un magasinier</option>
+                  {magasiniers.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                </select>
+              </div>
+              {/* Client */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom du client / chantier *</label>
+                <input
+                  type="text"
+                  value={bonPrepClient}
+                  onChange={e => setBonPrepClient(e.target.value)}
+                  placeholder="Ex: Résidence Les Pins - Dupont"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {/* Localisation */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Localisation palette (optionnel)</label>
+                <input
+                  type="text"
+                  value={bonPrepLocalisation}
+                  onChange={e => setBonPrepLocalisation(e.target.value)}
+                  placeholder="Ex: Allée B, rack 3 — Quai 2"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {/* Lignes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Articles *</label>
+                <div className="space-y-2">
+                  {bonPrepLignes.map((ligne, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={ligne.description}
+                        onChange={e => {
+                          const l = [...bonPrepLignes]; l[i].description = e.target.value; setBonPrepLignes(l)
+                        }}
+                        placeholder="Description article"
+                        className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="number"
+                        value={ligne.quantite}
+                        onChange={e => {
+                          const l = [...bonPrepLignes]; l[i].quantite = e.target.value; setBonPrepLignes(l)
+                        }}
+                        placeholder="Qté"
+                        className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        value={ligne.unite}
+                        onChange={e => {
+                          const l = [...bonPrepLignes]; l[i].unite = e.target.value; setBonPrepLignes(l)
+                        }}
+                        placeholder="Unité"
+                        className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      {bonPrepLignes.length > 1 && (
+                        <button type="button" onClick={() => setBonPrepLignes(bonPrepLignes.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:text-red-600 transition-colors rounded">
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBonPrepLignes([...bonPrepLignes, { description: '', quantite: '', unite: '' }])}
+                  className="mt-2 flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <PlusIcon className="h-4 w-4" /> Ajouter une ligne
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setShowBonPrep(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateBonPrep}
+                disabled={savingBonPrep || !bonPrepClient.trim() || !bonPrepMagasinierId || bonPrepLignes.filter(l => l.description.trim()).length === 0}
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-medium disabled:opacity-50 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                {savingBonPrep ? (
+                  <><div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" /> Création...</>
+                ) : (
+                  <><ClipboardDocumentListIcon className="h-4 w-4" /> Créer et télécharger PDF</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== LIGHTBOX ===== */}
       {lightboxUrl && (

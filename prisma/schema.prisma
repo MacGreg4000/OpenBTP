@@ -823,12 +823,13 @@ model OuvrierInterne {
 
 // Magasinier et tâches logistique
 model Magasinier {
-  id        String   @id @default(uuid())
-  nom       String
-  actif     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  taches    TacheMagasinier[]
+  id              String           @id @default(uuid())
+  nom             String
+  actif           Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  taches          TacheMagasinier[]
+  bonsPreparation BonPreparation[]
 
   @@map("magasinier")
 }
@@ -867,6 +868,24 @@ model PhotoTacheMagasinier {
 
   @@index([tacheId])
   @@map("photo_tache_magasinier")
+}
+
+model BonPreparation {
+  id           String     @id @default(uuid())
+  client       String
+  localisation String?
+  statut       String     @default("A_FAIRE") // A_FAIRE | TERMINE
+  magasinierId String
+  creePar      String
+  lignes       Json       // [{ description: string, quantite: number, unite: string }]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  magasinier   Magasinier @relation(fields: [magasinierId], references: [id], onDelete: Cascade)
+  createur     User       @relation("BonPreparationCreateur", fields: [creePar], references: [id], onDelete: Cascade)
+
+  @@index([magasinierId])
+  @@index([statut])
+  @@map("bon_preparation")
 }
 
 // Accès public par PIN pour ouvriers internes, sous-traitants et magasiniers
@@ -954,6 +973,9 @@ model User {
   
   // Tâches logistique (magasinier)
   tachesMagasinierCrees     TacheMagasinier[] @relation("TacheMagasinierCreateur")
+
+  // Bons de préparation
+  bonsPreparationCrees      BonPreparation[]  @relation("BonPreparationCreateur")
 }
 
 model BonRegie {
