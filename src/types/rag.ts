@@ -13,6 +13,7 @@ export interface OllamaRequest {
   prompt: string;
   stream?: boolean;
   context?: number[];
+  think?: boolean;
   options?: {
     temperature?: number;
     top_p?: number;
