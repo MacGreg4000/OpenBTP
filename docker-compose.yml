@@ -60,7 +60,13 @@ services:
     volumes:
       # Fichiers uploadés persistants (chemin configurable via UPLOADS_PATH dans .env)
       # Par défaut ./uploads/ est créé automatiquement à côté du docker-compose.yml
-      - ${UPLOADS_PATH:-./uploads}:/app/public/uploads
+      - ${UPLOADS_PATH:-./public/uploads}:/app/public/uploads
+      # Fiches techniques (PDFs)
+      - ./public/fiches-techniques:/app/public/fiches-techniques
+      # Photos et fichiers par chantier
+      - ./public/chantiers:/app/public/chantiers
+      # Documents transmis
+      - ./public/documents:/app/public/documents
       # Sauvegardes BDD persistantes
       - ${BACKUP_PATH:-./backups}:/app/backups
       # Dossier d'import SQL : si un .sql est présent ET la base est vide,
