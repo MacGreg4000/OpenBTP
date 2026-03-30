@@ -1,24 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-
-function getMagasinierFromCookie(request: NextRequest): string | null {
-  const cookieHeader = request.headers.get('cookie')
-  if (!cookieHeader) return null
-  const m = /portalSession=([^;]+)/.exec(cookieHeader)
-  if (!m) return null
-  try {
-    const decoded = decodeURIComponent(m[1])
-    const [type, id] = decoded.split(':')
-    if (type === 'MAGASINIER' && id) return id
-    return null
-  } catch {
-    return null
-  }
-}
+import { getMagasinierIdFromCookie } from '@/app/public/portail/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const magasinierId = getMagasinierFromCookie(request)
+    const magasinierId = getMagasinierIdFromCookie(request.headers.get('cookie'))
     if (!magasinierId) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
