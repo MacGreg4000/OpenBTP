@@ -13,7 +13,6 @@ import {
   CalendarIcon,
   ListBulletIcon,
   TrashIcon,
-  LockClosedIcon,
   ChevronDownIcon,
   KeyIcon,
   EyeIcon,
@@ -490,17 +489,6 @@ export default function LogistiquePage() {
         badgeColor="from-amber-600 via-orange-600 to-red-600"
         gradientColor="from-amber-600/10 via-orange-600/10 to-red-600/10"
         stats={statsCards}
-        actions={
-          <a
-            href={portailUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30"
-          >
-            <LockClosedIcon className="h-4 w-4" />
-            Portail magasinier
-          </a>
-        }
       />
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -541,7 +529,7 @@ export default function LogistiquePage() {
           </button>
           <button
             onClick={() => setShowBonPrep(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition-all text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition-all text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-600"
           >
             <ClipboardDocumentListIcon className="h-4 w-4" />
             Préparation commande
