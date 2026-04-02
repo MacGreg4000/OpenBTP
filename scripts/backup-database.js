@@ -18,7 +18,7 @@
  *   KEEP_DAYS - Nombre de jours à conserver (défaut: 30)
  */
 
-const { execSync } = require('child_process')
+const { execSync, spawnSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const { createGzip } = require('zlib')
@@ -136,19 +136,41 @@ function generateBackupFilename() {
 }
 
 /**
- * Vérifie si mysqldump est disponible
+ * Vérifie si mysqldump est disponible et retourne son chemin
  */
 function checkMysqldump() {
+  // 1. Essayer via le PATH courant
   try {
-    execSync('which mysqldump', { stdio: 'ignore' })
+    execSync('which mysqldump', { stdio: 'ignore', shell: true })
     return true
   } catch {
-    return false
+    // Pas dans le PATH
   }
+
+  // 2. Essayer les chemins courants (Linux / macOS Intel / macOS Apple Silicon)
+  const commonPaths = [
+    '/usr/bin/mysqldump',
+    '/usr/local/bin/mysqldump',
+    '/opt/homebrew/bin/mysqldump',
+    '/opt/homebrew/opt/mysql-client/bin/mysqldump',
+    '/usr/local/mysql/bin/mysqldump',
+  ]
+  for (const p of commonPaths) {
+    if (fs.existsSync(p)) {
+      // Ajouter le dossier au PATH pour que la commande fonctionne ensuite
+      const dir = path.dirname(p)
+      process.env.PATH = `${dir}:${process.env.PATH}`
+      return true
+    }
+  }
+
+  return false
 }
 
 /**
- * Exécute la sauvegarde de la base de données
+ * Exécute la sauvegarde de la base de données.
+ * Utilise spawnSync avec sortie directe vers fichier pour éviter tout
+ * chargement en mémoire (pas de limite maxBuffer quelle que soit la taille de la BDD).
  */
 async function backupDatabase(dbConfig) {
   const filename = generateBackupFilename()
@@ -158,86 +180,76 @@ async function backupDatabase(dbConfig) {
 
   info(`Début de la sauvegarde vers: ${filepath}`)
 
+  let outFd = null
+
   try {
-    // Créer un fichier de configuration MySQL temporaire pour éviter le mot de passe en clair
-    const configContent = `[client]
-host=${dbConfig.host}
-port=${dbConfig.port}
-user=${dbConfig.user}
-password=${dbConfig.password}
-`
-    fs.writeFileSync(tempConfigFile, configContent, { mode: 0o600 }) // Permissions restrictives
+    // Fichier de configuration MySQL temporaire (évite le mot de passe en clair)
+    const configContent = `[client]\nhost=${dbConfig.host}\nport=${dbConfig.port}\nuser=${dbConfig.user}\npassword=${dbConfig.password}\n`
+    fs.writeFileSync(tempConfigFile, configContent, { mode: 0o600 })
 
-    // Construction de la commande mysqldump avec le fichier de config
-    const command = [
-      'mysqldump',
+    const args = [
       `--defaults-file=${tempConfigFile}`,
-      '--single-transaction', // Pour éviter les verrous sur InnoDB
-      '--routines', // Inclure les procédures stockées
-      '--triggers', // Inclure les triggers
-      '--events', // Inclure les événements
-      '--quick', // Optimisation pour grandes bases
-      '--lock-tables=false', // Ne pas verrouiller les tables
-      '--no-tablespaces', // Éviter les problèmes de permissions
-      dbConfig.database
-    ].join(' ')
+      '--single-transaction',
+      '--routines',
+      '--triggers',
+      '--events',
+      '--quick',
+      '--lock-tables=false',
+      '--no-tablespaces',
+      dbConfig.database,
+    ]
 
-    // Exécuter mysqldump et sauvegarder dans un fichier temporaire
     info('Export de la base de données en cours...')
-    const dump = execSync(command, { 
-      encoding: 'utf8',
-      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-      stdio: ['ignore', 'pipe', 'pipe'] // Ignorer stdin, capturer stdout et stderr
-    })
 
-    // Écrire le dump dans un fichier temporaire
-    fs.writeFileSync(tempFilepath, dump, 'utf8')
-    
-    // Compresser le fichier
+    // Ouvrir le fichier de destination et y écrire stdout directement —
+    // aucun passage en mémoire, fonctionne pour n'importe quelle taille de BDD.
+    outFd = fs.openSync(tempFilepath, 'w')
+    const result = spawnSync('mysqldump', args, {
+      stdio: ['ignore', outFd, 'pipe'],
+      env: { ...process.env },
+    })
+    fs.closeSync(outFd)
+    outFd = null
+
+    if (result.error || result.status !== 0) {
+      const stderr = result.stderr ? result.stderr.toString().trim() : ''
+      const errCode = result.error?.code
+
+      if (errCode === 'ENOENT') {
+        throw new Error('mysqldump introuvable. Installez mysql-client et vérifiez le PATH.')
+      }
+      if (stderr.includes('Access denied')) {
+        throw new Error(`Accès refusé à la base de données. Vérifiez les identifiants dans DATABASE_URL.\nDétails: ${stderr}`)
+      }
+      if (stderr.includes('Unknown database')) {
+        throw new Error(`Base de données '${dbConfig.database}' introuvable.\nDétails: ${stderr}`)
+      }
+      if (stderr.includes("Can't connect") || stderr.includes('Connection refused')) {
+        throw new Error(`Impossible de se connecter à MySQL sur ${dbConfig.host}:${dbConfig.port}. Vérifiez que MySQL est démarré.\nDétails: ${stderr}`)
+      }
+      throw new Error(`mysqldump a échoué (code ${result.status}).\n${stderr}`)
+    }
+
+    // Compresser le fichier .sql → .sql.gz
     info('Compression de la sauvegarde...')
     const input = fs.createReadStream(tempFilepath)
     const output = fs.createWriteStream(filepath)
-    const gzip = createGzip({ level: 9 }) // Compression maximale
-
+    const gzip = createGzip({ level: 9 })
     await pipelineAsync(input, gzip, output)
 
-    // Supprimer le fichier temporaire non compressé
     fs.unlinkSync(tempFilepath)
 
-    // Supprimer le fichier de configuration temporaire
-    if (fs.existsSync(tempConfigFile)) {
-      fs.unlinkSync(tempConfigFile)
-    }
-
-    // Obtenir la taille du fichier
     const stats = fs.statSync(filepath)
     const sizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
-
     success(`Sauvegarde créée avec succès: ${filename} (${sizeInMB} MB)`)
     return filepath
 
   } catch (err) {
-    // Nettoyer les fichiers temporaires en cas d'erreur
-    if (fs.existsSync(tempFilepath)) {
-      fs.unlinkSync(tempFilepath)
-    }
-    if (fs.existsSync(tempConfigFile)) {
-      fs.unlinkSync(tempConfigFile)
-    }
-    
-    // Améliorer le message d'erreur
-    if (err.stderr) {
-      const stderr = err.stderr.toString()
-      if (stderr.includes('Access denied')) {
-        throw new Error(`Accès refusé à la base de données. Vérifiez les identifiants dans DATABASE_URL. Détails: ${stderr}`)
-      } else if (stderr.includes('Unknown database')) {
-        throw new Error(`Base de données '${dbConfig.database}' introuvable. Détails: ${stderr}`)
-      } else if (stderr.includes('Can\'t connect')) {
-        throw new Error(`Impossible de se connecter à MySQL sur ${dbConfig.host}:${dbConfig.port}. Vérifiez que MySQL est démarré. Détails: ${stderr}`)
-      }
-    }
-    
+    if (outFd !== null) { try { fs.closeSync(outFd) } catch {} }
+    if (fs.existsSync(tempFilepath)) fs.unlinkSync(tempFilepath)
     throw err
+  } finally {
+    if (fs.existsSync(tempConfigFile)) fs.unlinkSync(tempConfigFile)
   }
 }
 
