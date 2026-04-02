@@ -3,30 +3,16 @@ import { prisma } from '@/lib/prisma/client'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { validateImageFile } from '@/lib/utils/image-validation'
+import { getMagasinierIdFromCookie } from '@/app/public/portail/auth'
 
 const LOGISTIQUE_PHOTOS_PATH = join(process.cwd(), 'public', 'uploads', 'logistique')
-
-function getMagasinierFromCookie(request: NextRequest): string | null {
-  const cookieHeader = request.headers.get('cookie')
-  if (!cookieHeader) return null
-  const m = /portalSession=([^;]+)/.exec(cookieHeader)
-  if (!m) return null
-  try {
-    const decoded = decodeURIComponent(m[1])
-    const [type, id] = decoded.split(':')
-    if (type === 'MAGASINIER' && id) return id
-    return null
-  } catch {
-    return null
-  }
-}
 
 export async function POST(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const magasinierId = getMagasinierFromCookie(request)
+    const magasinierId = getMagasinierIdFromCookie(request.headers.get('cookie'))
     if (!magasinierId) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
