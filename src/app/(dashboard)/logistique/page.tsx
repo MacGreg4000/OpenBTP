@@ -395,7 +395,25 @@ export default function LogistiquePage() {
         setBonPrepMagasinierId('')
         setBonPrepLignes([{ description: '', quantite: '', unite: '' }])
         loadData()
-        setPrintBonAdmin(bon)
+        // Ouvrir le PDF directement (plus fiable que window.print sur une modale)
+        try {
+          const pdfRes = await fetch(`/api/logistique/bons-preparation/${bon.id}/pdf`)
+          if (pdfRes.ok) {
+            const blob = await pdfRes.blob()
+            const url = URL.createObjectURL(blob)
+            const win = window.open(url, '_blank')
+            if (!win) {
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `bon-preparation-${String(bon.id).slice(0, 8)}.pdf`
+              a.click()
+            }
+          } else {
+            alert('Bon créé, mais erreur lors de la génération du PDF')
+          }
+        } catch {
+          alert('Bon créé, mais erreur réseau lors de la génération du PDF')
+        }
       } else {
         const err = await res.json()
         alert(err.error || 'Erreur lors de la création')
