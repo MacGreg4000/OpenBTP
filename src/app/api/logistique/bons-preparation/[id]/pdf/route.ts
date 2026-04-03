@@ -22,7 +22,8 @@ export async function GET(
       return NextResponse.json({ error: 'Bon de préparation introuvable' }, { status: 404 })
     }
 
-    return new NextResponse(pdfBuffer, {
+    // NextResponse attend un BodyInit (Uint8Array / ArrayBuffer, etc.)
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
