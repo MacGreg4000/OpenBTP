@@ -112,7 +112,6 @@ export default function LogistiquePage() {
   const [bonPrepLignes, setBonPrepLignes] = useState<LigneBonPrep[]>([{ description: '', quantite: '', unite: '' }])
   const [savingBonPrep, setSavingBonPrep] = useState(false)
   const [deletingBonId, setDeletingBonId] = useState<string | null>(null)
-  const [printBonAdmin, setPrintBonAdmin] = useState<BonPreparation | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -683,7 +682,28 @@ export default function LogistiquePage() {
                       </div>
                       <div className="flex gap-1">
                         <button
-                          onClick={() => setPrintBonAdmin(bon)}
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/logistique/bons-preparation/${bon.id}/pdf`)
+                              if (!res.ok) {
+                                alert('Erreur lors de la génération du PDF')
+                                return
+                              }
+                              const blob = await res.blob()
+                              const url = URL.createObjectURL(blob)
+                              // Ouvrir dans un nouvel onglet pour que l'utilisateur puisse imprimer
+                              const win = window.open(url, '_blank')
+                              if (!win) {
+                                // Fallback téléchargement
+                                const a = document.createElement('a')
+                                a.href = url
+                                a.download = `bon-preparation-${bon.id.slice(0, 8)}.pdf`
+                                a.click()
+                              }
+                            } catch {
+                              alert('Erreur réseau lors de la génération du PDF')
+                            }
+                          }}
                           className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                           title="Imprimer"
                         >
@@ -1080,93 +1100,6 @@ export default function LogistiquePage() {
                 ) : (
                   <><ClipboardDocumentListIcon className="h-4 w-4" /> Créer le bon</>  
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== MODAL IMPRESSION BON DE PRÉPARATION (ADMIN) ===== */}
-      {printBonAdmin && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60] p-4">
-          <style>{`
-            @media print {
-              body > * { display: none !important; }
-              #admin-print-bon { display: block !important; position: fixed; inset: 0; padding: 20px; background: white; z-index: 99999; }
-              #admin-print-bon * { color: black !important; background: white !important; }
-              #admin-print-bon table { border-collapse: collapse; width: 100%; }
-              #admin-print-bon td, #admin-print-bon th { border: 1px solid #333; padding: 8px; }
-              #admin-print-bon .no-print { display: none !important; }
-            }
-          `}</style>
-          <div id="admin-print-bon" className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            {/* En-tête (caché à l'impression) */}
-            <div className="no-print flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-bold text-gray-900 dark:text-white">Bon de préparation</h3>
-              <button onClick={() => setPrintBonAdmin(null)} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg">
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-            {/* Contenu imprimable */}
-            <div className="p-5">
-              <div className="text-center mb-4">
-                <h2 className="text-xl font-bold tracking-widest uppercase">BON DE PRÉPARATION</h2>
-                <p className="text-xs text-gray-500 mt-1">À coller sur la palette</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="border-2 border-gray-800 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Client / Chantier</p>
-                  <p className="font-bold text-gray-900">{printBonAdmin.client}</p>
-                </div>
-                <div className="border-2 border-gray-800 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Localisation palette</p>
-                  <p className="font-bold text-gray-900">{printBonAdmin.localisation || '—'}</p>
-                </div>
-              </div>
-              <div className="border-2 border-gray-800 rounded-lg p-3 mb-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Magasinier</p>
-                <p className="font-bold text-gray-900">{printBonAdmin.magasinier?.nom || '—'}</p>
-              </div>
-              <table className="w-full text-sm border-collapse mb-4">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-400 px-2 py-2 text-left text-xs uppercase">N°</th>
-                    <th className="border border-gray-400 px-2 py-2 text-left text-xs uppercase">Description</th>
-                    <th className="border border-gray-400 px-2 py-2 text-center text-xs uppercase">Qté</th>
-                    <th className="border border-gray-400 px-2 py-2 text-center text-xs uppercase">Unité</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(printBonAdmin.lignes as LigneBonPrep[]).map((l, i) => (
-                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="border border-gray-300 px-2 py-2 text-center text-gray-500">{i + 1}</td>
-                      <td className="border border-gray-300 px-2 py-2">{l.description}</td>
-                      <td className="border border-gray-300 px-2 py-2 text-center font-bold">{l.quantite}</td>
-                      <td className="border border-gray-300 px-2 py-2 text-center text-gray-600">{l.unite}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="border border-gray-300 rounded p-3 h-16 mb-1">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Remarques</p>
-              </div>
-              <p className="text-xs text-gray-400 text-right mt-1">
-                {new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date())}
-              </p>
-            </div>
-            {/* Bouton imprimer (caché à l'impression) */}
-            <div className="no-print flex gap-3 p-4 border-t border-gray-100 dark:border-gray-700">
-              <button
-                onClick={() => setPrintBonAdmin(null)}
-                className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Fermer
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"
-              >
-                <PrinterIcon className="h-5 w-5" /> Imprimer
               </button>
             </div>
           </div>

@@ -266,7 +266,28 @@ export default function MagasinierTachesPage() {
                       )}
                     </div>
                     <button
-                      onClick={() => setPrintBon(bon)}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/public/portail/magasinier/bons-preparation/${bon.id}/pdf`, {
+                            credentials: 'include',
+                          })
+                          if (!res.ok) {
+                            alert('Erreur lors de la génération du PDF')
+                            return
+                          }
+                          const blob = await res.blob()
+                          const url = URL.createObjectURL(blob)
+                          const win = window.open(url, '_blank')
+                          if (!win) {
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `bon-preparation-${bon.id.slice(0, 8)}.pdf`
+                            a.click()
+                          }
+                        } catch {
+                          alert('Erreur réseau lors de la génération du PDF')
+                        }
+                      }}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-orange-300 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-50 transition-colors"
                     >
                       <PrinterIcon className="h-4 w-4" />
