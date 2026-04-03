@@ -63,7 +63,9 @@ RUN mkdir -p ./public/uploads ./backups && \
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
-USER nextjs
+# L'entrypoint doit pouvoir corriger les permissions sur les volumes montés
+# (public/uploads, backups). On repassera en user non-root dans docker-entrypoint.sh.
+USER root
 
 EXPOSE 3000
 

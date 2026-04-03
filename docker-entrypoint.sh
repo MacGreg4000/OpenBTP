@@ -15,6 +15,15 @@ done
 
 echo "✅ Base de données disponible"
 
+# ===== Permissions upload / backups =====
+# En Docker, les volumes montés remplacent les dossiers créés pendant la build.
+# Si le dossier public/uploads sur l'hôte n'a pas les bonnes permissions,
+# l'upload échoue avec EACCES.
+echo "🔧 Vérification/ajustement permissions uploads..."
+mkdir -p /app/public/uploads /app/backups || true
+chown -R nextjs:nodejs /app/public/uploads /app/backups 2>/dev/null || true
+chmod -R u+rwX,g+rwX,o+rX /app/public/uploads /app/backups 2>/dev/null || true
+
 # Vérifier si la base est vide (aucune table)
 # -sN = silent (pas de bordures) + no column names → retourne juste la valeur
 TABLE_COUNT=$(mariadb --skip-ssl -sN -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" \
@@ -39,7 +48,22 @@ echo "🔄 Application des migrations Prisma..."
 # faire un baseline automatique puis réessayer.
 migrate_output=$(npx prisma migrate deploy 2>&1) || {
   if echo "$migrate_output" | grep -q "P3005"; then
-    echo "⚠️  Schéma existant détecté (base importée) - baseline automatique..."
+    echo "⚠️  Schéma existant détecté (P3005). Vérification du schéma avant baseline..."
+
+    # Baseline "automatique" = on marque toutes les migrations comme appliquées.
+    # C'est seulement correct si le schéma SQL existant est déjà au bon niveau.
+    # Sinon, on risque de "sauter" des migrations => tables manquantes.
+    HAS_BON_PREPARATION=$(mariadb --skip-ssl -sN -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" \
+      -e "SELECT 1 FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='bon_preparation' LIMIT 1" 2>/dev/null || true)
+
+    if [ -z "$HAS_BON_PREPARATION" ]; then
+      echo "❌ Table 'bon_preparation' absente: baseline refusé. Il faut appliquer les migrations correctement."
+      echo "----- prisma output (P3005) -----"
+      echo "$migrate_output"
+      exit 1
+    fi
+
+    echo "✅ Schéma semble cohérent (bon_preparation présent) - baseline automatique..."
     for dir in prisma/migrations/*/; do
       migration_name=$(basename "$dir")
       npx prisma migrate resolve --applied "$migration_name" 2>/dev/null || true
@@ -53,4 +77,4 @@ migrate_output=$(npx prisma migrate deploy 2>&1) || {
 }
 
 echo "🚀 Démarrage de l'application..."
-exec npm run start
+exec su -s /bin/sh -c "npm run start" nextjs
