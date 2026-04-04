@@ -43,7 +43,8 @@ const quickActions: QuickAction[] = [
     bgColor: 'from-amber-50 to-orange-50',
     hoverColor: 'shadow-amber-500/30',
     hoverTextColor: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
-    shortcut: 'C'
+    // ⌘C = Copier sur macOS — utiliser ⌘B (bâtiments / chantiers)
+    shortcut: 'B'
   },
   {
     id: 'clients',
