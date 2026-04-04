@@ -123,6 +123,7 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           question: userQuestion
         }),
@@ -188,24 +189,30 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
           };
         }
       } else {
-        // En cas d'erreur RAG, donner une réponse générale
+        let detail = ''
+        try {
+          const errBody = (await ragResponse.json()) as { error?: string }
+          if (errBody?.error) detail = `\n\n**Détail :** ${errBody.error}`
+        } catch {
+          /* ignore */
+        }
         botMessage = {
           type: 'bot',
-          content: `Je suis un assistant spécialisé dans la gestion de chantiers et de projets. Je peux vous aider avec des questions sur :
-          
-• Les chantiers et leur suivi
-• Les commandes et devis
-• Les états d'avancement
-• La gestion des clients et sous-traitants
-• Les rapports et documents
+          content: `La requête vers l’assistant IA a échoué (code HTTP ${ragResponse.status}).${detail}
 
-Pour votre question "${userQuestion}", pourriez-vous me donner plus de détails ou reformuler ?`,
+**À vérifier :**
+• Êtes-vous bien connecté (session expirée → reconnectez-vous)
+• Les logs du conteneur \`openbtp-web\` pour \`/api/rag/query\`
+• Connexion Ollama depuis le conteneur (\`OLLAMA_BASE_URL\`)
+
+Si le problème persiste, ouvrez l’onglet Réseau du navigateur sur la requête \`query\` pour voir la réponse exacte du serveur.`,
           timestamp: new Date(),
           metadata: {
             confidence: 0,
             sources: 0,
             processingTime: 0,
-            ragResponse: null
+            ragResponse: null,
+            error: true
           }
         };
       }

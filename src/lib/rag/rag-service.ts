@@ -248,9 +248,14 @@ export class RAGService {
         processingTime: `${processingTime}ms`
       });
 
+      // Ne jamais renvoyer les embeddings au client : JSON énorme → échec NextResponse.json / timeouts
+      const sourcesSansEmbeddings: DocumentChunk[] = relevantDocs.map(
+        ({ embedding: _emb, ...chunk }) => chunk
+      );
+
       return {
         answer,
-        sources: relevantDocs,
+        sources: sourcesSansEmbeddings,
         confidence,
         query: query.question,
         processingTime
