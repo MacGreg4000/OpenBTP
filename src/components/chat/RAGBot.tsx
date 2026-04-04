@@ -162,14 +162,33 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
             }
           };
         } else {
-          // Confiance trop faible : message d’aide + réponse modèle si elle existe (évite d’avoir attendu pour rien)
-          const llmTail =
-            ragData.answer?.trim() && (ragData.confidence ?? 0) < 0.3
-              ? `\n\n---\n**Réponse indicative du modèle (à vérifier dans l’app) :**\n${ragData.answer.trim()}`
-              : '';
-          botMessage = {
-            type: 'bot',
-            content: `Je n'ai pas trouvé d'informations suffisamment fiables dans la base de connaissances pour votre question "${userQuestion}". 
+          // Confiance faible : réponses « structurées » (échec Ollama, seuil similarité…) affichées telles quelles
+          const answerTrim = ragData.answer?.trim() ?? '';
+          const isStructuredAnswer =
+            answerTrim.startsWith("Ollama n'a pas pu") ||
+            answerTrim.startsWith('Les passages les plus proches') ||
+            answerTrim.startsWith('Impossible de préparer la réponse');
+
+          if (isStructuredAnswer) {
+            botMessage = {
+              type: 'bot',
+              content: answerTrim,
+              timestamp: new Date(),
+              metadata: {
+                confidence: ragData.confidence || 0,
+                sources: ragData.sources?.length || 0,
+                processingTime: ragData.processingTime || 0,
+                ragResponse: ragData as unknown as Record<string, unknown>
+              }
+            };
+          } else {
+            const llmTail =
+              answerTrim && (ragData.confidence ?? 0) < 0.3
+                ? `\n\n---\n**Réponse indicative du modèle (à vérifier dans l'app) :**\n${answerTrim}`
+                : '';
+            botMessage = {
+              type: 'bot',
+              content: `Je n'ai pas trouvé d'informations suffisamment fiables dans la base de connaissances pour votre question "${userQuestion}". 
 
 💡 **Suggestions pour améliorer votre recherche :**
 • Soyez plus spécifique (ex: nom du chantier, numéro de commande)
@@ -183,14 +202,15 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
 👥 Clients et sous-traitants
 📦 Inventaire et matériaux
 🔧 Machines et équipements${llmTail}`,
-            timestamp: new Date(),
-            metadata: {
-              confidence: ragData.confidence || 0,
-              sources: ragData.sources?.length || 0,
-              processingTime: ragData.processingTime || 0,
-              ragResponse: null
-            }
-          };
+              timestamp: new Date(),
+              metadata: {
+                confidence: ragData.confidence || 0,
+                sources: ragData.sources?.length || 0,
+                processingTime: ragData.processingTime || 0,
+                ragResponse: null
+              }
+            };
+          }
         }
       } else {
         let detail = ''

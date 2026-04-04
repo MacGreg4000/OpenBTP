@@ -15,22 +15,44 @@ export class OllamaClient {
     this.config = config;
   }
 
-  // Générer une réponse avec le modèle de chat
-  async generateResponse(prompt: string, context?: number[]): Promise<string> {
+  /**
+   * Générer une réponse (API /api/generate).
+   * @param options.maxPredict borne la sortie (RAG : préférer une valeur basse sur NAS)
+   * @param options.timeoutMs délai fetch (AbortSignal) ; 0 = pas de limite
+   */
+  async generateResponse(
+    prompt: string,
+    options?: { context?: number[]; maxPredict?: number; timeoutMs?: number }
+  ): Promise<string> {
     try {
+      const numPredict =
+        typeof options?.maxPredict === 'number' && Number.isFinite(options.maxPredict)
+          ? Math.min(8192, Math.max(32, Math.floor(options.maxPredict)))
+          : this.config.maxTokens;
+
       const request: OllamaRequest = {
         model: this.config.model,
         prompt,
         stream: false,
-        context,
+        context: options?.context,
         options: {
           temperature: this.config.temperature,
-          num_predict: this.config.maxTokens,
+          num_predict: numPredict,
         },
         think: false,
       };
 
-      console.log('🤖 Envoi de la requête à Ollama:', { model: this.config.model, promptLength: prompt.length });
+      const timeoutMs =
+        typeof options?.timeoutMs === 'number' && Number.isFinite(options.timeoutMs) && options.timeoutMs > 0
+          ? Math.floor(options.timeoutMs)
+          : undefined;
+
+      console.log('🤖 Envoi de la requête à Ollama:', {
+        model: this.config.model,
+        promptLength: prompt.length,
+        numPredict,
+        timeoutMs: timeoutMs ?? 'illimité',
+      });
 
       const response = await fetch(`${this.config.baseUrl}/api/generate`, {
         method: 'POST',
@@ -38,18 +60,47 @@ export class OllamaClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
+        signal: timeoutMs !== undefined ? AbortSignal.timeout(timeoutMs) : undefined,
       });
 
       if (!response.ok) {
-        throw new Error(`Erreur Ollama: ${response.status} ${response.statusText}`);
+        const errText = await response.text().catch(() => '');
+        throw new Error(`Erreur Ollama HTTP ${response.status}: ${errText.slice(0, 500) || response.statusText}`);
       }
 
-      const data: OllamaResponse = await response.json();
-      console.log('✅ Réponse reçue d\'Ollama:', { responseLength: data.response.length, done: data.done });
+      let data: OllamaResponse;
+      try {
+        data = (await response.json()) as OllamaResponse;
+      } catch (e) {
+        throw new Error(`Réponse Ollama non JSON (proxy ou coupure réseau ?) : ${e instanceof Error ? e.message : String(e)}`);
+      }
 
-      return data.response;
+      const text =
+        typeof data.response === 'string'
+          ? data.response
+          : data.response != null
+            ? String(data.response)
+            : '';
+
+      if (!text.trim()) {
+        throw new Error(
+          `Réponse textuelle Ollama vide (modèle ${this.config.model}, done=${String(data.done)}). Vérifiez la compatibilité du modèle avec /api/generate.`
+        );
+      }
+
+      console.log('✅ Réponse reçue d\'Ollama:', { responseLength: text.length, done: data.done });
+
+      return text;
     } catch (error) {
       console.error('❌ Erreur lors de la génération avec Ollama:', error);
+      if (
+        error instanceof Error &&
+        (error.name === 'TimeoutError' || error.name === 'AbortError')
+      ) {
+        throw new Error(
+          `Délai dépassé pour Ollama (génération trop longue). Réduisez RAG_NUM_PREDICT ou augmentez RAG_LLM_TIMEOUT_MS.`
+        );
+      }
       throw new Error(`Erreur de génération Ollama: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     }
   }

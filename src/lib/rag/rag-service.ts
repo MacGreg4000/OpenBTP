@@ -250,18 +250,36 @@ export class RAGService {
         };
       }
 
-      // 3. Construire le contexte pour le LLM
+      // 3–5. Génération LLM isolée : en cas d’échec Ollama, on garde les sources trouvées
       const context = this.buildContext(relevantDocs);
-      
-      // 4. Construire le prompt pour Ollama
       const prompt = this.buildPrompt(query.question, context);
 
-      // 5. Générer la réponse avec Ollama
-      const answer = await this.ollamaClient.generateResponse(prompt);
+      const ragPredict = parseInt(process.env.RAG_NUM_PREDICT || '384', 10);
+      const ragTimeout = parseInt(process.env.RAG_LLM_TIMEOUT_MS || '180000', 10);
+      const maxPredict = Number.isFinite(ragPredict) ? ragPredict : 384;
+      const timeoutMs = Number.isFinite(ragTimeout) && ragTimeout > 0 ? ragTimeout : 180000;
 
-      // 6. Calculer la confiance (basée sur la similarité des documents)
+      let answer: string;
+      try {
+        answer = await this.ollamaClient.generateResponse(prompt, {
+          maxPredict,
+          timeoutMs,
+        });
+      } catch (llmErr) {
+        const detail = llmErr instanceof Error ? llmErr.message : String(llmErr);
+        console.error('❌ RAG: échec Ollama après retrieval réussi:', detail);
+        const confidence = this.calculateConfidence(relevantDocs);
+        return {
+          answer:
+            `Ollama n'a pas pu terminer la réponse (timeout, erreur modèle ou réponse vide). Voici tout de même les **extraits les plus proches** de votre question — vérifiez dans l'application (notes, fiche chantier).\n\n**Détail :** ${detail}`,
+          sources: sourcesSansEmbeddings,
+          confidence,
+          query: query.question,
+          processingTime: Date.now() - startTime,
+        };
+      }
+
       const confidence = this.calculateConfidence(relevantDocs);
-
       const processingTime = Date.now() - startTime;
 
       console.log('✅ Réponse RAG générée:', {
@@ -278,12 +296,11 @@ export class RAGService {
         query: query.question,
         processingTime
       };
-
     } catch (error) {
-      console.error('❌ Erreur lors du traitement RAG:', error);
-      
+      console.error('❌ Erreur lors du traitement RAG (recherche / embedding):', error);
+      const detail = error instanceof Error ? error.message : String(error);
       return {
-        answer: "Je rencontre un problème technique pour traiter votre question. Veuillez réessayer plus tard.",
+        answer: `Impossible de préparer la réponse (embedding ou recherche). ${detail}`.slice(0, 2000),
         sources: [],
         confidence: 0,
         query: query.question,
