@@ -141,12 +141,17 @@ export function getOllamaClient(): OllamaClient {
     console.log('  - OLLAMA_BASE_URL:', envUrl);
     console.log('  - OLLAMA_MODEL:', process.env.OLLAMA_MODEL);
     
+    const maxTokensEnv = process.env.OLLAMA_MAX_TOKENS;
+    const maxTokens = maxTokensEnv
+      ? Math.max(64, Math.min(8192, parseInt(maxTokensEnv, 10) || 1000))
+      : 1000;
+
     const config: OllamaConfig = {
       baseUrl: envUrl || 'http://localhost:11434',
       model: process.env.OLLAMA_MODEL || 'phi3:mini',
       embeddingModel: process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text:latest',
       temperature: 0.7,
-      maxTokens: 1000,
+      maxTokens,
     };
 
     console.log('🔧 Configuration Ollama finale:', { 

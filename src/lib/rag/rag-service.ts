@@ -212,8 +212,9 @@ export class RAGService {
         queryEmbedding,
         query.context?.limit || 5,
         {
-          type: query.context?.chantierId ? 'chantier' : undefined,
-          entityId: query.context?.chantierId || query.context?.clientId
+          type: query.context?.type,
+          entityId: query.context?.entityId ?? query.context?.clientId,
+          chantierId: query.context?.chantierId,
         }
       );
 
@@ -224,6 +225,28 @@ export class RAGService {
           confidence: 0,
           query: query.question,
           processingTime: Date.now() - startTime
+        };
+      }
+
+      const maxSim = Math.max(
+        ...relevantDocs.map((d) => (typeof d.similarityScore === 'number' ? d.similarityScore : 0))
+      );
+      const skipLlmBelow = parseFloat(process.env.RAG_SKIP_LLM_BELOW_SIMILARITY || '0.42');
+      const skipThreshold = Number.isFinite(skipLlmBelow) ? skipLlmBelow : 0.42;
+
+      const sourcesSansEmbeddings = relevantDocs.map(({ embedding: _emb, ...chunk }) => chunk);
+
+      // Similarité trop faible : ne pas appeler Ollama (évite des minutes d’attente pour une réponse vide)
+      if (maxSim < skipThreshold) {
+        const confidence = this.calculateConfidence(relevantDocs);
+        return {
+          answer:
+            `Les passages les plus proches de votre question ont une faible correspondance automatique (meilleur score ${(maxSim * 100).toFixed(0)} %, seuil ${(skipThreshold * 100).toFixed(0)} %). ` +
+            `Je ne peux pas conclure de façon fiable. Essayez des mots-clés plus courts (nom du chantier seul, « notes », nom du client) ou lancez une réindexation RAG si les données sont récentes.`,
+          sources: sourcesSansEmbeddings,
+          confidence,
+          query: query.question,
+          processingTime: Date.now() - startTime,
         };
       }
 
@@ -247,11 +270,6 @@ export class RAGService {
         confidence: confidence.toFixed(2),
         processingTime: `${processingTime}ms`
       });
-
-      // Ne jamais renvoyer les embeddings au client : JSON énorme → échec NextResponse.json / timeouts
-      const sourcesSansEmbeddings: DocumentChunk[] = relevantDocs.map(
-        ({ embedding: _emb, ...chunk }) => chunk
-      );
 
       return {
         answer,
@@ -309,43 +327,42 @@ ${question}
 RÉPONSE:`;
   }
 
-  // Calculer la confiance basée sur la similarité des documents (OPTIMISÉ)
+  // Calculer la confiance (similarité cosinus + signaux annexes, sans NaN)
   private calculateConfidence(documents: DocumentChunk[]): number {
     if (documents.length === 0) return 0;
-    
-    // Extraire les scores de similarité depuis les embeddings
-    // Note: Les scores sont calculés dans searchSimilar() via cosineSimilarity
-    // On les recalcule ici de manière simple si besoin
-    
-    // Calculer la confiance basée sur plusieurs facteurs
-    let confidence = 0;
-    
-    // 1. Nombre de sources (poids: 30%)
-    const sourceScore = Math.min(documents.length / 5, 1) * 0.3;
+
+    const sims = documents
+      .map((d) => (typeof d.similarityScore === 'number' && !Number.isNaN(d.similarityScore) ? d.similarityScore : 0))
+      .filter((s) => s > 0);
+    const topSims = [...sims].sort((a, b) => b - a).slice(0, 3);
+    const avgTopSim =
+      topSims.length > 0 ? topSims.reduce((a, b) => a + b, 0) / topSims.length : 0;
+    // Poids principal sur la vraie similarité embedding (0.3–1.0 → ~0.2–0.65)
+    let confidence = Math.min(1, Math.max(0, avgTopSim)) * 0.65;
+
+    const sourceScore = Math.min(documents.length / 5, 1) * 0.12;
     confidence += sourceScore;
-    
-    // 2. Qualité du contenu (poids: 25%)
+
     const avgContentLength = documents.reduce((sum, doc) => sum + doc.content.length, 0) / documents.length;
-    const contentScore = Math.min(avgContentLength / 300, 1) * 0.25;
+    const contentScore = Math.min(avgContentLength / 300, 1) * 0.08;
     confidence += contentScore;
-    
-    // 3. Diversité des sources (poids: 20%)
-    const uniqueTypes = new Set(documents.map(doc => doc.metadata.type)).size;
-    const diversityScore = Math.min(uniqueTypes / 3, 1) * 0.2;
+
+    const uniqueTypes = new Set(documents.map((doc) => doc.metadata.type)).size;
+    const diversityScore = Math.min(uniqueTypes / 3, 1) * 0.08;
     confidence += diversityScore;
-    
-    // 4. Fraîcheur des données (poids: 15%)
+
     const now = Date.now();
-    const avgAge = documents.reduce((sum, doc) => {
-      const updatedAt = doc.metadata.updatedAt ? new Date(doc.metadata.updatedAt).getTime() : now;
-      return sum + (now - updatedAt);
-    }, 0) / documents.length;
-    const maxAge = 365 * 24 * 60 * 60 * 1000; // 1 an en ms
-    const freshnessScore = Math.max(0, 1 - (avgAge / maxAge)) * 0.15;
-    confidence += freshnessScore;
-    
-    // 5. Richesse des métadonnées (poids: 10%)
-    const hasRichMetadata = documents.some(doc => {
+    const ages = documents.map((doc) => {
+      const raw = doc.metadata.updatedAt;
+      const t = raw ? new Date(raw).getTime() : now;
+      return Number.isFinite(t) ? now - t : 0;
+    });
+    const avgAge = ages.reduce((a, b) => a + b, 0) / documents.length;
+    const maxAge = 365 * 24 * 60 * 60 * 1000;
+    const freshnessScore = Math.max(0, 1 - avgAge / maxAge) * 0.05;
+    confidence += Number.isFinite(freshnessScore) ? freshnessScore : 0;
+
+    const hasRichMetadata = documents.some((doc) => {
       try {
         const metadata = typeof doc.metadata === 'string' ? JSON.parse(doc.metadata) : doc.metadata;
         return Object.keys(metadata).length > 3;
@@ -353,10 +370,9 @@ RÉPONSE:`;
         return false;
       }
     });
-    const metadataScore = hasRichMetadata ? 0.1 : 0.05;
-    confidence += metadataScore;
-    
-    // Arrondir et limiter à 95% max (on garde 5% d'incertitude)
+    confidence += hasRichMetadata ? 0.02 : 0.01;
+
+    if (!Number.isFinite(confidence) || confidence < 0) return 0;
     return Math.min(0.95, Math.round(confidence * 100) / 100);
   }
 
@@ -633,6 +649,7 @@ Budget: ${chantier.budget ? `${chantier.budget.toLocaleString('fr-FR')} €` : '
         type: 'chantier',
         entityId: chantier.id,
         entityName: chantier.nomChantier,
+        chantierId: chantier.chantierId,
         createdAt: new Date(chantier.createdAt),
         updatedAt: new Date(chantier.updatedAt)
       }
@@ -660,6 +677,7 @@ ${note.contenu}
         type: 'note',
         entityId: note.id,
         entityName: `Note - ${chantier.nomChantier}`,
+        chantierId: chantier.chantierId,
         createdAt: new Date(note.createdAt),
         updatedAt: new Date(note.updatedAt)
       }
@@ -686,6 +704,7 @@ Date d'ajout: ${new Date(document.createdAt).toLocaleDateString('fr-FR')}
         type: 'document',
         entityId: document.id,
         entityName: `Document ${document.nom} - ${chantier.nomChantier}`,
+        chantierId: chantier.chantierId,
         createdAt: new Date(document.createdAt),
         updatedAt: new Date(document.updatedAt)
       }
@@ -711,6 +730,7 @@ Date: ${new Date(remarque.createdAt).toLocaleDateString('fr-FR')}
         type: 'remarque',
         entityId: remarque.id,
         entityName: `Remarque - ${chantier.nomChantier}`,
+        chantierId: chantier.chantierId,
         createdAt: new Date(remarque.createdAt),
         updatedAt: new Date(remarque.updatedAt)
       }

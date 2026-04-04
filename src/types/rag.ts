@@ -42,6 +42,8 @@ export interface DocumentChunk {
     source?: string;
   };
   embedding?: number[];
+  /** Score cosinus question ↔ chunk (renseigné après searchSimilar, non persisté en BDD) */
+  similarityScore?: number;
 }
 
 export interface RAGQuery {
@@ -51,6 +53,9 @@ export interface RAGQuery {
     chantierId?: string;
     clientId?: string;
     limit?: number;
+    /** Filtre optionnel sur metadata.type (ex. 'note') */
+    type?: DocumentChunk['metadata']['type'];
+    entityId?: string;
   };
 }
 

@@ -164,6 +164,30 @@ Pour accéder à l'application via HTTPS avec ton nom de domaine :
 
 5. Clique sur **Enregistrer**
 
+### Proxy inversé DSM et assistant IA (Ollama) — éviter le HTTP 504
+
+Le **proxy inversé du DSM** coupe souvent les requêtes au bout d’environ **60 secondes**. Or une question RAG (embeddings + recherche + génération) peut dépasser ce délai : le navigateur affiche alors **504**, alors que Next.js et Ollama sont encore en train de travailler.
+
+**L’interface DSM ne permet pas** de régler ce délai pour une règle précise. Il faut **allonger les timeouts nginx** côté NAS (via SSH, compte administrateur), après **sauvegarde** de tout fichier modifié :
+
+1. Active **SSH** : *Panneau de configuration → Terminal et SNMP*.
+2. Connecte-toi en SSH et repère où nginx inclut la config proxy (souvent `include` vers un fichier du type `proxy.conf` sous `/etc/nginx/` ou `/usr/syno/etc/nginx/` — le chemin exact varie selon la **version DSM**).
+3. Ajoute (ou complète) des directives du type :
+
+```nginx
+proxy_connect_timeout 300s;
+proxy_send_timeout 300s;
+proxy_read_timeout 300s;
+```
+
+4. Recharge ou redémarre nginx (selon ta version : `sudo nginx -s reload`, `sudo synosystemctl restart nginx`, ou redémarrage du service **Nginx** dans le gestionnaire de paquets / services).
+
+Les mises à jour DSM peuvent **réécraser** certains fichiers : garde une copie de ta modification. En cas de doute, voir les fils Synology Community / SynoForum sur « nginx gateway timeout » et « reverse proxy ».
+
+**Ollama dans un autre conteneur Docker sur le même NAS** : tant que le port **11434** est **publié sur l’hôte** (ex. `-p 11434:11434`), la valeur par défaut du compose OpenBTP convient : `OLLAMA_BASE_URL=http://nas-host:11434` avec `extra_hosts: nas-host:host-gateway` (déjà dans `docker-compose.yml`). Vérifie depuis le conteneur web :  
+`docker exec -it openbtp-web wget -qO- --timeout=5 http://nas-host:11434/api/tags`  
+Si tu préfères un **réseau Docker partagé** entre OpenBTP et Ollama, tu peux alors utiliser l’URL `http://<nom_du_service_ollama>:11434` et l’indiquer dans `OLLAMA_BASE_URL` (sans passer par l’hôte).
+
 ---
 
 ## Étape 9 — Accéder à l'application

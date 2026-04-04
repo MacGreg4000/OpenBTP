@@ -162,7 +162,11 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
             }
           };
         } else {
-          // Confiance trop faible : réponse générique
+          // Confiance trop faible : message d’aide + réponse modèle si elle existe (évite d’avoir attendu pour rien)
+          const llmTail =
+            ragData.answer?.trim() && (ragData.confidence ?? 0) < 0.3
+              ? `\n\n---\n**Réponse indicative du modèle (à vérifier dans l’app) :**\n${ragData.answer.trim()}`
+              : '';
           botMessage = {
             type: 'bot',
             content: `Je n'ai pas trouvé d'informations suffisamment fiables dans la base de connaissances pour votre question "${userQuestion}". 
@@ -178,7 +182,7 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
 📊 États d'avancement
 👥 Clients et sous-traitants
 📦 Inventaire et matériaux
-🔧 Machines et équipements`,
+🔧 Machines et équipements${llmTail}`,
             timestamp: new Date(),
             metadata: {
               confidence: ragData.confidence || 0,
@@ -196,9 +200,19 @@ export default function RAGBot({ onSendMessage: _onSendMessage, disabled = false
         } catch {
           /* ignore */
         }
+        const isGatewayTimeout = ragResponse.status === 504
+        const timeoutHint = isGatewayTimeout
+          ? `
+
+**504 = délai dépassé (souvent le reverse proxy, pas l’application)**  
+La génération Ollama peut dépasser 60 s. Augmentez les timeouts côté proxy, par exemple nginx :
+\`proxy_connect_timeout 300s;\` \`proxy_send_timeout 300s;\` \`proxy_read_timeout 300s;\`  
+Sur Synology, cela se fait en général via une conf nginx personnalisée ou un profil avancé du reverse proxy.  
+Réduire \`OLLAMA_MAX_TOKENS\` (ex. 400) accélère la réponse sur un NAS modeste.`
+          : ''
         botMessage = {
           type: 'bot',
-          content: `La requête vers l’assistant IA a échoué (code HTTP ${ragResponse.status}).${detail}
+          content: `La requête vers l’assistant IA a échoué (code HTTP ${ragResponse.status}).${detail}${timeoutHint}
 
 **À vérifier :**
 • Êtes-vous bien connecté (session expirée → reconnectez-vous)

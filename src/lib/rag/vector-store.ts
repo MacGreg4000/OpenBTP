@@ -67,6 +67,8 @@ export class VectorStore {
   async searchSimilar(queryEmbedding: number[], limit: number = 5, filter?: {
     type?: string;
     entityId?: string;
+    /** Filtre chunks liés à ce chantier (metadata.chantierId) */
+    chantierId?: string;
   }): Promise<DocumentChunk[]> {
     try {
       console.log('🔍 Recherche de documents similaires:', {
@@ -83,20 +85,35 @@ export class VectorStore {
       if (filter?.entityId) {
         metadataFilters.push({ metadata: { contains: `"entityId":"${filter.entityId}"` } });
       }
+      if (filter?.chantierId) {
+        metadataFilters.push({ metadata: { contains: `"chantierId":"${filter.chantierId}"` } });
+      }
 
-      // Récupérer un ensemble optimisé de documents
-      // On prend plus que nécessaire pour compenser les filtres
-      const batchSize = Math.min(limit * 10, 100); // Max 100 docs pour éviter la surcharge
+      const baseWhere = {
+        embedding: { not: null } as const,
+        ...(metadataFilters.length > 0 ? { AND: metadataFilters } : {}),
+      };
+
+      const rawLimit = parseInt(process.env.RAG_VECTOR_SCAN_LIMIT || '8000', 10);
+      const scanLimit = Number.isFinite(rawLimit)
+        ? Math.min(50000, Math.max(200, rawLimit))
+        : 8000;
+
+      const totalWithEmbedding = await prisma.documentChunk.count({ where: baseWhere });
+      const take = Math.min(scanLimit, totalWithEmbedding);
+
+      if (totalWithEmbedding > scanLimit) {
+        console.warn(
+          `⚠️ RAG: ${totalWithEmbedding} chunks avec embedding, seuls ${scanLimit} sont comparés (RAG_VECTOR_SCAN_LIMIT). Augmentez la variable si besoin.`
+        );
+      }
+
       const documents = await prisma.documentChunk.findMany({
-        where: {
-          embedding: { not: null },
-          ...(metadataFilters.length > 0 ? { OR: metadataFilters } : {}),
-        },
-        orderBy: { updatedAt: 'desc' },
-        take: batchSize,
+        where: baseWhere,
+        take,
       });
 
-      console.log(`📊 ${documents.length} documents candidats récupérés`);
+      console.log(`📊 ${documents.length}/${totalWithEmbedding} documents candidats récupérés (limite scan ${scanLimit})`);
       
       if (documents.length === 0) {
         console.log('⚠️ Aucun document trouvé avec embeddings - vérifiez la base de données');
@@ -144,7 +161,10 @@ export class VectorStore {
         entityName: r.chunk.metadata.entityName
       })));
 
-      return topResults.map(r => r.chunk);
+      return topResults.map((r) => {
+        r.chunk.similarityScore = r.score;
+        return r.chunk;
+      });
     } catch (error) {
       console.error('❌ Erreur lors de la recherche:', error);
       throw error;

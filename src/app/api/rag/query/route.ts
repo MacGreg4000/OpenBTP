@@ -5,6 +5,10 @@ import { authOptions } from '@/lib/auth';
 import { ragService } from '@/lib/rag/rag-service';
 import { RAGQuery } from '@/types/rag';
 
+// maxDuration : plateformes type Vercel ; derrière nginx/Synology, augmenter aussi proxy_read_timeout.
+export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
