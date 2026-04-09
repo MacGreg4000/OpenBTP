@@ -90,6 +90,27 @@ model soustraitant {
   taskAssignments          TaskSousTraitant[]
   // Dossiers techniques
   dossiersFiches           DossierFiche[]
+  // Liste de prix
+  tarifs                   LigneTarifSousTraitant[]
+}
+
+model LigneTarifSousTraitant {
+  id             String       @id @default(uuid())
+  soustraitantId String
+  ordre          Int
+  type           String       @default("LIGNE")
+  article        String?
+  descriptif     String       @db.Text
+  unite          String?
+  prixUnitaire   Float?
+  remarques      String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  soustraitant   soustraitant @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
+
+  @@index([soustraitantId])
+  @@map("ligne_tarif_soustraitant")
 }
 
 model contrat {

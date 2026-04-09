@@ -1,23 +1,29 @@
 'use client'
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { 
-  EyeIcon, 
-  PencilSquareIcon, 
-  EnvelopeIcon, 
-  PhoneIcon, 
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
+import {
+  EyeIcon,
+  PencilSquareIcon,
+  EnvelopeIcon,
+  PhoneIcon,
   MapPinIcon,
   BuildingOfficeIcon,
   UserIcon,
   KeyIcon,
   GlobeAltIcon,
   UserGroupIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  CurrencyEuroIcon,
+  PlusIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
+import LigneTarif, { LigneTarifData } from '@/components/tarifs/LigneTarif'
 
 interface SousTraitantData {
   id: string
@@ -54,10 +60,63 @@ export default function SousTraitantConsultationPage(
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pin, setPin] = useState<string>('')
+  const [lignesTarif, setLignesTarif] = useState<LigneTarifData[]>([])
+  const [loadingTarif, setLoadingTarif] = useState(true)
 
   const portalLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/public/portail/soustraitant/${params.id}` 
     : `/public/portail/soustraitant/${params.id}`
+
+  // Chargement des tarifs
+  useEffect(() => {
+    if (!session) return
+    fetch(`/api/sous-traitants/${params.id}/tarifs`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { setLignesTarif(data); setLoadingTarif(false) })
+      .catch(() => setLoadingTarif(false))
+  }, [session, params.id])
+
+  const addLigneTarif = async (type: 'LIGNE' | 'TITRE' | 'SOUS_TITRE' = 'LIGNE') => {
+    const res = await fetch(`/api/sous-traitants/${params.id}/tarifs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, descriptif: '' }),
+    })
+    if (res.ok) {
+      const ligne = await res.json()
+      setLignesTarif(prev => [...prev, ligne])
+    }
+  }
+
+  const updateLigneTarif = useCallback(async (id: string, field: string, value: string | number | null) => {
+    setLignesTarif(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l))
+    await fetch(`/api/sous-traitants/${params.id}/tarifs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value }),
+    })
+  }, [params.id])
+
+  const deleteLigneTarif = useCallback(async (id: string) => {
+    setLignesTarif(prev => prev.filter(l => l.id !== id))
+    await fetch(`/api/sous-traitants/${params.id}/tarifs/${id}`, { method: 'DELETE' })
+  }, [params.id])
+
+  const moveLigneTarif = useCallback((dragIndex: number, hoverIndex: number) => {
+    setLignesTarif(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(dragIndex, 1)
+      next.splice(hoverIndex, 0, moved)
+      // Persist new order
+      const reordered = next.map((l, i) => ({ id: l.id, ordre: i + 1 }))
+      fetch(`/api/sous-traitants/${params.id}/tarifs/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reordered),
+      })
+      return next
+    })
+  }, [params.id])
 
   useEffect(() => {
     if (session) {
@@ -274,7 +333,7 @@ export default function SousTraitantConsultationPage(
                   </div>
                 </div>
                 <div className="p-6">
-                  <Link 
+                  <Link
                     href={`/sous-traitants/${params.id}/ouvriers`}
                     className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
@@ -283,6 +342,82 @@ export default function SousTraitantConsultationPage(
                 </div>
               </div>
             )}
+
+            {/* Liste de prix */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                <div className="flex items-center justify-between">
+                  <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white rounded-full shadow-lg ring-2 ring-amber-200 dark:ring-amber-700">
+                    <CurrencyEuroIcon className="w-5 h-5 mr-2" />
+                    <span className="font-bold text-lg">
+                      Liste de prix
+                      {lignesTarif.filter(l => l.type === 'LIGNE').length > 0 && (
+                        <span className="ml-2 text-amber-100 font-normal text-sm">
+                          ({lignesTarif.filter(l => l.type === 'LIGNE').length} poste{lignesTarif.filter(l => l.type === 'LIGNE').length > 1 ? 's' : ''})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => addLigneTarif('TITRE')}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                    >
+                      <Bars3Icon className="h-3.5 w-3.5" />
+                      Titre
+                    </button>
+                    <button
+                      onClick={() => addLigneTarif('LIGNE')}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors shadow-sm"
+                    >
+                      <PlusIcon className="h-3.5 w-3.5" />
+                      Ligne
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                {loadingTarif ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto" />
+                  </div>
+                ) : lignesTarif.length === 0 ? (
+                  <div className="p-10 text-center text-gray-400 dark:text-gray-500">
+                    <CurrencyEuroIcon className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">Aucune ligne de prix. Cliquez sur &quot;+ Ligne&quot; pour commencer.</p>
+                  </div>
+                ) : (
+                  <DndProvider backend={HTML5Backend}>
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="bg-amber-50/60 dark:bg-amber-900/10 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <th className="px-2 py-2 w-8" />
+                          <th className="px-2 py-2 w-28 text-left">Article</th>
+                          <th className="px-2 py-2 text-left">Descriptif</th>
+                          <th className="px-2 py-2 w-24 text-left">Unité</th>
+                          <th className="px-2 py-2 w-32 text-left">Prix HT</th>
+                          <th className="px-2 py-2 text-left">Remarques</th>
+                          <th className="px-2 py-2 w-10" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lignesTarif.map((ligne, index) => (
+                          <LigneTarif
+                            key={ligne.id}
+                            {...ligne}
+                            index={index}
+                            moveLigne={moveLigneTarif}
+                            updateLigne={updateLigneTarif}
+                            deleteLigne={deleteLigneTarif}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  </DndProvider>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Colonne latérale */}
