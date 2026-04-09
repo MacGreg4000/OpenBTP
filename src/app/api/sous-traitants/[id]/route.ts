@@ -77,6 +77,8 @@ export async function GET(
         actif: true,
         createdAt: true,
         updatedAt: true,
+        conditionsGenerales: true,
+        conditionsParticulieres: true,
         commandes: true,
         contrats: true
       }
@@ -170,6 +172,8 @@ export async function PUT(
     if (body.tva !== undefined) updateData.tva = body.tva || null
     if (body.logo !== undefined) updateData.logo = body.logo || null
     if (body.actif !== undefined) updateData.actif = !!body.actif
+    if (body.conditionsGenerales !== undefined) updateData.conditionsGenerales = body.conditionsGenerales || null
+    if (body.conditionsParticulieres !== undefined) updateData.conditionsParticulieres = body.conditionsParticulieres || null
 
     const sousTraitant = await prisma.soustraitant.update({
       where: { id },

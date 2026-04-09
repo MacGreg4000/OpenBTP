@@ -20,6 +20,8 @@ import {
   CurrencyEuroIcon,
   PlusIcon,
   Bars3Icon,
+  DocumentArrowDownIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
@@ -37,6 +39,8 @@ interface SousTraitantData {
   actif: boolean | null
   createdAt: string
   updatedAt: string
+  conditionsGenerales: string | null
+  conditionsParticulieres: string | null
   ouvriers?: Array<{
     id: string
     nom: string
@@ -62,6 +66,9 @@ export default function SousTraitantConsultationPage(
   const [pin, setPin] = useState<string>('')
   const [lignesTarif, setLignesTarif] = useState<LigneTarifData[]>([])
   const [loadingTarif, setLoadingTarif] = useState(true)
+  const [condGen, setCondGen] = useState('')
+  const [condPart, setCondPart] = useState('')
+  const [generatingPDF, setGeneratingPDF] = useState(false)
 
   const portalLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/public/portail/soustraitant/${params.id}` 
@@ -129,6 +136,8 @@ export default function SousTraitantConsultationPage(
         })
         .then(data => {
           setSousTraitant(data)
+          setCondGen(data.conditionsGenerales ?? '')
+          setCondPart(data.conditionsParticulieres ?? '')
           setLoading(false)
         })
         .then(async () => {
@@ -145,6 +154,30 @@ export default function SousTraitantConsultationPage(
         })
     }
   }, [session, params.id])
+
+  const saveConditions = useCallback(async (field: 'conditionsGenerales' | 'conditionsParticulieres', value: string) => {
+    await fetch(`/api/sous-traitants/${params.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value || null }),
+    })
+  }, [params.id])
+
+  const handleGeneratePDF = async () => {
+    setGeneratingPDF(true)
+    try {
+      const res = await fetch(`/api/sous-traitants/${params.id}/tarifs/pdf`)
+      if (!res.ok) throw new Error('Erreur génération PDF')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    } catch {
+      showNotification('Erreur', 'Impossible de générer le PDF', 'error')
+    } finally {
+      setGeneratingPDF(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -360,6 +393,14 @@ export default function SousTraitantConsultationPage(
                   </div>
                   <div className="flex gap-2">
                     <button
+                      onClick={handleGeneratePDF}
+                      disabled={generatingPDF}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                    >
+                      <DocumentArrowDownIcon className="h-3.5 w-3.5" />
+                      {generatingPDF ? 'Génération…' : 'PDF'}
+                    </button>
+                    <button
                       onClick={() => addLigneTarif('TITRE')}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
                     >
@@ -416,6 +457,51 @@ export default function SousTraitantConsultationPage(
                     </table>
                   </DndProvider>
                 )}
+              </div>
+            </div>
+
+            {/* Conditions générales et particulières */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-slate-500 via-gray-600 to-gray-700 text-white rounded-full shadow-lg ring-2 ring-gray-200 dark:ring-gray-700">
+                  <DocumentTextIcon className="w-5 h-5 mr-2" />
+                  <span className="font-bold text-lg">Conditions contractuelles</span>
+                </div>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Conditions générales */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Conditions générales
+                    <span className="ml-2 text-xs font-normal text-gray-400">(s&apos;appliquent à tous les sous-traitants)</span>
+                  </label>
+                  <textarea
+                    rows={6}
+                    value={condGen}
+                    onChange={(e) => setCondGen(e.target.value)}
+                    onBlur={() => saveConditions('conditionsGenerales', condGen)}
+                    placeholder="Ex : Paiement à 30 jours fin de mois. Retenue de garantie de 5% pendant 1 an. Respect des normes en vigueur…"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-200 dark:focus:border-amber-400 dark:focus:ring-amber-800 transition-colors resize-y"
+                  />
+                </div>
+                {/* Conditions particulières */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Conditions particulières
+                    <span className="ml-2 text-xs font-normal text-gray-400">(spécifiques à ce sous-traitant)</span>
+                  </label>
+                  <textarea
+                    rows={5}
+                    value={condPart}
+                    onChange={(e) => setCondPart(e.target.value)}
+                    onBlur={() => saveConditions('conditionsParticulieres', condPart)}
+                    placeholder="Ex : Tarifs valables jusqu&apos;au 31/12/2026. Déplacement inclus dans un rayon de 50 km…"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-200 dark:focus:border-amber-400 dark:focus:ring-amber-800 transition-colors resize-y"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  💾 Sauvegarde automatique à la sortie du champ — ces conditions apparaîtront dans le PDF.
+                </p>
               </div>
             </div>
           </div>

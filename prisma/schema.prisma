@@ -90,6 +90,9 @@ model soustraitant {
   taskAssignments          TaskSousTraitant[]
   // Dossiers techniques
   dossiersFiches           DossierFiche[]
+  // Conditions tarifaires
+  conditionsGenerales      String?                  @db.Text
+  conditionsParticulieres  String?                  @db.Text
   // Liste de prix
   tarifs                   LigneTarifSousTraitant[]
 }
