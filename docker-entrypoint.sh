@@ -19,10 +19,10 @@ echo "✅ Base de données disponible"
 # En Docker, les volumes montés remplacent les dossiers créés pendant la build.
 # Si le dossier public/uploads sur l'hôte n'a pas les bonnes permissions,
 # l'upload échoue avec EACCES.
-echo "🔧 Vérification/ajustement permissions uploads..."
-mkdir -p /app/public/uploads /app/backups || true
-chown -R nextjs:nodejs /app/public/uploads /app/backups 2>/dev/null || true
-chmod -R u+rwX,g+rwX,o+rX /app/public/uploads /app/backups 2>/dev/null || true
+echo "🔧 Vérification/ajustement permissions dossiers montés..."
+mkdir -p /app/public/uploads /app/public/chantiers /app/public/documents /app/backups || true
+chown -R nextjs:nodejs /app/public/uploads /app/public/chantiers /app/public/documents /app/backups 2>/dev/null || true
+chmod -R u+rwX,g+rwX,o+rX /app/public/uploads /app/public/chantiers /app/public/documents /app/backups 2>/dev/null || true
 
 # Vérifier si la base est vide (aucune table)
 # -sN = silent (pas de bordures) + no column names → retourne juste la valeur
