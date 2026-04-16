@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, use, useCallback } from 'react';
 import { useSession } from 'next-auth/react'
-// removed unused useRouter
+import { useRouter } from 'next/navigation'
 import { 
   ArrowLeftIcon,
   DocumentCheckIcon,
@@ -56,6 +56,7 @@ export default function CommandeSousTraitantPage(
 ) {
   const params = use(props.params);
   const { data: session } = useSession()
+  const router = useRouter()
   
 
   const [loading, setLoading] = useState(true)
@@ -64,6 +65,8 @@ export default function CommandeSousTraitantPage(
   const [ligneEnEdition, setLigneEnEdition] = useState<number | null>(null)
   const [lignesTemp, setLignesTemp] = useState<{[key: number]: LigneCommande}>({})
   const [submitting, setSubmitting] = useState(false)
+  const [deletingCommande, setDeletingCommande] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const fetchCommande = useCallback(async () => {
     try {
@@ -308,6 +311,29 @@ export default function CommandeSousTraitantPage(
     }
   }
 
+  const handleDeleteCommande = async () => {
+    setShowDeleteModal(false)
+    try {
+      setDeletingCommande(true)
+      const response = await fetch(
+        `/api/chantiers/${params.chantierId}/soustraitants/${params.soustraitantId}/commandes/${params.commandeId}`,
+        { method: 'DELETE' }
+      )
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Erreur lors de la suppression')
+      }
+      toast.success('Commande supprimée avec succès')
+      router.push(`/chantiers/${params.chantierId}/etats`)
+    } catch (error: unknown) {
+      console.error('Erreur:', error)
+      const message = error instanceof Error ? error.message : 'Une erreur est survenue'
+      toast.error(message)
+    } finally {
+      setDeletingCommande(false)
+    }
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
       <div className="text-center space-y-4">
@@ -362,6 +388,58 @@ export default function CommandeSousTraitantPage(
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* <Toaster position="top-right" /> */} {/* Déplacé vers RootClientProviders */}
+
+      {/* Modale de confirmation de suppression */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-red-200 dark:border-red-700">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                  Supprimer la commande
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  Vous êtes sur le point de supprimer la commande&nbsp;
+                  <strong className="text-gray-900 dark:text-white">{commande.reference || `#${commande.id}`}</strong> de&nbsp;
+                  <strong className="text-gray-900 dark:text-white">{commande.soustraitantNom}</strong>.
+                </p>
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                  Cette action est irréversible. Les lignes de commande seront également supprimées.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deletingCommande}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteCommande}
+                disabled={deletingCommande}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow transition disabled:opacity-50"
+              >
+                {deletingCommande ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="h-4 w-4" />
+                    Confirmer la suppression
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
@@ -408,6 +486,18 @@ export default function CommandeSousTraitantPage(
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-3">
+                {session?.user?.role === 'ADMIN' && (
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    disabled={deletingCommande || submitting}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/80 backdrop-blur-sm rounded-lg text-sm font-semibold text-white shadow-lg hover:bg-red-600/90 transition disabled:opacity-60"
+                    title="Supprimer la commande (admin uniquement)"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                    Supprimer
+                  </button>
+                )}
+
                 {commande.estVerrouillee && (
                   <>
                     <button

@@ -322,8 +322,8 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Seul un administrateur peut supprimer une commande sous-traitant.' }, { status: 403 })
     }
 
     const params = await context.params;
