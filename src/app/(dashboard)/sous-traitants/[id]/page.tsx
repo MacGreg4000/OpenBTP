@@ -22,6 +22,8 @@ import {
   Bars3Icon,
   DocumentArrowDownIcon,
   DocumentTextIcon,
+  ArrowsRightLeftIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
@@ -69,6 +71,11 @@ export default function SousTraitantConsultationPage(
   const [condGen, setCondGen] = useState('')
   const [condPart, setCondPart] = useState('')
   const [generatingPDF, setGeneratingPDF] = useState(false)
+  const [showDupliquerModal, setShowDupliquerModal] = useState(false)
+  const [sourceSearch, setSourceSearch] = useState('')
+  const [allSousTraitants, setAllSousTraitants] = useState<Array<{id: string, nom: string, _count?: {tarifs: number}}>>([])
+  const [loadingAllST, setLoadingAllST] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
 
   const portalLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/public/portail/soustraitant/${params.id}` 
@@ -179,6 +186,47 @@ export default function SousTraitantConsultationPage(
     }
   }
 
+  const openDupliquerModal = async () => {
+    setShowDupliquerModal(true)
+    setSourceSearch('')
+    if (allSousTraitants.length === 0) {
+      setLoadingAllST(true)
+      try {
+        const res = await fetch('/api/sous-traitants')
+        const data = await res.json()
+        // Exclure le ST courant et trier par nom
+        setAllSousTraitants((data as Array<{id: string, nom: string}>)
+          .filter((st: {id: string}) => st.id !== params.id)
+          .sort((a: {nom: string}, b: {nom: string}) => a.nom.localeCompare(b.nom)))
+      } finally {
+        setLoadingAllST(false)
+      }
+    }
+  }
+
+  const handleDupliquer = async (sourceId: string, sourceNom: string) => {
+    if (!confirm(`Dupliquer la liste de prix de "${sourceNom}" vers ce sous-traitant ? Les lignes existantes seront remplacées.`)) return
+    setDuplicating(true)
+    try {
+      const res = await fetch(`/api/sous-traitants/${params.id}/tarifs/dupliquer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceId }),
+      })
+      if (!res.ok) throw new Error('Erreur lors de la duplication')
+      const data = await res.json()
+      setLignesTarif(data.lignes)
+      setCondGen(data.conditionsGenerales ?? '')
+      setCondPart(data.conditionsParticulieres ?? '')
+      setShowDupliquerModal(false)
+      showNotification('Succès', 'Liste de prix dupliquée avec succès', 'success')
+    } catch {
+      showNotification('Erreur', 'Erreur lors de la duplication', 'error')
+    } finally {
+      setDuplicating(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -196,6 +244,85 @@ export default function SousTraitantConsultationPage(
   }
 
   return (
+    <>
+    {/* Modale de duplication de liste de prix */}
+    {showDupliquerModal && (
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            Dupliquer une liste de prix
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Choisissez un sous-traitant dont vous souhaitez copier la liste de prix (et les conditions contractuelles) vers <strong>{sousTraitant?.nom}</strong>. Les lignes existantes seront remplacées.
+          </p>
+
+          {/* Champ de recherche */}
+          <div className="relative mb-4">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={sourceSearch}
+              onChange={(e) => setSourceSearch(e.target.value)}
+              placeholder="Rechercher un sous-traitant…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:focus:border-blue-400 dark:focus:ring-blue-800 transition-colors"
+            />
+          </div>
+
+          {/* Liste des sous-traitants */}
+          <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+            {loadingAllST ? (
+              <div className="p-6 text-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto" />
+              </div>
+            ) : (() => {
+              const filtered = allSousTraitants.filter(st =>
+                st.nom.toLowerCase().includes(sourceSearch.toLowerCase())
+              )
+              if (filtered.length === 0) {
+                return (
+                  <div className="p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+                    Aucun sous-traitant trouvé
+                  </div>
+                )
+              }
+              return filtered.map((st) => (
+                <div
+                  key={st.id}
+                  className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                >
+                  <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                    {st.nom}
+                  </span>
+                  <button
+                    onClick={() => handleDupliquer(st.id, st.nom)}
+                    disabled={duplicating}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {duplicating ? (
+                      <span className="animate-spin rounded-full h-3 w-3 border-b border-white inline-block" />
+                    ) : (
+                      <ArrowsRightLeftIcon className="h-3 w-3" />
+                    )}
+                    Choisir
+                  </button>
+                </div>
+              ))
+            })()}
+          </div>
+
+          {/* Bouton Fermer */}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => setShowDupliquerModal(false)}
+              disabled={duplicating}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -392,6 +519,13 @@ export default function SousTraitantConsultationPage(
                     </span>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={openDupliquerModal}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <ArrowsRightLeftIcon className="h-3.5 w-3.5" />
+                      Dupliquer depuis…
+                    </button>
                     <button
                       onClick={handleGeneratePDF}
                       disabled={generatingPDF}
@@ -600,6 +734,7 @@ export default function SousTraitantConsultationPage(
       </div>
       <NotificationComponent />
     </div>
+    </>
   )
 }
 
