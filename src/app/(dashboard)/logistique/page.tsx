@@ -81,6 +81,8 @@ export default function LogistiquePage() {
   const [newTacheDate, setNewTacheDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [newTacheMagasinierId, setNewTacheMagasinierId] = useState('')
   const [newTachePhotos, setNewTachePhotos] = useState<File[]>([])
+  const [newTachePhotoURLs, setNewTachePhotoURLs] = useState<string[]>([])
+  const [editPhotoURLs, setEditPhotoURLs] = useState<string[]>([])
   const [savingTache, setSavingTache] = useState(false)
   const [filterMagasinier, setFilterMagasinier] = useState('')
   const [filterStatut, setFilterStatut] = useState('A_FAIRE')
@@ -215,18 +217,24 @@ export default function LogistiquePage() {
         })
       }
       if (res.ok) {
+        const data = await res.json()
         setNewTacheTitre('')
         setNewTacheDesc('')
         setNewTacheDate(new Date().toISOString().slice(0, 10))
+        newTachePhotoURLs.forEach(u => URL.revokeObjectURL(u))
         setNewTachePhotos([])
+        setNewTachePhotoURLs([])
         loadData()
         setActiveTab('consultation')
+        if (data.warning) {
+          alert(`Tâche créée, mais : ${data.warning}`)
+        }
       } else {
         const err = await res.json()
         alert(err.error || 'Erreur')
       }
     } catch (e) {
-      alert('Erreur')
+      alert('Erreur réseau')
     } finally {
       setSavingTache(false)
     }
@@ -234,13 +242,23 @@ export default function LogistiquePage() {
 
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (files?.length) setNewTachePhotos((prev) => [...prev, ...Array.from(files)])
+    if (files?.length) {
+      const newFiles = Array.from(files)
+      const newURLs = newFiles.map(f => URL.createObjectURL(f))
+      setNewTachePhotos((prev) => [...prev, ...newFiles])
+      setNewTachePhotoURLs((prev) => [...prev, ...newURLs])
+    }
     e.target.value = ''
   }
 
   const handleEditPhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (files?.length) setEditPhotos((prev) => [...prev, ...Array.from(files)])
+    if (files?.length) {
+      const newFiles = Array.from(files)
+      const newURLs = newFiles.map(f => URL.createObjectURL(f))
+      setEditPhotos((prev) => [...prev, ...newFiles])
+      setEditPhotoURLs((prev) => [...prev, ...newURLs])
+    }
     e.target.value = ''
   }
 
@@ -337,14 +355,19 @@ export default function LogistiquePage() {
         fd.append('type', 'A_FAIRE')
         editPhotos.forEach(f => fd.append('photos', f))
         const photoRes = await fetch(`/api/logistique/taches/${editTache.id}/photos`, { method: 'POST', body: fd })
+        const photoData = await photoRes.json().catch(() => ({}))
         if (!photoRes.ok) {
-          const err = await photoRes.json().catch(() => ({}))
-          alert(err.error || 'Erreur lors de l\'upload des photos')
+          alert(photoData.error || 'Erreur lors de l\'upload des photos')
           return
         }
+        if (photoData.warning) {
+          alert(`Photos enregistrées, mais : ${photoData.warning}`)
+        }
       }
+      editPhotoURLs.forEach(u => URL.revokeObjectURL(u))
       setEditTache(null)
       setEditPhotos([])
+      setEditPhotoURLs([])
       loadData()
     } catch {
       alert('Erreur réseau')
@@ -821,13 +844,17 @@ export default function LogistiquePage() {
                     {newTachePhotos.map((f, i) => (
                       <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 border-2 border-amber-300 dark:border-amber-600 group">
                         <img
-                          src={URL.createObjectURL(f)}
+                          src={newTachePhotoURLs[i] ?? ''}
                           alt={f.name}
                           className="w-full h-full object-cover"
                         />
                         <button
                           type="button"
-                          onClick={() => setNewTachePhotos((p) => p.filter((_, j) => j !== i))}
+                          onClick={() => {
+                            URL.revokeObjectURL(newTachePhotoURLs[i] ?? '')
+                            setNewTachePhotos((p) => p.filter((_, j) => j !== i))
+                            setNewTachePhotoURLs((p) => p.filter((_, j) => j !== i))
+                          }}
                           className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >×</button>
                       </div>
@@ -1310,10 +1337,14 @@ export default function LogistiquePage() {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {editPhotos.map((f, i) => (
                       <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 border-2 border-amber-300 dark:border-amber-600 group">
-                        <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
+                        <img src={editPhotoURLs[i] ?? ''} alt={f.name} className="w-full h-full object-cover" />
                         <button
                           type="button"
-                          onClick={() => setEditPhotos(p => p.filter((_, j) => j !== i))}
+                          onClick={() => {
+                            URL.revokeObjectURL(editPhotoURLs[i] ?? '')
+                            setEditPhotos(p => p.filter((_, j) => j !== i))
+                            setEditPhotoURLs(p => p.filter((_, j) => j !== i))
+                          }}
                           className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >×</button>
                       </div>
@@ -1324,7 +1355,7 @@ export default function LogistiquePage() {
             </div>
             <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-gray-700">
               <button
-                onClick={() => { setEditTache(null); setEditPhotos([]) }}
+                onClick={() => { editPhotoURLs.forEach(u => URL.revokeObjectURL(u)); setEditTache(null); setEditPhotos([]); setEditPhotoURLs([]) }}
                 className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Annuler

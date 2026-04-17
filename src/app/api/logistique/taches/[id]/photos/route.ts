@@ -39,13 +39,18 @@ export async function POST(
 
     const count = await prisma.photoTacheMagasinier.count({ where: { tacheId } })
     const urls: string[] = []
+    let rejected = 0
+    let ordreOffset = 0
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const validation = await validateImageFile(file)
-      if (!validation.isValid) continue
+      if (!validation.isValid) {
+        rejected++
+        continue
+      }
 
-      const filename = `photo-${Date.now()}-${i}.${validation.safeExtension}`
+      const filename = `photo-${Date.now()}-${ordreOffset}.${validation.safeExtension}`
       const relPath = `/uploads/logistique/${tacheId}/${filename}`
       const fullPath = join(LOGISTIQUE_PHOTOS_PATH, tacheId, filename)
       const buffer = Buffer.from(await file.arrayBuffer())
@@ -56,13 +61,25 @@ export async function POST(
           tacheId,
           type,
           url: relPath,
-          ordre: count + i
+          ordre: count + ordreOffset
         }
       })
       urls.push(relPath)
+      ordreOffset++
     }
 
-    return NextResponse.json({ success: true, urls })
+    if (urls.length === 0) {
+      return NextResponse.json(
+        { error: `Aucune photo valide. ${rejected} fichier(s) rejeté(s) : format non supporté (acceptés : JPEG, PNG, WebP, HEIC, AVIF).` },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      urls,
+      ...(rejected > 0 && { warning: `${rejected} photo(s) ignorée(s) : format non supporté.` })
+    })
   } catch (error) {
     console.error('Erreur POST photos tache:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

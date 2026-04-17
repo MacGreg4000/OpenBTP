@@ -9,7 +9,7 @@
 
 export interface ImageValidationResult {
   isValid: boolean
-  safeExtension: 'jpg' | 'png' | 'webp' | 'heic' | null
+  safeExtension: 'jpg' | 'png' | 'webp' | 'heic' | 'avif' | null
 }
 
 /**
@@ -34,21 +34,27 @@ export async function validateImageFile(file: File): Promise<ImageValidationResu
   const isWEBP = buffer.length >= 12 &&
                  buffer.slice(8, 12).toString('ascii') === 'WEBP'
 
-  // HEIC/HEIF : fichiers ISOBMFF (bytes 4-7 = 'ftyp')
-  // Brands acceptés : heic, heif, mif1, msf1 (standard) + hei1, heis, heix (iPhone)
+  // ISOBMFF (HEIC, HEIF, AVIF…) : bytes 4-7 = 'ftyp'
   const isFtyp = buffer.length >= 8 &&
                  buffer.slice(4, 8).toString('ascii') === 'ftyp'
   const majorBrand = buffer.length >= 12
-    ? buffer.slice(8, 12).toString('ascii').toLowerCase()
+    ? buffer.slice(8, 12).toString('ascii').toLowerCase().trim()
     : ''
-  const heicBrands = ['heic', 'heif', 'mif1', 'msf1', 'hei1', 'heis', 'heix']
+
+  // HEIC/HEIF : brands Apple (standard + variantes iOS récentes)
+  // hev1/hevc = iOS 17+, mp41/mp42 = certains appareils Android
+  const heicBrands = ['heic', 'heif', 'mif1', 'msf1', 'hei1', 'heis', 'heix', 'hev1', 'hevc', 'mp41', 'mp42']
   const isHEIC = isFtyp && heicBrands.includes(majorBrand)
 
-  if (!isJPEG && !isPNG && !isWEBP && !isHEIC) {
-    console.warn(`⚠️ Fichier rejeté (magic bytes invalides): ${file.name} type=${file.type} brand=${majorBrand}`)
+  // AVIF : format moderne Android/Chrome (avif, avis, avci)
+  const avifBrands = ['avif', 'avis', 'avci', 'av01']
+  const isAVIF = isFtyp && avifBrands.includes(majorBrand)
+
+  if (!isJPEG && !isPNG && !isWEBP && !isHEIC && !isAVIF) {
+    console.warn(`⚠️ Fichier rejeté (format non supporté): ${file.name} type=${file.type} brand="${majorBrand}"`)
     return { isValid: false, safeExtension: null }
   }
 
-  const safeExtension = isJPEG ? 'jpg' : isPNG ? 'png' : isWEBP ? 'webp' : 'heic'
+  const safeExtension = isJPEG ? 'jpg' : isPNG ? 'png' : isWEBP ? 'webp' : isAVIF ? 'avif' : 'heic'
   return { isValid: true, safeExtension }
 }

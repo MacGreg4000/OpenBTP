@@ -109,30 +109,41 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Upload photos A_FAIRE si fournies
+    // Upload photos A_FAIRE si fournies (traitement séquentiel pour éviter les collisions de noms)
     if (photoFiles.length > 0) {
       const { writeFile, mkdir } = await import('fs/promises')
       const path = await import('path')
       const basePath = path.join(process.cwd(), 'public', 'uploads', 'logistique', tache.id)
       await mkdir(basePath, { recursive: true })
       const { validateImageFile } = await import('@/lib/utils/image-validation')
-      await Promise.all(
-        photoFiles.map(async (file, i) => {
-          const validation = await validateImageFile(file)
-          if (!validation.isValid) return
-          const filename = `photo-${Date.now()}-${i}.${validation.safeExtension}`
-          const relPath = `/uploads/logistique/${tache.id}/${filename}`
-          await writeFile(path.join(basePath, filename), Buffer.from(await file.arrayBuffer()))
-          await prisma.photoTacheMagasinier.create({
-            data: { tacheId: tache.id, type: 'A_FAIRE', url: relPath, ordre: i }
-          })
+      let ordre = 0
+      let rejected = 0
+      for (const file of photoFiles) {
+        const validation = await validateImageFile(file)
+        if (!validation.isValid) {
+          console.warn(`⚠️ Photo ignorée (format non supporté): ${file.name} size=${file.size}`)
+          rejected++
+          continue
+        }
+        const filename = `photo-${Date.now()}-${ordre}.${validation.safeExtension}`
+        const relPath = `/uploads/logistique/${tache.id}/${filename}`
+        await writeFile(path.join(basePath, filename), Buffer.from(await file.arrayBuffer()))
+        await prisma.photoTacheMagasinier.create({
+          data: { tacheId: tache.id, type: 'A_FAIRE', url: relPath, ordre }
         })
-      )
+        ordre++
+      }
+      if (rejected > 0) {
+        console.warn(`⚠️ ${rejected}/${photoFiles.length} photo(s) ignorée(s) pour la tâche ${tache.id}`)
+      }
       const withPhotos = await prisma.tacheMagasinier.findUnique({
         where: { id: tache.id },
         include: { magasinier: { select: { id: true, nom: true } }, photos: true }
       })
-      return NextResponse.json(withPhotos, { status: 201 })
+      return NextResponse.json(
+        { ...withPhotos, ...(rejected > 0 && { warning: `${rejected} photo(s) ignorée(s) : format non supporté (JPEG, PNG, WebP, HEIC, AVIF acceptés).` }) },
+        { status: 201 }
+      )
     }
 
     return NextResponse.json(tache, { status: 201 })
