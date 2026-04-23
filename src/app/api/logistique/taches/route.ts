@@ -109,25 +109,39 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Upload photos A_FAIRE si fournies (traitement séquentiel pour éviter les collisions de noms)
+    // Upload photos A_FAIRE si fournies
     if (photoFiles.length > 0) {
       const { writeFile, mkdir } = await import('fs/promises')
       const path = await import('path')
       const basePath = path.join(process.cwd(), 'public', 'uploads', 'logistique', tache.id)
       await mkdir(basePath, { recursive: true })
-      const { validateImageFile } = await import('@/lib/utils/image-validation')
+      const { validateImageBuffer } = await import('@/lib/utils/image-validation')
+
+      // Lire TOUS les buffers en mémoire immédiatement avant tout traitement.
+      // Les File objects de FormData peuvent être backed par un stream consommable
+      // une seule fois — on matérialise tout ici pour fiabiliser la boucle.
+      const entries = await Promise.all(
+        photoFiles
+          .filter(f => f.size > 0)
+          .map(async (f) => ({
+            buffer: Buffer.from(await f.arrayBuffer()),
+            name: f.name,
+            type: f.type,
+          }))
+      )
+
       let ordre = 0
       let rejected = 0
-      for (const file of photoFiles) {
-        const validation = await validateImageFile(file)
+      for (const entry of entries) {
+        const validation = validateImageBuffer(entry.buffer, entry.type, entry.name)
         if (!validation.isValid) {
-          console.warn(`⚠️ Photo ignorée (format non supporté): ${file.name} size=${file.size}`)
+          console.warn(`⚠️ Photo ignorée (format non supporté): ${entry.name} size=${entry.buffer.length}`)
           rejected++
           continue
         }
         const filename = `photo-${Date.now()}-${ordre}.${validation.safeExtension}`
         const relPath = `/uploads/logistique/${tache.id}/${filename}`
-        await writeFile(path.join(basePath, filename), Buffer.from(await file.arrayBuffer()))
+        await writeFile(path.join(basePath, filename), entry.buffer)
         await prisma.photoTacheMagasinier.create({
           data: { tacheId: tache.id, type: 'A_FAIRE', url: relPath, ordre }
         })

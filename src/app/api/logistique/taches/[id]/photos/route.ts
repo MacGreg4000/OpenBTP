@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
-import { validateImageFile } from '@/lib/utils/image-validation'
+import { validateImageBuffer } from '@/lib/utils/image-validation'
 
 const LOGISTIQUE_PHOTOS_PATH = join(process.cwd(), 'public', 'uploads', 'logistique')
 
@@ -29,11 +29,24 @@ export async function POST(
 
     const formData = await request.formData()
     const type = (formData.get('type') as string) || 'A_FAIRE'
-    const files = formData.getAll('photos') as File[]
+    const rawFiles = formData.getAll('photos') as File[]
 
-    if (!files?.length) {
+    if (!rawFiles?.length) {
       return NextResponse.json({ error: 'Aucune photo' }, { status: 400 })
     }
+
+    // Lire TOUS les buffers en mémoire d'un seul coup avant tout traitement.
+    // Les File objects de FormData sont parfois backed par un stream qui ne peut
+    // être lu qu'une fois — on matérialise tout ici pour éviter ce problème.
+    const entries = await Promise.all(
+      rawFiles
+        .filter(f => f.size > 0)
+        .map(async (f) => ({
+          buffer: Buffer.from(await f.arrayBuffer()),
+          name: f.name,
+          type: f.type,
+        }))
+    )
 
     await mkdir(join(LOGISTIQUE_PHOTOS_PATH, tacheId), { recursive: true })
 
@@ -42,9 +55,8 @@ export async function POST(
     let rejected = 0
     let ordreOffset = 0
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      const validation = await validateImageFile(file)
+    for (const entry of entries) {
+      const validation = validateImageBuffer(entry.buffer, entry.type, entry.name)
       if (!validation.isValid) {
         rejected++
         continue
@@ -53,8 +65,7 @@ export async function POST(
       const filename = `photo-${Date.now()}-${ordreOffset}.${validation.safeExtension}`
       const relPath = `/uploads/logistique/${tacheId}/${filename}`
       const fullPath = join(LOGISTIQUE_PHOTOS_PATH, tacheId, filename)
-      const buffer = Buffer.from(await file.arrayBuffer())
-      await writeFile(fullPath, buffer)
+      await writeFile(fullPath, entry.buffer)
 
       await prisma.photoTacheMagasinier.create({
         data: {

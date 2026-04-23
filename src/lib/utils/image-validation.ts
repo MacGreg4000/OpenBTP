@@ -13,32 +13,21 @@ export interface ImageValidationResult {
 }
 
 /**
- * Valide un objet File en lisant ses magic bytes réels.
- * Retourne l'extension sécurisée basée sur le contenu réel, jamais sur le nom du fichier.
+ * Logique interne de détection par magic bytes (partagée).
+ * Reçoit les 12 premiers octets du fichier.
  */
-export async function validateImageFile(file: File): Promise<ImageValidationResult> {
-  // Première barrière : Content-Type client (rapide, mais non fiable seule)
-  // On accepte les fichiers avec type vide (certains appareils photo Android/iOS renvoient "")
-  if (file.type && !file.type.startsWith('image/')) {
-    return { isValid: false, safeExtension: null }
-  }
-
-  // Lire les 12 premiers octets pour inspecter les magic bytes
-  const slice = file.slice(0, 12)
-  const bytes = await slice.arrayBuffer()
-  const buffer = Buffer.from(bytes)
-
-  const isJPEG = buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF
-  const isPNG  = buffer[0] === 0x89 && buffer[1] === 0x50 &&
-                 buffer[2] === 0x4E && buffer[3] === 0x47
-  const isWEBP = buffer.length >= 12 &&
-                 buffer.slice(8, 12).toString('ascii') === 'WEBP'
+function _checkMagicBytes(header: Buffer, fileName: string = ''): ImageValidationResult {
+  const isJPEG = header[0] === 0xFF && header[1] === 0xD8 && header[2] === 0xFF
+  const isPNG  = header[0] === 0x89 && header[1] === 0x50 &&
+                 header[2] === 0x4E && header[3] === 0x47
+  const isWEBP = header.length >= 12 &&
+                 header.slice(8, 12).toString('ascii') === 'WEBP'
 
   // ISOBMFF (HEIC, HEIF, AVIF…) : bytes 4-7 = 'ftyp'
-  const isFtyp = buffer.length >= 8 &&
-                 buffer.slice(4, 8).toString('ascii') === 'ftyp'
-  const majorBrand = buffer.length >= 12
-    ? buffer.slice(8, 12).toString('ascii').toLowerCase().trim()
+  const isFtyp = header.length >= 8 &&
+                 header.slice(4, 8).toString('ascii') === 'ftyp'
+  const majorBrand = header.length >= 12
+    ? header.slice(8, 12).toString('ascii').toLowerCase().trim()
     : ''
 
   // HEIC/HEIF : brands Apple (standard + variantes iOS récentes)
@@ -46,15 +35,41 @@ export async function validateImageFile(file: File): Promise<ImageValidationResu
   const heicBrands = ['heic', 'heif', 'mif1', 'msf1', 'hei1', 'heis', 'heix', 'hev1', 'hevc', 'mp41', 'mp42']
   const isHEIC = isFtyp && heicBrands.includes(majorBrand)
 
-  // AVIF : format moderne Android/Chrome (avif, avis, avci)
+  // AVIF : format moderne Android/Chrome
   const avifBrands = ['avif', 'avis', 'avci', 'av01']
   const isAVIF = isFtyp && avifBrands.includes(majorBrand)
 
   if (!isJPEG && !isPNG && !isWEBP && !isHEIC && !isAVIF) {
-    console.warn(`⚠️ Fichier rejeté (format non supporté): ${file.name} type=${file.type} brand="${majorBrand}"`)
+    console.warn(`⚠️ Fichier rejeté (format non supporté): ${fileName} brand="${majorBrand}"`)
     return { isValid: false, safeExtension: null }
   }
 
   const safeExtension = isJPEG ? 'jpg' : isPNG ? 'png' : isWEBP ? 'webp' : isAVIF ? 'avif' : 'heic'
   return { isValid: true, safeExtension }
+}
+
+/**
+ * Valide un Buffer déjà lu en mémoire via ses magic bytes.
+ * ✅ Version recommandée pour les routes API — évite tout problème de stream.
+ */
+export function validateImageBuffer(buffer: Buffer, fileType: string = '', fileName: string = ''): ImageValidationResult {
+  if (fileType && !fileType.startsWith('image/')) {
+    return { isValid: false, safeExtension: null }
+  }
+  return _checkMagicBytes(buffer.subarray(0, 12), fileName)
+}
+
+/**
+ * Valide un objet File en lisant ses magic bytes réels.
+ * ⚠️ Ne pas utiliser quand le Buffer complet doit être lu ensuite —
+ *    utiliser validateImageBuffer() à la place pour éviter une double lecture.
+ */
+export async function validateImageFile(file: File): Promise<ImageValidationResult> {
+  if (file.type && !file.type.startsWith('image/')) {
+    return { isValid: false, safeExtension: null }
+  }
+
+  const slice = file.slice(0, 12)
+  const bytes = await slice.arrayBuffer()
+  return _checkMagicBytes(Buffer.from(bytes), file.name)
 }
