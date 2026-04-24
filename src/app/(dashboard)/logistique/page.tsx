@@ -114,6 +114,15 @@ export default function LogistiquePage() {
   const [bonPrepLignes, setBonPrepLignes] = useState<LigneBonPrep[]>([{ description: '', quantite: '', unite: '' }])
   const [savingBonPrep, setSavingBonPrep] = useState(false)
   const [deletingBonId, setDeletingBonId] = useState<string | null>(null)
+  const [bonsTermines, setBonsTermines] = useState<BonPreparation[]>([])
+  const [showTermines, setShowTermines] = useState(false)
+  const [editBon, setEditBon] = useState<BonPreparation | null>(null)
+  const [editBonClient, setEditBonClient] = useState('')
+  const [editBonLocalisation, setEditBonLocalisation] = useState('')
+  const [editBonMagasinierId, setEditBonMagasinierId] = useState('')
+  const [editBonLignes, setEditBonLignes] = useState<LigneBonPrep[]>([])
+  const [editBonStatut, setEditBonStatut] = useState<'A_FAIRE' | 'TERMINE'>('A_FAIRE')
+  const [savingEditBon, setSavingEditBon] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -135,14 +144,16 @@ export default function LogistiquePage() {
       if (filterMagasinier) params.set('magasinierId', filterMagasinier)
       if (filterStatut) params.set('statut', filterStatut)
       const query = params.toString()
-      const [mRes, tRes, bRes] = await Promise.all([
+      const [mRes, tRes, bRes, bTermRes] = await Promise.all([
         fetch('/api/magasiniers'),
         fetch('/api/logistique/taches' + (query ? '?' + query : '')),
         fetch('/api/logistique/bons-preparation?statut=A_FAIRE'),
+        fetch('/api/logistique/bons-preparation?statut=TERMINE'),
       ])
       if (mRes.ok) setMagasiniers(await mRes.json())
       if (tRes.ok) setTaches(await tRes.json())
       if (bRes.ok) setBonsPreparation(await bRes.json())
+      if (bTermRes.ok) setBonsTermines(await bTermRes.json())
     } catch (e) {
       console.error(e)
     } finally {
@@ -463,6 +474,56 @@ export default function LogistiquePage() {
     }
   }
 
+  const openEditBon = (bon: BonPreparation) => {
+    setEditBon(bon)
+    setEditBonClient(bon.client)
+    setEditBonLocalisation(bon.localisation ?? '')
+    setEditBonMagasinierId(bon.magasinier.id)
+    setEditBonLignes(
+      (bon.lignes as LigneBonPrep[]).map(l => ({
+        description: String(l.description),
+        quantite: String(l.quantite),
+        unite: String(l.unite),
+      }))
+    )
+    setEditBonStatut(bon.statut as 'A_FAIRE' | 'TERMINE')
+  }
+
+  const handleSaveEditBon = async () => {
+    if (!editBon) return
+    const lignesValides = editBonLignes.filter(l => l.description.trim())
+    if (!editBonClient.trim() || !editBonMagasinierId || lignesValides.length === 0) return
+    setSavingEditBon(true)
+    try {
+      const res = await fetch(`/api/logistique/bons-preparation/${editBon.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: editBonClient.trim(),
+          localisation: editBonLocalisation.trim() || null,
+          magasinierId: editBonMagasinierId,
+          statut: editBonStatut,
+          lignes: lignesValides.map(l => ({
+            description: l.description.trim(),
+            quantite: parseFloat(l.quantite) || 0,
+            unite: l.unite.trim(),
+          })),
+        }),
+      })
+      if (res.ok) {
+        setEditBon(null)
+        loadData()
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Erreur lors de la modification')
+      }
+    } catch {
+      alert('Erreur réseau')
+    } finally {
+      setSavingEditBon(false)
+    }
+  }
+
   const portailUrl = typeof window !== 'undefined' ? `${window.location.origin}/public/portail/magasinier` : ''
 
   const statsCards = !loading ? (
@@ -723,6 +784,13 @@ export default function LogistiquePage() {
                       </div>
                       <div className="flex gap-1">
                         <button
+                          onClick={() => openEditBon(bon)}
+                          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          title="Modifier"
+                        >
+                          <PencilSquareIcon className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={async () => {
                             try {
                               const res = await fetch(`/api/logistique/bons-preparation/${bon.id}/pdf`)
@@ -774,6 +842,85 @@ export default function LogistiquePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+          {/* Bons de préparation terminés */}
+          {bonsTermines.length > 0 && (
+            <div className="mt-6">
+              <button
+                onClick={() => setShowTermines(v => !v)}
+                className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors mb-3"
+              >
+                <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                Bons terminés ({bonsTermines.length})
+                <ChevronDownIcon className={`h-4 w-4 transition-transform ${showTermines ? 'rotate-180' : ''}`} />
+              </button>
+              {showTermines && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {bonsTermines.map(bon => (
+                    <div key={bon.id} className="bg-white dark:bg-gray-800 rounded-xl border-2 border-green-200 dark:border-green-800 p-4 shadow-sm opacity-80">
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                            <p className="font-bold text-gray-900 dark:text-white text-sm">{bon.client}</p>
+                          </div>
+                          {bon.localisation && (
+                            <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-0.5">
+                              <MapPinIcon className="h-3 w-3" />{bon.localisation}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{bon.magasinier.nom} · {formatDate(bon.createdAt)}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => openEditBon(bon)}
+                            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            title="Modifier / Rouvrir"
+                          >
+                            <PencilSquareIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/logistique/bons-preparation/${bon.id}/pdf`)
+                                if (!res.ok) { alert('Erreur PDF'); return }
+                                const blob = await res.blob()
+                                const url = URL.createObjectURL(blob)
+                                const win = window.open(url, '_blank')
+                                if (!win) { const a = document.createElement('a'); a.href = url; a.download = `bon-preparation-${bon.id.slice(0,8)}.pdf`; a.click() }
+                              } catch { alert('Erreur réseau PDF') }
+                            }}
+                            className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                            title="Imprimer"
+                          >
+                            <PrinterIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBonPrep(bon.id)}
+                            disabled={deletingBonId === bon.id}
+                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                            title="Supprimer"
+                          >
+                            {deletingBonId === bon.id
+                              ? <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-red-500" />
+                              : <TrashIcon className="h-4 w-4" />
+                            }
+                          </button>
+                        </div>
+                      </div>
+                      <ul className="space-y-1">
+                        {(bon.lignes as LigneBonPrep[]).map((l, i) => (
+                          <li key={i} className="flex items-baseline justify-between text-xs text-gray-600 dark:text-gray-400">
+                            <span className="truncate flex-1">{l.description}</span>
+                            <span className="ml-2 font-semibold whitespace-nowrap">{l.quantite} {l.unite}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           </>
@@ -1015,6 +1162,131 @@ export default function LogistiquePage() {
           </div>
         )}
       </div>
+
+      {/* ===== MODALE ÉDITION BON DE PRÉPARATION ===== */}
+      {editBon && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Modifier le bon de préparation</h3>
+              <button onClick={() => setEditBon(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <XMarkIcon className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Statut */}
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Statut :</span>
+                <button
+                  onClick={() => setEditBonStatut(s => s === 'A_FAIRE' ? 'TERMINE' : 'A_FAIRE')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                    editBonStatut === 'TERMINE'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                  }`}
+                >
+                  {editBonStatut === 'TERMINE' ? <CheckCircleIcon className="h-3.5 w-3.5" /> : <ClockIcon className="h-3.5 w-3.5" />}
+                  {editBonStatut === 'TERMINE' ? 'Terminé' : 'En cours'} — cliquer pour changer
+                </button>
+              </div>
+              {/* Client */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Client *</label>
+                <input
+                  type="text"
+                  value={editBonClient}
+                  onChange={e => setEditBonClient(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nom du client"
+                />
+              </div>
+              {/* Localisation */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Localisation</label>
+                <input
+                  type="text"
+                  value={editBonLocalisation}
+                  onChange={e => setEditBonLocalisation(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Adresse ou localisation (optionnel)"
+                />
+              </div>
+              {/* Magasinier */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Magasinier *</label>
+                <select
+                  value={editBonMagasinierId}
+                  onChange={e => setEditBonMagasinierId(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Choisir...</option>
+                  {magasiniers.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                </select>
+              </div>
+              {/* Lignes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lignes *</label>
+                <div className="space-y-2">
+                  {editBonLignes.map((ligne, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        value={ligne.description}
+                        onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], description: e.target.value }; setEditBonLignes(l) }}
+                        placeholder="Description"
+                        className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      {editBonLignes.length > 1 && (
+                        <button type="button" onClick={() => setEditBonLignes(editBonLignes.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:text-red-600 transition-colors rounded flex-shrink-0">
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        <input
+                          type="number"
+                          value={ligne.quantite}
+                          onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], quantite: e.target.value }; setEditBonLignes(l) }}
+                          placeholder="Qté"
+                          className="w-16 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                          type="text"
+                          value={ligne.unite}
+                          onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], unite: e.target.value }; setEditBonLignes(l) }}
+                          placeholder="Unité"
+                          className="w-16 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditBonLignes([...editBonLignes, { description: '', quantite: '', unite: '' }])}
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <PlusIcon className="h-3.5 w-3.5" /> Ajouter une ligne
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setEditBon(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveEditBon}
+                disabled={savingEditBon || !editBonClient.trim() || !editBonMagasinierId || editBonLignes.filter(l => l.description.trim()).length === 0}
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingEditBon ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== MODALE BON DE PRÉPARATION ===== */}
       {showBonPrep && (
