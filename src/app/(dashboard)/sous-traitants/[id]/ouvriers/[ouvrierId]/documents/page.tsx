@@ -389,7 +389,7 @@ export default function DocumentsOuvrierPage(
                         <div className="flex justify-end gap-2">
                           <a
                             href={document.url}
-                            download
+                            download={document.nom}
                             className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                           >
                             <ArrowDownTrayIcon className="h-5 w-5" />

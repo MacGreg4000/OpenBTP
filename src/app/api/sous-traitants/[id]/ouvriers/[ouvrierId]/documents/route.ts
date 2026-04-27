@@ -70,7 +70,7 @@ export async function POST(
     }
 
     // Créer le dossier de stockage si nécessaire
-    const uploadDir = join(process.cwd(), 'public', 'documents', 'ouvriers', params.ouvrierId)
+    const uploadDir = join(process.cwd(), 'public', 'uploads', 'documents', 'ouvriers', params.ouvrierId)
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }
@@ -91,7 +91,7 @@ export async function POST(
         id: crypto.randomUUID(),
         nom: file.name,
         type: type,
-        url: `/documents/ouvriers/${params.ouvrierId}/${fileName}`,
+        url: `/uploads/documents/ouvriers/${params.ouvrierId}/${fileName}`,
         dateExpiration: dateExpiration ? new Date(dateExpiration) : null,
         ouvrierId: params.ouvrierId,
         createdAt: new Date(),
