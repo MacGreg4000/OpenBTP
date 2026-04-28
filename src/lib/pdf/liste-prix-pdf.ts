@@ -90,7 +90,7 @@ export async function generateListePrixPDF(soustraitantId: string): Promise<Buff
       align-items: flex-start;
       margin-bottom: 18px;
       padding-bottom: 14px;
-      border-bottom: 2px solid #d97706;
+      border-bottom: 2px solid #1f2937;
     }
     .logo { max-height: 64px; max-width: 180px; object-fit: contain; }
     .company { text-align: right; font-size: 10px; line-height: 1.5; color: #374151; }
@@ -106,7 +106,7 @@ export async function generateListePrixPDF(soustraitantId: string): Promise<Buff
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #92400e;
+      color: #111827;
     }
     .doc-title .sous-titre {
       font-size: 11px;
@@ -116,15 +116,16 @@ export async function generateListePrixPDF(soustraitantId: string): Promise<Buff
 
     /* ── Bloc sous-traitant ── */
     .st-bloc {
-      background: #fffbeb;
-      border: 1px solid #fcd34d;
-      border-radius: 6px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid #334155;
+      border-radius: 4px;
       padding: 10px 14px;
       margin-bottom: 16px;
       font-size: 10.5px;
     }
-    .st-bloc strong { font-size: 13px; color: #92400e; }
-    .st-meta { display: flex; gap: 24px; margin-top: 4px; color: #6b7280; }
+    .st-bloc strong { font-size: 13px; color: #111827; }
+    .st-meta { display: flex; gap: 24px; margin-top: 4px; color: #64748b; }
 
     /* ── Tableau ── */
     table {
@@ -133,7 +134,7 @@ export async function generateListePrixPDF(soustraitantId: string): Promise<Buff
       margin-bottom: 20px;
     }
     thead tr {
-      background: #92400e;
+      background: #1f2937;
       color: #fff;
     }
     thead th {
@@ -155,17 +156,17 @@ export async function generateListePrixPDF(soustraitantId: string): Promise<Buff
     .article   { width: 10%; color: #6b7280; font-size: 10px; }
     .descriptif{ width: 38%; }
     .center    { width: 8%;  text-align: center; }
-    .prix      { width: 12%; font-weight: 600; color: #92400e; }
+    .prix      { width: 12%; font-weight: 600; color: #1e3a5f; }
     .remarques { width: 32%; color: #6b7280; font-size: 10px; font-style: italic; }
 
     .row-titre td.titre-cell {
-      background: #fef3c7;
+      background: #f1f5f9;
       font-weight: 700;
       font-size: 12px;
-      color: #78350f;
+      color: #1e293b;
       padding: 6px 10px;
-      border-bottom: 1px solid #fcd34d;
-      border-left: 3px solid #d97706;
+      border-bottom: 1px solid #e2e8f0;
+      border-left: 3px solid #475569;
     }
     .row-sous-titre td.sous-titre-cell {
       background: #f9fafb;
@@ -174,9 +175,9 @@ export async function generateListePrixPDF(soustraitantId: string): Promise<Buff
       color: #374151;
       padding: 5px 10px;
       border-bottom: 1px solid #e5e7eb;
-      border-left: 3px solid #9ca3af;
+      border-left: 3px solid #94a3b8;
     }
-    .row-ligne:hover td { background: #fafaf9; }
+    .row-ligne:hover td { background: #f8fafc; }
 
     /* ── Conditions ── */
     .conditions {

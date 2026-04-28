@@ -177,8 +177,13 @@ export default function SousTraitantConsultationPage(
       if (!res.ok) throw new Error('Erreur génération PDF')
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 60000)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Liste de prix - ${sousTraitant?.nom ?? 'sous-traitant'}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
     } catch {
       showNotification('Erreur', 'Impossible de générer le PDF', 'error')
     } finally {

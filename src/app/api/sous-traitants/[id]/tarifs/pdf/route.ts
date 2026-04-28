@@ -33,7 +33,7 @@ export async function GET(
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="${nomFichier}"`,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(nomFichier)}`,
     },
   })
 }
