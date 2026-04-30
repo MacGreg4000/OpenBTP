@@ -186,8 +186,8 @@ export default function EmailEtatAvancementModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          etatAvancementId: etatAvancement.id, // Ceci est l'ID numérique de l'état (PK)
-          chantierId: chantier?.chantierId, // Utiliser l'ID externe (chantierId) au lieu de l'ID interne (id)
+          etatAvancementId: etatAvancement.etatAvancementId ?? etatAvancement.id,
+          chantierId: chantier?.chantierId,
           recipients: selectedEmails,
           cc: ccEmails,
           subject,

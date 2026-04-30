@@ -133,6 +133,7 @@ export async function GET(
 
         return {
           id: etat.id,
+          etatAvancementId: etat.etatAvancementId,
           numero: etat.numero,
           soustraitantId: etat.soustraitantId,
           soustraitantNom: soustraitant?.nom || '',

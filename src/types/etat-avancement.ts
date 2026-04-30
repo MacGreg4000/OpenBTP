@@ -136,7 +136,8 @@ export interface EtatAvancementSummary {
 }
 
 // Ajout de EtatAvancementEtendu
-export interface EtatAvancementEtendu extends EtatAvancement { // Assurez-vous que EtatAvancement est bien défini/importé ici
+export interface EtatAvancementEtendu extends EtatAvancement {
   typeSoustraitant?: boolean;
   soustraitantId?: string;
+  etatAvancementId?: number; // Pour les états sous-traitants : ID du EtatAvancement client lié
 } 
