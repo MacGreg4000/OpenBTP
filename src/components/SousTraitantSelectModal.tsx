@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Dialog } from '@headlessui/react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
-import { FormSelect, Button } from '@/components/ui'
+import { XMarkIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { Button } from '@/components/ui'
 
 interface SousTraitant {
   id: string
@@ -23,6 +23,7 @@ export default function SousTraitantSelectModal({
 }: SousTraitantSelectModalProps) {
   const [sousTraitants, setSousTraitants] = useState<SousTraitant[]>([])
   const [selectedSousTraitantId, setSelectedSousTraitantId] = useState<string>('')
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -31,14 +32,17 @@ export default function SousTraitantSelectModal({
     const fetchSousTraitants = async () => {
       try {
         setLoading(true)
+        setSearch('')
         const response = await fetch('/api/sous-traitants')
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des sous-traitants')
         }
         const data = await response.json()
-        setSousTraitants(data)
-        if (data.length > 0) {
-          setSelectedSousTraitantId(data[0].id)
+        // N'afficher que les sous-traitants actifs
+        const actifs = (data as SousTraitant[]).filter((st: SousTraitant & { actif?: boolean }) => st.actif !== false)
+        setSousTraitants(actifs)
+        if (actifs.length > 0) {
+          setSelectedSousTraitantId(actifs[0].id)
         }
       } catch (error) {
         console.error('Erreur:', error)
@@ -53,16 +57,34 @@ export default function SousTraitantSelectModal({
     }
   }, [isOpen])
 
+  // Liste filtrée en temps réel
+  const filteredST = useMemo(() =>
+    sousTraitants.filter(st =>
+      st.nom.toLowerCase().includes(search.toLowerCase()) ||
+      (st.email && st.email.toLowerCase().includes(search.toLowerCase()))
+    ),
+    [sousTraitants, search]
+  )
+
+  // Quand le filtre change, sélectionner le premier résultat visible
+  useEffect(() => {
+    if (filteredST.length > 0) {
+      if (!filteredST.find(st => st.id === selectedSousTraitantId)) {
+        setSelectedSousTraitantId(filteredST[0].id)
+      }
+    } else {
+      setSelectedSousTraitantId('')
+    }
+  }, [filteredST, selectedSousTraitantId])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
     if (!selectedSousTraitantId) {
       setError('Veuillez sélectionner un sous-traitant')
       setIsSubmitting(false)
       return
     }
-    
     onSubmit(selectedSousTraitantId)
     setIsSubmitting(false)
   }
@@ -91,7 +113,9 @@ export default function SousTraitantSelectModal({
           </Dialog.Title>
 
           {loading ? (
-            <div className="py-4 text-center">Chargement des sous-traitants...</div>
+            <div className="py-4 text-center text-gray-500 dark:text-gray-400">
+              Chargement des sous-traitants…
+            </div>
           ) : error ? (
             <div className="py-4 text-center text-red-500">{error}</div>
           ) : sousTraitants.length === 0 ? (
@@ -108,22 +132,69 @@ export default function SousTraitantSelectModal({
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <FormSelect
-                id="sousTraitant"
-                label="Sous-traitant"
-                value={selectedSousTraitantId}
-                options={sousTraitants.map(st => ({ value: st.id, label: `${st.nom} (${st.email})` }))}
-                onChange={(e) => setSelectedSousTraitantId(e.target.value)}
-                required
-              />
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Champ de recherche */}
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Rechercher un sous-traitant…"
+                  className="w-full pl-9 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-colors"
+                />
+              </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                >
+              {/* Liste filtrée */}
+              <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
+                {filteredST.length === 0 ? (
+                  <p className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                    Aucun résultat pour &quot;{search}&quot;
+                  </p>
+                ) : (
+                  filteredST.map(st => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setSelectedSousTraitantId(st.id)}
+                      className={`w-full px-4 py-3 text-left text-sm transition-colors flex items-center justify-between gap-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
+                        selectedSousTraitantId === st.id
+                          ? 'bg-blue-50 dark:bg-blue-900/30'
+                          : ''
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className={`font-medium truncate ${
+                          selectedSousTraitantId === st.id
+                            ? 'text-blue-700 dark:text-blue-300'
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {st.nom}
+                        </div>
+                        {st.email && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                            {st.email}
+                          </div>
+                        )}
+                      </div>
+                      {selectedSousTraitantId === st.id && (
+                        <CheckIcon className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {/* Compteur */}
+              {search && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-right">
+                  {filteredST.length} résultat{filteredST.length !== 1 ? 's' : ''}
+                </p>
+              )}
+
+              <div className="pt-2 flex justify-end space-x-3">
+                <Button type="button" variant="outline" onClick={onClose}>
                   Annuler
                 </Button>
                 <Button
@@ -141,4 +212,4 @@ export default function SousTraitantSelectModal({
       </div>
     </Dialog>
   )
-} 
+}
