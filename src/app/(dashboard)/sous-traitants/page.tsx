@@ -160,6 +160,7 @@ export default function SousTraitantsPage() {
   const [editMagModal, setEditMagModal] = useState<{open: boolean; mag: {id:string; nom:string; actif:boolean} | null; pin:string; pinVisible:boolean; loadingPin:boolean; savingPin:boolean}>({open:false, mag:null, pin:'', pinVisible:false, loadingPin:false, savingPin:false})
   const [editMagForm, setEditMagForm] = useState({nom:'', actif:true})
   const [savingMag, setSavingMag] = useState(false)
+  const [filtreStatut, setFiltreStatut] = useState<'actif' | 'inactif' | 'tous'>('actif')
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [sortField, setSortField] = useState<SortField | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -505,9 +506,14 @@ export default function SousTraitantsPage() {
     }
   }
 
-  // Filtrer les sous-traitants par nom
+  // Filtrer les sous-traitants par nom et statut
   let sousTraitantsFiltres = Array.isArray(sousTraitants)
-    ? sousTraitants.filter(st => st.nom.toLowerCase().includes(filtreNom.toLowerCase()))
+    ? sousTraitants.filter(st => {
+        if (!st.nom.toLowerCase().includes(filtreNom.toLowerCase())) return false
+        if (filtreStatut === 'actif') return st.actif !== false
+        if (filtreStatut === 'inactif') return st.actif === false
+        return true
+      })
     : []
 
   // Fonction de tri
@@ -670,27 +676,50 @@ export default function SousTraitantsPage() {
               className="w-full"
             />
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                viewMode === 'cards' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Cartes
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                viewMode === 'table' 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Tableau
-            </button>
+          <div className="flex items-center gap-3">
+            {/* Filtre statut */}
+            <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 text-sm">
+              {(['actif', 'inactif', 'tous'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFiltreStatut(s)}
+                  className={`px-3 py-2 font-medium transition-colors ${
+                    filtreStatut === s
+                      ? s === 'actif'
+                        ? 'bg-green-600 text-white'
+                        : s === 'inactif'
+                          ? 'bg-gray-500 text-white'
+                          : 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {s === 'actif' ? 'Actifs' : s === 'inactif' ? 'Inactifs' : 'Tous'}
+                </button>
+              ))}
+            </div>
+            {/* Mode d'affichage */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  viewMode === 'cards'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                Cartes
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                Tableau
+              </button>
+            </div>
           </div>
         </div>
 
@@ -702,9 +731,15 @@ export default function SousTraitantsPage() {
               Aucun sous-traitant
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {filtreNom ? 'Aucun sous-traitant ne correspond à votre recherche.' : 'Commencez par créer un nouveau sous-traitant.'}
+              {filtreNom
+                ? 'Aucun sous-traitant ne correspond à votre recherche.'
+                : filtreStatut === 'actif'
+                  ? 'Aucun sous-traitant actif. Utilisez le filtre "Tous" pour voir les inactifs.'
+                  : filtreStatut === 'inactif'
+                    ? 'Aucun sous-traitant inactif.'
+                    : 'Commencez par créer un nouveau sous-traitant.'}
             </p>
-            {!filtreNom && (
+            {!filtreNom && filtreStatut === 'tous' && (
               <div className="mt-6">
                 <Link
                   href="/sous-traitants/nouveau"
