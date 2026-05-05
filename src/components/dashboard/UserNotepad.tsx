@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { PencilIcon, CheckIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PencilIcon, PencilSquareIcon, CheckIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { toast } from 'react-hot-toast'
 
 interface TodoItem {
@@ -40,6 +40,8 @@ export default function UserNotepad({ userId }: { userId: string }) {
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [newTodoText, setNewTodoText] = useState('')
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
+  const [editingTodoText, setEditingTodoText] = useState('')
   const editorRef = useRef<HTMLDivElement>(null)
 
   // Charger les données du tableau blanc
@@ -167,6 +169,20 @@ export default function UserNotepad({ userId }: { userId: string }) {
     }
     setNotepadData(updatedData)
     saveNotes(updatedData)
+  }
+
+  const saveEditTodo = (id: string) => {
+    const trimmed = editingTodoText.trim()
+    if (!trimmed) return
+    const updatedData = {
+      ...notepadData,
+      todos: notepadData.todos.map(todo =>
+        todo.id === id ? { ...todo, text: trimmed } : todo
+      )
+    }
+    setNotepadData(updatedData)
+    saveNotes(updatedData)
+    setEditingTodoId(null)
   }
 
   const toggleTodoImportant = (id: string) => {
@@ -389,13 +405,36 @@ export default function UserNotepad({ userId }: { userId: string }) {
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${
-                      todo.completed
-                        ? 'line-through text-gray-500 dark:text-gray-400'
-                        : 'text-gray-900 dark:text-white'
-                    }`}>
-                      {todo.text}
-                    </p>
+                    {editingTodoId === todo.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={editingTodoText}
+                          onChange={(e) => setEditingTodoText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEditTodo(todo.id)
+                            if (e.key === 'Escape') setEditingTodoId(null)
+                          }}
+                          onBlur={() => saveEditTodo(todo.id)}
+                          className="flex-1 px-2 py-0.5 text-sm border border-blue-400 dark:border-blue-500 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); saveEditTodo(todo.id) }}
+                          className="text-green-600 dark:text-green-400 hover:text-green-700 flex-shrink-0"
+                          title="Confirmer"
+                        >
+                          <CheckIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className={`text-sm font-medium ${
+                        todo.completed
+                          ? 'line-through text-gray-500 dark:text-gray-400'
+                          : 'text-gray-900 dark:text-white'
+                      }`}>
+                        {todo.text}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -415,8 +454,16 @@ export default function UserNotepad({ userId }: { userId: string }) {
                       </span>
                     </label>
                     <button
+                      onClick={() => { setEditingTodoId(todo.id); setEditingTodoText(todo.text) }}
+                      className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center justify-center hover:scale-110 opacity-0 group-hover:opacity-100"
+                      title="Modifier"
+                    >
+                      <PencilSquareIcon className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => deleteTodo(todo.id)}
                       className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 flex items-center justify-center hover:scale-110 opacity-0 group-hover:opacity-100"
+                      title="Supprimer"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
