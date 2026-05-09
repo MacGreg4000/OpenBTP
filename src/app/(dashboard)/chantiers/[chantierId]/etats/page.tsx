@@ -77,16 +77,18 @@ export default function ChantierEtatsPage(props: PageProps) {
       const etatsResponse = await fetch(`/api/chantiers/${chantierId}/soustraitants/${soustraitantId}/etats-avancement`);
       if (etatsResponse.ok) {
         const etatsData = await etatsResponse.json();
-        // Ajouter les propriétés typeSoustraitant et soustraitantId à chaque état
+        // Ajouter les propriétés typeSoustraitant, soustraitantId et soustraitantNom à chaque état
+        const stNom = sousTraitants.find(s => s.soustraitantId === soustraitantId)?.nom ?? ''
         const etatsAvecType = etatsData.map((etat: EtatAvancement) => ({
           ...etat,
           typeSoustraitant: true,
-          soustraitantId: soustraitantId
+          soustraitantId: soustraitantId,
+          soustraitantNom: stNom
         }));
-        
+
         // Mettre à jour seulement ce sous-traitant dans l'état local
-        setSousTraitants(prev => prev.map(st => 
-          st.soustraitantId === soustraitantId 
+        setSousTraitants(prev => prev.map(st =>
+          st.soustraitantId === soustraitantId
             ? { ...st, etatsAvancement: etatsAvecType }
             : st
         ));
@@ -157,11 +159,12 @@ export default function ChantierEtatsPage(props: PageProps) {
             if (etatsResponse.ok) {
               const etatsData = await etatsResponse.json();
               
-              // Ajouter les propriétés typeSoustraitant et soustraitantId à chaque état
+              // Ajouter les propriétés typeSoustraitant, soustraitantId et soustraitantNom à chaque état
               const etatsAvecType = etatsData.map((etat: EtatAvancement) => ({
                 ...etat,
                 typeSoustraitant: true,
-                soustraitantId: commande.soustraitantId
+                soustraitantId: commande.soustraitantId,
+                soustraitantNom: commande.soustraitantNom
               }));
               
               return {
@@ -450,7 +453,7 @@ export default function ChantierEtatsPage(props: PageProps) {
                   <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {etat.numero}
                     {etat.typeSoustraitant && (
-                      <span className="ml-2 text-xs text-blue-500">(Sous-traitant)</span>
+                      <span className="ml-2 text-xs text-blue-500">({etat.soustraitantNom ?? 'Sous-traitant'})</span>
                     )}
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

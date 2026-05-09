@@ -139,5 +139,6 @@ export interface EtatAvancementSummary {
 export interface EtatAvancementEtendu extends EtatAvancement {
   typeSoustraitant?: boolean;
   soustraitantId?: string;
+  soustraitantNom?: string;
   etatAvancementId?: number; // Pour les états sous-traitants : ID du EtatAvancement client lié
 } 
