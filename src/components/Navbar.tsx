@@ -24,7 +24,8 @@ import {
   CalendarDaysIcon,
   TruckIcon,
   ArchiveBoxIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  BuildingOffice2Icon
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
@@ -77,6 +78,7 @@ export function Navbar() {
     {
       name: 'Gestion',
       items: [
+        { name: 'CRM Prospects', href: '/crm', icon: BuildingOffice2Icon, moduleCode: 'crm' },
         { name: 'Clients', href: '/clients', icon: UserGroupIcon, moduleCode: 'clients' },
         { name: 'Devis', href: '/devis', icon: DocumentTextIcon, moduleCode: 'devis' },
         { name: 'Sous-traitants et ouvriers', href: '/sous-traitants', icon: UserGroupIcon, moduleCode: 'sous_traitants' },

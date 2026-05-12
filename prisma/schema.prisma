@@ -1000,6 +1000,10 @@ model User {
 
   // Bons de préparation
   bonsPreparationCrees      BonPreparation[]  @relation("BonPreparationCreateur")
+
+  // CRM Prospects
+  prospectRappels           ProspectRappel[]
+  prospectActivites         ProspectActivite[]
 }
 
 model BonRegie {
@@ -2190,4 +2194,84 @@ enum StatutDevis {
   REFUSE
   CONVERTI
   EXPIRE
+}
+
+// ─── CRM Prospects ────────────────────────────────────────────────────────────
+
+model ProspectEntreprise {
+  id         String   @id @default(uuid())
+  nom        String
+  type       String   @default("AUTRE") // ENTREPRISE_GENERALE | ARCHITECTE | CLIENT_DIRECT | AUTRE
+  adresse    String?
+  codePostal String?
+  ville      String?
+  pays       String?  @default("Belgique")
+  telephone  String?
+  email      String?
+  siteWeb    String?
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  contacts  ProspectContact[]
+  rappels   ProspectRappel[]
+  activites ProspectActivite[]
+
+  @@index([nom])
+  @@map("prospect_entreprise")
+}
+
+model ProspectContact {
+  id           String   @id @default(uuid())
+  entrepriseId String
+  prenom       String
+  nom          String
+  role         String?
+  telephone    String?
+  mobile       String?
+  email        String?
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  entreprise ProspectEntreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+
+  @@index([entrepriseId])
+  @@map("prospect_contact")
+}
+
+model ProspectRappel {
+  id           String   @id @default(uuid())
+  entrepriseId String
+  titre        String
+  description  String?  @db.Text
+  dateRappel   DateTime
+  statut       String   @default("EN_ATTENTE") // EN_ATTENTE | FAIT | ANNULE
+  emailEnvoye  Boolean  @default(false)
+  creePar      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  entreprise ProspectEntreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  createur   User               @relation(fields: [creePar], references: [id])
+
+  @@index([entrepriseId])
+  @@index([dateRappel, statut])
+  @@map("prospect_rappel")
+}
+
+model ProspectActivite {
+  id           String   @id @default(uuid())
+  entrepriseId String
+  type         String   // APPEL | EMAIL | RDV | NOTE | AUTRE
+  description  String   @db.Text
+  date         DateTime @default(now())
+  creePar      String
+  createdAt    DateTime @default(now())
+
+  entreprise ProspectEntreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  createur   User               @relation(fields: [creePar], references: [id])
+
+  @@index([entrepriseId])
+  @@map("prospect_activite")
 }

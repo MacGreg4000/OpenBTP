@@ -42,6 +42,16 @@ async function seedFeatureModules() {
       ordre: 1
     },
     {
+      code: 'crm',
+      name: 'CRM Prospects',
+      description: 'Gestion des prospects et contacts commerciaux',
+      category: 'commercial',
+      icon: 'BuildingOffice2Icon',
+      isActive: true,
+      isSystem: false,
+      ordre: 2
+    },
+    {
       code: 'clients',
       name: 'Clients',
       description: 'Gestion de la base clients',
@@ -49,7 +59,7 @@ async function seedFeatureModules() {
       icon: 'UsersIcon',
       isActive: true,
       isSystem: false,
-      ordre: 2
+      ordre: 3
     },
     {
       code: 'devis',
