@@ -76,5 +76,8 @@ migrate_output=$(npx prisma migrate deploy 2>&1) || {
   fi
 }
 
+echo "🌱 Initialisation des données de référence (seed)..."
+npx prisma db seed 2>&1 || echo "⚠️  Seed ignoré (non bloquant)"
+
 echo "🚀 Démarrage de l'application..."
 exec su -s /bin/sh -c "npm run start" nextjs
