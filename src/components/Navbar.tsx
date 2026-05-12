@@ -78,7 +78,7 @@ export function Navbar() {
     {
       name: 'Gestion',
       items: [
-        { name: 'CRM Prospects', href: '/crm', icon: BuildingOffice2Icon, moduleCode: 'crm' },
+        { name: 'CRM Prospects', href: '/crm', icon: BuildingOffice2Icon, moduleCode: 'chantiers' },
         { name: 'Clients', href: '/clients', icon: UserGroupIcon, moduleCode: 'clients' },
         { name: 'Devis', href: '/devis', icon: DocumentTextIcon, moduleCode: 'devis' },
         { name: 'Sous-traitants et ouvriers', href: '/sous-traitants', icon: UserGroupIcon, moduleCode: 'sous_traitants' },
