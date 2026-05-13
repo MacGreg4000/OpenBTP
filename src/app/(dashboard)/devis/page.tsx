@@ -16,36 +16,7 @@ import {
   EyeIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
-
-// Icône "Télécharger PDF" : document arrondi avec "PDF" + flèche download
-function PdfDownloadIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      {/* Corps du document */}
-      <rect x="3" y="1" width="18" height="19" rx="2.5" ry="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      {/* Texte PDF */}
-      <text x="12" y="12" textAnchor="middle" fontSize="5.5" fontWeight="800" fontFamily="Arial, sans-serif" fill="currentColor" stroke="none">PDF</text>
-      {/* Flèche download */}
-      <path d="M12 15 L12 21 M9 18.5 L12 21 L15 18.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-// Icône "PDF sans prix" : même style mais "€" barré
-function PdfSansPrixIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      {/* Corps du document */}
-      <rect x="3" y="1" width="18" height="19" rx="2.5" ry="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      {/* Symbole € */}
-      <text x="12" y="12" textAnchor="middle" fontSize="7" fontWeight="800" fontFamily="Arial, sans-serif" fill="currentColor" stroke="none">€</text>
-      {/* Barre diagonale (barré) */}
-      <line x1="7" y1="15" x2="17" y2="5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      {/* Flèche download */}
-      <path d="M12 15 L12 21 M9 18.5 L12 21 L15 18.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
+import { FileDown, FileX } from 'lucide-react'
 
 interface Devis {
   id: string
@@ -480,7 +451,7 @@ export default function DevisPage() {
                           className="inline-flex items-center justify-center p-2 rounded-lg text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-all duration-200"
                           title="Télécharger PDF"
                         >
-                          <PdfDownloadIcon className="h-5 w-5" />
+                          <FileDown className="h-5 w-5" />
                         </a>
                         <a
                           href={`/api/devis/${devis.id}/pdf-sans-prix`}
@@ -489,7 +460,7 @@ export default function DevisPage() {
                           className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
                           title="Télécharger PDF sans prix"
                         >
-                          <PdfSansPrixIcon className="h-5 w-5" />
+                          <FileX className="h-5 w-5" />
                         </a>
                       </div>
                     </td>
