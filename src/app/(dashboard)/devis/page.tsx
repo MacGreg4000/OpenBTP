@@ -14,8 +14,23 @@ import {
   ClockIcon,
   ArrowPathIcon,
   EyeIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline'
+
+// Icône "PDF sans prix" : document avec € barré
+function PdfSansPrixIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      {/* € stylisé */}
+      <text x="8" y="17" fontSize="7" fontWeight="bold" stroke="none" fill="currentColor">€</text>
+      {/* barre diagonale */}
+      <line x1="7" y1="19" x2="17" y2="11" strokeWidth={1.5} />
+    </svg>
+  )
+}
 
 interface Devis {
   id: string
@@ -92,16 +107,27 @@ interface DevisForFilter {
   }
 }
 
+const SESSION_KEY = 'devis_filters'
+
+function saveFilters(keyword: string, client: string | number | null, statut: string | number | null, page: number) {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ keyword, client, statut, page })) } catch {}
+}
+function loadFilters() {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null') } catch { return null }
+}
+
 export default function DevisPage() {
+  const saved = typeof window !== 'undefined' ? loadFilters() : null
+
   const [devisList, setDevisList] = useState<Devis[]>([])
   const [allDevisForFilters, setAllDevisForFilters] = useState<DevisForFilter[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingFilters, setLoadingFilters] = useState(true)
-  const [keywordInput, setKeywordInput] = useState('')
-  const [keywordFilter, setKeywordFilter] = useState('')
-  const [clientFilter, setClientFilter] = useState<string | number | null>(null)
-  const [statutFilter, setStatutFilter] = useState<string | number | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [keywordInput, setKeywordInput] = useState(saved?.keyword ?? '')
+  const [keywordFilter, setKeywordFilter] = useState(saved?.keyword ?? '')
+  const [clientFilter, setClientFilter] = useState<string | number | null>(saved?.client ?? null)
+  const [statutFilter, setStatutFilter] = useState<string | number | null>(saved?.statut ?? null)
+  const [currentPage, setCurrentPage] = useState(saved?.page ?? 1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const pageSize = 25
@@ -176,6 +202,11 @@ export default function DevisPage() {
   useEffect(() => {
     setCurrentPage(1)
   }, [clientFilter, statutFilter, keywordFilter])
+
+  // Persister les filtres dans sessionStorage
+  useEffect(() => {
+    saveFilters(keywordFilter, clientFilter, statutFilter, currentPage)
+  }, [keywordFilter, clientFilter, statutFilter, currentPage])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -419,13 +450,33 @@ export default function DevisPage() {
                       {formatCurrency(Number(devis.montantTTC))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      <Link
-                        href={`/devis/${devis.id}`}
-                        className="inline-flex items-center justify-center p-2 rounded-lg text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition-all duration-200"
-                        title="Voir le devis"
-                      >
-                        <EyeIcon className="h-5 w-5" />
-                      </Link>
+                      <div className="inline-flex items-center gap-1">
+                        <Link
+                          href={`/devis/${devis.id}`}
+                          className="inline-flex items-center justify-center p-2 rounded-lg text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition-all duration-200"
+                          title="Voir le devis"
+                        >
+                          <EyeIcon className="h-5 w-5" />
+                        </Link>
+                        <a
+                          href={`/api/devis/${devis.id}/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center p-2 rounded-lg text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-all duration-200"
+                          title="Télécharger PDF"
+                        >
+                          <ArrowDownTrayIcon className="h-5 w-5" />
+                        </a>
+                        <a
+                          href={`/api/devis/${devis.id}/pdf-sans-prix`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                          title="Télécharger PDF sans prix"
+                        >
+                          <PdfSansPrixIcon className="h-5 w-5" />
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 )
