@@ -86,7 +86,7 @@
     "react-dnd-html5-backend": "16.0.1",
     "react-dom": "18.3.1",
     "react-hot-toast": "2.5.2",
-    "react-konva": "^19.2.3",
+    "react-konva": "^18.2.16",
     "react-leaflet": "4.2.1",
     "react-qr-code": "2.0.15",
     "react-select": "^5.10.1",
