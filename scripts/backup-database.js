@@ -189,6 +189,7 @@ async function backupDatabase(dbConfig) {
 
     const args = [
       `--defaults-file=${tempConfigFile}`,
+      '--skip-ssl',
       '--single-transaction',
       '--routines',
       '--triggers',
