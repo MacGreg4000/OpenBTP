@@ -9,7 +9,7 @@ interface UsePdfLayerOptions {
 }
 
 export function usePdfLayer({ canvasRef, onPageRendered }: UsePdfLayerOptions) {
-  const renderTaskRef = useRef<any>(null)
+  const renderTaskRef = useRef<import('pdfjs-dist').RenderTask | null>(null)
   const { pdfDocument, currentPage, zoom, setPageInfo } = usePdfStore()
   const { pageRotations } = useProjectStore()
 
@@ -37,7 +37,7 @@ export function usePdfLayer({ canvasRef, onPageRendered }: UsePdfLayerOptions) {
     canvas.style.width = `${baseViewport.width}px`
     canvas.style.height = `${baseViewport.height}px`
 
-    renderTaskRef.current = page.render({ canvasContext: ctx, viewport })
+    renderTaskRef.current = page.render({ canvasContext: ctx, viewport, canvas })
     try {
       await renderTaskRef.current.promise
       setPageInfo({
@@ -46,8 +46,9 @@ export function usePdfLayer({ canvasRef, onPageRendered }: UsePdfLayerOptions) {
         transform: baseViewport.transform,
       })
       onPageRendered?.(baseViewport.width, baseViewport.height)
-    } catch (e: any) {
-      if (e?.name !== 'RenderingCancelledException') console.error('PDF render error:', e)
+    } catch (e: unknown) {
+      const err = e as { name?: string }
+      if (err?.name !== 'RenderingCancelledException') console.error('PDF render error:', e)
     }
   }, [pdfDocument, currentPage, zoom, pageRotations, canvasRef, setPageInfo, onPageRendered])
 

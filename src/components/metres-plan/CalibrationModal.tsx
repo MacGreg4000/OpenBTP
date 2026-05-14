@@ -54,30 +54,36 @@ const CalibrationModal: React.FC = () => {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={handleClose}>
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-96 shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]" onClick={handleClose}>
+      <div
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 w-96 shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Crosshair size={20} className="text-red-400" />
-            <h2 className="text-white font-semibold">Calibration de l'échelle</h2>
+            <Crosshair size={20} className="text-red-500 dark:text-red-400" />
+            <h2 className="text-gray-900 dark:text-white font-semibold">Calibration de l&apos;échelle</h2>
           </div>
-          <button onClick={handleClose} className="text-gray-500 hover:text-white transition-colors">
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <div className="bg-gray-800 rounded-lg p-3 mb-4">
-          <p className="text-xs text-gray-400">Distance mesurée sur le plan</p>
-          <p className="text-lg font-bold text-white mt-0.5">{data?.pixelDistance.toFixed(1)} px</p>
+        {/* Pixel distance display */}
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400">Distance mesurée sur le plan</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">{data?.pixelDistance.toFixed(1)} px</p>
         </div>
 
+        {/* Real distance input */}
         <div className="mb-4">
-          <label className="block text-xs text-gray-400 mb-1">Distance réelle correspondante</label>
+          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Distance réelle correspondante</label>
           <div className="flex gap-2">
             <input
               type="number"
               autoFocus
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+              className="flex-1 min-w-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500"
               placeholder="ex: 5.00"
               value={realValue}
               onChange={e => setRealValue(e.target.value)}
@@ -86,7 +92,7 @@ const CalibrationModal: React.FC = () => {
               step="any"
             />
             <select
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+              className="w-20 flex-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-2 text-gray-900 dark:text-white text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500"
               value={unit}
               onChange={e => setUnit(e.target.value as Unit)}
             >
@@ -99,19 +105,21 @@ const CalibrationModal: React.FC = () => {
           </div>
         </div>
 
+        {/* Calculated ratio preview */}
         {realValue && !isNaN(parseFloat(realValue)) && parseFloat(realValue) > 0 && data && (
-          <div className="bg-blue-900/30 border border-blue-800 rounded-lg p-3 mb-4">
-            <p className="text-xs text-blue-300">Ratio calculé</p>
-            <p className="text-sm font-semibold text-blue-200 mt-0.5">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+            <p className="text-xs text-blue-600 dark:text-blue-300">Ratio calculé</p>
+            <p className="text-sm font-semibold text-blue-700 dark:text-blue-200 mt-0.5">
               1 px = {(parseFloat(realValue) / data.pixelDistance).toFixed(5)} {unit}
             </p>
           </div>
         )}
 
+        {/* Actions */}
         <div className="flex gap-2">
           <button
             onClick={handleClose}
-            className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
+            className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm transition-colors"
           >
             Annuler
           </button>

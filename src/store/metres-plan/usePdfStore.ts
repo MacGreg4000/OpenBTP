@@ -1,8 +1,9 @@
 import { create } from 'zustand'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 import type { PdfPageInfo } from '@/types/metres-plan'
 
 interface PdfStore {
-  pdfDocument: any | null
+  pdfDocument: PDFDocumentProxy | null
   pdfBytes: Uint8Array | null
   currentPage: number
   totalPages: number
@@ -10,7 +11,7 @@ interface PdfStore {
   pageInfo: PdfPageInfo | null
   pdfFileName: string
 
-  setPdfDocument: (doc: any, fileName: string) => void
+  setPdfDocument: (doc: PDFDocumentProxy, fileName: string) => void
   setPdfBytes: (bytes: Uint8Array) => void
   setCurrentPage: (page: number) => void
   setZoom: (zoom: number) => void

@@ -59,7 +59,7 @@ const MesuresTab: React.FC = () => {
   if (measurements.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="text-center text-gray-600">
+        <div className="text-center text-gray-400 dark:text-gray-600">
           <Ruler size={32} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm font-medium">Aucune mesure</p>
           <p className="text-xs mt-1">Utilisez les outils pour mesurer</p>
@@ -71,17 +71,17 @@ const MesuresTab: React.FC = () => {
   return (
     <div className="flex-1 overflow-y-auto flex flex-col">
       {/* Global totals */}
-      <div className="p-3 border-b border-gray-800 shrink-0">
+      <div className="p-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-2">Résumé global</p>
         <div className="space-y-1">
           {Object.entries(totals).map(([key, t]) => (
             <div key={key} className="flex items-center justify-between py-0.5">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="text-gray-500">{TYPE_ICONS[t.type]}</span>
                 <span>{TYPE_LABELS[t.type]}{t.type === 'count' ? ` (${key.split(':')[1]})` : ''}</span>
-                <span className="text-gray-600">×{t.count}</span>
+                <span className="text-gray-400 dark:text-gray-600">×{t.count}</span>
               </div>
-              <span className="text-xs font-semibold text-white">
+              <span className="text-xs font-semibold text-gray-900 dark:text-white">
                 {t.type === 'count' ? t.count : `${t.total.toFixed(2)} ${t.unit}`}
               </span>
             </div>
@@ -98,7 +98,7 @@ const MesuresTab: React.FC = () => {
           <div key={type} className="mb-3">
             <div className="flex items-center gap-2 px-1 mb-1">
               <span className="text-gray-500">{TYPE_ICONS[type as MeasurementType]}</span>
-              <span className="text-xs font-medium text-gray-400">{TYPE_LABELS[type as MeasurementType]}</span>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{TYPE_LABELS[type as MeasurementType]}</span>
             </div>
             <div className="space-y-0.5">
               {items.map(m => (
@@ -132,26 +132,26 @@ const MeasurementRow: React.FC<{
     <div
       className={clsx(
         'flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors group',
-        isSelected ? 'bg-blue-900/50 border border-blue-700' : 'hover:bg-gray-800'
+        isSelected ? 'bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-700' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
       )}
       onClick={onSelect}
     >
       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: poste ? poste.color : m.color }} />
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-200 truncate">{m.name}</p>
+        <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{m.name}</p>
         <p className="text-xs text-gray-500">
           {m.type === 'count' ? '1 unité' : `${m.value.toFixed(2)} ${m.unit}`}
           {m.type === 'roof' && m.slopeFactor && (
             <span className="text-orange-400 ml-1">×{m.slopeFactor.toFixed(3)}</span>
           )}
           {poste && (
-            <span className="ml-1 text-gray-600">· {poste.name}</span>
+            <span className="ml-1 text-gray-400 dark:text-gray-600">· {poste.name}</span>
           )}
         </p>
       </div>
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button onClick={e => { e.stopPropagation(); onToggleVisibility() }}
-          className="p-0.5 rounded hover:bg-gray-700 text-gray-500 hover:text-gray-300" title={m.visible ? 'Masquer' : 'Afficher'}>
+          className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" title={m.visible ? 'Masquer' : 'Afficher'}>
           {m.visible ? <Eye size={12} /> : <EyeOff size={12} />}
         </button>
         <button onClick={e => { e.stopPropagation(); onDelete() }}
@@ -195,14 +195,14 @@ const MetreTab: React.FC = () => {
   if (postes.length === 0) {
     return (
       <div className="flex-1 flex flex-col">
-        <div className="p-3 border-b border-gray-800">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-800">
           <button onClick={handleAddPoste}
             className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
             <Plus size={16} /> Nouveau poste
           </button>
         </div>
         <div className="flex-1 flex items-center justify-center p-6">
-          <div className="text-center text-gray-600">
+          <div className="text-center text-gray-400 dark:text-gray-600">
             <Target size={32} className="mx-auto mb-3 opacity-30" />
             <p className="text-sm font-medium">Aucun poste</p>
             <p className="text-xs mt-1 leading-relaxed">Créez des postes pour<br />regrouper vos mesures</p>
@@ -214,7 +214,7 @@ const MetreTab: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="p-3 border-b border-gray-800 shrink-0">
+      <div className="p-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <button onClick={handleAddPoste}
           className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
           <Plus size={16} /> Nouveau poste
@@ -246,18 +246,18 @@ const MetreTab: React.FC = () => {
 
       {/* Grand total footer */}
       {postes.length > 0 && (
-        <div className="p-3 border-t border-gray-800 shrink-0">
+        <div className="p-3 border-t border-gray-200 dark:border-gray-800 shrink-0">
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Total global devis</p>
           {postes.map(p => {
             const s = posteStats[p.id]
             if (s.count === 0) return null
             return (
               <div key={p.id} className="flex justify-between text-xs py-0.5">
-                <span className="text-gray-400 flex items-center gap-1.5">
+                <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                   <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
                   {p.name}
                 </span>
-                <span className="font-semibold text-white">{s.total.toFixed(2)} {s.unit}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{s.total.toFixed(2)} {s.unit}</span>
               </div>
             )
           })}
@@ -296,7 +296,7 @@ const PosteRow: React.FC<{
         'rounded-xl p-2.5 transition-all border',
         isActive
           ? 'bg-blue-900/30 border-blue-600 shadow-sm shadow-blue-900'
-          : 'bg-gray-800/50 border-gray-800 hover:border-gray-700'
+          : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
       )}
     >
       <div className="flex items-center gap-2">
@@ -318,7 +318,7 @@ const PosteRow: React.FC<{
           {editing ? (
             <input
               ref={inputRef}
-              className="w-full bg-gray-700 border border-blue-500 rounded px-1.5 py-0.5 text-xs text-white outline-none"
+              className="w-full bg-gray-50 dark:bg-gray-700 border border-blue-500 rounded px-1.5 py-0.5 text-xs text-gray-900 dark:text-white outline-none"
               value={editVal}
               onChange={e => setEditVal(e.target.value)}
               onBlur={commitEdit}
@@ -329,7 +329,7 @@ const PosteRow: React.FC<{
             />
           ) : (
             <p
-              className="text-xs font-semibold text-gray-100 truncate cursor-text"
+              className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate cursor-text"
               onDoubleClick={() => { setEditVal(poste.name); setEditing(true) }}
               title="Double-clic pour renommer"
             >
@@ -339,7 +339,7 @@ const PosteRow: React.FC<{
           <p className="text-xs text-gray-500 mt-0.5">
             {stats.count === 0
               ? <span className="italic">Aucune mesure assignée</span>
-              : <span><span className="text-white font-semibold">{stats.total.toFixed(2)}</span> {stats.unit} <span className="text-gray-600">({stats.count} mesure{stats.count > 1 ? 's' : ''})</span></span>
+              : <span><span className="text-gray-900 dark:text-white font-semibold">{stats.total.toFixed(2)}</span> {stats.unit} <span className="text-gray-400 dark:text-gray-600">({stats.count} mesure{stats.count > 1 ? 's' : ''})</span></span>
             }
           </p>
         </div>
@@ -347,7 +347,7 @@ const PosteRow: React.FC<{
         {/* Delete */}
         <button
           onClick={e => { e.stopPropagation(); onDelete() }}
-          className="p-1 rounded hover:bg-red-900 text-gray-600 hover:text-red-400 transition-colors shrink-0"
+          className="p-1 rounded hover:bg-red-900 text-gray-400 dark:text-gray-600 hover:text-red-400 transition-colors shrink-0"
           title="Supprimer ce poste"
         >
           <Trash2 size={13} />
@@ -411,7 +411,7 @@ const RightPanel: React.FC = () => {
 
   return (
     <div
-      className="relative bg-gray-900 border-l border-gray-800 flex flex-col shrink-0 overflow-hidden"
+      className="relative bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex flex-col shrink-0 overflow-hidden"
       style={{ width: panelWidth }}
     >
       {/* ── Resize handle (left edge) ────────────────────────────────────────── */}
@@ -421,7 +421,7 @@ const RightPanel: React.FC = () => {
         title="Glisser pour redimensionner"
       >
         {/* thin visual line */}
-        <div className="w-px h-full bg-gray-800 group-hover:bg-blue-500/60 transition-colors" />
+        <div className="w-px h-full bg-gray-200 dark:bg-gray-800 group-hover:bg-blue-500/60 transition-colors" />
         {/* center grip dots */}
         <div className="absolute top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="w-1 h-1 rounded-full bg-blue-400" />
@@ -431,12 +431,12 @@ const RightPanel: React.FC = () => {
       </div>
 
       {/* ── Tab bar ─────────────────────────────────────────────────────────── */}
-      <div className="flex border-b border-gray-800 shrink-0 pl-2">
+      <div className="flex border-b border-gray-200 dark:border-gray-800 shrink-0 pl-2">
         <button
           onClick={() => setTab('mesures')}
           className={clsx(
             'flex-1 py-2.5 text-xs font-semibold transition-colors',
-            tab === 'mesures' ? 'text-white border-b-2 border-blue-500 bg-gray-800/50' : 'text-gray-500 hover:text-gray-300'
+            tab === 'mesures' ? 'text-gray-900 dark:text-white border-b-2 border-blue-500 bg-gray-100/50 dark:bg-gray-800/50' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
           )}
         >
           Mesures
@@ -445,7 +445,7 @@ const RightPanel: React.FC = () => {
           onClick={() => setTab('metre')}
           className={clsx(
             'flex-1 py-2.5 text-xs font-semibold transition-colors relative',
-            tab === 'metre' ? 'text-white border-b-2 border-blue-500 bg-gray-800/50' : 'text-gray-500 hover:text-gray-300'
+            tab === 'metre' ? 'text-gray-900 dark:text-white border-b-2 border-blue-500 bg-gray-100/50 dark:bg-gray-800/50' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
           )}
         >
           Métré
@@ -453,7 +453,7 @@ const RightPanel: React.FC = () => {
             <span className="absolute top-1.5 right-3 w-2 h-2 rounded-full bg-blue-500" title="Poste actif" />
           )}
           {postes.length > 0 && !activePosteId && (
-            <span className="absolute top-1.5 right-3 text-gray-600 text-[10px] font-normal">{postes.length}</span>
+            <span className="absolute top-1.5 right-3 text-gray-400 dark:text-gray-600 text-[10px] font-normal">{postes.length}</span>
           )}
         </button>
       </div>
