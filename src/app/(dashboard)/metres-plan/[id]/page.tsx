@@ -88,7 +88,7 @@ export default function MetrePlanEditorPage() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden z-50">
+    <div className="fixed inset-0 overflow-hidden z-[110]">
       <MetrePlanEditor
         metrePlanId={id}
         chantierId={meta.chantier?.chantierId ?? meta.chantierId ?? undefined}

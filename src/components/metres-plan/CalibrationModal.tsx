@@ -54,7 +54,7 @@ const CalibrationModal: React.FC = () => {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]" onClick={handleClose}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[120]" onClick={handleClose}>
       <div
         className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 w-96 shadow-2xl"
         onClick={e => e.stopPropagation()}
