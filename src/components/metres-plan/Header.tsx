@@ -13,8 +13,10 @@ import {
   MagnifyingGlassMinusIcon,
   ArrowsPointingOutIcon,
   ArrowPathIcon,
+  ArrowLeftIcon,
 } from '@heroicons/react/24/outline'
 import { RulerIcon } from 'lucide-react'
+import Link from 'next/link'
 import { usePdfStore } from '@/store/metres-plan/usePdfStore'
 import { useProjectStore } from '@/store/metres-plan/useProjectStore'
 
@@ -77,6 +79,18 @@ const MetrePlanHeader: React.FC<MetrePlanHeaderProps> = ({
 
   return (
     <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex items-center px-4 gap-3 shrink-0 select-none z-10">
+      {/* Retour à la liste */}
+      <Link
+        href="/metres-plan"
+        className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
+        title="Retour à la liste des métrés"
+      >
+        <ArrowLeftIcon className="w-4 h-4" />
+        <span className="hidden sm:inline">Retour</span>
+      </Link>
+
+      <Divider />
+
       {/* Logo + titre */}
       <div className="flex items-center gap-2 mr-1">
         <RulerIcon size={18} className="text-indigo-600 dark:text-indigo-400" />
