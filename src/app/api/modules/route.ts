@@ -24,6 +24,7 @@ const DEFAULT_MODULES = [
   { code: 'messagerie',           name: 'Messagerie',                description: 'Chat et messagerie entre utilisateurs',                  category: 'communication', icon: 'ChatBubbleLeftRightIcon',   isActive: true, isSystem: false, ordre: 50 },
   { code: 'chat',                 name: 'Assistant IA',              description: 'Chatbot intelligent avec RAG',                           category: 'ia',            icon: 'SparklesIcon',              isActive: true, isSystem: false, ordre: 51 },
   { code: 'notifications',        name: 'Notifications',             description: 'Système de notifications email et in-app',               category: 'system',        icon: 'BellIcon',                  isActive: true, isSystem: false, ordre: 52 },
+  { code: 'metres_plan',          name: 'Métré sur plan',            description: 'Outil de mesure et métré sur plan PDF',                  category: 'outils',        icon: 'PencilSquareIcon',          isActive: true, isSystem: false, ordre: 60 },
 ] as const
 
 // GET /api/modules - Liste tous les modules
