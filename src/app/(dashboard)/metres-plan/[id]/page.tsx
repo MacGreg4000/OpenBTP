@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { loadProjectFromServer } from '@/lib/metres-plan/projectStorage'
 import { useProjectStore } from '@/store/metres-plan/useProjectStore'
@@ -67,9 +68,9 @@ export default function MetrePlanEditorPage() {
       <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
         <div className="text-center">
           <p className="text-red-400 text-lg font-medium mb-3">{error}</p>
-          <a href="/metres-plan" className="text-blue-400 hover:underline text-sm">
+          <Link href="/metres-plan" className="text-blue-400 hover:underline text-sm">
             Retour à la liste
-          </a>
+          </Link>
         </div>
       </div>
     )

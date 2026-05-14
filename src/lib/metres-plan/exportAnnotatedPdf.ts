@@ -121,7 +121,7 @@ function drawMeasurement(
     // Étiquettes au centroïde
     const c = polygonCentroid(pts)
     const cx = c.x * s
-    let cy = c.y * s
+    const cy = c.y * s
     if (posteName) {
       drawLabel(ctx, cx, cy - 18, posteName, color, 'white', 9)
     }
