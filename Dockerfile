@@ -19,6 +19,9 @@ COPY . .
 # Générer le client Prisma
 RUN npx prisma generate
 
+# Copier le worker PDF.js dans public/ (requis pour l'outil Métré sur plan)
+RUN cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs
+
 # Variables nécessaires au build (valeurs fictives, remplacées au runtime)
 ARG NEXTAUTH_SECRET=build_placeholder_secret
 ARG DATABASE_URL=mysql://build:build@localhost:3306/build

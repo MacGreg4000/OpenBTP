@@ -20,8 +20,10 @@ import {
 } from '@/lib/metres-plan/geometry'
 import { nanoid } from '@/lib/metres-plan/nanoid'
 
-// Chemin relatif : fonctionne en web (http://) ET en Electron (file://)
-pdfjs.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.min.mjs', window.location.href).href
+// Worker PDF.js : initialisé côté client uniquement (Next.js)
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`
+}
 
 interface Props {
   onPdfLoaded?: (bytes: Uint8Array, fileName: string) => void

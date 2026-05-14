@@ -58,7 +58,7 @@ export default function MetresPlanPage() {
       const response = await fetch('/api/chantiers')
       if (!response.ok) return
       const data = await response.json()
-      setChantiers(Array.isArray(data) ? data : data.data ?? [])
+      setChantiers(Array.isArray(data) ? data : (data.chantiers ?? data.data ?? []))
     } catch {
       // Silencieux — le select sera vide
     }
