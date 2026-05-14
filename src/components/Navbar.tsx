@@ -127,7 +127,7 @@ export function Navbar() {
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
-    return pathname.startsWith(href)
+    return pathname === href || pathname.startsWith(href + '/')
   }
 
   const getActiveGroup = () => {
