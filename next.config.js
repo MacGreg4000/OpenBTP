@@ -46,11 +46,6 @@ const nextConfig = {
         'pdfjs-dist/build/pdf.worker.min.mjs';
     }
 
-    // Forcer une instance unique de React pour éviter le conflit react-konva/react-reconciler
-    const path = require('path')
-    config.resolve.alias['react'] = path.resolve('./node_modules/react')
-    config.resolve.alias['react-dom'] = path.resolve('./node_modules/react-dom')
-
     return config;
   },
   // Configuration Turbopack (Next.js 16+)

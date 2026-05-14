@@ -153,13 +153,6 @@
       "unzipper": {
         "fstream": "npm:graceful-fs"
       }
-    },
-    "react-konva": {
-      "react": "18.3.1",
-      "react-dom": "18.3.1"
-    },
-    "its-fine": {
-      "react": "18.3.1"
     }
   }
 }
