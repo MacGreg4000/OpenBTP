@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import Image from 'next/image'
 import { 
-  HomeIcon, 
+  HomeIcon,
   UserCircleIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
@@ -25,7 +25,8 @@ import {
   TruckIcon,
   ArchiveBoxIcon,
   ChartBarIcon,
-  BuildingOffice2Icon
+  BuildingOffice2Icon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
@@ -108,6 +109,12 @@ export function Navbar() {
           ? [{ name: 'Planification chargements', href: '/planification-chargements', icon: TruckIcon, moduleCode: 'planning_chargements' }]
           : []
         ),
+      ]
+    },
+    {
+      name: 'Outils',
+      items: [
+        { name: 'Métré sur plan', href: '/metres-plan', icon: PencilSquareIcon, moduleCode: 'metres_plan' },
       ]
     }
   ]

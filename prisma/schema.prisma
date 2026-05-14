@@ -601,6 +601,9 @@ model Chantier {
   // Dossiers techniques
   dossiersTechniques       DossierTechnique[]
 
+  // Métrés sur plan
+  metresPlan               MetrePlan[]
+
   @@index([clientId])
   @@index([contactId])
 }
@@ -1004,6 +1007,9 @@ model User {
   // CRM Prospects
   prospectRappels           ProspectRappel[]
   prospectActivites         ProspectActivite[]
+
+  // Métrés sur plan
+  metresPlan                MetrePlan[]
 }
 
 model BonRegie {
@@ -2274,4 +2280,26 @@ model ProspectActivite {
 
   @@index([entrepriseId])
   @@map("prospect_activite")
+}
+
+// ===================================
+// MÉTRÉS SUR PLAN
+// ===================================
+
+model MetrePlan {
+  id           String    @id @default(cuid())
+  nom          String
+  chantierId   String?
+  mplanUrl     String
+  pdfUrl       String?
+  shareToken   String?   @unique
+  createdBy    String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  chantier     Chantier? @relation(fields: [chantierId], references: [id])
+  User         User      @relation(fields: [createdBy], references: [id])
+
+  @@index([chantierId])
+  @@index([createdBy])
+  @@map("metre_plan")
 }

@@ -16,7 +16,7 @@ const nextConfig = {
     unoptimized: true,
   },
   // Packages externes pour les composants serveur
-  serverExternalPackages: ['pdf-lib', 'pdfkit', 'chartjs-node-canvas', 'chart.js'],
+  serverExternalPackages: ['pdf-lib', 'pdfkit', 'chartjs-node-canvas', 'chart.js', 'konva'],
   // Augmenter le timeout des requêtes et la taille des données
   experimental: {
     serverActions: {
@@ -36,6 +36,15 @@ const nextConfig = {
       test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
       type: 'asset/resource',
     });
+
+    // Support canvas pour Konva (SSR)
+    config.resolve.alias.canvas = false;
+
+    // PDF.js : éviter les erreurs de worker côté serveur
+    if (config.name !== 'server') {
+      config.resolve.alias['pdfjs-dist/build/pdf.worker.mjs'] =
+        'pdfjs-dist/build/pdf.worker.min.mjs';
+    }
 
     return config;
   },
