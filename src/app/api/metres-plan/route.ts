@@ -18,16 +18,15 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const chantierId = url.searchParams.get('chantierId')
 
-    const whereClause: { createdBy: string; chantierId?: string } = {
-      createdBy: session.user.id,
-    }
-
-    if (chantierId) {
-      whereClause.chantierId = chantierId
-    }
-
     const metresPlan = await prisma.metrePlan.findMany({
-      where: whereClause,
+      where: {
+        createdBy: session.user.id,
+        ...(chantierId ? { chantierId } : {}),
+        // Exclure les métrés dont le chantier associé est terminé
+        NOT: {
+          chantier: { statut: 'TERMINE' },
+        },
+      },
       include: {
         chantier: {
           select: {
