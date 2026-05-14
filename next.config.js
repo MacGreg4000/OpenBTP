@@ -31,7 +31,7 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   // Configuration pour permettre l'importation d'images
-  webpack(config) {
+  webpack(config, { isServer }) {
     config.module.rules.push({
       test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
       type: 'asset/resource',
@@ -41,10 +41,15 @@ const nextConfig = {
     config.resolve.alias.canvas = false;
 
     // PDF.js : éviter les erreurs de worker côté serveur
-    if (config.name !== 'server') {
+    if (!isServer) {
       config.resolve.alias['pdfjs-dist/build/pdf.worker.mjs'] =
         'pdfjs-dist/build/pdf.worker.min.mjs';
     }
+
+    // Forcer une instance unique de React pour éviter le conflit react-konva/react-reconciler
+    const path = require('path')
+    config.resolve.alias['react'] = path.resolve('./node_modules/react')
+    config.resolve.alias['react-dom'] = path.resolve('./node_modules/react-dom')
 
     return config;
   },
