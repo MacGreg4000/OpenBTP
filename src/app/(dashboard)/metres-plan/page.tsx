@@ -23,6 +23,7 @@ interface MetrePlan {
 }
 
 interface Chantier {
+  id: string
   chantierId: string
   nomChantier: string
 }
@@ -408,7 +409,7 @@ export default function MetresPlanPage() {
                 >
                   <option value="">— Aucun chantier —</option>
                   {chantiers.map(c => (
-                    <option key={c.chantierId} value={c.chantierId}>{c.nomChantier}</option>
+                    <option key={c.id} value={c.id}>{c.nomChantier}</option>
                   ))}
                 </select>
               </div>
