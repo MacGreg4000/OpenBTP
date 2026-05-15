@@ -183,48 +183,48 @@ export default function MetresPlanPage() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* ── Toolbar filtre / tri / vue ─────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-xs">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-            />
-          </div>
+        <div className="flex items-center gap-3 mb-6">
+          {/* Les 3 champs sur la même ligne */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Search */}
+            <div className="relative flex-1 min-w-0">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
 
-          {/* Filter by chantier */}
-          <div className="relative">
-            <FunnelIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            {/* Filter by chantier */}
+            <div className="relative flex-1 min-w-0">
+              <FunnelIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <select
+                value={filterChantier}
+                onChange={e => setFilterChantier(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
+              >
+                <option value="">Tous les chantiers</option>
+                {chantiers.map(c => (
+                  <option key={c.chantierId} value={c.chantierId}>{c.nomChantier}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort */}
             <select
-              value={filterChantier}
-              onChange={e => setFilterChantier(e.target.value)}
-              className="pl-9 pr-8 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
+              value={sort}
+              onChange={e => setSort(e.target.value as SortKey)}
+              className="flex-1 min-w-0 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-              <option value="">Tous les chantiers</option>
-              {chantiers.map(c => (
-                <option key={c.chantierId} value={c.chantierId}>{c.nomChantier}</option>
-              ))}
+              <option value="recent">Plus récent</option>
+              <option value="oldest">Plus ancien</option>
+              <option value="name_asc">Nom A → Z</option>
+              <option value="name_desc">Nom Z → A</option>
             </select>
           </div>
-
-          {/* Sort */}
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value as SortKey)}
-            className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none"
-          >
-            <option value="recent">Plus récent</option>
-            <option value="oldest">Plus ancien</option>
-            <option value="name_asc">Nom A → Z</option>
-            <option value="name_desc">Nom Z → A</option>
-          </select>
-
-          {/* Spacer */}
-          <div className="flex-1" />
 
           {/* Result count */}
           {!loading && (
