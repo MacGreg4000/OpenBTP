@@ -137,14 +137,12 @@ export async function POST(_request: Request) {
         }
       }),
       prisma.ouvrierInterne.findMany({
-        orderBy: {
-          nom: 'asc'
-        }
+        where: { actif: true },
+        orderBy: { nom: 'asc' }
       }),
       prisma.soustraitant.findMany({
-        orderBy: {
-          nom: 'asc'
-        }
+        where: { actif: true },
+        orderBy: { nom: 'asc' }
       }),
       prisma.chantier.findMany({
         where: {
