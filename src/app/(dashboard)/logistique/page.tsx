@@ -1243,9 +1243,9 @@ export default function LogistiquePage() {
               {/* Lignes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lignes *</label>
-                <div className="space-y-3">
+                <div className="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden divide-y divide-gray-200 dark:divide-gray-600">
                   {editBonLignes.map((ligne, i) => (
-                    <div key={i} className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 p-3 space-y-2">
+                    <div key={i} className="bg-gray-50 dark:bg-gray-700/50 p-3 space-y-2">
                       {/* Ligne 1 : description */}
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 w-5 flex-shrink-0">{i + 1}.</span>
@@ -1368,9 +1368,9 @@ export default function LogistiquePage() {
               {/* Lignes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Articles *</label>
-                <div className="space-y-3">
+                <div className="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden divide-y divide-gray-200 dark:divide-gray-600">
                   {bonPrepLignes.map((ligne, i) => (
-                    <div key={i} className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 p-3 space-y-2">
+                    <div key={i} className="bg-gray-50 dark:bg-gray-700/50 p-3 space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 w-5 flex-shrink-0">{i + 1}.</span>
                         <input
