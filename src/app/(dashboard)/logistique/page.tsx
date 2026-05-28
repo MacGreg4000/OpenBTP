@@ -1243,36 +1243,48 @@ export default function LogistiquePage() {
               {/* Lignes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lignes *</label>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {editBonLignes.map((ligne, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <input
-                        type="text"
-                        value={ligne.description}
-                        onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], description: e.target.value }; setEditBonLignes(l) }}
-                        placeholder="Description"
-                        className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      {editBonLignes.length > 1 && (
-                        <button type="button" onClick={() => setEditBonLignes(editBonLignes.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:text-red-600 transition-colors rounded flex-shrink-0">
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      )}
-                      <div className="flex gap-1.5 flex-shrink-0">
-                        <input
-                          type="number"
-                          value={ligne.quantite}
-                          onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], quantite: e.target.value }; setEditBonLignes(l) }}
-                          placeholder="Qté"
-                          className="w-16 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    <div key={i} className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 p-3 space-y-2">
+                      {/* Ligne 1 : description */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 w-5 flex-shrink-0">{i + 1}.</span>
                         <input
                           type="text"
-                          value={ligne.unite}
-                          onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], unite: e.target.value }; setEditBonLignes(l) }}
-                          placeholder="Unité"
-                          className="w-16 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={ligne.description}
+                          onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], description: e.target.value }; setEditBonLignes(l) }}
+                          placeholder="Description de l'article"
+                          className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                        {editBonLignes.length > 1 && (
+                          <button type="button" onClick={() => setEditBonLignes(editBonLignes.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:text-red-600 transition-colors rounded flex-shrink-0">
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                      {/* Ligne 2 : quantité + unité */}
+                      <div className="flex gap-2 pl-7">
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Quantité</label>
+                          <input
+                            type="number"
+                            value={ligne.quantite}
+                            onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], quantite: e.target.value }; setEditBonLignes(l) }}
+                            placeholder="0"
+                            min="0"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Unité</label>
+                          <input
+                            type="text"
+                            value={ligne.unite}
+                            onChange={e => { const l = [...editBonLignes]; l[i] = { ...l[i], unite: e.target.value }; setEditBonLignes(l) }}
+                            placeholder="m², ml, u…"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
