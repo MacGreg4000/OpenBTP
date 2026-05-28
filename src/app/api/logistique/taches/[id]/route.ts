@@ -46,11 +46,12 @@ export async function PATCH(
 
     const { id } = await props.params
     const body = await request.json()
-    const { titre, description, dateExecution, magasinierId } = body as {
+    const { titre, description, dateExecution, magasinierId, statut } = body as {
       titre?: string
       description?: string
       dateExecution?: string
       magasinierId?: string
+      statut?: string
     }
 
     const tache = await prisma.tacheMagasinier.update({
@@ -59,7 +60,13 @@ export async function PATCH(
         ...(titre !== undefined && { titre: String(titre).trim() }),
         ...(description !== undefined && { description: description?.trim() || null }),
         ...(dateExecution !== undefined && { dateExecution: new Date(dateExecution) }),
-        ...(magasinierId !== undefined && { magasinierId })
+        ...(magasinierId !== undefined && { magasinierId }),
+        // Repasser en "À faire" : reset de la validation
+        ...(statut === 'A_FAIRE' && {
+          statut: 'A_FAIRE',
+          dateValidation: null,
+          commentaire: null,
+        }),
       },
       include: {
         magasinier: { select: { id: true, nom: true } },

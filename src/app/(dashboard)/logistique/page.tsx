@@ -26,6 +26,7 @@ import {
   DocumentArrowDownIcon,
   MapPinIcon,
   PrinterIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline'
 import { PageHeader } from '@/components/PageHeader'
 import Image from 'next/image'
@@ -401,6 +402,22 @@ export default function LogistiquePage() {
       alert('Erreur réseau')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleRepasserAFaire = async (id: string) => {
+    try {
+      const res = await fetch(`/api/logistique/taches/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut: 'A_FAIRE' }),
+      })
+      if (!res.ok) throw new Error()
+      const updated = await res.json()
+      setTaches(prev => prev.map(t => t.id === id ? { ...t, ...updated } : t))
+      setViewTache(prev => prev && prev.id === id ? { ...prev, ...updated } : prev)
+    } catch {
+      alert('Erreur lors de la remise en À faire')
     }
   }
 
@@ -1520,8 +1537,17 @@ export default function LogistiquePage() {
                 </div>
               )}
             </div>
-            <div className="p-5 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-              <button onClick={() => setViewTache(null)} className="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm">
+            <div className="p-5 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              {viewTache.statut === 'VALIDEE' && (
+                <button
+                  onClick={() => handleRepasserAFaire(viewTache.id)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-sm font-medium hover:bg-amber-200 dark:hover:bg-amber-800/40 transition-colors"
+                >
+                  <ArrowPathIcon className="h-4 w-4" />
+                  Repasser en À faire
+                </button>
+              )}
+              <button onClick={() => setViewTache(null)} className="ml-auto px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm">
                 Fermer
               </button>
             </div>
