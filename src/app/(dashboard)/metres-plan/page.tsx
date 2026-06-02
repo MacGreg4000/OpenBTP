@@ -76,7 +76,7 @@ export default function MetresPlanPage() {
 
   const loadChantiers = async () => {
     try {
-      const res = await fetch('/api/chantiers?etat=tous&pageSize=1000')
+      const res = await fetch('/api/chantiers?pageSize=1000')
       if (!res.ok) return
       const data = await res.json()
       setChantiers(Array.isArray(data) ? data : (data.chantiers ?? data.data ?? []))
