@@ -46,15 +46,23 @@ const MetrePlanEditor: React.FC<MetrePlanEditorProps> = ({
     setIsSaving(true)
     try {
       const project = { ...getProject(), pdfFileName }
-      await saveProjectToServer(metrePlanId, project, pdfBytes, pdfFileName || null)
-      toast.success('Projet sauvegardé dans le chantier')
+
+      if (!chantierId) {
+        // Chantier libre → téléchargement local
+        downloadProject(project, pdfBytes, pdfFileName || null)
+        toast.success('Fichiers téléchargés localement')
+      } else {
+        // Chantier existant → sauvegarde sur le serveur
+        await saveProjectToServer(metrePlanId, project, pdfBytes, pdfFileName || null)
+        toast.success('Projet sauvegardé')
+      }
     } catch (err) {
       console.error(err)
       toast.error('Erreur lors de la sauvegarde')
     } finally {
       setIsSaving(false)
     }
-  }, [metrePlanId, getProject, pdfBytes, pdfFileName])
+  }, [metrePlanId, chantierId, getProject, pdfBytes, pdfFileName])
 
   const handleDownloadLocal = useCallback(() => {
     const project = { ...getProject(), pdfFileName }
@@ -74,24 +82,40 @@ const MetrePlanEditor: React.FC<MetrePlanEditorProps> = ({
   }, [loadProject, setPdfDocument, setPdfBytes])
 
   const handleExportAnnotatedToChantier = useCallback(async () => {
-    if (!pdfDocument || !metrePlanId) return
+    if (!pdfDocument) return
     try {
       const project = { ...getProject(), pdfFileName }
       const annotatedBytes = await exportAnnotatedPdf(project, pdfDocument)
+      const fileName = `${project.name}_annote.pdf`
+
+      if (!metrePlanId || !chantierId) {
+        // Pas de chantier → téléchargement direct
+        const blob = new Blob([annotatedBytes as BlobPart], { type: 'application/pdf' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = fileName
+        document.body.appendChild(a); a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 10000)
+        toast.success('Plan annoté téléchargé localement')
+        return
+      }
+
+      // Chantier existant → sauvegarde dans les documents du chantier
       const blob = new Blob([annotatedBytes as BlobPart], { type: 'application/pdf' })
       const formData = new FormData()
-      formData.append('pdf', blob, `${project.name}_annote.pdf`)
+      formData.append('pdf', blob, fileName)
       const res = await fetch(`/api/metres-plan/${metrePlanId}/export`, {
         method: 'POST',
         body: formData,
       })
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-      toast.success('Plan annoté exporté vers le chantier')
+      toast.success('Plan annoté sauvegardé dans les documents du chantier')
     } catch (err) {
       console.error(err)
       toast.error("Erreur lors de l'export")
     }
-  }, [pdfDocument, metrePlanId, getProject, pdfFileName])
+  }, [pdfDocument, metrePlanId, chantierId, getProject, pdfFileName])
 
   const handleGenerateShareLink = useCallback(async () => {
     if (!metrePlanId) return

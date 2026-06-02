@@ -43,6 +43,8 @@ export default function MetresPlanPage() {
   // ── Filters / sort / view ────────────────────────────────────────────────────
   const [search, setSearch]           = useState('')
   const [filterChantier, setFilterChantier] = useState('')
+  const [chantierSearch, setChantierSearch] = useState('')
+  const [chantierDropdownOpen, setChantierDropdownOpen] = useState(false)
   const [sort, setSort]               = useState<SortKey>('recent')
   const [view, setView]               = useState<ViewMode>('list')
 
@@ -74,7 +76,7 @@ export default function MetresPlanPage() {
 
   const loadChantiers = async () => {
     try {
-      const res = await fetch('/api/chantiers')
+      const res = await fetch('/api/chantiers?etat=tous&pageSize=1000')
       if (!res.ok) return
       const data = await res.json()
       setChantiers(Array.isArray(data) ? data : (data.chantiers ?? data.data ?? []))
@@ -199,19 +201,52 @@ export default function MetresPlanPage() {
               />
             </div>
 
-            {/* Filter by chantier */}
+            {/* Filter by chantier — searchable dropdown */}
             <div className="relative flex-1 min-w-0">
-              <FunnelIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-              <select
-                value={filterChantier}
-                onChange={e => setFilterChantier(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
+              <FunnelIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+              <button
+                type="button"
+                onClick={() => { setChantierDropdownOpen(o => !o); setChantierSearch('') }}
+                className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-left text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none truncate"
               >
-                <option value="">Tous les chantiers</option>
-                {chantiers.map(c => (
-                  <option key={c.chantierId} value={c.chantierId}>{c.nomChantier}</option>
-                ))}
-              </select>
+                {filterChantier ? chantiers.find(c => c.chantierId === filterChantier)?.nomChantier ?? 'Chantier' : 'Tous les chantiers'}
+              </button>
+              {chantierDropdownOpen && (
+                <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                  <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Rechercher un chantier…"
+                      value={chantierSearch}
+                      onChange={e => setChantierSearch(e.target.value)}
+                      className="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <ul className="max-h-52 overflow-y-auto">
+                    <li>
+                      <button type="button" onClick={() => { setFilterChantier(''); setChantierDropdownOpen(false) }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${!filterChantier ? 'font-semibold text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                        Tous les chantiers
+                      </button>
+                    </li>
+                    {chantiers
+                      .filter(c => !chantierSearch || c.nomChantier.toLowerCase().includes(chantierSearch.toLowerCase()))
+                      .map(c => (
+                        <li key={c.chantierId}>
+                          <button type="button"
+                            onClick={() => { setFilterChantier(c.chantierId); setChantierDropdownOpen(false) }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${filterChantier === c.chantierId ? 'font-semibold text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                            {c.nomChantier}
+                          </button>
+                        </li>
+                    ))}
+                    {chantiers.filter(c => !chantierSearch || c.nomChantier.toLowerCase().includes(chantierSearch.toLowerCase())).length === 0 && (
+                      <li className="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">Aucun chantier trouvé</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Sort */}

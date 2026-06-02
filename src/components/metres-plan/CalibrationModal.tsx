@@ -79,11 +79,11 @@ const CalibrationModal: React.FC = () => {
         {/* Real distance input */}
         <div className="mb-4">
           <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Distance réelle correspondante</label>
-          <div className="flex gap-2">
+          <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 5rem' }}>
             <input
               type="number"
               autoFocus
-              className="flex-1 min-w-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500"
+              className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500"
               placeholder="ex: 5.00"
               value={realValue}
               onChange={e => setRealValue(e.target.value)}
@@ -92,7 +92,7 @@ const CalibrationModal: React.FC = () => {
               step="any"
             />
             <select
-              className="w-20 flex-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-2 text-gray-900 dark:text-white text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500"
+              className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-2 text-gray-900 dark:text-white text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500"
               value={unit}
               onChange={e => setUnit(e.target.value as Unit)}
             >
