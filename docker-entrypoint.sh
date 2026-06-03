@@ -20,7 +20,18 @@ echo "✅ Base de données disponible"
 # Si le dossier public/uploads sur l'hôte n'a pas les bonnes permissions,
 # l'upload échoue avec EACCES.
 echo "🔧 Vérification/ajustement permissions dossiers montés..."
-mkdir -p /app/public/uploads /app/public/chantiers /app/public/documents /app/backups || true
+mkdir -p \
+  /app/public/uploads \
+  /app/public/uploads/documents \
+  /app/public/uploads/documents/administratifs \
+  /app/public/uploads/documents/ouvriers \
+  /app/public/uploads/documents/sav \
+  /app/public/uploads/metres-plan \
+  /app/public/uploads/choix-clients \
+  /app/public/uploads/rapports \
+  /app/public/chantiers \
+  /app/public/documents \
+  /app/backups || true
 chown -R nextjs:nodejs /app/public/uploads /app/public/chantiers /app/public/documents /app/backups 2>/dev/null || true
 chmod -R u+rwX,g+rwX,o+rX /app/public/uploads /app/public/chantiers /app/public/documents /app/backups 2>/dev/null || true
 
