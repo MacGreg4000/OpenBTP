@@ -70,16 +70,20 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
       emailEntreprise: companyInfo.email,
       telephoneEntreprise: companyInfo.telephone,
       tvaEntreprise: companyInfo.tva,
+      bceEntreprise: companyInfo.tva,
+      numEntrepriseEntreprise: companyInfo.tva,
       representantEntreprise: companyInfo.representant || 'Directeur',
-      
+
       // Informations sous-traitant
       nomSousTraitant: soustraitant.nom,
       adresseSousTraitant: soustraitant.adresse || '',
       emailSousTraitant: soustraitant.email || '',
       telephoneSousTraitant: soustraitant.telephone || '',
       tvaSousTraitant: soustraitant.tva || '',
+      bceSousTraitant: soustraitant.tva || '',
+      numEntrepriseSousTraitant: soustraitant.tva || '',
       representantSousTraitant: soustraitant.contact || 'Représentant',
-      
+
       // Dates
       dateGeneration: format(new Date(), 'dd/MM/yyyy', { locale: fr }),
       dateDebut: format(new Date(), 'dd/MM/yyyy', { locale: fr }),
@@ -206,14 +210,18 @@ export async function signerContrat(
       emailEntreprise: companyInfo.email,
       telephoneEntreprise: companyInfo.telephone,
       tvaEntreprise: companyInfo.tva,
+      bceEntreprise: companyInfo.tva,
+      numEntrepriseEntreprise: companyInfo.tva,
       representantEntreprise: companyInfo.representant || 'Directeur',
-      
+
       // Informations sous-traitant
       nomSousTraitant: contrat.soustraitant.nom,
       adresseSousTraitant: contrat.soustraitant.adresse || '',
       emailSousTraitant: contrat.soustraitant.email || '',
       telephoneSousTraitant: contrat.soustraitant.telephone || '',
       tvaSousTraitant: contrat.soustraitant.tva || '',
+      bceSousTraitant: contrat.soustraitant.tva || '',
+      numEntrepriseSousTraitant: contrat.soustraitant.tva || '',
       representantSousTraitant: contrat.soustraitant.contact || 'Représentant',
       
       // Dates
