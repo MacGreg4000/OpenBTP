@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { PageHeader } from '@/components/PageHeader'
@@ -144,6 +144,8 @@ export default function SousTraitantsPage() {
     onConfirm: async () => {},
     isDeleting: false
   })
+  // Ref pour éviter le stale closure : toujours la dernière valeur même dans les anciennes closures
+  const sousTraitantToDeleteRef = useRef<SousTraitant | null>(null)
   const [generatingContract, setGeneratingContract] = useState<string | null>(null)
   const [sendingContract, setSendingContract] = useState<string | null>(null)
   const [ouvriersInternes, setOuvriersInternes] = useState<Array<{id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean}>>([])
@@ -221,11 +223,12 @@ export default function SousTraitantsPage() {
   }, [statusMenuOpen])
 
   const handleDelete = async () => {
-    if (!deleteModal.sousTraitant) return
+    const st = sousTraitantToDeleteRef.current
+    if (!st) return
 
     setDeleteModal(prev => ({ ...prev, isDeleting: true }))
     try {
-      const response = await fetch(`/api/sous-traitants/${deleteModal.sousTraitant.id}`, {
+      const response = await fetch(`/api/sous-traitants/${st.id}`, {
         method: 'DELETE'
       })
 
@@ -234,8 +237,8 @@ export default function SousTraitantsPage() {
       }
 
       // Mettre à jour la liste
-      setSousTraitants(prev => 
-        prev.filter(st => st.id !== deleteModal.sousTraitant?.id)
+      setSousTraitants(prev =>
+        prev.filter(s => s.id !== st.id)
       )
       setDeleteModal(prev => ({ ...prev, isOpen: false }))
     } catch {
@@ -815,13 +818,16 @@ export default function SousTraitantsPage() {
                         <GlobeAltIcon className="h-4 w-4" />
                       </a>
                       <button
-                        onClick={() => setDeleteModal({
-                          isOpen: true,
-                          sousTraitant: st,
-                          onClose: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
-                          onConfirm: handleDelete,
-                          isDeleting: false
-                        })}
+                        onClick={() => {
+                          sousTraitantToDeleteRef.current = st
+                          setDeleteModal({
+                            isOpen: true,
+                            sousTraitant: st,
+                            onClose: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
+                            onConfirm: handleDelete,
+                            isDeleting: false
+                          })
+                        }}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
                         title="Supprimer"
                       >
