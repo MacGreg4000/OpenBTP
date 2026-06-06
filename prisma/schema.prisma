@@ -650,7 +650,7 @@ model Document {
   chantierId       String?
   createdBy        String
   createdAt        DateTime            @default(now())
-  updatedAt        DateTime
+  updatedAt        DateTime            @updatedAt
   metadata         Json?
   estPlan          Boolean             @default(false)
   chantier         Chantier?           @relation(fields: [chantierId], references: [chantierId], onDelete: Cascade)

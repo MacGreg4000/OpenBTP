@@ -1,0 +1,3 @@
+-- Aucune modification SQL nécessaire : updatedAt existait déjà en base.
+-- Cette migration marque simplement l'ajout de @updatedAt dans le schema Prisma
+-- pour que l'ORM gère automatiquement ce champ lors des create/update.
