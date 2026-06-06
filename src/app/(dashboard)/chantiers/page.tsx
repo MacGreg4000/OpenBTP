@@ -656,7 +656,6 @@ export default function ChantiersPage() {
                   <option value="En préparation">En préparation</option>
                   <option value="En cours">En cours</option>
                   <option value="Terminé">Terminé</option>
-                  <option value="À venir">À venir</option>
                 </select>
               </div>
             </div>
