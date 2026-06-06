@@ -1213,13 +1213,16 @@ export default function SousTraitantsPage() {
                                 <GlobeAltIcon className="h-4 w-4" />
                               </a>
                               <button
-                                onClick={() => setDeleteModal({
-                                  isOpen: true,
-                                  sousTraitant: st,
-                                  onClose: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
-                                  onConfirm: handleDelete,
-                                  isDeleting: false
-                                })}
+                                onClick={() => {
+                                  sousTraitantToDeleteRef.current = st
+                                  setDeleteModal({
+                                    isOpen: true,
+                                    sousTraitant: st,
+                                    onClose: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
+                                    onConfirm: handleDelete,
+                                    isDeleting: false
+                                  })
+                                }}
                                 className="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900 rounded transition-colors"
                                 title="Supprimer"
                               >
