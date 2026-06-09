@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 // import { useRouter } from 'next/navigation'
-import SignatureCanvas from 'react-signature-canvas'
+import SignaturePad, { type SignaturePadHandle } from '@/components/ui/SignaturePad'
 import { DocumentCheckIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 // import Link from 'next/link'
@@ -12,7 +12,7 @@ export default function BonRegiePage() {
   const [success, setSuccess] = useState(false)
   
   // Références pour les champs du formulaire
-  const signatureRef = useRef<SignatureCanvas>(null)
+  const signatureRef = useRef<SignaturePadHandle>(null)
   
   // États pour les données du formulaire
   const [dates, setDates] = useState('')
@@ -261,14 +261,11 @@ export default function BonRegiePage() {
                   Signature du responsable sur site
                 </label>
                 <div className="mt-1 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden bg-white">
-                  <SignatureCanvas
+                  <SignaturePad
                     ref={signatureRef}
-                    canvasProps={{
-                      width: 500, height: 200, 
-                      className: 'sigCanvas w-full h-auto'
-                    }}
-                    backgroundColor="rgb(255,255,255)"
+                    height={200}
                     penColor="rgb(0,0,0)"
+                    backgroundColor="rgb(255,255,255)"
                   />
                 </div>
                 <button 

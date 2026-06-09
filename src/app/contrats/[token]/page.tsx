@@ -1,17 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, use } from 'react';
-import type { ComponentType, Ref, CanvasHTMLAttributes } from 'react'
-// import { useRouter } from 'next/navigation'
-// ce module n'a pas de types, on l'importe en any contrôlé
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import SignatureCanvas from 'react-signature-canvas'
-
-interface SignatureCanvasRef {
-  clear: () => void;
-  isEmpty: () => boolean;
-  toDataURL: (type: string, options?: object) => string;
-}
+import SignaturePad, { type SignaturePadHandle } from '@/components/ui/SignaturePad'
 
 interface ContratData {
   id: string
@@ -26,12 +15,6 @@ interface ContratData {
   }
 }
 
-// Composant typé pour éviter l'usage de any sur le ref
-const TypedSignatureCanvas = SignatureCanvas as unknown as ComponentType<{
-  ref: Ref<SignatureCanvasRef | null>
-  canvasProps?: CanvasHTMLAttributes<HTMLCanvasElement>
-}>
-
 export default function SignerContratPage(props: { params: Promise<{ token: string }> }) {
   const params = use(props.params);
   const [loading, setLoading] = useState(true)
@@ -41,7 +24,7 @@ export default function SignerContratPage(props: { params: Promise<{ token: stri
   const [success, setSuccess] = useState(false)
   const [identityConfirmed, setIdentityConfirmed] = useState(false)
   const [consentGiven, setConsentGiven] = useState(false)
-  const sigCanvas = useRef<SignatureCanvasRef | null>(null)
+  const sigCanvas = useRef<SignaturePadHandle | null>(null)
   // const router = useRouter()
 
   useEffect(() => {
@@ -245,14 +228,12 @@ export default function SignerContratPage(props: { params: Promise<{ token: stri
               Veuillez signer ci-dessous en utilisant votre souris ou votre doigt sur un écran tactile.
             </p>
             
-            <div className="mt-4 border border-gray-300 rounded-md overflow-hidden">
-              <TypedSignatureCanvas 
+            <div className="mt-4 border border-gray-300 rounded-md overflow-hidden bg-white">
+              <SignaturePad
                 ref={sigCanvas}
-                canvasProps={{
-                  width: 500,
-                  height: 200,
-                  className: 'w-full h-48 bg-white'
-                }}
+                height={200}
+                penColor="rgb(0,0,0)"
+                backgroundColor="rgb(255,255,255)"
               />
             </div>
             

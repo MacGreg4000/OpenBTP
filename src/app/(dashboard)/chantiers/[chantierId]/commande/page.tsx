@@ -815,35 +815,85 @@ export default function CommandePage(props: CommandePageProps) {
       { header: 'Option', key: 'option', width: 10 }
     ];
     
-    // Ajouter quelques lignes d'exemple
+    // ── SECTION 1 : exemple de TITRE ──────────────────────────────────────────
+    // Type TITRE → ligne de grande section (fond bleu clair, police grande)
+    const titreRow = worksheet.addRow({
+      article: '',
+      description: 'Travaux de maçonnerie',
+      type: 'TITRE',
+      unite: '',
+      prixUnitaire: '',
+      quantite: '',
+      option: ''
+    });
+    titreRow.font = { bold: true, size: 13 };
+    titreRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F2FD' } };
+
+    // Type SOUS_TITRE → sous-section (fond gris clair)
+    const sousTitreRow = worksheet.addRow({
+      article: '',
+      description: 'Fondations',
+      type: 'SOUS_TITRE',
+      unite: '',
+      prixUnitaire: '',
+      quantite: '',
+      option: ''
+    });
+    sousTitreRow.font = { italic: true, size: 11 };
+    sousTitreRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+
+    // Lignes normales sous ce sous-titre
     worksheet.addRow({
-      article: 'EX001',
-      description: 'Exemple de produit',
+      article: 'MAS001',
+      description: 'Béton de fondation C20/25',
       type: 'QP',
-      unite: 'Pièces',
-      prixUnitaire: 100,
+      unite: 'm³',
+      prixUnitaire: 120,
+      quantite: 15,
+      option: 'Non'
+    });
+
+    worksheet.addRow({
+      article: 'MAS002',
+      description: 'Coffrage bois perdu',
+      type: 'QP',
+      unite: 'm²',
+      prixUnitaire: 45,
+      quantite: 30,
+      option: 'Non'
+    });
+
+    // ── SECTION 2 : deuxième TITRE + lignes ───────────────────────────────────
+    const titreRow2 = worksheet.addRow({
+      article: '',
+      description: 'Travaux de charpente',
+      type: 'TITRE',
+      unite: '',
+      prixUnitaire: '',
+      quantite: '',
+      option: ''
+    });
+    titreRow2.font = { bold: true, size: 13 };
+    titreRow2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F2FD' } };
+
+    worksheet.addRow({
+      article: 'CHARP001',
+      description: 'Fourniture et pose charpente traditionnelle',
+      type: 'FF',
+      unite: 'Forfait',
+      prixUnitaire: 8500,
       quantite: 1,
       option: 'Non'
     });
-    
-    worksheet.addRow({
-      article: 'EX002',
-      description: 'Exemple de service',
-      type: 'FF',
-      unite: 'Heures',
-      prixUnitaire: 75,
-      quantite: 2,
-      option: 'Non'
-    });
-    
-    // Ajouter un exemple d'option
+
+    // Exemple d'option (ligne optionnelle, non incluse dans le total)
     worksheet.addRow({
       article: 'OPT001',
-      description: 'Option exemple',
+      description: 'Option : traitement fongicide supplémentaire',
       type: 'QP',
-      unite: 'Pièces',
-      prixUnitaire: 50,
-      quantite: 1,
+      unite: 'm²',
+      prixUnitaire: 8,
+      quantite: 120,
       option: 'Oui'
     });
     
@@ -856,6 +906,19 @@ export default function CommandePage(props: CommandePageProps) {
       bgColor: { argb: 'FF333333' }
     };
     worksheet.getRow(1).font = { color: { argb: 'FFFFFFFF' }, bold: true };
+
+    // Note explicative sur les valeurs de la colonne Type
+    worksheet.getCell('C1').note = {
+      texts: [
+        { font: { bold: true }, text: 'Valeurs possibles pour la colonne Type :\n' },
+        { text: '• TITRE       → Grande section (fond bleu, police 13)\n' },
+        { text: '• SOUS_TITRE → Sous-section (fond gris, italique)\n' },
+        { text: '• QP          → Quantité × Prix unitaire (ligne normale)\n' },
+        { text: '• FF          → Forfait (prix fixe)\n\n' },
+        { font: { bold: true }, text: 'Pour TITRE et SOUS_TITRE :\n' },
+        { text: 'Laissez Article, Unité, Prix Unitaire et Quantité vides.\nMettez uniquement le libellé dans la colonne Description.' }
+      ]
+    };
     
     // Générer le fichier
     const buffer = await workbook.xlsx.writeBuffer();

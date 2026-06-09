@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import SignatureCanvas from 'react-signature-canvas'
+import SignaturePad, { type SignaturePadHandle } from '@/components/ui/SignaturePad'
 import { ArrowLeftIcon, DocumentCheckIcon } from '@heroicons/react/24/outline'
 import { PortalI18nProvider, usePortalI18n } from '../../../../i18n'
 
@@ -12,7 +12,7 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const signatureRef = useRef<SignatureCanvas>(null)
+  const signatureRef = useRef<SignaturePadHandle>(null)
 
   const [dates, setDates] = useState('')
   const [client, setClient] = useState('')
@@ -105,7 +105,7 @@ function InnerPage({ params: _params }: { params: { type: 'ouvrier'|'soustraitan
           <div>
             <label className="block text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('signature_label')}</label>
             <div className="mt-2 border-2 border-gray-300 dark:border-gray-500 rounded-lg bg-white overflow-hidden">
-              <SignatureCanvas ref={signatureRef} canvasProps={{ width: 500, height: 200, className: 'w-full h-auto' }} backgroundColor="#fff" penColor="#000" />
+              <SignaturePad ref={signatureRef} height={200} penColor="#000" backgroundColor="#fff" />
             </div>
             <button type="button" onClick={clearSignature} className="mt-3 text-base font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">{t('clear_signature')}</button>
           </div>
