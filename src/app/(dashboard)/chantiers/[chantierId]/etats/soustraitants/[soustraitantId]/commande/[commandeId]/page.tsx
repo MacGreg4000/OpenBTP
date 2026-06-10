@@ -204,6 +204,62 @@ export default function CommandeSousTraitantPage(
     }
   }
 
+  const addLigneWithType = async (type: 'QP' | 'FF' | 'TITRE' | 'SOUS_TITRE') => {
+    if (!commande) return
+    const isSectionType = type === 'TITRE' || type === 'SOUS_TITRE'
+    const ordre = commande.lignes.length
+    try {
+      const res = await fetch(
+        `/api/chantiers/${params.chantierId}/soustraitants/${params.soustraitantId}/commandes/${params.commandeId}/lignes`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            article: isSectionType ? '' : '',
+            description: type === 'TITRE' ? 'Nouveau titre' : type === 'SOUS_TITRE' ? 'Nouveau sous-titre' : 'Nouvelle ligne',
+            type,
+            unite: isSectionType ? '' : 'U',
+            prixUnitaire: 0,
+            quantite: isSectionType ? 0 : 1,
+            ordre
+          })
+        }
+      )
+      if (!res.ok) throw new Error('Erreur création ligne')
+      const nouvelleLigne = await res.json()
+      setCommande(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          lignes: [
+            ...prev.lignes,
+            {
+              id: nouvelleLigne.id as number,
+              ordre,
+              article: nouvelleLigne.article as string || '',
+              description: nouvelleLigne.description as string || '',
+              type: nouvelleLigne.type as string || type,
+              unite: nouvelleLigne.unite as string || '',
+              prixUnitaire: typeof nouvelleLigne.prixUnitaire === 'string' ? parseFloat(nouvelleLigne.prixUnitaire) : (nouvelleLigne.prixUnitaire as number) || 0,
+              quantite: typeof nouvelleLigne.quantite === 'string' ? parseFloat(nouvelleLigne.quantite) : (nouvelleLigne.quantite as number) || 0,
+              total: typeof nouvelleLigne.total === 'string' ? parseFloat(nouvelleLigne.total) : (nouvelleLigne.total as number) || 0,
+            }
+          ]
+        }
+      })
+      // Passer en édition immédiatement pour les lignes normales
+      if (!isSectionType) {
+        setLigneEnEdition(nouvelleLigne.id as number)
+      }
+    } catch {
+      toast.error('Erreur lors de l\'ajout de la ligne')
+    }
+  }
+
+  const addLigne = () => addLigneWithType('QP')
+  const addTitreLigne = () => addLigneWithType('TITRE')
+  const addSousTitreLigne = () => addLigneWithType('SOUS_TITRE')
+
   const handleInputChange = (id: number, field: keyof LigneCommande, value: string | number) => {
     setLignesTemp(prev => {
       const ligneTemp = prev[id] || {}
@@ -724,8 +780,30 @@ export default function CommandeSousTraitantPage(
               </div>
 
               {!commande.estVerrouillee && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Ajoutez des lignes pour compléter la commande sous-traitant.</p>
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-600/10 via-blue-700/10 to-indigo-800/10 dark:from-blue-600/5 dark:via-blue-700/5 dark:to-indigo-800/5">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={addTitreLigne}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-900 dark:text-white bg-white/70 dark:bg-white/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-md"
+                    >
+                      <span className="text-lg leading-none font-bold">T</span>
+                      Ajouter un titre
+                    </button>
+                    <button
+                      onClick={addSousTitreLigne}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-900 dark:text-white bg-white/60 dark:bg-white/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-md"
+                    >
+                      <span className="text-base leading-none italic">t</span>
+                      Ajouter un sous-titre
+                    </button>
+                    <button
+                      onClick={addLigne}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      <PlusIcon className="h-5 w-5" />
+                      Ajouter une ligne
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
