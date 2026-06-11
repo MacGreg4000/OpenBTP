@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, use, useCallback } from 'react';
+import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { 
@@ -49,6 +49,16 @@ interface CommandeSousTraitant {
   lignes: LigneCommande[];
 }
 
+interface LigneTarif {
+  id: string
+  type: string
+  article: string | null
+  descriptif: string
+  unite: string | null
+  prixUnitaire: number | null
+  remarques: string | null
+}
+
 export default function CommandeSousTraitantPage(
   props: {
     params: Promise<{ chantierId: string; soustraitantId: string; commandeId: string }>
@@ -67,6 +77,10 @@ export default function CommandeSousTraitantPage(
   const [submitting, setSubmitting] = useState(false)
   const [deletingCommande, setDeletingCommande] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [tarifsPanelOpen, setTarifsPanelOpen] = useState(false)
+  const [tarifs, setTarifs] = useState<LigneTarif[]>([])
+  const [tarifsLoading, setTarifsLoading] = useState(false)
+  const [tarifsSearch, setTarifsSearch] = useState('')
 
   const fetchCommande = useCallback(async () => {
     try {
@@ -97,6 +111,31 @@ export default function CommandeSousTraitantPage(
       fetchCommande()
     }
   }, [session, fetchCommande])
+
+  const openTarifsPanel = async () => {
+    setTarifsPanelOpen(true)
+    if (tarifs.length > 0) return
+    setTarifsLoading(true)
+    try {
+      const res = await fetch(`/api/sous-traitants/${params.soustraitantId}/tarifs`)
+      const data = await res.json()
+      setTarifs(Array.isArray(data) ? data : [])
+    } catch {
+      setTarifs([])
+    } finally {
+      setTarifsLoading(false)
+    }
+  }
+
+  const filteredTarifs = useMemo(() => {
+    if (!tarifsSearch.trim()) return tarifs
+    const q = tarifsSearch.toLowerCase()
+    return tarifs.filter(t =>
+      t.descriptif.toLowerCase().includes(q) ||
+      t.article?.toLowerCase().includes(q) ||
+      t.remarques?.toLowerCase().includes(q)
+    )
+  }, [tarifs, tarifsSearch])
 
   const handleEditLigne = (id: number) => {
     if (commande && commande.estVerrouillee) {
@@ -579,6 +618,18 @@ export default function CommandeSousTraitantPage(
                 )}
 
                 <button
+                  onClick={tarifsPanelOpen ? () => setTarifsPanelOpen(false) : openTarifsPanel}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
+                    tarifsPanelOpen
+                      ? 'bg-white text-blue-700 shadow-inner'
+                      : 'bg-white/25 backdrop-blur-sm text-white hover:bg-white/35'
+                  }`}
+                >
+                  <ClipboardDocumentListIcon className="h-5 w-5" />
+                  {tarifsPanelOpen ? 'Fermer tarifs' : 'Tarifs ST'}
+                </button>
+
+                <button
                   onClick={handleVerrouillage}
                   disabled={submitting}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg transition disabled:opacity-60 ${
@@ -895,6 +946,80 @@ export default function CommandeSousTraitantPage(
           </div>
         </div>
       </div>
+
+      {tarifsPanelOpen && (
+        <div className="fixed top-0 right-0 h-full w-80 z-40 flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white shrink-0">
+            <div className="min-w-0">
+              <p className="text-xs opacity-75">Liste de prix</p>
+              <p className="font-semibold text-sm truncate">{commande?.soustraitantNom}</p>
+            </div>
+            <button onClick={() => setTarifsPanelOpen(false)} className="ml-2 p-1 rounded hover:bg-white/20 transition">
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 shrink-0">
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={tarifsSearch}
+              onChange={e => setTarifsSearch(e.target.value)}
+              className="w-full text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {tarifsLoading ? (
+              <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Chargement...</div>
+            ) : filteredTarifs.length === 0 ? (
+              <div className="flex items-center justify-center py-12 text-gray-400 text-sm">
+                {tarifsSearch ? 'Aucun résultat' : 'Aucune ligne de tarif'}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredTarifs.map(tarif => {
+                  if (tarif.type === 'TITRE') return (
+                    <div key={tarif.id} className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20">
+                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">{tarif.descriptif}</p>
+                    </div>
+                  )
+                  if (tarif.type === 'SOUS_TITRE') return (
+                    <div key={tarif.id} className="px-4 py-1.5 bg-gray-50 dark:bg-gray-800/50">
+                      <p className="text-xs font-semibold italic text-gray-500 dark:text-gray-400">{tarif.descriptif}</p>
+                    </div>
+                  )
+                  return (
+                    <div key={tarif.id} className="px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          {tarif.article && <p className="text-[10px] font-mono text-gray-400 mb-0.5">{tarif.article}</p>}
+                          <p className="text-sm text-gray-900 dark:text-white leading-snug">{tarif.descriptif}</p>
+                          {tarif.remarques && <p className="text-xs text-gray-400 mt-0.5 italic">{tarif.remarques}</p>}
+                        </div>
+                        <div className="text-right shrink-0">
+                          {tarif.prixUnitaire != null && (
+                            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                              {tarif.prixUnitaire.toLocaleString('fr-FR')} €
+                            </p>
+                          )}
+                          {tarif.unite && <p className="text-xs text-gray-400">{tarif.unite}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 shrink-0">
+            <p className="text-xs text-gray-400 text-center">
+              {tarifs.filter(t => t.type === 'LIGNE').length} articles dans la liste de prix
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
