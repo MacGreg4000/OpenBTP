@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { 
   PencilIcon,
   TrashIcon,
@@ -92,6 +93,8 @@ export default function DevisDetailPage() {
   const [duplicateAsType, setDuplicateAsType] = useState<'DEVIS' | 'AVENANT'>('DEVIS')
   const [duplicateChantierId, setDuplicateChantierId] = useState('')
   const [duplicating, setDuplicating] = useState(false)
+  const [includeCGV, setIncludeCGV] = useState(true)
+  const [cgvStatus, setCgvStatus] = useState<{ actif: boolean; nom: string | null } | null>(null)
   const { showConfirmation, ConfirmationModalComponent } = useConfirmation()
 
   const loadDevis = useCallback(async () => {
@@ -117,6 +120,16 @@ export default function DevisDetailPage() {
       void loadDevis()
     }
   }, [devisId, loadDevis])
+
+  useEffect(() => {
+    fetch('/api/templates/cgv-status')
+      .then((res) => (res.ok ? res.json() : { actif: false, nom: null }))
+      .then((data) => {
+        setCgvStatus(data)
+        if (!data.actif) setIncludeCGV(false)
+      })
+      .catch(() => setCgvStatus({ actif: false, nom: null }))
+  }, [])
 
   const loadChantiers = async () => {
     if (!devis) return
@@ -585,7 +598,7 @@ export default function DevisDetailPage() {
             
             {/* Boutons d'action */}
             <a
-              href={`/api/devis/${devisId}/pdf`}
+              href={`/api/devis/${devisId}/pdf?cgv=${includeCGV ? '1' : '0'}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
@@ -595,7 +608,7 @@ export default function DevisDetailPage() {
             </a>
 
             <a
-              href={`/api/devis/${devisId}/pdf-sans-prix`}
+              href={`/api/devis/${devisId}/pdf-sans-prix?cgv=${includeCGV ? '1' : '0'}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
@@ -907,12 +920,36 @@ export default function DevisDetailPage() {
           </div>
         </div>
 
-        {/* Note sur les CGV */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/50 rounded-2xl p-5 backdrop-blur-sm shadow-xl">
-          <p className="text-sm text-blue-800 dark:text-blue-300">
-            <span className="font-medium">Note :</span> Les conditions générales de vente seront incluses dans le PDF généré, selon le template configuré dans les paramètres de l'entreprise.
-          </p>
-        </div>
+        {/* Conditions générales de vente */}
+        {cgvStatus?.actif ? (
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/50 rounded-2xl p-5 backdrop-blur-sm shadow-xl">
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeCGV}
+                onChange={(e) => setIncludeCGV(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-blue-800 dark:text-blue-300">
+                <span className="font-medium">Inclure les conditions générales de vente dans le PDF</span>
+                <br />
+                <span className="text-blue-600/80 dark:text-blue-400/80">
+                  Template actif : « {cgvStatus.nom} ». Décochez si vous ne souhaitez pas les joindre à ce devis.
+                </span>
+              </span>
+            </label>
+          </div>
+        ) : cgvStatus ? (
+          <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 border border-amber-200/50 dark:border-amber-700/50 rounded-2xl p-5 backdrop-blur-sm shadow-xl">
+            <p className="text-sm text-amber-800 dark:text-amber-300">
+              <span className="font-medium">Conditions générales :</span> aucun template CGV actif — le PDF sera généré sans conditions générales.
+              Pour en ajouter, créez et activez un template de catégorie « CGV » dans{' '}
+              <Link href="/admin/templates-contrats" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200">
+                Administration → Templates de contrats
+              </Link>.
+            </p>
+          </div>
+        ) : null}
 
         {/* Modal Changer la nature */}
         {showChangeNatureModal && (

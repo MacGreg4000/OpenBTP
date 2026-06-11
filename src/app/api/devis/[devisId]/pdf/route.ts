@@ -70,7 +70,9 @@ export async function GET(
       }
     }
 
-    const cgvHtml = await getActiveTemplateHtml('CGV')
+    // CGV désactivables via ?cgv=0 (case à cocher sur la page devis)
+    const includeCgv = request.nextUrl.searchParams.get('cgv') !== '0'
+    const cgvHtml = includeCgv ? await getActiveTemplateHtml('CGV') : null
 
     // Préparer les données pour le template
     const devisData = {
