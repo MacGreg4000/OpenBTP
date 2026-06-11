@@ -14,6 +14,13 @@ export function toToolJSON(value: unknown): unknown {
   if (value === null || value === undefined) return undefined
   if (value instanceof Date) return formatDate(value)
   if (typeof value === 'bigint') return Number(value)
+  // Prisma Decimal (devis…) : objet avec toNumber()
+  if (
+    typeof value === 'object' &&
+    typeof (value as { toNumber?: unknown }).toNumber === 'function'
+  ) {
+    return (value as { toNumber: () => number }).toNumber()
+  }
   if (Array.isArray(value)) {
     return value.map(toToolJSON).filter((v) => v !== undefined)
   }

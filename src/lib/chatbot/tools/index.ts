@@ -15,6 +15,21 @@ import { listeTachesLogistique, listeMagasiniers } from './logistique'
 import { listePlanning } from './planning'
 import { listeNotesChantier, listeDocumentsChantier } from './notes-documents'
 import { rechercheSemantique } from './recherche'
+import { lireNotesDashboard, ajouterTodoDashboard, ajouterNoteDashboard } from './dashboard'
+import { listeTicketsSAV, detailTicketSAV, creerTicketSAV } from './sav'
+import { rechercheMateriaux, listeMachines } from './inventaire'
+import { listeDevis } from './devis'
+import {
+  listeProspects,
+  listeRappelsProspects,
+  creerRappelProspect,
+  ajouterActiviteProspect,
+} from './crm'
+import {
+  listeTachesAdministratives,
+  listeRemarquesReception,
+  listeContactsClient,
+} from './suivi-chantier'
 import {
   creerNoteChantier,
   creerTacheLogistique,
@@ -23,27 +38,48 @@ import {
 } from './actions'
 
 const ALL_TOOLS: ToolDefinition[] = [
-  // Lecture
+  // Lecture — chantiers & suivi
   listeChantiers,
   detailChantier,
-  listeClients,
-  listeSousTraitants,
-  tarifsSousTraitant,
+  listeTachesAdministratives,
+  listeRemarquesReception,
+  listeNotesChantier,
+  listeDocumentsChantier,
+  // Lecture — finances
   listeCommandesSousTraitant,
   listeEtatsAvancement,
   listeDepenses,
   listeBonsRegie,
-  listeNotesChantier,
-  listeDocumentsChantier,
+  listeDevis,
+  // Lecture — acteurs
+  listeClients,
+  listeContactsClient,
+  listeSousTraitants,
+  tarifsSousTraitant,
+  // Lecture — logistique, planning, inventaire
   listeTachesLogistique,
   listeMagasiniers,
   listePlanning,
+  rechercheMateriaux,
+  listeMachines,
+  // Lecture — SAV & CRM
+  listeTicketsSAV,
+  detailTicketSAV,
+  listeProspects,
+  listeRappelsProspects,
+  // Lecture — personnel & recherche
+  lireNotesDashboard,
   rechercheSemantique,
   // Écriture (confirmation obligatoire)
   creerNoteChantier,
   creerTacheLogistique,
   creerCommandeST,
   ajouterAvenantEtat,
+  ajouterTodoDashboard,
+  ajouterNoteDashboard,
+  creerTicketSAV,
+  creerRappelProspect,
+  ajouterActiviteProspect,
 ]
 
 const TOOLS_BY_NAME = new Map(ALL_TOOLS.map((t) => [t.name, t]))
