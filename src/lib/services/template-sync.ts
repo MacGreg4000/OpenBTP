@@ -47,13 +47,18 @@ export async function syncProfessionalTemplate() {
         console.log('✅ Template professionnel déjà à jour')
       }
     } else {
-      // Créer le nouveau template
+      // Créer le nouveau template — actif uniquement si aucun template CONTRAT
+      // actif n'existe déjà (ne pas voler l'activation d'un template utilisateur)
+      const autreContratActif = await prisma.contractTemplate.findFirst({
+        where: { isActive: true, category: 'CONTRAT' }
+      })
       const template = await prisma.contractTemplate.create({
         data: {
           name: 'Contrat de Sous-Traitance Professionnel',
           description: 'Modèle professionnel de contrat de sous-traitance avec toutes les clauses légales et signatures électroniques',
           htmlContent,
-          isActive: true
+          isActive: !autreContratActif,
+          category: 'CONTRAT'
         }
       })
       console.log('✅ Template professionnel créé avec ID:', template.id)
@@ -84,9 +89,12 @@ export async function syncProfessionalTemplate() {
  */
 export async function getActiveTemplate() {
   try {
+    // Toujours scoper sur la catégorie CONTRAT : sans ce filtre, un template
+    // CGV actif pouvait être renvoyé à la place du contrat
     const template = await prisma.contractTemplate.findFirst({
       where: {
-        isActive: true
+        isActive: true,
+        category: 'CONTRAT'
       }
     })
     
