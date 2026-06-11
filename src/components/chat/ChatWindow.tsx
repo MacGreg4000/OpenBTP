@@ -156,8 +156,8 @@ const ChatWindow: React.FC = () => {
   return (
     <div 
       ref={chatRef}
-      className={`fixed bg-white overflow-hidden flex flex-col z-50 smooth-scroll ${
-        isMobile ? 'inset-0 rounded-none mobile-chat-container' : 'rounded-lg shadow-2xl'
+      className={`fixed bg-white dark:bg-gray-900 overflow-hidden flex flex-col z-50 smooth-scroll ${
+        isMobile ? 'inset-0 rounded-none mobile-chat-container' : 'rounded-2xl shadow-2xl'
       }`}
       style={{
         left: isMobile ? 0 : `${position.x}px`,
@@ -165,20 +165,20 @@ const ChatWindow: React.FC = () => {
         width: isMobile ? '100vw' : `${size.width}px`,
         height: isMobile ? '100dvh' : `${size.height}px`, // Utiliser dvh pour mobile
         transition: isDragging ? 'none' : 'box-shadow 0.3s ease',
-        boxShadow: isMobile ? 'none' : (isDragging ? '0 25px 50px -12px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.2)'),
-        borderRadius: isMobile ? '0' : '12px',
-        border: isMobile ? 'none' : '1px solid rgba(0, 0, 0, 0.1)'
+        boxShadow: isMobile ? 'none' : (isDragging ? '0 25px 50px -12px rgba(0, 0, 0, 0.35)' : '0 20px 40px -10px rgba(0, 0, 0, 0.25)'),
+        borderRadius: isMobile ? '0' : '16px',
+        border: isMobile ? 'none' : '1px solid rgba(0, 0, 0, 0.08)'
       }}
     >
       {/* Barre de titre avec onglets */}
-      <div 
-        className={`bg-gradient-to-r from-amber-500 via-orange-600 to-red-600 text-white relative ${
+      <div
+        className={`bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white relative ${
           isMobile ? 'cursor-default' : 'cursor-move'
         }`}
         onMouseDown={isMobile ? undefined : handleMouseDown}
-        style={{ 
-          borderTopLeftRadius: isMobile ? '0' : '11px', 
-          borderTopRightRadius: isMobile ? '0' : '11px',
+        style={{
+          borderTopLeftRadius: isMobile ? '0' : '15px',
+          borderTopRightRadius: isMobile ? '0' : '15px',
           paddingTop: isMobile ? 'max(env(safe-area-inset-top), 0.5rem)' : undefined
         }}
       >
@@ -243,10 +243,10 @@ const ChatWindow: React.FC = () => {
               }`}
             >
               <div className="flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" clipRule="evenodd" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
                 </svg>
-                <span className="text-base">IA Bot</span>
+                <span className="text-base">Assistant IA</span>
               </div>
             </button>
           )}

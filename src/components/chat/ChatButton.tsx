@@ -28,10 +28,10 @@ const ChatButton: React.FC = () => {
     <>
       <button
         onClick={toggleChat}
-        className="group fixed bottom-6 right-6 z-50 bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 hover:from-amber-600 hover:via-orange-700 hover:to-red-700 text-white rounded-full p-4 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center backdrop-blur-sm"
+        className="group fixed bottom-6 right-6 z-50 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:via-indigo-700 hover:to-violet-700 text-white rounded-full p-4 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center backdrop-blur-sm"
         aria-label="Chat"
         style={{
-          boxShadow: '0 10px 25px -5px rgba(251, 146, 60, 0.3), 0 8px 10px -6px rgba(251, 146, 60, 0.2)'
+          boxShadow: '0 10px 25px -5px rgba(79, 70, 229, 0.35), 0 8px 10px -6px rgba(79, 70, 229, 0.25)'
         }}
       >
         {/* Icône de message */}

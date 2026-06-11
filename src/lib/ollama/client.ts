@@ -8,11 +8,130 @@ interface OllamaModel {
   modified_at?: string;
 }
 
+export interface OllamaToolCall {
+  function: {
+    name: string;
+    arguments: Record<string, unknown> | string;
+  };
+}
+
+export interface OllamaChatMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  tool_calls?: OllamaToolCall[];
+  tool_name?: string;
+}
+
+export interface OllamaTool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+export class ModelToolsUnsupportedError extends Error {
+  constructor(model: string) {
+    super(`Le modèle ${model} ne supporte pas les outils (tool calling). Utilisez un modèle compatible (ex. gemma4, qwen3).`);
+    this.name = 'ModelToolsUnsupportedError';
+  }
+}
+
 export class OllamaClient {
   private config: OllamaConfig;
 
   constructor(config: OllamaConfig) {
     this.config = config;
+  }
+
+  get chatModel(): string {
+    return process.env.OLLAMA_CHAT_MODEL || this.config.model;
+  }
+
+  /**
+   * Conversation avec outils (API /api/chat).
+   * num_ctx est crucial : le défaut Ollama (4096) tronque silencieusement
+   * les résultats d'outils et fait halluciner le modèle.
+   */
+  async chat(
+    messages: OllamaChatMessage[],
+    options?: { tools?: OllamaTool[]; timeoutMs?: number; numCtx?: number }
+  ): Promise<OllamaChatMessage> {
+    const envNumCtx = parseInt(process.env.OLLAMA_CHAT_NUM_CTX || '16384', 10);
+    const numCtx = options?.numCtx ?? (Number.isFinite(envNumCtx) ? envNumCtx : 16384);
+    const envTimeout = parseInt(process.env.OLLAMA_CHAT_TIMEOUT_MS || '120000', 10);
+    const timeoutMs = options?.timeoutMs ?? (Number.isFinite(envTimeout) && envTimeout > 0 ? envTimeout : 120000);
+
+    const body: Record<string, unknown> = {
+      model: this.chatModel,
+      messages,
+      stream: false,
+      options: {
+        num_ctx: numCtx,
+        temperature: 0.2,
+      },
+    };
+    if (options?.tools && options.tools.length > 0) {
+      body.tools = options.tools;
+    }
+
+    console.log('💬 Ollama /api/chat:', {
+      model: this.chatModel,
+      messagesCount: messages.length,
+      toolsCount: options?.tools?.length ?? 0,
+      numCtx,
+    });
+
+    let response: Response;
+    try {
+      response = await fetch(`${this.config.baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        throw new Error(`Délai dépassé pour Ollama /api/chat (${timeoutMs} ms). Augmentez OLLAMA_CHAT_TIMEOUT_MS ou utilisez un modèle plus petit.`);
+      }
+      throw error;
+    }
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      if (response.status === 400 && /does not support tools/i.test(errText)) {
+        throw new ModelToolsUnsupportedError(this.chatModel);
+      }
+      throw new Error(`Erreur Ollama /api/chat HTTP ${response.status}: ${errText.slice(0, 500) || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const message = data?.message as OllamaChatMessage | undefined;
+    if (!message || typeof message !== 'object') {
+      throw new Error('Réponse Ollama /api/chat invalide : champ message manquant.');
+    }
+    return message;
+  }
+
+  /** Détails d'un modèle (/api/show) — sert à vérifier la capacité "tools". */
+  async showModel(name?: string): Promise<{ exists: boolean; capabilities: string[] }> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/show`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: name || this.chatModel }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) return { exists: false, capabilities: [] };
+      const data = await response.json();
+      return {
+        exists: true,
+        capabilities: Array.isArray(data?.capabilities) ? data.capabilities : [],
+      };
+    } catch {
+      return { exists: false, capabilities: [] };
+    }
   }
 
   /**
