@@ -112,10 +112,15 @@ export async function PUT(
     const parsedCategory: TemplateCategory =
       category && isTemplateCategory(category) ? category : template.category
 
-    // Si on active ce template, désactiver tous les autres
-    if (isActive) {
+    // Si isActive n'est pas fourni (page Modifier), conserver l'état actuel —
+    // sinon chaque édition désactivait silencieusement le template
+    const effectiveActive: boolean =
+      typeof isActive === 'boolean' ? isActive : template.isActive
+
+    // Si ce template est actif, désactiver les autres de la même catégorie
+    if (effectiveActive) {
       await prisma.contractTemplate.updateMany({
-        where: { isActive: true, category: parsedCategory },
+        where: { isActive: true, category: parsedCategory, id: { not: id } },
         data: { isActive: false }
       })
     }
@@ -127,7 +132,7 @@ export async function PUT(
         name,
         description,
         htmlContent,
-        isActive: isActive || false,
+        isActive: effectiveActive,
         category: parsedCategory
       }
     })
