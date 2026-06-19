@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/PageHeader'
-import { CalendarIcon, PlusIcon, UserIcon, BuildingOfficeIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, PlusIcon, UserIcon, BuildingOfficeIcon, DocumentArrowDownIcon, ChevronDownIcon, CheckIcon } from '@heroicons/react/24/outline'
 import ResourceScheduler from '@/components/planning/ResourceScheduler'
 import TaskModal from '@/components/planning/TaskModal'
 import { useNotification } from '@/hooks/useNotification'
@@ -86,6 +86,9 @@ export default function PlanningRessourcesPage() {
   const [ouvriersInternes, setOuvriersInternes] = useState<OuvrierInterne[]>([])
   const [soustraitants, setSoustraitants] = useState<Soustraitant[]>([])
   const [loading, setLoading] = useState(true)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   // Charger les données initiales
   useEffect(() => {
@@ -277,37 +280,46 @@ export default function PlanningRessourcesPage() {
     setShowTaskModal(true)
   }
 
-  const handleExportPDF = async () => {
+  // Fermer le menu export si clic en dehors
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleExportPDF = async (resourceId?: string, resourceType?: 'I' | 'S') => {
+    setExportMenuOpen(false)
+    setIsExporting(true)
     try {
-      console.log('🚀 Début de l\'export PDF...');
       const response = await fetch('/api/planning/export-pdf', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resourceId ? { resourceId, resourceType } : {})
       })
 
       if (response.ok) {
-        console.log('✅ Réponse OK, téléchargement du PDF...');
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.style.display = 'none'
         a.href = url
-        a.download = `planning-ressources-${new Date().toISOString().split('T')[0]}.pdf`
+        a.download = `planning-${new Date().toISOString().split('T')[0]}.pdf`
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        console.log('✅ PDF téléchargé avec succès');
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
-        console.error('❌ Erreur lors de l\'export PDF:', errorData);
-        showNotification('Erreur', `Erreur lors de l'export PDF: ${errorData.details || errorData.error || 'Erreur inconnue'}`, 'error');
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        showNotification('Erreur', `Erreur lors de l'export PDF: ${errorData.details || errorData.error || 'Erreur inconnue'}`, 'error')
       }
     } catch (error) {
-      console.error('❌ Erreur lors de l\'export PDF:', error)
       showNotification('Erreur', `Erreur lors de l'export PDF: ${error instanceof Error ? error.message : 'Erreur inconnue'}`, 'error')
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -371,14 +383,79 @@ export default function PlanningRessourcesPage() {
         stats={statsCards}
         actions={
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleExportPDF}
-              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-orange-600 to-rose-700 hover:from-orange-700 hover:to-rose-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
-            >
-              <DocumentArrowDownIcon className="h-4 w-4 mr-1.5" />
-              <span className="hidden sm:inline">Export PDF</span>
-              <span className="sm:hidden">PDF</span>
-            </button>
+            {/* Bouton Export PDF avec dropdown */}
+            <div className="relative" ref={exportMenuRef}>
+              <div className="inline-flex rounded-lg shadow-lg overflow-hidden">
+                <button
+                  onClick={() => handleExportPDF()}
+                  disabled={isExporting}
+                  className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-orange-600 to-rose-700 hover:from-orange-700 hover:to-rose-800 disabled:opacity-60 text-white transition-all duration-200 text-sm font-semibold"
+                >
+                  <DocumentArrowDownIcon className={`h-4 w-4 mr-1.5 ${isExporting ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{isExporting ? 'Export...' : 'Export PDF'}</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+                <button
+                  onClick={() => setExportMenuOpen(o => !o)}
+                  disabled={isExporting}
+                  className="inline-flex items-center px-2 py-2 bg-gradient-to-r from-rose-700 to-rose-800 hover:from-rose-800 hover:to-rose-900 disabled:opacity-60 text-white border-l border-white/20 transition-all duration-200"
+                  title="Choisir une ressource"
+                >
+                  <ChevronDownIcon className={`h-4 w-4 transition-transform duration-200 ${exportMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+
+              {exportMenuOpen && (
+                <div className="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                  <div className="py-1">
+                    <button
+                      onClick={() => handleExportPDF()}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                    >
+                      <CheckIcon className="h-4 w-4 text-orange-500" />
+                      <span className="font-medium">Tout le planning</span>
+                    </button>
+
+                    {ouvriersInternes.length > 0 && (
+                      <>
+                        <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-700 mt-1">
+                          Ouvriers internes
+                        </div>
+                        {ouvriersInternes.map(o => (
+                          <button
+                            key={o.id}
+                            onClick={() => handleExportPDF(o.id, 'I')}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                          >
+                            <UserIcon className="h-4 w-4 text-orange-400 shrink-0" />
+                            <span>{o.prenom} {o.nom}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {soustraitants.length > 0 && (
+                      <>
+                        <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-700 mt-1">
+                          Sous-traitants
+                        </div>
+                        {soustraitants.map(s => (
+                          <button
+                            key={s.id}
+                            onClick={() => handleExportPDF(s.id, 'S')}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                          >
+                            <BuildingOfficeIcon className="h-4 w-4 text-rose-400 shrink-0" />
+                            <span>{s.nom}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={handleCreateTask}
               className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-orange-600 to-rose-700 hover:from-orange-700 hover:to-rose-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"

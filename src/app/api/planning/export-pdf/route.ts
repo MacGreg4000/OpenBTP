@@ -92,15 +92,20 @@ const getTaskColor = (task: TaskForPDF, chantierColorMap: Map<string, number>) =
   return TASK_COLORS.CHANTIER[colorIndex % TASK_COLORS.CHANTIER.length];
 };
 
-export async function POST(_request: Request) {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
+    // Filtre optionnel par ressource
+    const body = await request.json().catch(() => ({}))
+    const resourceId: string | undefined = body.resourceId
+    const resourceType: 'I' | 'S' | undefined = body.resourceType
+
     // Récupérer toutes les données nécessaires
-    const [tasks, ouvriersInternes, soustraitants, _chantiers] = await Promise.all([
+    const [tasks, allOuvriers, allSoustraitants, _chantiers] = await Promise.all([
       prisma.task.findMany({
         include: {
           chantier: {
@@ -159,6 +164,32 @@ export async function POST(_request: Request) {
       })
     ]);
 
+    // Appliquer le filtre par ressource si demandé
+    const ouvriersInternes = resourceType === 'I' && resourceId
+      ? allOuvriers.filter(o => o.id === resourceId)
+      : resourceType === 'S'
+        ? []
+        : allOuvriers
+
+    const soustraitants = resourceType === 'S' && resourceId
+      ? allSoustraitants.filter(s => s.id === resourceId)
+      : resourceType === 'I'
+        ? []
+        : allSoustraitants
+
+    // Nom de la ressource pour le titre et le nom de fichier
+    const foundOuvrier = resourceType === 'I' && resourceId
+      ? allOuvriers.find(o => o.id === resourceId)
+      : undefined
+    const foundST = resourceType === 'S' && resourceId
+      ? allSoustraitants.find(s => s.id === resourceId)
+      : undefined
+    const resourceLabel: string | null = foundOuvrier
+      ? `${foundOuvrier.prenom} ${foundOuvrier.nom}`
+      : foundST
+        ? foundST.nom
+        : null
+
     // Générer les créneaux de la semaine courante
     const generateTimeSlots = (weekOffset = 0) => {
       const slots = [];
@@ -204,10 +235,10 @@ export async function POST(_request: Request) {
     });
 
     // Fonction pour générer le HTML d'une semaine
-    const generateWeekHTML = (timeSlots, weekTitle) => `
+    const generateWeekHTML = (timeSlots: typeof timeSlotsCurrent, weekTitle: string) => `
       <div class="page-break">
         <div class="header">
-          <h1>Planning des Ressources</h1>
+          <h1>Planning des Ressources${resourceLabel ? ` — ${resourceLabel}` : ''}</h1>
           <p>${weekTitle}</p>
         </div>
 
@@ -494,7 +525,7 @@ export async function POST(_request: Request) {
     return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="planning-ressources-${new Date().toISOString().split('T')[0]}.pdf"`,
+        'Content-Disposition': `attachment; filename="planning-${resourceLabel ? resourceLabel.replace(/[^a-zA-Z0-9]/g, '-') + '-' : 'ressources-'}${new Date().toISOString().split('T')[0]}.pdf"`,
       },
     });
 
