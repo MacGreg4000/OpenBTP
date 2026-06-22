@@ -79,10 +79,12 @@ export function PageHeader({
   return (
     <div className="sticky top-20 z-40 pb-4">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-1 overflow-hidden">
-          {/* Effet de brillance en arrière-plan */}
-          <div className={`absolute inset-0 bg-gradient-to-r ${gradientColor} dark:${gradientColor.replace('/10', '/5')}`}></div>
-          
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-1 relative">
+          {/* Gradient clipé séparément pour ne pas bloquer les dropdowns enfants */}
+          <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+            <div className={`absolute inset-0 bg-gradient-to-r ${gradientColor} dark:${gradientColor.replace('/10', '/5')}`}></div>
+          </div>
+
           <div className={`relative z-10 transition-all duration-300 ${isCompact ? 'py-2 px-4' : 'py-3 sm:py-6 px-4'} sm:px-6 lg:px-8`}>
             <div className={`flex flex-row items-center justify-between gap-2 sm:gap-4 transition-all duration-300`}>
               {/* Titre à gauche */}
