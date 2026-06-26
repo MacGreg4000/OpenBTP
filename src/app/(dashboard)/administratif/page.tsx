@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { 
-  DocumentTextIcon, 
+import {
+  DocumentTextIcon,
   ClipboardDocumentListIcon,
   ArrowRightIcon,
   BuildingOfficeIcon,
-  SwatchIcon
+  SwatchIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 
 const administrativeModules = [
@@ -45,6 +46,18 @@ const administrativeModules = [
     bgGradient: 'from-orange-500 to-orange-600',
     bgLight: 'bg-orange-50 dark:bg-orange-900/20',
     textColor: 'text-orange-600 dark:text-orange-400'
+  },
+  {
+    id: 'mediatheque',
+    title: 'Photothèque',
+    description: 'Bibliothèque de référence photo avec tags libres pour retrouver rapidement vos visuels de chantier, matériaux et réalisations',
+    href: '/mediatheque',
+    icon: PhotoIcon,
+    color: 'violet',
+    features: ['Tags libres', 'Recherche rapide', 'Lightbox'],
+    bgGradient: 'from-violet-500 to-purple-600',
+    bgLight: 'bg-violet-50 dark:bg-violet-900/20',
+    textColor: 'text-violet-600 dark:text-violet-400'
   }
 ]
 
