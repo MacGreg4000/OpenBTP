@@ -49,7 +49,8 @@ export async function compressImage(
         // Dessiner l'image redimensionnée
         ctx.drawImage(img, 0, 0, width, height)
         
-        // Convertir en blob avec compression
+        // Convertir en blob avec compression — fallback JPEG si le format original n'est pas supporté par canvas
+        const outputType = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ? file.type : 'image/jpeg'
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -58,11 +59,14 @@ export async function compressImage(
             }
             
             // Créer un nouveau File avec le blob compressé
+            const ext = outputType === 'image/jpeg' ? '.jpg' : outputType === 'image/png' ? '.png' : '.webp'
+            const baseName = file.name.replace(/\.[^.]+$/, '')
+            const outName = outputType !== file.type ? `${baseName}${ext}` : file.name
             const compressedFile = new File(
               [blob],
-              file.name,
+              outName,
               {
-                type: file.type,
+                type: outputType,
                 lastModified: Date.now()
               }
             )
@@ -76,7 +80,7 @@ export async function compressImage(
               resolve(compressedFile)
             }
           },
-          file.type,
+          outputType,
           quality
         )
       }

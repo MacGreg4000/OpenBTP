@@ -202,9 +202,15 @@ export default function MediathequePage() {
     let success = 0
     try {
       for (const file of pendingFiles) {
-        const compressed = await compressImage(file, 1920, 1920, 0.85)
+        // Tenter la compression ; en cas d'échec (HEIC, format exotique), envoyer le fichier original
+        let toUpload: File = file
+        try {
+          toUpload = await compressImage(file, 1920, 1920, 0.85)
+        } catch {
+          // format non compressable côté canvas → on envoie l'original
+        }
         const fd = new FormData()
-        fd.append('file', compressed)
+        fd.append('file', toUpload)
         fd.append('tags', JSON.stringify(uploadTags))
         fd.append('description', uploadDescription)
         const res = await fetch('/api/mediatheque', { method: 'POST', body: fd })
