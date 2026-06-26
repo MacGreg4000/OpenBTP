@@ -26,7 +26,8 @@ import {
   ArchiveBoxIcon,
   ChartBarIcon,
   BuildingOffice2Icon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import ThemeToggle from './ThemeToggle'
@@ -93,6 +94,7 @@ export function Navbar() {
       name: 'Documents',
       items: [
         { name: 'Administratifs', href: '/administratif/documents', icon: DocumentTextIcon, moduleCode: 'documents' },
+        { name: 'Photothèque', href: '/mediatheque', icon: PhotoIcon, moduleCode: null },
         { name: 'Bons de régie', href: '/bons-regie', icon: ClipboardDocumentListIcon, moduleCode: 'bons_regie' },
         { name: 'Choix client', href: '/choix-clients', icon: SwatchIcon, moduleCode: 'choix_clients' },
         { name: 'SAV', href: '/sav', icon: DocumentDuplicateIcon, moduleCode: 'sav' },
@@ -122,7 +124,7 @@ export function Navbar() {
   // Filtrer les éléments de navigation selon les modules actifs
   const navigationGroups = allNavigationItems.map(group => ({
     ...group,
-    items: group.items.filter(item => isEnabled(item.moduleCode))
+    items: group.items.filter(item => item.moduleCode === null || isEnabled(item.moduleCode))
   })).filter(group => group.items.length > 0) // Ne garder que les groupes non vides
 
   const isActive = (href: string) => {
