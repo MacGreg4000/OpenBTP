@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma/client'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
-import { validateImageBuffer } from '@/lib/utils/image-validation'
+import { validateMediaBuffer } from '@/lib/utils/image-validation'
 
 const PHOTOTHEQUE_DIR = path.join(process.cwd(), 'public', 'uploads', 'documents', 'phototheque')
-const MAX_SIZE = 15 * 1024 * 1024 // 15 Mo
+const MAX_IMAGE_SIZE = 15 * 1024 * 1024   // 15 Mo
+const MAX_VIDEO_SIZE = 200 * 1024 * 1024  // 200 Mo
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = request.nextUrl
-    const tagsParam = searchParams.get('tags') // "tag1,tag2"
+    const tagsParam = searchParams.get('tags')
     const search = searchParams.get('search')?.toLowerCase()
 
     const tagFilter = tagsParam
@@ -45,16 +46,21 @@ export async function GET(request: NextRequest) {
           ?.toLowerCase().includes(search)
         return tagMatch || nameMatch || descMatch
       })
-      .map(d => ({
-        id: d.id,
-        nom: d.nom,
-        url: d.url,
-        taille: d.taille,
-        description: (d.metadata as Record<string, string> | null)?.description ?? '',
-        tags: d.tags.map(t => t.nom),
-        uploadedBy: d.User?.name ?? 'Inconnu',
-        createdAt: d.createdAt.toISOString()
-      }))
+      .map(d => {
+        const meta = (d.metadata ?? {}) as Record<string, string>
+        return {
+          id: d.id,
+          nom: d.nom,
+          url: d.url,
+          taille: d.taille,
+          mimeType: d.mimeType,
+          isVideo: d.mimeType?.startsWith('video/') ?? false,
+          description: meta.description ?? '',
+          tags: d.tags.map(t => t.nom),
+          uploadedBy: d.User?.name ?? 'Inconnu',
+          createdAt: d.createdAt.toISOString()
+        }
+      })
 
     return NextResponse.json(results)
   } catch (error) {
@@ -79,25 +85,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 })
     }
 
-    if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: 'Fichier trop volumineux (max 15 Mo)' }, { status: 400 })
+    const isVideo = file.type.startsWith('video/')
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE
+    if (file.size > maxSize) {
+      return NextResponse.json({
+        error: `Fichier trop volumineux (max ${isVideo ? '200' : '15'} Mo)`
+      }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const validation = validateImageBuffer(buffer, file.type, file.name)
+    const validation = validateMediaBuffer(buffer, file.type, file.name)
     if (!validation.isValid) {
-      return NextResponse.json({ error: 'Format non supporté (JPEG, PNG, WebP, HEIC, AVIF uniquement)' }, { status: 400 })
+      return NextResponse.json({
+        error: 'Format non supporté (images : JPEG, PNG, WebP, HEIC, AVIF — vidéos : MP4, MOV, WebM, AVI)'
+      }, { status: 400 })
     }
 
     let tagNames: string[] = []
     if (tagsRaw) {
-      try {
-        tagNames = JSON.parse(tagsRaw)
-      } catch {
-        return NextResponse.json({ error: 'Format tags invalide' }, { status: 400 })
-      }
+      try { tagNames = JSON.parse(tagsRaw) }
+      catch { return NextResponse.json({ error: 'Format tags invalide' }, { status: 400 }) }
     }
 
     if (!existsSync(PHOTOTHEQUE_DIR)) {
@@ -111,7 +120,6 @@ export async function POST(request: NextRequest) {
 
     await writeFile(filePath, buffer)
 
-    // Upsert tags
     const tagsToConnect: Array<{ id: string }> = []
     for (const name of tagNames) {
       const normalized = name.trim().toLowerCase()
@@ -130,7 +138,7 @@ export async function POST(request: NextRequest) {
         nom: file.name,
         url: fileUrl,
         type: 'phototheque',
-        mimeType: file.type || `image/${validation.safeExtension}`,
+        mimeType: file.type || `${validation.mediaType}/${validation.safeExtension}`,
         taille: file.size,
         metadata: description ? { description } : undefined,
         User: { connect: { id: session.user.id } },
@@ -144,6 +152,8 @@ export async function POST(request: NextRequest) {
       nom: doc.nom,
       url: doc.url,
       taille: doc.taille,
+      mimeType: doc.mimeType,
+      isVideo: doc.mimeType?.startsWith('video/') ?? false,
       description,
       tags: doc.tags.map(t => t.nom),
       createdAt: doc.createdAt.toISOString()

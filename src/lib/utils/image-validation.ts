@@ -12,6 +12,47 @@ export interface ImageValidationResult {
   safeExtension: 'jpg' | 'png' | 'webp' | 'heic' | 'avif' | null
 }
 
+export interface MediaValidationResult {
+  isValid: boolean
+  mediaType: 'image' | 'video' | null
+  safeExtension: string | null
+}
+
+export function validateMediaBuffer(buffer: Buffer, fileType: string = '', fileName: string = ''): MediaValidationResult {
+  if (fileType.startsWith('image/')) {
+    const img = validateImageBuffer(buffer, fileType, fileName)
+    return { isValid: img.isValid, mediaType: img.isValid ? 'image' : null, safeExtension: img.safeExtension }
+  }
+  if (fileType.startsWith('video/')) {
+    return _checkVideoMagicBytes(buffer.subarray(0, 16), fileName)
+  }
+  return { isValid: false, mediaType: null, safeExtension: null }
+}
+
+function _checkVideoMagicBytes(header: Buffer, fileName: string = ''): MediaValidationResult {
+  // WebM : 1A 45 DF A3
+  const isWebM = header[0] === 0x1A && header[1] === 0x45 && header[2] === 0xDF && header[3] === 0xA3
+
+  // MP4 / MOV / M4V : ftyp box at bytes 4-7
+  const isFtyp = header.length >= 8 && header.slice(4, 8).toString('ascii') === 'ftyp'
+  const brand = header.length >= 12 ? header.slice(8, 12).toString('ascii').toLowerCase().trim() : ''
+  const mp4Brands = ['mp41', 'mp42', 'isom', 'iso2', 'iso4', 'avc1', 'm4v ', 'm4a ', 'f4v ', 'f4p ', 'dash']
+  const movBrands = ['qt  ']
+  const isMp4 = isFtyp && mp4Brands.includes(brand)
+  const isMov = isFtyp && movBrands.includes(brand)
+
+  // AVI : RIFF....AVI
+  const isAVI = header[0] === 0x52 && header[1] === 0x49 && header[2] === 0x46 && header[3] === 0x46
+
+  if (!isWebM && !isMp4 && !isMov && !isAVI) {
+    console.warn(`⚠️ Vidéo rejetée (format non supporté): ${fileName} brand="${brand}"`)
+    return { isValid: false, mediaType: null, safeExtension: null }
+  }
+
+  const safeExtension = isWebM ? 'webm' : isMov ? 'mov' : isAVI ? 'avi' : 'mp4'
+  return { isValid: true, mediaType: 'video', safeExtension }
+}
+
 /**
  * Logique interne de détection par magic bytes (partagée).
  * Reçoit les 12 premiers octets du fichier.
