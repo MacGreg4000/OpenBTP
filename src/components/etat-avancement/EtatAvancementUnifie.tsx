@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { EtatAvancement, SoustraitantEtat, EtatAvancementSummary, AvenantEtatAvancement, AvenantSoustraitantEtat } from '@/types/etat-avancement'
 import { TrashIcon, PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import NumericInput from '@/components/ui/NumericInput'
@@ -33,6 +34,7 @@ export default function EtatAvancementUnifie({
 }: EtatAvancementUnifieProps) {
   const router = useRouter()
   const [isEditingComments, setIsEditingComments] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; avenantId: number | null }>({ open: false, avenantId: null })
 
   // Fonction utilitaire pour vérifier le type d'avenant
   // const isAvenantClient = (avenant: AvenantEtatAvancement | AvenantSoustraitantEtat): avenant is AvenantEtatAvancement => {
@@ -632,24 +634,27 @@ export default function EtatAvancementUnifie({
     }
   }
 
-  const handleDeleteAvenant = async (avenantId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet avenant ?')) {
-      return
-    }
+  const handleDeleteAvenant = (avenantId: number) => {
+    setConfirmDelete({ open: true, avenantId })
+  }
+
+  const doDeleteAvenant = async () => {
+    const avenantId = confirmDelete.avenantId
+    if (!avenantId) return
+    setConfirmDelete({ open: false, avenantId: null })
 
     try {
       const response = await fetch(
-        `${getBaseApiUrl()}/${effectiveEtatId}/avenants?avenantId=${avenantId}`,
-        {
-          method: 'DELETE',
-        }
+        `${getBaseApiUrl()}/${effectiveEtatId}/avenants/${avenantId}`,
+        { method: 'DELETE' }
       )
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la suppression de l\'avenant')
+        const data = await response.json().catch(() => null)
+        toast.error(data?.error || 'Erreur lors de la suppression de l\'avenant')
+        return
       }
 
-      // Mettre à jour l'état local
       setAvenants(prev => prev.filter(a => a.id !== avenantId) as (AvenantEtatAvancement | AvenantSoustraitantEtat)[])
       setAvenantValues(prev => {
         const newValues = { ...prev }
@@ -1168,6 +1173,17 @@ export default function EtatAvancementUnifie({
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmDelete.open}
+        onClose={() => setConfirmDelete({ open: false, avenantId: null })}
+        onConfirm={doDeleteAvenant}
+        title="Supprimer l'avenant"
+        message="Êtes-vous sûr de vouloir supprimer cet avenant ? Cette action est irréversible."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        type="danger"
+      />
     </div>
   )
-} 
+}
