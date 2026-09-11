@@ -263,9 +263,23 @@ export async function signerContrat(
       htmlContent = htmlContent.replace(regex, String(value))
     })
     
-    // Ajouter la signature du sous-traitant dans le HTML
+    // Ajouter la signature du sous-traitant dans le HTML.
+    //
+    // Le titre « Pour le Sous-traitant » doit suivre IMMÉDIATEMENT (rien que
+    // du blanc autorisé entre les deux) l'ouverture du <div class="signature-
+    // box">. Une simple ancre plus loin dans le motif ne suffit pas : `\s\S]*?`
+    // est paresseux mais reste libre de démarrer sur le MAUVAIS cadre (celui
+    // de l'entrepreneur, qui partage la même classe `signature-box`) et de
+    // traverser tout son contenu — jusqu'à sa balise fermante y compris — pour
+    // aller chercher l'ancre dans le cadre suivant. Résultat vérifié : les deux
+    // cadres fusionnaient en un seul remplacement, effaçant entièrement la
+    // signature de l'entrepreneur du contrat signé final (pas seulement
+    // l'image : le titre « L'Entrepreneur principal » disparaissait aussi).
+    // En exigeant le titre en premier enfant, un démarrage sur le cadre
+    // entrepreneur échoue immédiatement — la recherche ne peut aboutir qu'en
+    // démarrant sur le bon cadre.
     htmlContent = htmlContent.replace(
-      /<div class="signature-box">[\s\S]*?<div class="signature-line"><\/div>[\s\S]*?<div style="font-size: 10px; color: #6b7280; margin-top: 5px;">[\s\S]*?<\/div>[\s\S]*?<\/div>/g,
+      /<div class="signature-box">\s*<div class="signature-title">Pour le Sous-traitant<\/div>[\s\S]*?<div class="signature-line"><\/div>[\s\S]*?<div style="font-size: 10px; color: #6b7280; margin-top: 5px;">[\s\S]*?<\/div>[\s\S]*?<\/div>/g,
       `<div class="signature-box">
         <div class="signature-title">Pour le Sous-traitant</div>
         <div class="signature-name">${contrat.soustraitant.nom}</div>
