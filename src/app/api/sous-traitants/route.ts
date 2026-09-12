@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { renouvellementConseille } from '@/lib/contrats/echeance'
 
 export async function GET() {
   try {
@@ -50,7 +51,8 @@ export async function GET() {
               url: true,
               estSigne: true,
               dateGeneration: true,
-              dateSignature: true
+              dateSignature: true,
+              dateFin: true
             },
             orderBy: {
               dateGeneration: 'desc'
@@ -69,12 +71,24 @@ export async function GET() {
           .filter(c => c.estSigne)
           .sort((a, b) => (b.dateSignature?.getTime() ?? 0) - (a.dateSignature?.getTime() ?? 0))[0]
         const contratAffiche = contratSigne ?? tousLesContrats[0]
-        const contrats = contratAffiche ? [contratAffiche] : []
+        const contrats = contratAffiche
+          ? [{
+              ...contratAffiche,
+              // Renouvellement conseillé UNIQUEMENT si le contrat affiché est
+              // signé : une échéance proche sur un contrat encore en attente
+              // de signature n'a pas le même sens (il faut relancer la
+              // signature, pas régénérer des dates).
+              renouvellementConseille:
+                contratAffiche.estSigne && renouvellementConseille(contratAffiche.dateFin)
+            }]
+          : []
+        const nombreContratsTotal = tousLesContrats.length
 
         return {
           ...st,
           actif: actifById[st.id] ?? true,
           contrats,
+          nombreContratsTotal,
           _count: {
             ...st._count,
             ouvriers: ouvriersCount

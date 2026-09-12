@@ -69,7 +69,12 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
     
     // Récupérer la signature de l'entreprise en base64
     const signatureBase64 = await getCompanySignatureBase64()
-    
+
+    // Instant de référence unique pour dateDebut/dateFin — voir commentaire
+    // sur templateData.dateFin plus bas.
+    const maintenant = new Date()
+    const dateFinContrat = addYears(maintenant, 1)
+
     // Préparer les données pour le remplacement des variables
     const templateData = {
       // Informations entreprise
@@ -94,11 +99,14 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
       numEntrepriseSousTraitant: soustraitant.tva || '',
       representantSousTraitant: soustraitant.contact || 'Représentant',
 
-      // Dates
-      dateGeneration: format(new Date(), 'dd/MM/yyyy', { locale: fr }),
-      dateDebut: format(new Date(), 'dd/MM/yyyy', { locale: fr }),
-      dateFin: format(addYears(new Date(), 1), 'dd/MM/yyyy', { locale: fr }),
-      
+      // Dates — un seul instant de référence : dateFinContrat (calculée à
+      // partir du même instant) est celle persistée en base plus bas, pour
+      // que la date imprimée dans le PDF et celle affichée dans l'app ne
+      // divergent jamais, même de quelques millisecondes.
+      dateGeneration: format(maintenant, 'dd/MM/yyyy', { locale: fr }),
+      dateDebut: format(maintenant, 'dd/MM/yyyy', { locale: fr }),
+      dateFin: format(dateFinContrat, 'dd/MM/yyyy', { locale: fr }),
+
       // Métadonnées
       referenceContrat: `CT-${Date.now()}`,
       tokenSignature: token,
@@ -148,6 +156,7 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
         soustraitantId: soustraitantId,
         url: relativeUrl,
         token: token,
+        dateFin: dateFinContrat,
         estSigne: false
       }
     })

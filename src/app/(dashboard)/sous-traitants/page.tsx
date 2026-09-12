@@ -25,10 +25,14 @@ import { PageHeader } from '@/components/PageHeader'
   PaperAirplaneIcon,
   XMarkIcon,
   QrCodeIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentListIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
+import HistoriqueContratsModal from '@/components/sous-traitants/HistoriqueContratsModal'
+import { statutEcheance } from '@/lib/contrats/echeance'
 // import { useRouter } from 'next/navigation'
 
 interface SousTraitant {
@@ -47,7 +51,11 @@ interface SousTraitant {
     url: string
     estSigne: boolean
     dateGeneration: string
+    dateSignature?: string | null
+    dateFin?: string | null
+    renouvellementConseille?: boolean
   }[]
+  nombreContratsTotal?: number
 }
 
 interface InviteResult {
@@ -163,6 +171,7 @@ export default function SousTraitantsPage() {
   const sousTraitantToDeleteRef = useRef<SousTraitant | null>(null)
   const [generatingContract, setGeneratingContract] = useState<string | null>(null)
   const [sendingContract, setSendingContract] = useState<string | null>(null)
+  const [historiqueOuvert, setHistoriqueOuvert] = useState<{ id: string; nom: string } | null>(null)
   const [ouvriersInternes, setOuvriersInternes] = useState<Array<{id:string; prenom:string; nom:string; poste?:string; email?:string; telephone?:string; actif?:boolean}>>([])
   const [newOuvrier, setNewOuvrier] = useState({ prenom:'', nom:'', email:'', telephone:'', poste:'', actif:true })
   // Modal édition ouvrier interne
@@ -1078,6 +1087,27 @@ export default function SousTraitantsPage() {
                             </button>
                       </>
                           )}
+                          <div className="flex items-center justify-between pt-1">
+                            {(() => {
+                              const contratActuel = st.contrats?.[0]
+                              if (!contratActuel?.dateFin) return <span />
+                              const dateAffichee = new Date(contratActuel.dateFin).toLocaleDateString('fr-FR')
+                              const alerte = contratActuel.estSigne && contratActuel.renouvellementConseille
+                              return (
+                                <span className={`inline-flex items-center gap-1 text-xs ${alerte ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                  {alerte && <ExclamationTriangleIcon className="h-3.5 w-3.5" />}
+                                  Fin : {dateAffichee}
+                                </span>
+                              )
+                            })()}
+                            <button
+                              onClick={() => setHistoriqueOuvert({ id: st.id, nom: st.nom })}
+                              className="inline-flex items-center gap-1 text-xs text-gray-600 hover:underline dark:text-gray-300"
+                            >
+                              <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
+                              Historique
+                            </button>
+                          </div>
                         </div>
                         </div>
                         </div>
@@ -1126,6 +1156,9 @@ export default function SousTraitantsPage() {
                         />
                         <th scope="col" colSpan={2} className="py-3.5 px-3 text-center text-sm font-semibold text-gray-900 dark:text-gray-200">
                           Contrat
+                        </th>
+                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">
+                          Fin de contrat
                         </th>
                         <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-200 pr-4 sm:pr-6">
                           Actions
@@ -1301,6 +1334,39 @@ export default function SousTraitantsPage() {
                               )}
                             </div>
                           </td>
+                          {/* Fin de contrat : calculée côté serveur (dateGeneration + 1 an),
+                              persistée depuis peu — les contrats générés avant cette date
+                              ont été rétro-remplis avec la même règle lors de la migration. */}
+                          <td className="whitespace-nowrap px-3 py-4 text-sm">
+                            {(() => {
+                              const contratActuel = st.contrats?.[0]
+                              if (!contratActuel?.dateFin) {
+                                return <span className="text-gray-400 dark:text-gray-500">—</span>
+                              }
+                              const statut = statutEcheance(new Date(contratActuel.dateFin))
+                              const dateAffichee = new Date(contratActuel.dateFin).toLocaleDateString('fr-FR')
+                              // L'urgence n'a de sens que pour un contrat SIGNÉ : une échéance
+                              // proche sur un contrat encore en attente appelle à relancer la
+                              // signature, pas à en régénérer un nouveau.
+                              if (!contratActuel.estSigne) {
+                                return <span className="text-gray-500 dark:text-gray-400">{dateAffichee}</span>
+                              }
+                              const styles: Record<string, string> = {
+                                expire: 'text-red-700 dark:text-red-400 font-medium',
+                                proche: 'text-amber-700 dark:text-amber-400 font-medium',
+                                ok: 'text-gray-600 dark:text-gray-300',
+                                inconnu: 'text-gray-400 dark:text-gray-500',
+                              }
+                              return (
+                                <span className={`inline-flex items-center gap-1 ${styles[statut]}`}>
+                                  {(statut === 'expire' || statut === 'proche') && (
+                                    <ExclamationTriangleIcon className="h-3.5 w-3.5" />
+                                  )}
+                                  {dateAffichee}
+                                </span>
+                              )
+                            })()}
+                          </td>
                           {/* Actions générales */}
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div className="flex items-center space-x-1 justify-end">
@@ -1330,6 +1396,22 @@ export default function SousTraitantsPage() {
                               >
                                 <GlobeAltIcon className="h-4 w-4" />
                               </a>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setHistoriqueOuvert({ id: st.id, nom: st.nom })
+                                }}
+                                className="p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded transition-colors relative"
+                                title="Historique des contrats"
+                              >
+                                <ClipboardDocumentListIcon className="h-4 w-4" />
+                                {st.contrats?.[0]?.renouvellementConseille && (
+                                  <span
+                                    className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500"
+                                    title="Renouvellement conseillé"
+                                  />
+                                )}
+                              </button>
                               <button
                                 onClick={() => {
                                   sousTraitantToDeleteRef.current = st
@@ -2078,7 +2160,18 @@ export default function SousTraitantsPage() {
         </div>
       )}
 
+      {historiqueOuvert && (
+        <HistoriqueContratsModal
+          soustraitantId={historiqueOuvert.id}
+          soustraitantNom={historiqueOuvert.nom}
+          open={!!historiqueOuvert}
+          onClose={() => setHistoriqueOuvert(null)}
+          onRenouvele={() => window.location.reload()}
+          notifier={showNotification}
+        />
+      )}
+
       <NotificationComponent />
     </div>
   )
-} 
+}

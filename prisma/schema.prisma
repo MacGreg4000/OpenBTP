@@ -121,6 +121,11 @@ model contrat {
   soustraitantId      String
   url                 String
   dateGeneration      DateTime     @default(now())
+  // Fin de validité (dateGeneration + 1 an, cohérent avec le texte du PDF
+  // « ARTICLE... dateDebut/dateFin »). Jusqu'ici seulement écrite en dur dans
+  // le PDF au moment de la génération, jamais persistée : impossible de
+  // lister, trier ou alerter sur une échéance qui n'existe nulle part en base.
+  dateFin             DateTime?
   dateSignature       DateTime?
   estSigne            Boolean      @default(false)
   token               String?      @unique
