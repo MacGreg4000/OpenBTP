@@ -35,25 +35,42 @@ export async function GET() {
     // Récupérer les contrats et compter les ouvriers pour chaque sous-traitant
     const sousTraitantsWithContrats = await Promise.all(
       sousTraitants.map(async (st) => {
-        const [contrats, ouvriersCount] = await Promise.all([
+        const [tousLesContrats, ouvriersCount] = await Promise.all([
+          // Tous les contrats, pas seulement le dernier généré : un contrat
+          // régénéré (nouveau clic sur « Générer », par exemple pour obtenir
+          // une simple copie) crée un nouvel enregistrement SANS jamais
+          // toucher au précédent. Si celui-ci avait déjà été signé, prendre
+          // seulement le plus récent par date de génération masquait un
+          // contrat bel et bien signé derrière un doublon jamais envoyé ni
+          // signé — vécu sur 2 sous-traitants, l'un depuis juillet.
           prisma.contrat.findMany({
             where: { soustraitantId: st.id },
             select: {
               id: true,
               url: true,
               estSigne: true,
-              dateGeneration: true
+              dateGeneration: true,
+              dateSignature: true
             },
             orderBy: {
               dateGeneration: 'desc'
-            },
-            take: 1
+            }
           }),
           prisma.ouvrier.count({
             where: { sousTraitantId: st.id }
           })
         ])
-        
+
+        // Le contrat à afficher : un contrat SIGNÉ (le plus récemment signé,
+        // s'il y en a plusieurs) prime toujours sur un contrat non signé plus
+        // récemment généré. À défaut d'aucun contrat signé, on retombe sur le
+        // comportement précédent — le plus récemment généré.
+        const contratSigne = tousLesContrats
+          .filter(c => c.estSigne)
+          .sort((a, b) => (b.dateSignature?.getTime() ?? 0) - (a.dateSignature?.getTime() ?? 0))[0]
+        const contratAffiche = contratSigne ?? tousLesContrats[0]
+        const contrats = contratAffiche ? [contratAffiche] : []
+
         return {
           ...st,
           actif: actifById[st.id] ?? true,
