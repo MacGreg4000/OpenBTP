@@ -150,6 +150,43 @@ export async function resolveSousTraitant(
   return { ok: false, message: `Aucun sous-traitant trouvé pour « ${cleaned} ».` }
 }
 
+/** Résout un ouvrier par id exact, puis par nom/prénom flou, DANS le périmètre
+ *  d'un sous-traitant donné — deux sous-traitants peuvent chacun employer un
+ *  « Jean Dupont », la recherche ne doit jamais traverser cette frontière. */
+export async function resolveOuvrier(
+  sousTraitantId: string,
+  ref: string
+): Promise<ResolveResult<{ id: string; nom: string; prenom: string }>> {
+  const cleaned = String(ref || '').trim()
+  if (!cleaned) return { ok: false, message: 'Référence d’ouvrier vide.' }
+
+  const select = { id: true, nom: true, prenom: true }
+
+  const exact = await prisma.ouvrier.findFirst({
+    where: { id: cleaned, sousTraitantId },
+    select,
+  })
+  if (exact) return { ok: true, value: exact }
+
+  const matches = await prisma.ouvrier.findMany({
+    where: {
+      sousTraitantId,
+      OR: [{ nom: { contains: cleaned } }, { prenom: { contains: cleaned } }],
+    },
+    select,
+    take: 8,
+  })
+  if (matches.length === 1) return { ok: true, value: matches[0] }
+  if (matches.length > 1) {
+    return {
+      ok: false,
+      message: `Plusieurs ouvriers de ce sous-traitant correspondent à « ${cleaned} ». Demande à l'utilisateur de préciser.`,
+      candidats: matches.map((m) => ({ id: m.id, nom: `${m.prenom} ${m.nom}` })),
+    }
+  }
+  return { ok: false, message: `Aucun ouvrier de ce sous-traitant ne correspond à « ${cleaned} ».` }
+}
+
 /** Borne un paramètre limit fourni par le modèle. */
 export function clampLimit(value: unknown, def: number, max: number): number {
   const n = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10)

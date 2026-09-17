@@ -43,6 +43,7 @@ import {
   listeDocumentsChantier,
   documentsExpirants,
 } from './lecture'
+import { ajouterDocumentOuvrier, modifierDocumentOuvrier, listeDocumentsOuvrier } from './ouvriers'
 
 const ALL_TOOLS: ToolDefinition[] = [
   // Lecture (aucune écriture)
@@ -54,6 +55,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   listeNotesChantier,
   listeDocumentsChantier,
   documentsExpirants,
+  listeDocumentsOuvrier,
   listeEtatsAvancement,
   lireNotesDashboard,
   lireBaremeMateriau,
@@ -78,6 +80,9 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Rentabilité / coût matière
   definirBaremeMateriau,
   definirCoutMatiereLigne,
+  // Documents d'ouvriers — pas de suppression, voir commentaire dans ouvriers.ts
+  ajouterDocumentOuvrier,
+  modifierDocumentOuvrier,
 ]
 
 const TOOLS_BY_NAME = new Map(ALL_TOOLS.map((t) => [t.name, t]))
