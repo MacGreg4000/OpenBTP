@@ -61,6 +61,26 @@ const nextConfig = {
       }
     ];
   },
+  // Liens de portail déjà distribués avec un segment de type invalide.
+  //
+  // La page « Ouvriers internes » générait /public/portail/OUVRIER_INTERNE/<id> —
+  // la valeur de l'énumération de la base — alors que le portail n'accepte que
+  // « ouvrier » ou « soustraitant ». Tout autre segment était traité comme un
+  // sous-traitant : mauvaise page, et PIN vérifié contre SOUSTRAITANT + l'id d'un
+  // ouvrier, donc « PIN invalide » quel que soit le code saisi.
+  //
+  // Corriger le générateur ne suffit pas : des liens, QR codes et messages
+  // WhatsApp portant l'ancien segment circulent déjà. Cette redirection les
+  // remet sur le bon chemin sans qu'il faille les renvoyer.
+  async redirects() {
+    return [
+      {
+        source: '/public/portail/:type(OUVRIER_INTERNE|ouvrier_interne|ouvrier-interne|ouvrierInterne)/:path*',
+        destination: '/public/portail/ouvrier/:path*',
+        permanent: true,
+      },
+    ];
+  },
   // Headers de sécurité pour PWA
   async headers() {
     return [

@@ -268,6 +268,24 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
 
 export default function PortailPublicPage(props: { params: Promise<{ type: 'ouvrier'|'soustraitant'; actorId: string }> }) {
   const p = React.use(props.params)
+
+  // Le type vient de l'URL et n'était jamais validé : tout ce qui n'était pas
+  // exactement « ouvrier » devenait silencieusement un portail sous-traitant
+  // (titre, fonctionnalités, ET type de PIN vérifié). Un lien mal formé
+  // produisait donc un « PIN invalide » trompeur au lieu d'une erreur claire.
+  if (p.type !== 'ouvrier' && p.type !== 'soustraitant') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-600 to-indigo-700 text-white flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-white/10 backdrop-blur rounded-2xl p-6 text-center">
+          <h1 className="text-xl font-semibold mb-2">Lien invalide</h1>
+          <p className="text-sm text-blue-100">
+            Ce lien d&apos;accès ne correspond à aucun espace. Demandez un nouveau lien à votre contact.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <PortalI18nProvider>
       <InnerPortail params={p} />

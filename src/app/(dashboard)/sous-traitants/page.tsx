@@ -1666,7 +1666,7 @@ export default function SousTraitantsPage() {
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div className="flex space-x-1 justify-end">
                               <a
-                                href={`/public/portail/OUVRIER_INTERNE/${o.id}`}
+                                href={`/public/portail/ouvrier/${o.id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
