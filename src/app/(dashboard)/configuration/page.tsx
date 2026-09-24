@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Cog6ToothIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon, XCircleIcon, DocumentTextIcon, BellIcon } from '@heroicons/react/24/outline'
 import DocumentManager from '@/components/documents/DocumentManager'
 import AdminTaskTypesManager from '@/components/configuration/AdminTaskTypesManager'
+import CheckinLienSettings from '@/components/configuration/CheckinLienSettings'
 import { usePermission } from '@/hooks/usePermission'
 import { PageHeader } from '@/components/PageHeader'
 import { useNotification } from '@/hooks/useNotification'
@@ -660,6 +661,10 @@ export default function ConfigurationPage() {
           </button>
         </div>
       </form>
+
+      <div className="mt-12">
+        <CheckinLienSettings />
+      </div>
 
       <h2 className="text-xl font-bold mt-12 mb-6 flex items-center gap-2 dark:text-white">
         Configuration des emails

@@ -345,6 +345,10 @@ model companysettings {
   emailCc       String?
   emailBcc      String?
   iban          String?
+  // Jeton du lien public /checkin/<jeton> (liste des chantiers et numéros
+  // Checkinatwork envoyée aux sous-traitants). Un seul jeton global,
+  // régénérable si le lien circule trop : l'ancien devient aussitôt invalide.
+  checkinToken  String?  @unique
 }
 
 model CommandeSousTraitant {
