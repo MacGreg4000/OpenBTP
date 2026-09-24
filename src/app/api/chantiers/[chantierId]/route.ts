@@ -82,20 +82,21 @@ export async function PUT(
 
     // Gestion de la compatibilité avec les anciens et nouveaux noms de champs
     // Pour le statut, on accepte à la fois etatChantier (ancien) et statut (nouveau)
-    let statut = body.statut;
-    if (!statut && body.etatChantier) {
-      // Conversion des états pour correspondre au schéma prisma (ancienne méthode)
-      if (body.etatChantier === 'En cours') statut = 'EN_COURS';
-      else if (body.etatChantier === 'Terminé') statut = 'TERMINE';
-      else if (body.etatChantier === 'À venir') statut = 'A_VENIR';
-      else statut = 'EN_PREPARATION';
-    } else if (statut) {
-      // Si c'est déjà au format d'affichage, convertir au format DB
-      if (statut === 'En cours') statut = 'EN_COURS';
-      else if (statut === 'Terminé') statut = 'TERMINE';
-      else if (statut === 'À venir' || statut === 'A_VENIR') statut = 'A_VENIR';
-      else statut = 'EN_PREPARATION';
+    //
+    // Accepte le libellé d'affichage (« En cours ») ET la valeur de base
+    // (EN_COURS). L'ancienne conversion ne reconnaissait que les libellés : une
+    // valeur de base comme EN_COURS ou TERMINE tombait dans le « sinon » et était
+    // réécrite silencieusement en EN_PREPARATION — un chantier terminé pouvait
+    // ainsi redevenir « en préparation » par une simple sauvegarde de sa fiche.
+    // Une valeur inconnue ne modifie plus le statut du tout (undefined).
+    const STATUTS: Record<string, string> = {
+      EN_PREPARATION: 'EN_PREPARATION', 'En préparation': 'EN_PREPARATION',
+      A_VENIR: 'A_VENIR', 'À venir': 'A_VENIR', 'A venir': 'A_VENIR',
+      EN_COURS: 'EN_COURS', 'En cours': 'EN_COURS',
+      TERMINE: 'TERMINE', 'Terminé': 'TERMINE',
     }
+    const statutBrut = body.statut || body.etatChantier
+    const statut = statutBrut ? STATUTS[String(statutBrut).trim()] : undefined
 
     // Pour la date, on accepte dateCommencement (ancien) ou dateDebut (nouveau)
     const dateDebut = body.dateDebut ? new Date(body.dateDebut) : 
