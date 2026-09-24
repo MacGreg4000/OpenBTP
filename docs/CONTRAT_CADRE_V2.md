@@ -3,13 +3,6 @@
 Suite à l'avertissement de l'Inspection du travail (CLS Liège, réf. LA20260198041,
 23/09/2026).
 
-> ✅ **Clauses 8 à 8.10 validées par le conseil juridique de Secotech le
-> 24/09/2026.** Elles peuvent être intégrées au template et activées.
->
-> Le cadre de l'avenant n°1 (préambule, prise d'effet, dispositions finales —
-> section en fin de document) a été rédigé ensuite pour reprendre ces clauses
-> telles quelles : à lui soumettre pour un dernier regard avant envoi.
-
 **Deux documents :**
 
 1. **Le contrat-cadre v2** — pour tout nouveau sous-traitant et tout
@@ -108,7 +101,7 @@ Contrat-cadre {{referenceContrat}} — version {{versionContrat}}
 …y compris toutes les sanctions financières liées à l'occupation de ressortissants en séjour illégal, ainsi que <strong>toutes amendes administratives ou pénales, sommes, frais de défense et pertes</strong> réclamés à l'entrepreneur principal ou supportés par lui en raison d'un manquement du sous-traitant aux articles 8.5 et 8.6, ou en application notamment des articles 30bis de la loi du 27 juin 1969, 402 CIR 1992 et/ou 35/2 de la loi du 12 avril 1965.
 ```
 
-**Nouvel art. 8.8 — Pénalité forfaitaire** *(montant à écrire directement dans le template — c'est le seul blanc du texte validé)* :
+**Nouvel art. 8.8 — Pénalité forfaitaire** *(montant à écrire directement dans le template — c'est le seul blanc du texte)* :
 
 ```html
 <p><strong>8.8.</strong> Sans préjudice de l'article 8.7, toute personne constatée sur chantier en infraction aux articles 8.5 ou 8.6 donne lieu, de plein droit et sans mise en demeure, à une pénalité forfaitaire de <strong>… €</strong> par personne et par jour, compensable avec toute somme due au sous-traitant.</p>
@@ -131,7 +124,7 @@ Contrat-cadre {{referenceContrat}} — version {{versionContrat}}
 # Avenant n°1 au contrat-cadre de sous-traitance
 
 Pour les sous-traitants dont le contrat-cadre v1 est déjà signé. Il intègre les
-clauses validées ci-dessus **sans les modifier** ; seuls le préambule et les
+clauses ci-dessus **sans les modifier** ; seuls le préambule et les
 dispositions finales sont propres à l'avenant.
 
 À compléter pour chaque sous-traitant : les zones `[…]`. Même montant de
