@@ -142,7 +142,7 @@ export function construireAttestationHtml(d: DonneesAttestation): string {
 
   const sectionListes = listes
     .map(
-      (p) => `<h3>Chantiers communiqués ${intervalle(p.du, p.au)} (${p.valeur.length})</h3>
+      (p) => `<h3>Liste en vigueur ${intervalle(p.du, p.au)} — ${p.valeur.length} chantier${p.valeur.length > 1 ? 's' : ''}</h3>
 <table><thead><tr><th>N° Checkinatwork</th><th>Client</th><th>Chantier</th><th>Adresse</th></tr></thead><tbody>
 ${p.valeur.map((c) => `<tr><td class="mono">${e(c.numero) || '—'}</td><td>${e(c.client)}</td><td>${e(c.chantier)}</td><td>${e(c.adresse)}</td></tr>`).join('\n')}
 </tbody></table>`
@@ -209,6 +209,10 @@ ${lignesTableau}
 
 ${sectionTextes ? `<h2>Texte des rappels</h2>\n${sectionTextes}` : ''}
 
-${sectionListes ? `<h2>Chantiers communiqués (page Checkinatwork)</h2>\n${sectionListes}` : ''}
+${sectionListes ? `<h2>Chantiers et numéros Checkinatwork transmis avec les rappels</h2>
+<p class="note">Chaque rappel contient un lien vers une page listant les chantiers en cours, à venir et en préparation,
+avec leur numéro d'enregistrement Checkinatwork. Voici le contenu exact de cette page au moment des envois ; une
+nouvelle liste apparaît chaque fois qu'un chantier a été ajouté, retiré ou modifié.</p>
+${sectionListes}` : ''}
 </body></html>`
 }
