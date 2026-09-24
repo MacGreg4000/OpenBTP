@@ -18,6 +18,12 @@ Le texte du contrat vit en base, pas dans le code. Pour passer en v2 :
    version.
 3. Y intégrer les blocs ci-dessous, puis **activer** ce template.
 
+> ⚠️ **Ne jamais nommer un template « Contrat de Sous-Traitance
+> Professionnel »** : ce nom est réservé à un modèle d'exemple que
+> l'application réécrit à chaque redémarrage depuis
+> `templates/contrat-professionnel.html`. Tout texte saisi dans un template
+> portant ce nom serait écrasé au déploiement suivant.
+
 ### Faire re-signer tout le monde
 
 Une fois le template v2 activé, pour chaque sous-traitant actif :
