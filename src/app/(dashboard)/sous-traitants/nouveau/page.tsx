@@ -2,12 +2,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FormInput, Button } from '@/components/ui'
+import RepresentantFields, { REPRESENTANT_VIDE, type RepresentantValeurs } from '@/components/sous-traitants/RepresentantFields'
 import PageHeader from '@/components/PageHeader'
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline'
 
 export const dynamic = 'force-dynamic'
 
-interface FormData {
+interface FormData extends RepresentantValeurs {
   nom: string
   email: string
   contact: string
@@ -28,7 +29,8 @@ export default function NouveauSousTraitantPage() {
     telephone: '',
     adresse: '',
     tva: '',
-    logo: ''
+    logo: '',
+    ...REPRESENTANT_VIDE,
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -220,6 +222,8 @@ export default function NouveauSousTraitantPage() {
             value={formData.adresse}
             onChange={handleChange}
           />
+
+          <RepresentantFields valeurs={formData} onChange={handleChange} />
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">

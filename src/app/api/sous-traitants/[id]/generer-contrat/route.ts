@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { generateContratSoustraitance } from '@/lib/contrat-generator'
+import { ContratIncompletError } from '@/lib/contract-generator-puppeteer'
 
 export async function POST(
   request: Request,
@@ -22,6 +23,9 @@ export async function POST(
     
     return NextResponse.json({ url: contratUrl })
   } catch (error: unknown) {
+    if (error instanceof ContratIncompletError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     console.error('Erreur lors de la génération du contrat:', error)
     return NextResponse.json(
       { error: 'Erreur lors de la génération du contrat' },

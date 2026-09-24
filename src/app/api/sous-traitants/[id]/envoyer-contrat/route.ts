@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { sendContractSignatureEmail } from '@/lib/email-sender'
 import { generateContratSoustraitance } from '@/lib/contrat-generator'
+import { ContratIncompletError } from '@/lib/contract-generator-puppeteer'
+import { champsRepresentantManquants } from '@/lib/soustraitants/representant'
 import { notifier } from '@/lib/services/notificationService'
 
 export async function POST(
@@ -32,13 +34,32 @@ export async function POST(
     if (!soustraitant.email) {
       return NextResponse.json({ error: 'Le sous-traitant n\'a pas d\'adresse email' }, { status: 400 })
     }
+
+    // Contrat-cadre v2 : pas d'envoi en signature sans représentant complet —
+    // y compris quand un ancien contrat non signé serait simplement renvoyé.
+    const manquants = champsRepresentantManquants(soustraitant)
+    if (manquants.length > 0) {
+      return NextResponse.json(
+        { error: `Contrat non envoyé — à compléter sur la fiche du sous-traitant : ${manquants.join(', ')}.` },
+        { status: 400 }
+      )
+    }
     
-    // Vérifier si un contrat existe déjà pour ce sous-traitant
+    // Réutiliser un contrat non signé existant — mais seulement s'il a été
+    // généré avec le template actuellement actif. Un ancien contrat (v1, sans
+    // représentant ni nouvelles clauses) ne doit pas repartir en signature
+    // après l'activation d'un nouveau template : on en génère un neuf.
+    const templateActif = await prisma.contractTemplate.findFirst({
+      where: { isActive: true, category: 'CONTRAT' },
+      select: { name: true },
+    })
     const existingContract = await prisma.contrat.findFirst({
-      where: { 
+      where: {
         soustraitantId: id,
-        estSigne: false
-      }
+        estSigne: false,
+        templateVersion: templateActif?.name ?? '__aucun__',
+      },
+      orderBy: { dateGeneration: 'desc' },
     })
     
     let token: string
@@ -78,8 +99,9 @@ export async function POST(
     const companyEmail = companySettings?.email || undefined
     
     // Envoyer l'email avec copie à l'adresse principale de l'entreprise
+    // Le lien de signature va au représentant — c'est lui qui signe.
     const emailSent = await sendContractSignatureEmail(
-      soustraitant.email,
+      soustraitant.representantEmail || soustraitant.email,
       soustraitant.nom,
       companyName,
       token,
@@ -102,6 +124,9 @@ export async function POST(
     
     return NextResponse.json({ success: true, message: 'Email envoyé avec succès' })
   } catch (error: unknown) {
+    if (error instanceof ContratIncompletError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     console.error('Erreur lors de l\'envoi du contrat:', error)
     return NextResponse.json(
       { error: `Erreur lors de l'envoi du contrat` },

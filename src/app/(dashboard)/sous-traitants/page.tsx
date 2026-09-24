@@ -291,7 +291,10 @@ export default function SousTraitantsPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la génération du contrat')
+        // Le serveur explique précisément ce qui manque (représentant,
+        // signature d'entreprise) : l'afficher tel quel.
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || 'Erreur lors de la génération du contrat')
       }
 
       await response.json()
@@ -300,7 +303,7 @@ export default function SousTraitantsPage() {
       window.location.reload()
     } catch (error) {
       console.error('Erreur:', error)
-      showNotification('Erreur', 'Erreur lors de la génération du contrat', 'error')
+      showNotification('Erreur', error instanceof Error ? error.message : 'Erreur lors de la génération du contrat', 'error')
     } finally {
       setGeneratingContract(null)
     }

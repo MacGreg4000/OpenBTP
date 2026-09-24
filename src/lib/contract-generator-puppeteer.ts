@@ -5,9 +5,180 @@ import { fr } from 'date-fns/locale'
 import crypto from 'crypto'
 import { writeFile, mkdir, stat } from 'fs/promises'
 import { join } from 'path'
+import { champsRepresentantManquants, formaterGsm } from '@/lib/soustraitants/representant'
 
 // Chemin de base pour les documents
 const DOCUMENTS_BASE_PATH = join(process.cwd(), 'public', 'uploads', 'documents')
+
+/**
+ * Contrat impossible à générer faute de données obligatoires. Distinguée des
+ * erreurs techniques pour que les routes renvoient le message tel quel (400)
+ * au lieu d'un « erreur lors de la génération » générique.
+ */
+export class ContratIncompletError extends Error {}
+
+interface DonneesSousTraitant {
+  nom: string
+  adresse: string | null
+  email: string | null
+  telephone: string | null
+  tva: string | null
+  contact: string | null
+  representantNom?: string | null
+  representantPrenom?: string | null
+  representantFonction?: string | null
+  representantEmail?: string | null
+  representantGsm?: string | null
+}
+
+/**
+ * Données injectées dans le template — construites par UNE seule fonction,
+ * appelée à la génération ET à la signature.
+ *
+ * Avant, chaque étape construisait sa propre copie, et elles divergeaient :
+ * référence CT-… recalculée, dates de début/fin recalculées au jour de la
+ * signature, et surtout `signatureBase64` rempli à la signature avec la
+ * signature du SOUS-TRAITANT au lieu de celle de l'entreprise — le cadre
+ * « Entrepreneur principal » du contrat signé affichait donc la mauvaise
+ * signature. Tout ce qui caractérise le contrat (référence, dates, version)
+ * vient désormais de l'enregistrement créé à la génération.
+ */
+function construireDonneesTemplate(p: {
+  soustraitant: DonneesSousTraitant
+  companyInfo: Awaited<ReturnType<typeof getCompanyInfo>>
+  dateGeneration: Date
+  dateFin: Date
+  token: string
+  templateVersion: string
+  logoBase64: string
+  signatureEntrepriseBase64: string
+}): Record<string, string> {
+  const { soustraitant: st, companyInfo } = p
+  const nomRepresentant = [st.representantPrenom, st.representantNom]
+    .map((x) => (x || '').trim())
+    .filter(Boolean)
+    .join(' ')
+  return {
+    // Informations entreprise
+    nomEntreprise: companyInfo.nom,
+    adresseEntreprise: companyInfo.adresse,
+    zipCodeEntreprise: companyInfo.zipCode || '',
+    villeEntreprise: companyInfo.city || '',
+    emailEntreprise: companyInfo.email,
+    telephoneEntreprise: companyInfo.telephone,
+    tvaEntreprise: companyInfo.tva,
+    bceEntreprise: companyInfo.tva,
+    numEntrepriseEntreprise: companyInfo.tva,
+    representantEntreprise: companyInfo.representant || 'Directeur',
+
+    // Informations sous-traitant
+    nomSousTraitant: st.nom,
+    adresseSousTraitant: st.adresse || '',
+    emailSousTraitant: st.email || '',
+    telephoneSousTraitant: st.telephone || '',
+    tvaSousTraitant: st.tva || '',
+    bceSousTraitant: st.tva || '',
+    numEntrepriseSousTraitant: st.tva || '',
+    // Repli sur `contact` : seuls les anciens contrats (générés avant les
+    // champs représentant) peuvent encore arriver ici sans représentant.
+    representantSousTraitant: nomRepresentant || st.contact || 'Représentant',
+    fonctionRepresentantSousTraitant: st.representantFonction || '',
+    emailRepresentantSousTraitant: st.representantEmail || '',
+    gsmRepresentantSousTraitant: formaterGsm(st.representantGsm),
+
+    // Dates — celles du contrat, jamais « aujourd'hui » au moment de signer
+    dateGeneration: format(p.dateGeneration, 'dd/MM/yyyy', { locale: fr }),
+    dateDebut: format(p.dateGeneration, 'dd/MM/yyyy', { locale: fr }),
+    dateFin: format(p.dateFin, 'dd/MM/yyyy', { locale: fr }),
+
+    // Métadonnées
+    referenceContrat: referenceContrat(p.dateGeneration),
+    versionContrat: p.templateVersion,
+    tokenSignature: p.token,
+    urlSignature: `${process.env.NEXT_PUBLIC_APP_URL}/contrats/${p.token}`,
+
+    // Images en base64 — signatureBase64 est TOUJOURS celle de l'entreprise
+    logoBase64: p.logoBase64,
+    signatureBase64: p.signatureEntrepriseBase64,
+  }
+}
+
+/** Texte d'attente du cadre sous-traitant dans le template — le seul marqueur fiable. */
+export const MARQUEUR_SIGNATURE_SOUS_TRAITANT = 'Signature électronique via la plateforme'
+
+/**
+ * Insère la signature du sous-traitant dans CHAQUE cadre qui l'attend
+ * (contrat + annexe).
+ *
+ * Historique, pour ne pas refaire les mêmes erreurs :
+ *  1. La première version remplaçait « un <div class="signature-box"> suivi
+ *     plus loin d'une ligne et d'un texte gris » : partant du cadre
+ *     entrepreneur, elle fusionnait les deux cadres et effaçait la signature
+ *     de l'entreprise.
+ *  2. Le correctif suivant exigeait le titre « Pour le Sous-traitant » — celui
+ *     des templates du dépôt, PAS celui du template de production (« Le
+ *     Sous-traitant »). Plus aucun cadre ne correspondait : la signature du
+ *     sous-traitant n'était plus insérée du tout.
+ *
+ * Ici, on ne dépend plus du titre : on repère le texte d'attente, qui n'existe
+ * que dans le cadre sous-traitant, et le motif ne peut pas franchir
+ * l'ouverture d'un autre cadre (il ne peut donc démarrer que sur le bon). Le
+ * contenu du template (titre, nom du représentant) est conservé tel quel : on
+ * ajoute seulement l'image avant la ligne, et on remplace le texte d'attente.
+ */
+export function insererSignatureSousTraitant(
+  html: string,
+  signatureBase64: string,
+  auditInfo?: AuditInfo
+): string {
+  const horodatage = auditInfo?.horodatageCertifie || new Date()
+  const mention = `Signé électroniquement le ${format(horodatage, 'dd/MM/yyyy à HH:mm', { locale: fr })}` +
+    (auditInfo ? `
+          <div style="font-size: 9px; color: #9ca3af; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+            <div style="margin-bottom: 4px;"><strong>Informations d'audit de signature :</strong></div>
+            <div style="margin-bottom: 2px;">• Identité confirmée : Oui</div>
+            <div style="margin-bottom: 2px;">• Consentement donné : Oui</div>
+            ${auditInfo.ipAddress ? `<div style="margin-bottom: 2px;">• Adresse IP : ${auditInfo.ipAddress}</div>` : ''}
+            <div style="margin-bottom: 2px;">• Horodatage certifié : ${format(horodatage, 'dd/MM/yyyy à HH:mm:ss', { locale: fr })}</div>
+            <div style="margin-top: 6px; font-size: 8px; color: #6b7280;">
+              Signature électronique conforme au Règlement eIDAS (UE) 910/2014 et à la législation belge en vigueur.
+            </div>
+          </div>` : '')
+  const image = `<img src="data:image/png;base64,${signatureBase64}" class="signature-image" alt="Signature Sous-traitant" />`
+
+  const cadre = new RegExp(
+    `<div class="signature-box">(?:(?!<div class="signature-box">)[\\s\\S])*?${MARQUEUR_SIGNATURE_SOUS_TRAITANT}`,
+    'g'
+  )
+  const resultat = html.replace(cadre, (bloc) => {
+    const avecImage = bloc.includes('<div class="signature-line"></div>')
+      ? bloc.replace('<div class="signature-line"></div>', `${image}\n        <div class="signature-line"></div>`)
+      : bloc.replace(MARQUEUR_SIGNATURE_SOUS_TRAITANT, `${image}${MARQUEUR_SIGNATURE_SOUS_TRAITANT}`)
+    return avecImage.replace(MARQUEUR_SIGNATURE_SOUS_TRAITANT, mention)
+  })
+
+  // Échec franc plutôt qu'un contrat « signé » sans signature visible.
+  if (resultat === html) {
+    throw new Error(
+      `Signature non insérée : le template ne contient pas le texte « ${MARQUEUR_SIGNATURE_SOUS_TRAITANT} » ` +
+        'dans le cadre du sous-traitant.'
+    )
+  }
+  return resultat
+}
+
+/** Référence stable d'un contrat, dérivée de sa date de génération persistée. */
+export function referenceContrat(dateGeneration: Date): string {
+  return `CT-${dateGeneration.getTime()}`
+}
+
+function remplirTemplate(html: string, donnees: Record<string, string>): string {
+  let resultat = html
+  for (const [cle, valeur] of Object.entries(donnees)) {
+    resultat = resultat.replace(new RegExp(`{{${cle}}}`, 'g'), String(valeur))
+  }
+  return resultat
+}
 
 /**
  * Génère un contrat de sous-traitance en utilisant Puppeteer et les templates de la base de données
@@ -61,69 +232,45 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
     
     console.log('Template actif trouvé:', activeTemplate.name)
     
+    // Contrat-cadre v2 : le représentant est le signataire ET le destinataire
+    // des rappels Checkinatwork. Sans lui, pas de contrat.
+    const manquants = champsRepresentantManquants(soustraitant)
+    if (manquants.length > 0) {
+      throw new ContratIncompletError(
+        `Contrat non généré — à compléter sur la fiche du sous-traitant : ${manquants.join(', ')}.`
+      )
+    }
+    // Double signature : le contrat part toujours signé par l'entreprise.
+    const settingsSignature = await prisma.companysettings.findFirst({ select: { signature: true } })
+    if (!settingsSignature?.signature) {
+      throw new ContratIncompletError(
+        "Contrat non généré — aucune signature d'entreprise configurée (Configuration → Signature)."
+      )
+    }
+
     // Générer le token unique pour la signature
     const token = crypto.randomBytes(32).toString('hex')
-    
-    // Récupérer le logo de l'entreprise en base64
-    const logoBase64 = await getCompanyLogoBase64()
-    
-    // Récupérer la signature de l'entreprise en base64
-    const signatureBase64 = await getCompanySignatureBase64()
 
-    // Instant de référence unique pour dateDebut/dateFin — voir commentaire
-    // sur templateData.dateFin plus bas.
+    // Un seul instant de référence : il devient Contrat.dateGeneration, dont
+    // dérivent la référence CT-…, la date de début et la date de fin — à la
+    // génération comme, plus tard, à la signature.
     const maintenant = new Date()
     const dateFinContrat = addYears(maintenant, 1)
 
-    // Préparer les données pour le remplacement des variables
-    const templateData = {
-      // Informations entreprise
-      nomEntreprise: companyInfo.nom,
-      adresseEntreprise: companyInfo.adresse,
-      zipCodeEntreprise: companyInfo.zipCode || '',
-      villeEntreprise: companyInfo.city || '',
-      emailEntreprise: companyInfo.email,
-      telephoneEntreprise: companyInfo.telephone,
-      tvaEntreprise: companyInfo.tva,
-      bceEntreprise: companyInfo.tva,
-      numEntrepriseEntreprise: companyInfo.tva,
-      representantEntreprise: companyInfo.representant || 'Directeur',
+    const htmlContent = remplirTemplate(
+      activeTemplate.htmlContent,
+      construireDonneesTemplate({
+        soustraitant,
+        companyInfo,
+        dateGeneration: maintenant,
+        dateFin: dateFinContrat,
+        token,
+        templateVersion: activeTemplate.name,
+        logoBase64: await getCompanyLogoBase64(),
+        signatureEntrepriseBase64: await getCompanySignatureBase64(),
+      })
+    )
 
-      // Informations sous-traitant
-      nomSousTraitant: soustraitant.nom,
-      adresseSousTraitant: soustraitant.adresse || '',
-      emailSousTraitant: soustraitant.email || '',
-      telephoneSousTraitant: soustraitant.telephone || '',
-      tvaSousTraitant: soustraitant.tva || '',
-      bceSousTraitant: soustraitant.tva || '',
-      numEntrepriseSousTraitant: soustraitant.tva || '',
-      representantSousTraitant: soustraitant.contact || 'Représentant',
-
-      // Dates — un seul instant de référence : dateFinContrat (calculée à
-      // partir du même instant) est celle persistée en base plus bas, pour
-      // que la date imprimée dans le PDF et celle affichée dans l'app ne
-      // divergent jamais, même de quelques millisecondes.
-      dateGeneration: format(maintenant, 'dd/MM/yyyy', { locale: fr }),
-      dateDebut: format(maintenant, 'dd/MM/yyyy', { locale: fr }),
-      dateFin: format(dateFinContrat, 'dd/MM/yyyy', { locale: fr }),
-
-      // Métadonnées
-      referenceContrat: `CT-${Date.now()}`,
-      tokenSignature: token,
-      urlSignature: `${process.env.NEXT_PUBLIC_APP_URL}/contrats/${token}`,
-      
-      // Images en base64
-      logoBase64: logoBase64,
-      signatureBase64: signatureBase64
-    }
-    
-    // Remplacer les variables dans le template HTML
-    let htmlContent = activeTemplate.htmlContent
-    Object.entries(templateData).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, 'g')
-      htmlContent = htmlContent.replace(regex, String(value))
-    })
-    
     console.log('Variables remplacées dans le template')
     
     // Générer le PDF avec Puppeteer
@@ -156,7 +303,9 @@ export async function generateContratSoustraitance(soustraitantId: string, _user
         soustraitantId: soustraitantId,
         url: relativeUrl,
         token: token,
+        dateGeneration: maintenant,
         dateFin: dateFinContrat,
+        templateVersion: activeTemplate.name,
         estSigne: false
       }
     })
@@ -211,106 +360,40 @@ export async function signerContrat(
     
     console.log('Contrat trouvé:', contrat.url)
     
-    // Récupérer le template actif pour la version signée (catégorie CONTRAT)
-    const activeTemplate = await prisma.contractTemplate.findFirst({
-      where: { isActive: true, category: 'CONTRAT' }
-    })
-    
-    if (!activeTemplate) {
-      throw new Error('Aucun template de contrat actif trouvé')
-    }
-    
-    // Récupérer les informations de l'entreprise
-    const companyInfo = await getCompanyInfo()
-    
-    // Récupérer le logo de l'entreprise
-    const logoBase64 = await getCompanyLogoBase64()
-    
-    // Préparer les données pour le remplacement des variables (version signée)
-    const templateData = {
-      // Informations entreprise
-      nomEntreprise: companyInfo.nom,
-      adresseEntreprise: companyInfo.adresse,
-      zipCodeEntreprise: companyInfo.zipCode || '',
-      villeEntreprise: companyInfo.city || '',
-      emailEntreprise: companyInfo.email,
-      telephoneEntreprise: companyInfo.telephone,
-      tvaEntreprise: companyInfo.tva,
-      bceEntreprise: companyInfo.tva,
-      numEntrepriseEntreprise: companyInfo.tva,
-      representantEntreprise: companyInfo.representant || 'Directeur',
+    // Le template SIGNÉ doit être celui qui a été ENVOYÉ : si un nouveau
+    // template a été activé entre-temps, le sous-traitant signerait sinon un
+    // texte différent de celui qu'il a reçu. Repli sur le template actif pour
+    // les contrats générés avant l'enregistrement de la version.
+    const template = contrat.templateVersion
+      ? await prisma.contractTemplate.findUnique({ where: { name: contrat.templateVersion } })
+      : await prisma.contractTemplate.findFirst({ where: { isActive: true, category: 'CONTRAT' } })
 
-      // Informations sous-traitant
-      nomSousTraitant: contrat.soustraitant.nom,
-      adresseSousTraitant: contrat.soustraitant.adresse || '',
-      emailSousTraitant: contrat.soustraitant.email || '',
-      telephoneSousTraitant: contrat.soustraitant.telephone || '',
-      tvaSousTraitant: contrat.soustraitant.tva || '',
-      bceSousTraitant: contrat.soustraitant.tva || '',
-      numEntrepriseSousTraitant: contrat.soustraitant.tva || '',
-      representantSousTraitant: contrat.soustraitant.contact || 'Représentant',
-      
-      // Dates
-      dateGeneration: format(contrat.dateGeneration, 'dd/MM/yyyy', { locale: fr }),
-      dateDebut: format(new Date(), 'dd/MM/yyyy', { locale: fr }),
-      dateFin: format(addYears(new Date(), 1), 'dd/MM/yyyy', { locale: fr }),
-      
-      // Métadonnées
-      referenceContrat: `CT-${contrat.dateGeneration.getTime()}`,
-      tokenSignature: token,
-      urlSignature: `${process.env.NEXT_PUBLIC_APP_URL}/contrats/${token}`,
-      
-      // Images en base64
-      logoBase64: logoBase64,
-      signatureBase64: signatureBase64
+    if (!template) {
+      throw new Error(
+        contrat.templateVersion
+          ? `Le template « ${contrat.templateVersion} » utilisé pour ce contrat n'existe plus.`
+          : 'Aucun template de contrat actif trouvé'
+      )
     }
-    
-    // Remplacer les variables dans le template HTML
-    let htmlContent = activeTemplate.htmlContent
-    Object.entries(templateData).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, 'g')
-      htmlContent = htmlContent.replace(regex, String(value))
-    })
-    
-    // Ajouter la signature du sous-traitant dans le HTML.
-    //
-    // Le titre « Pour le Sous-traitant » doit suivre IMMÉDIATEMENT (rien que
-    // du blanc autorisé entre les deux) l'ouverture du <div class="signature-
-    // box">. Une simple ancre plus loin dans le motif ne suffit pas : `\s\S]*?`
-    // est paresseux mais reste libre de démarrer sur le MAUVAIS cadre (celui
-    // de l'entrepreneur, qui partage la même classe `signature-box`) et de
-    // traverser tout son contenu — jusqu'à sa balise fermante y compris — pour
-    // aller chercher l'ancre dans le cadre suivant. Résultat vérifié : les deux
-    // cadres fusionnaient en un seul remplacement, effaçant entièrement la
-    // signature de l'entrepreneur du contrat signé final (pas seulement
-    // l'image : le titre « L'Entrepreneur principal » disparaissait aussi).
-    // En exigeant le titre en premier enfant, un démarrage sur le cadre
-    // entrepreneur échoue immédiatement — la recherche ne peut aboutir qu'en
-    // démarrant sur le bon cadre.
-    htmlContent = htmlContent.replace(
-      /<div class="signature-box">\s*<div class="signature-title">Pour le Sous-traitant<\/div>[\s\S]*?<div class="signature-line"><\/div>[\s\S]*?<div style="font-size: 10px; color: #6b7280; margin-top: 5px;">[\s\S]*?<\/div>[\s\S]*?<\/div>/g,
-      `<div class="signature-box">
-        <div class="signature-title">Pour le Sous-traitant</div>
-        <div class="signature-name">${contrat.soustraitant.nom}</div>
-        <img src="data:image/png;base64,${signatureBase64}" class="signature-image" alt="Signature Sous-traitant" />
-        <div class="signature-line"></div>
-        <div style="font-size: 10px; color: #6b7280; margin-top: 5px;">
-          Signé électroniquement le ${format(auditInfo?.horodatageCertifie || new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}
-        </div>
-        ${auditInfo ? `
-        <div style="font-size: 9px; color: #9ca3af; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-          <div style="margin-bottom: 4px;"><strong>Informations d'audit de signature :</strong></div>
-          <div style="margin-bottom: 2px;">• Identité confirmée : Oui</div>
-          <div style="margin-bottom: 2px;">• Consentement donné : Oui</div>
-          ${auditInfo.ipAddress ? `<div style="margin-bottom: 2px;">• Adresse IP : ${auditInfo.ipAddress}</div>` : ''}
-          <div style="margin-bottom: 2px;">• Horodatage certifié : ${format(auditInfo.horodatageCertifie || new Date(), 'dd/MM/yyyy à HH:mm:ss', { locale: fr })}</div>
-          <div style="margin-top: 6px; font-size: 8px; color: #6b7280;">
-            Signature électronique conforme au Règlement eIDAS (UE) 910/2014 et à la législation belge en vigueur.
-          </div>
-        </div>
-        ` : ''}
-      </div>`
+
+    const companyInfo = await getCompanyInfo()
+
+    let htmlContent = remplirTemplate(
+      template.htmlContent,
+      construireDonneesTemplate({
+        soustraitant: contrat.soustraitant,
+        companyInfo,
+        dateGeneration: contrat.dateGeneration,
+        dateFin: contrat.dateFin ?? addYears(contrat.dateGeneration, 1),
+        token,
+        templateVersion: template.name,
+        logoBase64: await getCompanyLogoBase64(),
+        signatureEntrepriseBase64: await getCompanySignatureBase64(),
+      })
     )
+
+    // Ajouter la signature du sous-traitant dans le HTML.
+    htmlContent = insererSignatureSousTraitant(htmlContent, signatureBase64, auditInfo)
     
     // Générer le PDF signé avec Puppeteer
     console.log('Génération du PDF signé avec Puppeteer...')
@@ -352,7 +435,14 @@ export async function signerContrat(
         signatureHorodatageCertifie: auditInfo?.horodatageCertifie || new Date()
       }
     })
-    
+
+    // Contrat-cadre signé → inscription au rappel Checkinatwork quotidien
+    // (désactivable ensuite manuellement sur la fiche du sous-traitant).
+    await prisma.soustraitant.update({
+      where: { id: contrat.soustraitantId },
+      data: { rappelCheckinActif: true },
+    })
+
     console.log('Contrat signé avec succès:', relativeUrl)
     return relativeUrl
     

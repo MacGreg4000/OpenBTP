@@ -61,6 +61,7 @@
     "konva": "^10.2.0",
     "leaflet": "^1.9.4",
     "leaflet-defaulticon-compatibility": "0.1.2",
+    "libphonenumber-js": "^1.13.14",
     "lru-cache": "11.1.0",
     "lucide-react": "^0.511.0",
     "mathjs": "^15.1.1",

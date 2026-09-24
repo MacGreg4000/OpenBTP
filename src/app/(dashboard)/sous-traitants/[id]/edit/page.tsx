@@ -3,6 +3,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { FormInput, Button } from '@/components/ui'
+import RepresentantFields, { REPRESENTANT_VIDE, type RepresentantValeurs } from '@/components/sous-traitants/RepresentantFields'
 import { 
   PencilSquareIcon,
   ArrowLeftIcon,
@@ -11,7 +12,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { toast, Toaster } from 'react-hot-toast'
 
-interface FormData {
+interface FormData extends RepresentantValeurs {
+  rappelCheckinActif: boolean
   nom: string
   email: string
   contact: string
@@ -36,7 +38,9 @@ export default function EditSousTraitantPage(
     telephone: '',
     adresse: '',
     tva: '',
-    logo: ''
+    logo: '',
+    ...REPRESENTANT_VIDE,
+    rappelCheckinActif: false,
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,7 +65,13 @@ export default function EditSousTraitantPage(
             telephone: data.telephone || '',
             adresse: data.adresse || '',
             tva: data.tva || '',
-            logo: data.logo || ''
+            logo: data.logo || '',
+            representantNom: data.representantNom || '',
+            representantPrenom: data.representantPrenom || '',
+            representantFonction: data.representantFonction || '',
+            representantEmail: data.representantEmail || '',
+            representantGsm: data.representantGsm || '',
+            rappelCheckinActif: !!data.rappelCheckinActif,
           })
           if (data.logo) {
             setLogoPreview(data.logo)
@@ -104,7 +114,13 @@ export default function EditSousTraitantPage(
         telephone: formData.telephone || null,
         adresse: formData.adresse || null,
         tva: formData.tva || null,
-        logo: formData.logo || null
+        logo: formData.logo || null,
+        representantNom: formData.representantNom,
+        representantPrenom: formData.representantPrenom,
+        representantFonction: formData.representantFonction,
+        representantEmail: formData.representantEmail,
+        representantGsm: formData.representantGsm,
+        rappelCheckinActif: formData.rappelCheckinActif,
       };
       
       console.log('Données fusionnées pour mise à jour:', updatedData);
@@ -308,6 +324,26 @@ export default function EditSousTraitantPage(
             value={formData.adresse}
             onChange={handleChange}
           />
+
+          <RepresentantFields valeurs={formData} onChange={handleChange} />
+
+          <label className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+            <input
+              type="checkbox"
+              checked={formData.rappelCheckinActif}
+              onChange={(e) => setFormData((f) => ({ ...f, rappelCheckinActif: e.target.checked }))}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span>
+              <span className="block text-sm font-medium text-gray-900 dark:text-white">
+                Rappel Checkinatwork quotidien actif
+              </span>
+              <span className="block text-xs text-gray-500 dark:text-gray-400">
+                Activé automatiquement à la signature du contrat-cadre. Décocher pour un sous-traitant qui
+                n&apos;intervient plus.
+              </span>
+            </span>
+          </label>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">

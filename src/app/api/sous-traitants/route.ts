@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { renouvellementConseille } from '@/lib/contrats/echeance'
+import { normaliserRepresentant } from '@/lib/soustraitants/representant-serveur'
 
 export async function GET() {
   try {
@@ -140,6 +141,12 @@ export async function POST(request: Request) {
       )
     }
 
+    // Représentant légal (facultatif à la création, exigé pour générer un contrat)
+    const representant = await normaliserRepresentant(body)
+    if (representant.erreur) {
+      return NextResponse.json({ error: representant.erreur }, { status: 400 })
+    }
+
     // Générer un ID unique pour le sous-traitant
     const uniqueId = `ST-${Date.now()}-${Math.floor(Math.random() * 1000)}`
     console.log('ID généré pour le sous-traitant:', uniqueId)
@@ -153,6 +160,7 @@ export async function POST(request: Request) {
         telephone: body.telephone || null,
         adresse: body.adresse || null,
         tva: body.tva || null,
+        ...representant.data,
         updatedAt: new Date()
       }
     })

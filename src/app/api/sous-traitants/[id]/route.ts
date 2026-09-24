@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { normaliserRepresentant } from '@/lib/soustraitants/representant-serveur'
 // Retrait de l'import Prisma non nécessaire
 
 export async function DELETE(
@@ -75,6 +76,12 @@ export async function GET(
         tva: true,
         logo: true,
         actif: true,
+        representantNom: true,
+        representantPrenom: true,
+        representantFonction: true,
+        representantEmail: true,
+        representantGsm: true,
+        rappelCheckinActif: true,
         createdAt: true,
         updatedAt: true,
         conditionsGenerales: true,
@@ -163,7 +170,12 @@ export async function PUT(
       )
     }
 
-    const updateData: Record<string, unknown> = { updatedAt: new Date() }
+    const representant = await normaliserRepresentant(body)
+    if (representant.erreur) {
+      return NextResponse.json({ error: representant.erreur }, { status: 400 })
+    }
+
+    const updateData: Record<string, unknown> = { updatedAt: new Date(), ...representant.data }
     if (body.nom !== undefined) updateData.nom = body.nom
     if (body.email !== undefined) updateData.email = body.email
     if (body.contact !== undefined) updateData.contact = body.contact || null
@@ -172,6 +184,7 @@ export async function PUT(
     if (body.tva !== undefined) updateData.tva = body.tva || null
     if (body.logo !== undefined) updateData.logo = body.logo || null
     if (body.actif !== undefined) updateData.actif = !!body.actif
+    if (body.rappelCheckinActif !== undefined) updateData.rappelCheckinActif = !!body.rappelCheckinActif
     if (body.conditionsGenerales !== undefined) updateData.conditionsGenerales = body.conditionsGenerales || null
     if (body.conditionsParticulieres !== undefined) updateData.conditionsParticulieres = body.conditionsParticulieres || null
 

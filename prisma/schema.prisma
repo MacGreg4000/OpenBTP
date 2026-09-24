@@ -78,6 +78,17 @@ model soustraitant {
   updatedAt                    DateTime
   tva                          String?
   actif                        Boolean                        @default(true)
+  // Représentant légal — signataire du contrat-cadre et destinataire des
+  // rappels Checkinatwork. Distinct de `contact` (simple personne de contact)
+  // et de `email` (adresse générale de la société, unique).
+  representantNom              String?
+  representantPrenom           String?
+  representantFonction         String?
+  representantEmail            String?
+  representantGsm              String?  // normalisé E.164, ex. +351912345678
+  // Rappel Checkinatwork quotidien : activé à la signature d'un contrat-cadre,
+  // désactivable manuellement.
+  rappelCheckinActif           Boolean                        @default(false)
   commandes                    CommandeSousTraitant[]
   metresSoustraitant           MetreSoustraitant[]
   contrats                     contrat[]
@@ -126,6 +137,9 @@ model contrat {
   // le PDF au moment de la génération, jamais persistée : impossible de
   // lister, trier ou alerter sur une échéance qui n'existe nulle part en base.
   dateFin             DateTime?
+  // Nom du template (ContractTemplate.name) utilisé à la génération : permet
+  // de savoir quelles clauses un contrat signé contient réellement (v1/v2).
+  templateVersion     String?
   dateSignature       DateTime?
   estSigne            Boolean      @default(false)
   token               String?      @unique
