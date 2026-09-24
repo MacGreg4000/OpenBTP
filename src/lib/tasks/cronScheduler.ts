@@ -140,6 +140,35 @@ export class RAGIndexingScheduler {
     return task;
   }
 
+  // Rappel Checkinatwork quotidien : passage toutes les 15 min de 5h à 10h45,
+  // lundi–vendredi. L'heure réelle (réglable), les jours fériés et le « déjà
+  // envoyé aujourd'hui » sont vérifiés à chaque passage : si le serveur était
+  // arrêté à l'heure prévue, les rappels partent au passage suivant.
+  startRappelCheckin() {
+    const cronExpression = '*/15 5-10 * * 1-5';
+
+    console.log(`🕐 [CRON] Planification rappel Checkinatwork: ${cronExpression}`);
+
+    const task = cron.schedule(cronExpression, async () => {
+      try {
+        const { executerRappels } = await import('@/lib/checkin/envoi');
+        const r = await executerRappels({ declencheur: 'CRON' });
+        if (r.envoyes.length || r.echecs.length) {
+          console.log(`📧 [CRON] Rappels Checkinatwork (${r.mode}) : ${r.envoyes.length} envoyé(s), ${r.echecs.length} échec(s), ${r.ignores.length} ignoré(s)`);
+        }
+      } catch (error) {
+        console.error('❌ [CRON] Erreur rappel Checkinatwork:', error);
+      }
+    }, {
+      timezone: "Europe/Brussels"
+    });
+
+    this.tasks.set('rappel-checkin', task);
+    task.start();
+
+    return task;
+  }
+
   // Arrêter une tâche spécifique
   stopTask(taskName: string) {
     const task = this.tasks.get(taskName);
@@ -188,6 +217,9 @@ export class RAGIndexingScheduler {
 
     // Sauvegarde automatique de la base de données chaque jour à 20h00
     this.startDailyBackup();
+
+    // Rappel Checkinatwork (mode réglé dans Configuration ; désactivé par défaut)
+    this.startRappelCheckin();
 
     console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport vendredi midi + sauvegarde 20h00)');
   }

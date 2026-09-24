@@ -270,3 +270,43 @@ export async function sendContractSignatureEmail(
     return false
   }
 } 
+/**
+ * Envoi d'un rappel Checkinatwork — variante dédiée, pour la preuve.
+ *
+ * Différences avec sendEmail :
+ *  - renvoie le Message-ID SMTP (conservé dans le journal des rappels) et
+ *    l'erreur exacte, au lieu d'un simple booléen ;
+ *  - n'ajoute PAS le Cc/Cci global des paramètres : il produirait une copie
+ *    par sous-traitant et par jour, et un Cc serait visible des sous-traitants ;
+ *  - Reply-To explicite, version texte jointe à la version HTML ;
+ *  - EMAIL_DRY_RUN=true : rien n'est envoyé, l'envoi est seulement journalisé.
+ */
+export async function envoyerEmailRappel(p: {
+  to: string
+  subject: string
+  html: string
+  text: string
+  replyTo?: string
+}): Promise<{ ok: boolean; messageId?: string; erreur?: string }> {
+  if (process.env.EMAIL_DRY_RUN === 'true') {
+    console.log(`[EMAIL_DRY_RUN] Rappel non envoyé → ${p.to} — ${p.subject}`)
+    return { ok: true, messageId: `dry-run-${Date.now()}` }
+  }
+  try {
+    const transporter = await createTransporter()
+    const settings = await prisma.companysettings.findFirst() as unknown as EmailSettings
+    const fromEmail = settings?.emailFrom || process.env.EMAIL_FROM || 'noreply@example.com'
+    const fromName = settings?.emailFromName || process.env.EMAIL_FROM_NAME || 'Secotech'
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: p.to,
+      replyTo: p.replyTo,
+      subject: p.subject,
+      html: p.html,
+      text: p.text,
+    })
+    return { ok: true, messageId: info.messageId }
+  } catch (error) {
+    return { ok: false, erreur: error instanceof Error ? error.message : String(error) }
+  }
+}

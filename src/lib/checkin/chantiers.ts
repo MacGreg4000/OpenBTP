@@ -87,3 +87,10 @@ export async function jetonCheckinValide(jeton: string): Promise<boolean> {
   const fourni = Buffer.from(j)
   return attendu.length === fourni.length && timingSafeEqual(attendu, fourni)
 }
+
+/** URL publique de la page pour un jeton (null si aucun jeton). */
+export function lienCheckin(jeton: string | null | undefined): string | null {
+  if (!jeton) return null
+  const base = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')
+  return `${base}/checkin/${jeton}`
+}

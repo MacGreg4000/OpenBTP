@@ -363,6 +363,43 @@ model companysettings {
   // Checkinatwork envoyée aux sous-traitants). Un seul jeton global,
   // régénérable si le lien circule trop : l'ancien devient aussitôt invalide.
   checkinToken  String?  @unique
+  // Rappel Checkinatwork quotidien
+  rappelCheckinMode        String   @default("DESACTIVE") // DESACTIVE | TEST | ACTIF
+  rappelCheckinEmailTest   String?  // en mode TEST, TOUS les rappels partent ici
+  rappelCheckinHeure       String   @default("06:30")     // heure locale Europe/Brussels
+  rappelCheckinJoursFeries String?  @db.Text              // une date AAAA-MM-JJ ou une période AAAA-MM-JJ:AAAA-MM-JJ par ligne
+}
+
+/// Journal des rappels Checkinatwork — la PREUVE remise à l'inspection.
+///
+/// Append-only : aucune route ne le modifie ni ne le supprime. Volontairement
+/// SANS relation vers `soustraitant` : une clé étrangère en cascade effacerait
+/// la preuve avec le sous-traitant. Nom et contrat sont donc copiés à l'envoi.
+model RappelCheckinLog {
+  id                Int      @id @default(autoincrement())
+  canal             String   @default("EMAIL")
+  dateRappel        String   // AAAA-MM-JJ (Europe/Brussels) — une seule fois par sous-traitant et par jour
+  declencheur       String   // CRON | MANUEL
+  modeTest          Boolean  @default(false)
+  soustraitantId    String
+  soustraitantNom   String
+  destinataire      String   // adresse à laquelle l'email est réellement parti
+  destinataireReel  String?  // en mode test : l'adresse qui aurait reçu le rappel
+  contratReference  String?  // CT-…
+  contratVersion    String?  // nom du template du contrat signé
+  objet             String   @db.Text
+  contenuTexte      String   @db.LongText
+  contenuHtml       String   @db.LongText
+  chantiersSnapshot String   @db.LongText // JSON : chantiers affichés sur la page ce jour-là
+  lien              String   @db.Text
+  messageId         String?
+  statut            String   // ENVOYE | ECHEC
+  erreur            String?  @db.Text
+  createdAt         DateTime @default(now())
+
+  @@index([soustraitantId, dateRappel])
+  @@index([dateRappel])
+  @@map("rappel_checkin_log")
 }
 
 model CommandeSousTraitant {
