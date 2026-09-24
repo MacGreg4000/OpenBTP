@@ -309,8 +309,8 @@ async function validerChantier(args: Record<string, unknown>): Promise<Validatio
     if (conflit) {
       return {
         erreur:
-          `La référence « ${numeroIdentification} » est déjà utilisée par le chantier ` +
-          `« ${conflit.nomChantier} » (${conflit.chantierId}). Utilise une autre référence.`,
+          `Le numéro Checkinatwork « ${numeroIdentification} » est déjà utilisé par le chantier ` +
+          `« ${conflit.nomChantier} » (${conflit.chantierId}). Vérifie le numéro de déclaration.`,
       }
     }
   }
@@ -359,8 +359,10 @@ export const creerChantier: ToolDefinition = {
   name: 'creer_chantier',
   description:
     "Crée un nouveau chantier. L'identifiant du chantier (format CH-ANNEE-XXXXXX) est généré " +
-    "automatiquement et ne doit PAS être fourni. La référence du marché va dans numeroIdentification " +
-    "(unique : un doublon est refusé avec un message clair). Génère aussi le PPSS et notifie l'équipe. " +
+    "automatiquement et ne doit PAS être fourni. numeroIdentification reçoit UNIQUEMENT le numéro de déclaration " +
+    "Checkinatwork (enregistrement des présences, ONSS) — jamais une référence de marché ou de " +
+    "bon de commande : il est communiqué chaque jour aux sous-traitants pour leur check-in. " +
+    "Si le numéro n'est pas connu, ne rien mettre (unique : un doublon est refusé). Génère aussi le PPSS et notifie l'équipe. " +
     "Utiliser dryRun d'abord pour valider les données sans rien écrire.",
   requiresConfirmation: true,
   parameters: {
@@ -374,7 +376,9 @@ export const creerChantier: ToolDefinition = {
       },
       numeroIdentification: {
         type: 'string',
-        description: 'Référence du marché / numéro de dossier (doit être unique)',
+        description:
+          "Numéro de déclaration Checkinatwork du chantier (unique). JAMAIS une référence de marché ou " +
+          "de bon de commande. Laisser vide si inconnu.",
       },
       adresseChantier: { type: 'string', description: 'Adresse du chantier' },
       villeChantier: { type: 'string', description: 'Ville du chantier' },
@@ -522,7 +526,7 @@ export const completerFicheChantier: ToolDefinition = {
   name: 'completer_fiche_chantier',
   description:
     "Complète la fiche d'un chantier existant : maître d'ouvrage, bureau d'architecture, " +
-    "adresse/ville, budget, référence, durée. Fusion partielle : seuls les champs fournis sont " +
+    "adresse/ville, budget, numéro Checkinatwork, durée. Fusion partielle : seuls les champs fournis sont " +
     "modifiés, les autres restent intacts. Une chaîne vide est ignorée ; envoyer null pour vider " +
     "un champ. Cet outil ne peut pas modifier le statut du chantier.",
   requiresConfirmation: true,
@@ -542,7 +546,12 @@ export const completerFicheChantier: ToolDefinition = {
       adresseChantier: { type: 'string', description: 'Adresse du chantier' },
       villeChantier: { type: 'string', description: 'Ville du chantier' },
       budget: { type: 'number', description: 'Budget en euros (voir avertissement dans le résumé)' },
-      numeroIdentification: { type: 'string', description: 'Référence du marché (unique)' },
+      numeroIdentification: {
+        type: 'string',
+        description:
+          "Numéro de déclaration Checkinatwork du chantier (unique). JAMAIS une référence de marché ou " +
+          "de bon de commande.",
+      },
       dateDebut: { type: 'string', description: 'Date de début, format AAAA-MM-JJ' },
       dureeEnJours: { type: 'number', description: 'Durée prévue en jours' },
       typeDuree: { type: 'string', description: 'CALENDRIER ou OUVRABLE', enum: ['CALENDRIER', 'OUVRABLE'] },
@@ -683,7 +692,7 @@ async function preparerFiche(args: Record<string, unknown>): Promise<Preparation
       if (conflit && conflit.id !== res.value.id) {
         return {
           erreur:
-            `La référence « ${ref} » est déjà utilisée par le chantier ` +
+            `Le numéro Checkinatwork « ${ref} » est déjà utilisé par le chantier ` +
             `« ${conflit.nomChantier} » (${conflit.chantierId}).`,
         }
       }
