@@ -12,6 +12,9 @@ interface Etat {
   emailTest: string
   heure: string
   joursFeries: string
+  emailAlerte: string
+  emailSociete: string
+  prochainsFeries: { date: string; nom: string }[]
   lienConfigure: boolean
   date: string
   destinataires: { id: string; nom: string; email: string | null; probleme: string | null }[]
@@ -35,7 +38,7 @@ const MODES: { valeur: Mode; libelle: string; aide: string }[] = [
 
 export default function RappelCheckinSettings() {
   const [etat, setEtat] = useState<Etat | null>(null)
-  const [form, setForm] = useState({ mode: 'DESACTIVE' as Mode, emailTest: '', heure: '06:30', joursFeries: '' })
+  const [form, setForm] = useState({ mode: 'DESACTIVE' as Mode, emailTest: '', emailAlerte: '', heure: '06:30', joursFeries: '' })
   const [enCours, setEnCours] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; texte: string } | null>(null)
 
@@ -44,7 +47,7 @@ export default function RappelCheckinSettings() {
     if (!r.ok) return
     const d: Etat = await r.json()
     setEtat(d)
-    setForm({ mode: d.mode, emailTest: d.emailTest, heure: d.heure, joursFeries: d.joursFeries })
+    setForm({ mode: d.mode, emailTest: d.emailTest, emailAlerte: d.emailAlerte, heure: d.heure, joursFeries: d.joursFeries })
   }, [])
 
   useEffect(() => {
@@ -103,7 +106,7 @@ export default function RappelCheckinSettings() {
   }
 
   const modifie =
-    form.mode !== etat.mode || form.emailTest !== etat.emailTest || form.heure !== etat.heure || form.joursFeries !== etat.joursFeries
+    form.mode !== etat.mode || form.emailTest !== etat.emailTest || form.emailAlerte !== etat.emailAlerte || form.heure !== etat.heure || form.joursFeries !== etat.joursFeries
   const aContacter = etat.destinataires.filter((d) => !d.probleme)
   const aProbleme = etat.destinataires.filter((d) => d.probleme)
   const champ = 'rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white'
@@ -173,12 +176,37 @@ export default function RappelCheckinSettings() {
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Jours fériés et congés du bâtiment (aucun rappel)</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Adresse d&apos;alerte</span>
+        <input
+          type="email"
+          value={form.emailAlerte}
+          onChange={(e) => setForm({ ...form, emailAlerte: e.target.value })}
+          placeholder={etat.emailSociete || 'gregory@secotech.be'}
+          className={`mt-1 w-full sm:w-1/2 ${champ}`}
+        />
+        <span className="mt-1 block text-xs text-gray-500">
+          Vers 7h00, uniquement en cas de problème : rappel en échec ou pas parti, sous-traitant actif sans contrat
+          signé ou sans email, chantier sans numéro Checkinatwork. Vide = email de la société.
+        </span>
+      </label>
+
+      <div className="rounded-md bg-gray-50 dark:bg-gray-700/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+        Aucun rappel les samedis, dimanches et jours fériés légaux belges (calculés automatiquement).
+        {etat.prochainsFeries.length > 0 && (
+          <span className="block text-xs text-gray-500 dark:text-gray-400">
+            Prochains :{' '}
+            {etat.prochainsFeries.map((f) => `${f.nom} ${f.date.split('-').reverse().join('/')}`).join(' · ')}
+          </span>
+        )}
+      </div>
+
+      <label className="block">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Autres jours sans rappel (facultatif — congés du bâtiment…)</span>
         <textarea
-          rows={5}
+          rows={3}
           value={form.joursFeries}
           onChange={(e) => setForm({ ...form, joursFeries: e.target.value })}
-          placeholder={'2026-11-11  # Armistice\n2026-12-21:2027-01-01  # Congés d’hiver'}
+          placeholder={'2026-12-21:2027-01-01  # Congés d’hiver'}
           className={`mt-1 w-full font-mono ${champ}`}
         />
         <span className="mt-1 block text-xs text-gray-500">

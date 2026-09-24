@@ -141,7 +141,7 @@ export class RAGIndexingScheduler {
   }
 
   // Rappel Checkinatwork quotidien : passage toutes les 15 min de 5h à 10h45,
-  // lundi–vendredi. L'heure réelle (réglable), les jours fériés et le « déjà
+  // lundi–vendredi (fériés belges exclus dans executerRappels). L'heure réelle (réglable), les jours fériés et le « déjà
   // envoyé aujourd'hui » sont vérifiés à chaque passage : si le serveur était
   // arrêté à l'heure prévue, les rappels partent au passage suivant.
   startRappelCheckin() {
@@ -151,11 +151,14 @@ export class RAGIndexingScheduler {
 
     const task = cron.schedule(cronExpression, async () => {
       try {
-        const { executerRappels } = await import('@/lib/checkin/envoi');
+        const { executerRappels, executerAlerte } = await import('@/lib/checkin/envoi');
         const r = await executerRappels({ declencheur: 'CRON' });
         if (r.envoyes.length || r.echecs.length) {
           console.log(`📧 [CRON] Rappels Checkinatwork (${r.mode}) : ${r.envoyes.length} envoyé(s), ${r.echecs.length} échec(s), ${r.ignores.length} ignoré(s)`);
         }
+        // Alerte (au plus tôt 7h00, 30 min après l'heure d'envoi) si problème
+        const alerte = await executerAlerte();
+        if (alerte.envoyee) console.log('⚠️ [CRON] Alerte rappels Checkinatwork envoyée');
       } catch (error) {
         console.error('❌ [CRON] Erreur rappel Checkinatwork:', error);
       }

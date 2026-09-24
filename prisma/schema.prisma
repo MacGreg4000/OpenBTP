@@ -367,7 +367,9 @@ model companysettings {
   rappelCheckinMode        String   @default("DESACTIVE") // DESACTIVE | TEST | ACTIF
   rappelCheckinEmailTest   String?  // en mode TEST, TOUS les rappels partent ici
   rappelCheckinHeure       String   @default("06:30")     // heure locale Europe/Brussels
-  rappelCheckinJoursFeries String?  @db.Text              // une date AAAA-MM-JJ ou une période AAAA-MM-JJ:AAAA-MM-JJ par ligne
+  rappelCheckinJoursFeries String?  @db.Text              // jours SUPPLÉMENTAIRES (les fériés belges sont automatiques) : une date AAAA-MM-JJ ou une période AAAA-MM-JJ:AAAA-MM-JJ par ligne
+  rappelCheckinEmailAlerte    String?  // alerte 7h00 en cas de problème (repli : email de la société)
+  rappelCheckinAlerteVerifiee String?  // AAAA-MM-JJ du dernier contrôle d'alerte — un seul par jour
 }
 
 /// Journal des rappels Checkinatwork — la PREUVE remise à l'inspection.

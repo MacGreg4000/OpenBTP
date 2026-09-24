@@ -2,13 +2,15 @@
 //
 // GET : réglages, destinataires prévus (et ceux qui seront ignorés, avec la
 //       raison), rappels déjà journalisés aujourd'hui.
-// PUT : mode (DESACTIVE | TEST | ACTIF), adresse de test, heure, jours sans rappel.
+// PUT : mode (DESACTIVE | TEST | ACTIF), adresses de test et d'alerte, heure,
+//       jours sans rappel supplémentaires (fériés belges automatiques).
 
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { emailFormatValide } from '@/lib/soustraitants/representant'
+import { prochainsJoursFeries } from '@/lib/checkin/jours-feries'
 import { MODES_RAPPEL, maintenantBruxelles, lireJoursSansRappel, type ModeRappel } from '@/lib/checkin/envoi'
 
 const ROLES = ['ADMIN', 'MANAGER']
@@ -27,6 +29,8 @@ export async function GET() {
       rappelCheckinEmailTest: true,
       rappelCheckinHeure: true,
       rappelCheckinJoursFeries: true,
+      rappelCheckinEmailAlerte: true,
+      email: true,
       checkinToken: true,
     },
   })
@@ -73,6 +77,9 @@ export async function GET() {
     emailTest: s?.rappelCheckinEmailTest ?? '',
     heure: s?.rappelCheckinHeure ?? '06:30',
     joursFeries: s?.rappelCheckinJoursFeries ?? '',
+    emailAlerte: s?.rappelCheckinEmailAlerte ?? '',
+    emailSociete: s?.email ?? '',
+    prochainsFeries: prochainsJoursFeries(date),
     lienConfigure: !!s?.checkinToken,
     date,
     destinataires,
@@ -96,6 +103,11 @@ export async function PUT(request: Request) {
   }
   if (mode === 'TEST' && !emailTest) {
     return NextResponse.json({ error: 'Le mode test exige une adresse de test.' }, { status: 400 })
+  }
+
+  const emailAlerte = String(body.emailAlerte ?? '').trim().toLowerCase()
+  if (emailAlerte && !emailFormatValide(emailAlerte)) {
+    return NextResponse.json({ error: `Adresse d'alerte invalide : « ${emailAlerte} ».` }, { status: 400 })
   }
 
   const heure = String(body.heure ?? '06:30').trim()
@@ -122,6 +134,7 @@ export async function PUT(request: Request) {
       rappelCheckinEmailTest: emailTest || null,
       rappelCheckinHeure: heure,
       rappelCheckinJoursFeries: joursFeries.trim() || null,
+      rappelCheckinEmailAlerte: emailAlerte || null,
     },
   })
   return NextResponse.json({ ok: true })

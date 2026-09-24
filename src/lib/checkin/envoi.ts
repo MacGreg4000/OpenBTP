@@ -16,6 +16,7 @@ import { envoyerEmailRappel } from '@/lib/email-sender'
 import { referenceContrat } from '@/lib/contract-generator-puppeteer'
 import { listerChantiersCheckin, lienCheckin } from './chantiers'
 import { construireRappel } from './rappel'
+import { jourFerieBelge } from './jours-feries'
 
 const FUSEAU = 'Europe/Brussels'
 const REPLY_TO = 'info@secotech.be'
@@ -63,7 +64,8 @@ export function maintenantBruxelles(d = new Date()): { date: string; heure: stri
 }
 
 /**
- * Jours sans rappel : une date AAAA-MM-JJ ou une période AAAA-MM-JJ:AAAA-MM-JJ
+ * Jours sans rappel SUPPLÉMENTAIRES (les week-ends et fériés légaux belges
+ * sont exclus d'office) : une date AAAA-MM-JJ ou une période AAAA-MM-JJ:AAAA-MM-JJ
  * par ligne ; le texte après un # est un commentaire. Les lignes illisibles
  * sont ignorées (elles sont signalées dans l'écran des réglages).
  */
@@ -122,8 +124,10 @@ async function executer(
 
   if (opts.declencheur === 'CRON') {
     if (jourSemaine < 1 || jourSemaine > 5) return { ...res, raison: 'Week-end.' }
+    const ferie = jourFerieBelge(date)
+    if (ferie) return { ...res, raison: `Jour férié (${ferie}).` }
     if (estJourSansRappel(date, settings.rappelCheckinJoursFeries)) {
-      return { ...res, raison: 'Jour férié / congé du bâtiment.' }
+      return { ...res, raison: 'Jour de congé (liste des réglages).' }
     }
     if (heure < (settings.rappelCheckinHeure || '06:30')) return { ...res, raison: 'Heure d\'envoi pas encore atteinte.' }
     if (heure >= HEURE_LIMITE_CRON) return { ...res, raison: 'Fenêtre d\'envoi automatique dépassée.' }
@@ -268,4 +272,125 @@ async function executer(
   }
 
   return res
+}
+
+// ─── Alerte du matin ────────────────────────────────────────────────────────
+//
+// Une fois par jour ouvrable, au plus tôt à 7h00 et au moins 30 min après
+// l'heure d'envoi, contrôle la situation et envoie un email à Secotech
+// UNIQUEMENT s'il y a un problème :
+//  - rappels en échec aujourd'hui, ou sous-traitants pas encore contactés ;
+//  - sous-traitants actifs sans contrat-cadre signé ou sans email représentant ;
+//  - chantiers publiés sur la page sans numéro Checkinatwork.
+
+export interface ProblemesRappel {
+  echecs: { soustraitant: string; erreur: string }[]
+  nonEnvoyes: string[]
+  nonContactables: { soustraitant: string; raison: string }[]
+  chantiersSansNumero: { chantier: string; client: string }[]
+}
+
+function ajouterMinutes(heure: string, minutes: number): string {
+  const [h, m] = heure.split(':').map(Number)
+  const t = Math.min(h * 60 + m + minutes, 23 * 60 + 59)
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+}
+
+export async function releverProblemes(date: string, modeTest: boolean): Promise<ProblemesRappel> {
+  const sousTraitants = await prisma.soustraitant.findMany({
+    where: { actif: true, rappelCheckinActif: true },
+    select: {
+      id: true,
+      nom: true,
+      representantEmail: true,
+      contrats: { where: { estSigne: true }, select: { id: true }, take: 1 },
+    },
+    orderBy: { nom: 'asc' },
+  })
+  const logs = await prisma.rappelCheckinLog.findMany({
+    where: { dateRappel: date, modeTest },
+    select: { soustraitantId: true, statut: true, erreur: true },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  const p: ProblemesRappel = { echecs: [], nonEnvoyes: [], nonContactables: [], chantiersSansNumero: [] }
+  for (const st of sousTraitants) {
+    if (!st.contrats.length) {
+      p.nonContactables.push({ soustraitant: st.nom, raison: 'Aucun contrat-cadre signé' })
+      continue
+    }
+    if (!st.representantEmail) {
+      p.nonContactables.push({ soustraitant: st.nom, raison: 'Email du représentant manquant' })
+      continue
+    }
+    const siens = logs.filter((l) => l.soustraitantId === st.id)
+    if (siens.some((l) => l.statut === 'ENVOYE')) continue
+    const echec = siens.filter((l) => l.statut === 'ECHEC').pop()
+    if (echec) p.echecs.push({ soustraitant: st.nom, erreur: echec.erreur || 'Erreur inconnue' })
+    else p.nonEnvoyes.push(st.nom)
+  }
+  p.chantiersSansNumero = (await listerChantiersCheckin())
+    .filter((c) => !c.numero)
+    .map((c) => ({ chantier: c.chantier, client: c.client }))
+  return p
+}
+
+export function aDesProblemes(p: ProblemesRappel): boolean {
+  return !!(p.echecs.length || p.nonEnvoyes.length || p.nonContactables.length || p.chantiersSansNumero.length)
+}
+
+export async function executerAlerte(maintenant?: Date): Promise<{ envoyee: boolean; raison?: string }> {
+  const settings = await prisma.companysettings.findFirst()
+  const mode = settings?.rappelCheckinMode as ModeRappel
+  if (!settings || (mode !== 'TEST' && mode !== 'ACTIF')) return { envoyee: false, raison: 'Rappels désactivés.' }
+
+  const { date, heure, jourSemaine } = maintenantBruxelles(maintenant)
+  if (jourSemaine < 1 || jourSemaine > 5 || jourFerieBelge(date) || estJourSansRappel(date, settings.rappelCheckinJoursFeries)) {
+    return { envoyee: false, raison: 'Jour sans rappel.' }
+  }
+  const seuil = [ajouterMinutes(settings.rappelCheckinHeure || '06:30', 30), '07:00'].sort()[1]
+  if (heure < seuil) return { envoyee: false, raison: 'Trop tôt.' }
+  if (settings.rappelCheckinAlerteVerifiee === date) return { envoyee: false, raison: 'Déjà contrôlé aujourd\'hui.' }
+
+  // Marqué AVANT l'envoi : en cas de plantage, pas d'alerte en boucle.
+  await prisma.companysettings.update({ where: { id: settings.id }, data: { rappelCheckinAlerteVerifiee: date } })
+
+  const p = await releverProblemes(date, mode === 'TEST')
+  if (!aDesProblemes(p)) return { envoyee: false, raison: 'Aucun problème.' }
+
+  const destinataire = settings.rappelCheckinEmailAlerte?.trim() || settings.email
+  if (!destinataire) return { envoyee: false, raison: 'Aucune adresse d\'alerte.' }
+
+  const e = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const sections: { titre: string; lignes: string[] }[] = [
+    { titre: 'Rappels en échec', lignes: p.echecs.map((x) => `${x.soustraitant} — ${x.erreur}`) },
+    { titre: 'Rappels pas encore partis', lignes: p.nonEnvoyes },
+    { titre: 'Sous-traitants actifs non contactés', lignes: p.nonContactables.map((x) => `${x.soustraitant} — ${x.raison}`) },
+    {
+      titre: 'Chantiers sans numéro Checkinatwork (fiche chantier → Numéro d\'identification)',
+      lignes: p.chantiersSansNumero.map((x) => (x.client ? `${x.chantier} (${x.client})` : x.chantier)),
+    },
+  ].filter((s) => s.lignes.length)
+
+  const dateFr = date.split('-').reverse().join('/')
+  const prefixe = mode === 'TEST' ? '[TEST] ' : ''
+  const texte = [
+    `Contrôle des rappels Checkinatwork du ${dateFr}${mode === 'TEST' ? ' (mode test)' : ''} :`,
+    '',
+    ...sections.flatMap((s) => [`${s.titre} (${s.lignes.length}) :`, ...s.lignes.map((l) => `- ${l}`), '']),
+    'Réglages : Configuration → Rappel Checkinatwork quotidien.',
+  ].join('\n')
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111">
+<p>Contrôle des rappels Checkinatwork du ${dateFr}${mode === 'TEST' ? ' (mode test)' : ''} :</p>
+${sections.map((s) => `<h3 style="font-size:15px;margin:16px 0 4px">${e(s.titre)} (${s.lignes.length})</h3><ul>${s.lignes.map((l) => `<li>${e(l)}</li>`).join('')}</ul>`).join('\n')}
+<p style="color:#555">Réglages : Configuration → Rappel Checkinatwork quotidien.</p></div>`
+
+  const envoi = await envoyerEmailRappel({
+    to: destinataire,
+    subject: `${prefixe}⚠️ Rappels Checkinatwork – ${dateFr} – à vérifier`,
+    html,
+    text: texte,
+  })
+  if (!envoi.ok) console.error(`❌ [ALERTE CHECKIN] Envoi impossible à ${destinataire}: ${envoi.erreur}`)
+  return { envoyee: envoi.ok, raison: envoi.erreur }
 }

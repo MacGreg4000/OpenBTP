@@ -27,6 +27,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useNotification } from '@/hooks/useNotification'
 import LigneTarif, { LigneTarifData } from '@/components/tarifs/LigneTarif'
+import RappelsCheckinSection from '@/components/sous-traitants/RappelsCheckinSection'
 
 interface SousTraitantData {
   id: string
@@ -510,6 +511,9 @@ export default function SousTraitantConsultationPage(
                 </div>
               </div>
             )}
+
+            {/* Rappels Checkinatwork (journal de preuve) */}
+            <RappelsCheckinSection soustraitantId={params.id} />
 
             {/* Liste de prix */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
