@@ -7,6 +7,7 @@ import DocumentManager from '@/components/documents/DocumentManager'
 import AdminTaskTypesManager from '@/components/configuration/AdminTaskTypesManager'
 import CheckinLienSettings from '@/components/configuration/CheckinLienSettings'
 import RappelCheckinSettings from '@/components/configuration/RappelCheckinSettings'
+import RenouvellementContratsSettings from '@/components/configuration/RenouvellementContratsSettings'
 import { usePermission } from '@/hooks/usePermission'
 import { PageHeader } from '@/components/PageHeader'
 import { useNotification } from '@/hooks/useNotification'
@@ -669,6 +670,10 @@ export default function ConfigurationPage() {
 
       <div className="mt-6">
         <RappelCheckinSettings />
+      </div>
+
+      <div className="mt-6">
+        <RenouvellementContratsSettings />
       </div>
 
       <h2 className="text-xl font-bold mt-12 mb-6 flex items-center gap-2 dark:text-white">

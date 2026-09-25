@@ -172,6 +172,37 @@ export class RAGIndexingScheduler {
     return task;
   }
 
+  // Renouvellement automatique des contrats-cadres : 8h00, lundi–vendredi
+  // (fériés belges exclus). Ne fait rien tant que l'option n'est pas activée
+  // dans Configuration.
+  startRenouvellementContrats() {
+    const cronExpression = '0 8 * * 1-5';
+
+    console.log(`🕐 [CRON] Planification renouvellement des contrats: ${cronExpression}`);
+
+    const task = cron.schedule(cronExpression, async () => {
+      try {
+        const { jourFerieBelge } = await import('@/lib/checkin/jours-feries');
+        const { maintenantBruxelles } = await import('@/lib/checkin/envoi');
+        if (jourFerieBelge(maintenantBruxelles().date)) return;
+        const { executerRenouvellements } = await import('@/lib/contrats/renouvellement');
+        const r = await executerRenouvellements();
+        if (r.envoyes.length || r.echecs.length) {
+          console.log(`📧 [CRON] Renouvellement contrats : ${r.envoyes.length} envoyé(s), ${r.echecs.length} échec(s), ${r.bloques.length} bloqué(s)`);
+        }
+      } catch (error) {
+        console.error('❌ [CRON] Erreur renouvellement contrats:', error);
+      }
+    }, {
+      timezone: "Europe/Brussels"
+    });
+
+    this.tasks.set('renouvellement-contrats', task);
+    task.start();
+
+    return task;
+  }
+
   // Arrêter une tâche spécifique
   stopTask(taskName: string) {
     const task = this.tasks.get(taskName);
@@ -223,6 +254,9 @@ export class RAGIndexingScheduler {
 
     // Rappel Checkinatwork (mode réglé dans Configuration ; désactivé par défaut)
     this.startRappelCheckin();
+
+    // Renouvellement automatique des contrats-cadres (désactivé par défaut)
+    this.startRenouvellementContrats();
 
     console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport vendredi midi + sauvegarde 20h00)');
   }
