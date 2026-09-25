@@ -24,7 +24,7 @@ import {
   creerNoteChantier,
 } from './notes'
 import { listeEtatsAvancement, creerEtatAvancement, ajouterAvenantEtat } from './etats'
-import { creerDevis } from './devis'
+import { creerDevis, listeDevis, detailDevis, modifierDevis } from './devis'
 import {
   lireBaremeMateriau,
   definirBaremeMateriau,
@@ -57,6 +57,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   documentsExpirants,
   listeDocumentsOuvrier,
   listeEtatsAvancement,
+  listeDevis,
+  detailDevis,
   lireNotesDashboard,
   lireBaremeMateriau,
   analyserCoutMatiereChantier,
@@ -77,6 +79,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   ajouterAvenantEtat,
   // Devis
   creerDevis,
+  modifierDevis,
   // Rentabilité / coût matière
   definirBaremeMateriau,
   definirCoutMatiereLigne,
