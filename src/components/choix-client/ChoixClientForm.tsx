@@ -12,7 +12,13 @@ import { toast } from 'react-hot-toast'
 interface Chantier {
   chantierId: string
   nomChantier: string
+  clientNom?: string
+  villeChantier?: string
+  etatChantier?: string
 }
+
+// Actifs d'abord, terminés en dernier
+const ORDRE_ETAT: Record<string, number> = { 'En cours': 0, 'En préparation': 1, 'À venir': 2, 'Terminé': 3 }
 
 interface DetailChoix {
   id?: string
@@ -102,26 +108,35 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
     fetchChantiers()
   }, [])
 
+  // Tous les chantiers, page par page : l'API plafonne à 100 par page et
+  // trie du plus récent au plus ancien — une seule page masquait les
+  // chantiers plus anciens, introuvables dans la recherche.
+  // Les pseudo-chantiers « CH-LIBRE-… » (créés par un métré soumis sur le
+  // portail avec un nom libre) sont masqués, sauf s'il s'agit du chantier
+  // déjà associé à cette fiche.
   const fetchChantiers = async () => {
     try {
-      const response = await fetch('/api/chantiers?etat=tous&pageSize=100')
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
+      const tous: Chantier[] = []
+      for (let page = 1; page <= 50; page++) {
+        const response = await fetch(`/api/chantiers?etat=tous&pageSize=100&page=${page}`)
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`)
+        }
+        const data = await response.json()
+        const lot: Chantier[] = Array.isArray(data.chantiers) ? data.chantiers : Array.isArray(data) ? data : []
+        tous.push(...lot)
+        if (!data.meta || page >= data.meta.totalPages || lot.length === 0) break
       }
-      const data = await response.json()
-      // L'API retourne { chantiers: [...], meta: {...} }
-      if (data.chantiers && Array.isArray(data.chantiers)) {
-        setChantiers(data.chantiers)
-      } else if (data.data && Array.isArray(data.data)) {
-        // Fallback pour l'ancien format
-        setChantiers(data.data)
-      } else if (Array.isArray(data)) {
-        // Fallback si l'API retourne directement un array
-        setChantiers(data)
-      } else {
-        console.warn('Format de réponse inattendu pour /api/chantiers:', data)
-        setChantiers([])
-      }
+      const initial = initialData?.chantierId
+      setChantiers(
+        tous
+          .filter((c) => !c.chantierId.startsWith('CH-LIBRE-') || c.chantierId === initial)
+          .sort(
+            (a, b) =>
+              (ORDRE_ETAT[a.etatChantier || ''] ?? 9) - (ORDRE_ETAT[b.etatChantier || ''] ?? 9) ||
+              a.nomChantier.localeCompare(b.nomChantier, 'fr')
+          )
+      )
     } catch (error) {
       console.error('Erreur lors du chargement des chantiers:', error)
       setChantiers([])
@@ -235,7 +250,12 @@ export default function ChoixClientForm({ initialData, onSubmit, saving }: Choix
 
   const chantierOptions = useMemo<SearchableSelectOption[]>(() => {
     const base: SearchableSelectOption[] = [{ value: null, label: 'Aucun (client en réflexion)' }]
-    const others = chantiers.map((c) => ({ value: c.chantierId, label: c.nomChantier }))
+    const others = chantiers.map((c) => ({
+      value: c.chantierId,
+      label: c.nomChantier,
+      // Recherché aussi : on retrouve un chantier par client, ville ou état
+      subtitle: [c.clientNom, c.villeChantier, c.etatChantier].filter(Boolean).join(' · ') || undefined,
+    }))
     return [...base, ...others]
   }, [chantiers])
 
