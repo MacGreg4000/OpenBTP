@@ -40,7 +40,13 @@ function composerAdresse(adresse: string | null, ville: string | null): string {
 
 export async function listerChantiersCheckin(): Promise<ChantierCheckin[]> {
   const chantiers = await prisma.chantier.findMany({
-    where: { statut: { in: [...STATUTS_CHECKIN] } },
+    where: {
+      statut: { in: [...STATUTS_CHECKIN] },
+      // Pseudo-chantiers « CH-LIBRE-… » créés par un métré soumis sur le
+      // portail avec un nom libre (« spa », « Jeudi »…) : ce ne sont pas des
+      // chantiers, l'application les masque déjà de ses listes.
+      NOT: { chantierId: { startsWith: 'CH-LIBRE-' } },
+    },
     select: {
       id: true,
       numeroIdentification: true,
