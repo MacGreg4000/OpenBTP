@@ -21,7 +21,8 @@ interface Chantier {
 const normaliser = (s: string) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
-const URL_CHECKINATWORK = 'https://www.checkinatwork.be'
+// Service en ligne officiel de l'ONSS (l'ancien checkinatwork.be ne répond plus)
+const URL_CHECKINATWORK = 'https://checkinatwork.socialsecurity.be/checkinatwork/'
 
 export default function CheckinListe({ chantiers, miseAJour }: { chantiers: Chantier[]; miseAJour: string }) {
   const [recherche, setRecherche] = useState('')
@@ -71,6 +72,12 @@ export default function CheckinListe({ chantiers, miseAJour }: { chantiers: Chan
         Toute personne non enregistrée n&apos;est pas autorisée sur chantier.
         <span className="block font-normal opacity-90">
           Qualquer pessoa não registada não está autorizada na obra.
+        </span>
+        <span className="block font-normal opacity-90">
+          Orice persoană neînregistrată nu are acces pe șantier.
+        </span>
+        <span className="block font-normal opacity-90">
+          Any unregistered person is not allowed on site.
         </span>
       </div>
 

@@ -116,7 +116,7 @@ export default function RappelCheckinSettings() {
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Rappel Checkinatwork quotidien</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Chaque jour ouvrable, un email FR/PT au représentant de chaque sous-traitant actif ayant un contrat-cadre signé :
+          Chaque jour ouvrable, un email en français, portugais, roumain et anglais au représentant de chaque sous-traitant actif ayant un contrat-cadre signé :
           obligation d&apos;enregistrement, interdiction d&apos;accès sans enregistrement et lien vers la page des chantiers.
           Chaque envoi est conservé (texte exact + liste des chantiers du jour). Réponses vers info@secotech.be.
         </p>

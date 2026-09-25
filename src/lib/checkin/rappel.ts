@@ -1,4 +1,4 @@
-// Contenu de l'email de rappel Checkinatwork quotidien (FR + PT).
+// Contenu de l'email de rappel Checkinatwork quotidien (FR, PT, RO, EN).
 //
 // Module pur (sans Prisma) : le texte exact produit ici est envoyé ET copié
 // tel quel dans le journal des rappels, qui sert de preuve à l'inspection.
@@ -53,7 +53,14 @@ export function construireRappel(d: DonneesRappel): ContenuRappel {
   const refacturationPt = d.contratV2
     ? 'Qualquer multa será integralmente refaturada (artigos 8.7 e 8.8).'
     : 'Qualquer multa será integralmente refaturada, nos termos do contrato-quadro e da legislação aplicável.'
+  const refacturationRo = d.contratV2
+    ? 'Orice amendă va fi refacturată integral (articolele 8.7 și 8.8).'
+    : 'Orice amendă va fi refacturată integral, în conformitate cu contractul-cadru și cu legislația aplicabilă.'
+  const refacturationEn = d.contratV2
+    ? 'Any fine will be recharged to you in full (articles 8.7 and 8.8).'
+    : 'Any fine will be recharged to you in full, in accordance with the framework contract and applicable law.'
   const pied = `${d.societe.nom} – ${d.societe.adresse} – ${d.societe.tva}`
+  const separateur = `-------------------------------------------------------------------------------`
 
   const texte = [
     `Madame, Monsieur,`,
@@ -89,7 +96,7 @@ export function construireRappel(d: DonneesRappel): ContenuRappel {
     ``,
     pied,
     ``,
-    `-------------------------------------------------------------------------------`,
+    separateur,
     ``,
     `LEMBRETE DIÁRIO – REGISTO DE PRESENÇAS (CHECKINATWORK) E LIMOSA`,
     ``,
@@ -101,6 +108,33 @@ export function construireRappel(d: DonneesRappel): ContenuRappel {
     `3. QUALQUER PESSOA NÃO REGISTADA NÃO ESTÁ AUTORIZADA NA OBRA e será retirada`,
     `imediatamente. ${refacturationPt}`,
     `4. Números Checkinatwork e moradas das obras: ${d.lien}`,
+    ``,
+    separateur,
+    ``,
+    `MEMENTO ZILNIC – ÎNREGISTRAREA PREZENȚEI (CHECKINATWORK) ȘI LIMOSA`,
+    ``,
+    `1. OBLIGAȚIE LEGALĂ: fiecare persoană care intră pe un șantier în numele dumneavoastră`,
+    `(salariat, asociat, administrator, independent, lucrător temporar) trebuie să fie`,
+    `înregistrată în Checkinatwork ÎNAINTE de a intra pe șantier. Pentru persoanele detașate,`,
+    `declarația LIMOSA trebuie făcută ÎNAINTE de începerea lucrului, iar confirmarea de primire`,
+    `L-1 trebuie să poată fi prezentată pe șantier.`,
+    `2. Aceste obligații decurg din articolele 8.5 și 8.6 ale contractului-cadru${ref}.`,
+    `3. ORICE PERSOANĂ NEÎNREGISTRATĂ NU ARE ACCES PE ȘANTIER și va fi îndepărtată`,
+    `imediat. ${refacturationRo}`,
+    `4. Numerele Checkinatwork și adresele șantierelor: ${d.lien}`,
+    ``,
+    separateur,
+    ``,
+    `DAILY REMINDER – ATTENDANCE REGISTRATION (CHECKINATWORK) AND LIMOSA`,
+    ``,
+    `1. LEGAL OBLIGATION: every person entering a site on your behalf (employee, partner,`,
+    `manager, self-employed, temporary worker) must be registered in Checkinatwork BEFORE`,
+    `entering the site. For posted workers, the LIMOSA declaration must be made BEFORE work`,
+    `starts and the L-1 acknowledgement of receipt must be available for inspection on site.`,
+    `2. These obligations arise from articles 8.5 and 8.6 of the framework contract${ref}.`,
+    `3. ANY UNREGISTERED PERSON IS NOT ALLOWED ON SITE and will be removed immediately.`,
+    refacturationEn,
+    `4. Checkinatwork numbers and site addresses: ${d.lien}`,
   ].join('\n')
 
   // HTML : même texte, mise en forme minimale (meilleure délivrabilité, lisible
@@ -116,7 +150,9 @@ export function construireRappel(d: DonneesRappel): ContenuRappel {
 <div style="max-width:680px;margin:0 auto;padding:16px">
 <p style="background:#b91c1c;color:#fff;font-weight:bold;padding:10px 12px;margin:0 0 16px">
 TOUTE PERSONNE NON ENREGISTRÉE N'EST PAS AUTORISÉE SUR LE CHANTIER.<br>
-QUALQUER PESSOA NÃO REGISTADA NÃO ESTÁ AUTORIZADA NA OBRA.
+QUALQUER PESSOA NÃO REGISTADA NÃO ESTÁ AUTORIZADA NA OBRA.<br>
+ORICE PERSOANĂ NEÎNREGISTRATĂ NU ARE ACCES PE ȘANTIER.<br>
+ANY UNREGISTERED PERSON IS NOT ALLOWED ON SITE.
 </p>
 <div>${corps}</div>
 </div>
