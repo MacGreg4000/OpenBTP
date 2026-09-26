@@ -132,3 +132,26 @@ Contrat-cadre {{referenceContrat}} — version {{versionContrat}}
 ```html
 <p><strong>8.10.</strong> Les parties prennent acte de l'évolution annoncée de l'enregistrement des présences vers un enregistrement personnel et en temps réel de l'arrivée et du départ (« Check In and Out at Work »). Dès son entrée en vigueur, le sous-traitant s'y conforme sans qu'un avenant soit nécessaire ; l'article 8.6 s'applique mutatis mutandis au check-out.</p>
 ```
+
+## Article 10 — Non-sollicitation de la clientèle (v2.1)
+
+Ajouté après la mise en place de la v2 : l'ancien article 10 ne visait que
+les travaux supplémentaires proposés au maître de l'ouvrage du chantier en
+cours. Il est remplacé par 10.1 à 10.5 (sans renuméroter la suite du
+contrat : les renvois existants restent valables).
+
+> ⚠️ **Créer un nouveau template** (ex. `Contrat-cadre 2026-10 v2.1`), ne pas
+> modifier le template v2 en place : un contrat non signé est signé avec le
+> template dont il porte le nom — le modifier changerait le texte d'un
+> contrat déjà envoyé.
+
+```html
+<div class="article-title"><span class="clause-number">Article 10 -</span> TRAVAUX SUPPLÉMENTAIRES ET NON-SOLLICITATION DE LA CLIENTÈLE</div>
+<div class="article-content">
+  <p><strong>10.1. Travaux supplémentaires.</strong> Le sous-traitant s'interdit de soumettre d'initiative ou sur invitation tout devis ou proposition supplémentaire, quel qu'il soit, au maître de l'ouvrage sans passer par l'intermédiaire de l'entrepreneur principal, sauf s'il s'agit d'un travail étranger à l'objet du chantier en question.</p>
+  <p><strong>10.2. Non-sollicitation.</strong> Pendant la durée du présent contrat-cadre et pendant <span class="important">douze (12) mois</span> à compter de la fin du dernier chantier qu'il a exécuté pour l'entrepreneur principal, le sous-traitant s'interdit, directement ou par personne interposée (société liée, gérant, associé, préposé ou tout tiers agissant pour son compte), de solliciter, de démarcher ou d'accepter, sans l'accord préalable et écrit de l'entrepreneur principal, toute commande de travaux de même nature que ceux qui lui ont été confiés, émanant d'un client de l'entrepreneur principal dont il a eu connaissance à l'occasion de l'exécution du présent contrat. Sont visés les maîtres de l'ouvrage, les entrepreneurs généraux et leurs mandataires (architectes, bureaux d'études, gestionnaires de projet) des chantiers sur lesquels le sous-traitant est intervenu pour le compte de l'entrepreneur principal.</p>
+  <p><strong>10.3. Exceptions.</strong> L'article 10.2 ne s'applique pas aux clients avec lesquels le sous-traitant démontre, par écrit, avoir été en relation d'affaires avant sa première intervention pour l'entrepreneur principal, ni aux marchés publics attribués à l'issue d'une procédure à laquelle le sous-traitant a soumissionné en son nom propre.</p>
+  <p><strong>10.4. Indemnité forfaitaire.</strong> Toute violation de l'article 10.2 donne lieu, de plein droit et sans mise en demeure, au paiement par le sous-traitant d'une indemnité forfaitaire égale à <span class="important">dix pour cent (10 %)</span> du montant hors TVA des travaux commandés ou exécutés en violation de cet article. Le sous-traitant communique ce montant à première demande de l'entrepreneur principal ; à défaut, l'entrepreneur principal peut l'établir sur la base d'une estimation raisonnable, sauf preuve contraire apportée par le sous-traitant. Cette indemnité est compensable avec toute somme due au sous-traitant.</p>
+  <p><strong>10.5.</strong> Le sous-traitant impose les obligations du présent article à ses propres sous-traitants et à toute personne qu'il fait intervenir sur les chantiers de l'entrepreneur principal, et se porte fort de leur respect.</p>
+</div>
+```
