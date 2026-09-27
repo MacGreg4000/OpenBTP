@@ -241,6 +241,8 @@ function ChantierCard({
   )
 }
 
+const CLE_FILTRES_CHANTIERS = 'openbtp:chantiers:liste'
+
 export default function ChantiersPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -386,7 +388,49 @@ export default function ChantiersPage() {
     setPage(1)
   }, [filtreNom, filtreClient, filtreEtat, filtreClientId])
 
+  // Filtres, tri, page et affichage mémorisés pour l'onglet : en revenant de
+  // la fiche d'un chantier, on retrouve la liste telle qu'on l'avait laissée.
+  // sessionStorage (et non localStorage) : un nouvel onglet repart à zéro.
+  // Restauration dans un effet (pas au rendu) pour ne pas désynchroniser le
+  // rendu serveur ; le chargement attend la restauration (`filtresPrets`).
+  const [filtresPrets, setFiltresPrets] = useState(false)
   useEffect(() => {
+    try {
+      const brut = sessionStorage.getItem(CLE_FILTRES_CHANTIERS)
+      if (brut) {
+        const f = JSON.parse(brut)
+        if (typeof f.filtreNom === 'string') setFiltreNom(f.filtreNom)
+        if (typeof f.filtreClient === 'string') setFiltreClient(f.filtreClient)
+        if (typeof f.filtreEtat === 'string') setFiltreEtat(f.filtreEtat)
+        if (f.viewMode === 'cards' || f.viewMode === 'table') setViewMode(f.viewMode)
+        if (f.sortField) setSortField(f.sortField)
+        if (f.sortDirection === 'asc' || f.sortDirection === 'desc') setSortDirection(f.sortDirection)
+        if (Number.isInteger(f.page) && f.page > 0) setPage(f.page)
+      }
+    } catch {
+      // stockage indisponible (navigation privée…) : liste par défaut
+    }
+    setFiltresPrets(true)
+  }, [])
+  useEffect(() => {
+    if (!filtresPrets) return
+    try {
+      sessionStorage.setItem(
+        CLE_FILTRES_CHANTIERS,
+        JSON.stringify({ filtreNom, filtreClient, filtreEtat, viewMode, sortField, sortDirection, page })
+      )
+    } catch {}
+  }, [filtresPrets, filtreNom, filtreClient, filtreEtat, viewMode, sortField, sortDirection, page])
+
+  const filtresActifs = !!(filtreNom.trim() || filtreClient.trim() || filtreEtat)
+  const effacerFiltres = () => {
+    setFiltreNom('')
+    setFiltreClient('')
+    setFiltreEtat('')
+  }
+
+  useEffect(() => {
+    if (!filtresPrets) return
     const fetchChantiers = async () => {
       try {
         // Si des filtres sont actifs, récupérer TOUTES les données (pas de pagination)
@@ -448,7 +492,7 @@ export default function ChantiersPage() {
     }
     
     fetchChantiers()
-  }, [clientIdFromUrl, page, filtreEtat, filtreNom, filtreClient, filtreClientId])
+  }, [filtresPrets, clientIdFromUrl, page, filtreEtat, filtreNom, filtreClient, filtreClientId])
 
   // Fonction pour gérer le clic sur un en-tête de colonne
   const handleSort = (field: SortField) => {
@@ -686,6 +730,15 @@ export default function ChantiersPage() {
                   <option value="Terminé">Terminé</option>
                 </select>
               </div>
+              {filtresActifs && (
+                <button
+                  type="button"
+                  onClick={effacerFiltres}
+                  className="self-center text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
+                >
+                  Effacer les filtres
+                </button>
+              )}
             </div>
             <div className="flex gap-2">
               <button
