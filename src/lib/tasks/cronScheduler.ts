@@ -238,13 +238,13 @@ export class RAGIndexingScheduler {
 
   // Démarrer toutes les tâches par défaut
   startDefaultTasks() {
-    console.log('🚀 [CRON] Démarrage des tâches RAG par défaut');
-    
-    // Indexation complète tous les jours à 2h du matin
-    this.startDailyFullIndexing('02:00');
-    
-    // Indexation incrémentale toutes les 6 heures
-    this.startIncrementalIndexing();
+    console.log('🚀 [CRON] Démarrage des tâches planifiées');
+
+    // Indexation RAG (assistant IA / Ollama) DÉSACTIVÉE : l'assistant n'est
+    // plus utilisé et Ollama ne tourne plus sur le NAS — les deux tâches
+    // échouaient à chaque passage. Code et données conservés ; pour réactiver :
+    //   this.startDailyFullIndexing('02:00');
+    //   this.startIncrementalIndexing();
 
     // Rapport états d'avancement chaque vendredi à midi (mois en cours)
     this.startMonthlyReport();
@@ -258,7 +258,7 @@ export class RAGIndexingScheduler {
     // Renouvellement automatique des contrats-cadres (désactivé par défaut)
     this.startRenouvellementContrats();
 
-    console.log('✅ [CRON] Toutes les tâches démarrées (RAG + rapport vendredi midi + sauvegarde 20h00)');
+    console.log('✅ [CRON] Tâches démarrées (rapport vendredi midi, sauvegarde 20h00, rappels Checkinatwork, renouvellement contrats)');
   }
 }
 

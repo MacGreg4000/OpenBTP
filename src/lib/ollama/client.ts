@@ -188,9 +188,6 @@ export function getOllamaClient(): OllamaClient {
   // Force le rechargement si l'URL a changé
   if (!ollamaClient) {
     const envUrl = process.env.OLLAMA_BASE_URL;
-    console.log('🔍 Variables d\'environnement:');
-    console.log('  - OLLAMA_BASE_URL:', envUrl);
-    console.log('  - OLLAMA_MODEL:', process.env.OLLAMA_MODEL);
     
     const maxTokensEnv = process.env.OLLAMA_MAX_TOKENS;
     const maxTokens = maxTokensEnv
@@ -205,11 +202,6 @@ export function getOllamaClient(): OllamaClient {
       maxTokens,
     };
 
-    console.log('🔧 Configuration Ollama finale:', { 
-      baseUrl: config.baseUrl, 
-      model: config.model,
-      fromEnv: !!envUrl 
-    });
     ollamaClient = new OllamaClient(config);
   }
   return ollamaClient;
