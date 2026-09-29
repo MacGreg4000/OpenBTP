@@ -129,17 +129,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Vérifier si l'email est déjà utilisé
-    const existingTraitant = await prisma.soustraitant.findUnique({
-      where: { email: body.email }
-    })
-
-    if (existingTraitant) {
-      return NextResponse.json(
-        { error: 'Un sous-traitant avec cet email existe déjà' },
-        { status: 400 }
-      )
-    }
+    // Pas de contrôle d'unicité de l'email : une même personne peut gérer
+    // plusieurs sociétés sous-traitantes (un contrat-cadre par société).
 
     // Représentant légal (facultatif à la création, exigé pour générer un contrat)
     const representant = await normaliserRepresentant(body)

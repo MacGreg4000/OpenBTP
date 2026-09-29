@@ -69,7 +69,9 @@ model pret {
 model soustraitant {
   id                           String                         @id
   nom                          String
-  email                        String                         @unique(map: "SousTraitant_email_key")
+  // Pas unique : une même personne peut gérer plusieurs sociétés (un
+  // contrat-cadre par société, même adresse email).
+  email                        String
   contact                      String?
   adresse                      String?
   telephone                    String?

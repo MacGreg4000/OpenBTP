@@ -153,22 +153,8 @@ export async function PUT(
       )
     }
 
-    // Vérifier si l'email est déjà utilisé par un autre sous-traitant
-    const existingTraitant = body.email ? await prisma.soustraitant.findFirst({
-      where: {
-        email: body.email,
-        NOT: {
-          id
-        }
-      }
-    }) : null
-
-    if (existingTraitant) {
-      return NextResponse.json(
-        { error: 'Un autre sous-traitant utilise déjà cet email' },
-        { status: 400 }
-      )
-    }
+    // Pas de contrôle d'unicité de l'email : une même personne peut gérer
+    // plusieurs sociétés sous-traitantes (un contrat-cadre par société).
 
     const representant = await normaliserRepresentant(body)
     if (representant.erreur) {
