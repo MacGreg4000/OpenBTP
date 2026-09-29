@@ -20,5 +20,5 @@ export async function POST(
   if (!r.ok) {
     return NextResponse.json({ error: r.erreur }, { status: r.status ?? 500 })
   }
-  return NextResponse.json({ success: true, message: 'Email envoyé avec succès' })
+  return NextResponse.json({ success: true, message: 'Email envoyé avec succès', destinataire: r.destinataire })
 }

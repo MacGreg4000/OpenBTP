@@ -27,7 +27,8 @@ import { PageHeader } from '@/components/PageHeader'
   QrCodeIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
@@ -56,6 +57,8 @@ interface SousTraitant {
     renouvellementConseille?: boolean
   }[]
   nombreContratsTotal?: number
+  /** Nouveau contrat non signé généré après le contrat signé (renouvellement en cours) */
+  renouvellement?: { id: string; url: string; dateGeneration: string; dateEnvoi?: string | null } | null
 }
 
 interface InviteResult {
@@ -210,22 +213,27 @@ export default function SousTraitantsPage() {
     [ouvriersInternes, magasiniers]
   )
 
+  // Rechargement de la liste sans recharger la page : un rechargement
+  // complet effaçait le message de confirmation après un envoi de contrat.
+  const chargerSousTraitants = () =>
+    fetch('/api/sous-traitants')
+      .then(async res => {
+        const json = await res.json().catch(() => null)
+        if (!res.ok) {
+          throw new Error(json?.error || 'Erreur API sous-traitants')
+        }
+        const arr = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : [])
+        setSousTraitants(arr as SousTraitant[])
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Erreur lors du chargement des sous-traitants')
+        setLoading(false)
+      })
+
   useEffect(() => {
     if (session) {
-      fetch('/api/sous-traitants')
-        .then(async res => {
-          const json = await res.json().catch(() => null)
-          if (!res.ok) {
-            throw new Error(json?.error || 'Erreur API sous-traitants')
-          }
-          const arr = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : [])
-          setSousTraitants(arr as SousTraitant[])
-          setLoading(false)
-        })
-        .catch(() => {
-          setError('Erreur lors du chargement des sous-traitants')
-          setLoading(false)
-        })
+      chargerSousTraitants()
       // Charger ouvriers internes
       fetch('/api/ouvriers-internes')
         .then(r=>r.json())
@@ -309,7 +317,11 @@ export default function SousTraitantsPage() {
     }
   }
 
-  const envoyerContrat = async (soustraitantId: string) => {
+  const envoyerContrat = async (soustraitantId: string, mode: 'envoi' | 'renouvellement' | 'relance' = 'envoi') => {
+    const st = sousTraitants.find((x) => x.id === soustraitantId)
+    if (mode === 'renouvellement' && !confirm(
+      `Générer un nouveau contrat-cadre pour ${st?.nom ?? 'ce sous-traitant'} (dates actualisées, template actif) et l'envoyer en signature ?\n\nLe contrat signé actuel reste valable jusqu'à la signature du nouveau.`
+    )) return
     try {
       setSendingContract(soustraitantId)
       const response = await fetch(`/api/sous-traitants/${soustraitantId}/envoyer-contrat`, {
@@ -324,7 +336,14 @@ export default function SousTraitantsPage() {
         throw new Error(errorData.error || 'Erreur lors de l\'envoi du contrat')
       }
 
-      showNotification('Succès', 'Le contrat a été envoyé avec succès au sous-traitant', 'success')
+      const data = await response.json().catch(() => null)
+      const destinataire = data?.destinataire ? ` à ${data.destinataire}` : ''
+      showNotification(
+        mode === 'renouvellement' ? 'Nouveau contrat envoyé' : mode === 'relance' ? 'Relance envoyée' : 'Contrat envoyé',
+        `Le contrat a été envoyé pour signature${destinataire}. Il apparaît « en attente de signature » jusqu'à ce qu'il soit signé.`,
+        'success'
+      )
+      await chargerSousTraitants()
     } catch (error) {
       console.error('Erreur:', error)
       showNotification('Erreur', error instanceof Error ? error.message : 'Erreur lors de l\'envoi du contrat', 'error')
@@ -1090,6 +1109,46 @@ export default function SousTraitantsPage() {
                             </button>
                       </>
                           )}
+                          {st.contrats?.[0]?.estSigne && (
+                            st.renouvellement ? (
+                              <div className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-800 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-200">
+                                <div className="flex items-center gap-1 font-medium">
+                                  <ClockIcon className="h-3.5 w-3.5" />
+                                  {st.renouvellement.dateEnvoi
+                                    ? `Nouveau contrat envoyé le ${new Date(st.renouvellement.dateEnvoi).toLocaleDateString('fr-FR')} — en attente de signature`
+                                    : 'Nouveau contrat généré — pas encore envoyé'}
+                                </div>
+                                <div className="mt-2 flex gap-2">
+                                  <a
+                                    href={st.renouvellement.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center rounded-md bg-white px-2 py-1 font-medium text-indigo-700 hover:bg-indigo-50 dark:bg-gray-800 dark:text-indigo-300"
+                                  >
+                                    <EyeIcon className="h-3.5 w-3.5 mr-1" />
+                                    Consulter
+                                  </a>
+                                  <button
+                                    onClick={() => envoyerContrat(st.id, st.renouvellement?.dateEnvoi ? 'relance' : 'envoi')}
+                                    disabled={sendingContract === st.id}
+                                    className="inline-flex items-center rounded-md bg-white px-2 py-1 font-medium text-green-700 hover:bg-green-50 disabled:opacity-50 dark:bg-gray-800 dark:text-green-300"
+                                  >
+                                    <EnvelopeIcon className="h-3.5 w-3.5 mr-1" />
+                                    {sendingContract === st.id ? 'Envoi…' : st.renouvellement.dateEnvoi ? 'Renvoyer' : 'Envoyer'}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => envoyerContrat(st.id, 'renouvellement')}
+                                disabled={sendingContract === st.id}
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 transition-colors duration-200"
+                              >
+                                <ArrowPathIcon className={`h-4 w-4 mr-2 ${sendingContract === st.id ? 'animate-spin' : ''}`} />
+                                {sendingContract === st.id ? 'Envoi…' : 'Renouveler le contrat'}
+                              </button>
+                            )
+                          )}
                           <div className="flex items-center justify-between pt-1">
                             {(() => {
                               const contratActuel = st.contrats?.[0]
@@ -1253,10 +1312,23 @@ export default function SousTraitantsPage() {
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
                             {st.contrats && st.contrats.length > 0 && st.contrats[0].estSigne ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                <CheckCircleIcon className="h-3 w-3 mr-1" />
-                                Signé
-                              </span>
+                              <div className="flex flex-col items-start gap-1">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                  <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                  Signé
+                                </span>
+                                {st.renouvellement && (
+                                  <span
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100"
+                                    title={st.renouvellement.dateEnvoi ? `Nouveau contrat envoyé le ${new Date(st.renouvellement.dateEnvoi).toLocaleDateString('fr-FR')}` : 'Nouveau contrat généré, pas encore envoyé'}
+                                  >
+                                    <ClockIcon className="h-3 w-3 mr-1" />
+                                    {st.renouvellement.dateEnvoi
+                                      ? `Renouvellement envoyé le ${new Date(st.renouvellement.dateEnvoi).toLocaleDateString('fr-FR')}`
+                                      : 'Renouvellement à envoyer'}
+                                  </span>
+                                )}
+                              </div>
                             ) : st.contrats && st.contrats.length > 0 ? (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100">
                                 <ClockIcon className="h-3 w-3 mr-1" />
@@ -1273,6 +1345,7 @@ export default function SousTraitantsPage() {
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-center">
                             <div className="flex items-center justify-center space-x-1">
                               {st.contrats && st.contrats.length > 0 && st.contrats[0].estSigne ? (
+                                <>
                                 <a
                                   href={st.contrats[0].url}
                                   target="_blank"
@@ -1283,6 +1356,38 @@ export default function SousTraitantsPage() {
                                 >
                                   <DocumentTextIcon className="h-4 w-4" />
                                 </a>
+                                {st.renouvellement ? (
+                                  <>
+                                    <a
+                                      href={st.renouvellement.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 rounded transition-colors"
+                                      title="Consulter le nouveau contrat (en attente de signature)"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <EyeIcon className="h-4 w-4" />
+                                    </a>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); envoyerContrat(st.id, st.renouvellement?.dateEnvoi ? 'relance' : 'envoi') }}
+                                      disabled={sendingContract === st.id}
+                                      className="p-2 text-green-600 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900 rounded transition-colors disabled:opacity-50"
+                                      title={st.renouvellement.dateEnvoi ? 'Renvoyer le nouveau contrat pour signature' : 'Envoyer le nouveau contrat pour signature'}
+                                    >
+                                      <EnvelopeIcon className={`h-4 w-4 ${sendingContract === st.id ? 'animate-pulse' : ''}`} />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); envoyerContrat(st.id, 'renouvellement') }}
+                                    disabled={sendingContract === st.id}
+                                    className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900 rounded transition-colors disabled:opacity-50"
+                                    title="Renouveler : générer un nouveau contrat et l'envoyer en signature"
+                                  >
+                                    <ArrowPathIcon className={`h-4 w-4 ${sendingContract === st.id ? 'animate-spin' : ''}`} />
+                                  </button>
+                                )}
+                                </>
                               ) : (
                                 <>
                                   <button
@@ -2169,7 +2274,7 @@ export default function SousTraitantsPage() {
           soustraitantNom={historiqueOuvert.nom}
           open={!!historiqueOuvert}
           onClose={() => setHistoriqueOuvert(null)}
-          onRenouvele={() => window.location.reload()}
+          onRenouvele={() => { setHistoriqueOuvert(null); chargerSousTraitants() }}
           notifier={showNotification}
         />
       )}

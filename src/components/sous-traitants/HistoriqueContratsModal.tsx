@@ -105,7 +105,11 @@ export default function HistoriqueContratsModal({
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || 'Erreur lors du renouvellement')
-      notifier('Contrat renouvelé', 'Un nouveau contrat a été généré et envoyé au sous-traitant.', 'success')
+      notifier(
+        'Nouveau contrat envoyé',
+        `Le nouveau contrat a été envoyé pour signature${data?.destinataire ? ` à ${data.destinataire}` : ''}. Il apparaît « en attente de signature » dans la liste jusqu'à sa signature.`,
+        'success'
+      )
       charger()
       onRenouvele?.()
     } catch (e) {

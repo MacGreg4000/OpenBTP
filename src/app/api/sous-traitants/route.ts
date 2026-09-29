@@ -53,7 +53,8 @@ export async function GET() {
               estSigne: true,
               dateGeneration: true,
               dateSignature: true,
-              dateFin: true
+              dateFin: true,
+              dateEnvoi: true
             },
             orderBy: {
               dateGeneration: 'desc'
@@ -85,11 +86,22 @@ export async function GET() {
           : []
         const nombreContratsTotal = tousLesContrats.length
 
+        // Renouvellement en cours : contrat non signé généré APRÈS le contrat
+        // signé affiché. Sans cela, un renouvellement envoyé restait invisible
+        // dans le tableau (qui continue d'afficher le contrat signé).
+        const nouveau = contratSigne
+          ? tousLesContrats.find((c) => !c.estSigne && c.dateGeneration > contratSigne.dateGeneration)
+          : undefined
+        const renouvellement = nouveau
+          ? { id: nouveau.id, url: nouveau.url, dateGeneration: nouveau.dateGeneration, dateEnvoi: nouveau.dateEnvoi }
+          : null
+
         return {
           ...st,
           actif: actifById[st.id] ?? true,
           contrats,
           nombreContratsTotal,
+          renouvellement,
           _count: {
             ...st._count,
             ouvriers: ouvriersCount
