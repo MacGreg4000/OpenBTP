@@ -1,3 +1,5 @@
+import { gabaritEmail, paragraphe, texteEnHtml, echapperHtml } from '@/lib/email/gabarit'
+import { societeEmail } from '@/lib/email/societe'
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -246,7 +248,11 @@ export async function POST(request: Request) {
       from: `"${companySettingsRaw.name || 'Votre Entreprise'}" <${companySettingsRaw.emailFrom || companySettingsRaw.emailUser}>`,
       to: toList.join(','),
       subject: subject,
-      html: emailBody.replace(/\n/g, '<br />'),
+      html: gabaritEmail({
+        titre: subject,
+        contenuHtml: paragraphe(texteEnHtml(emailBody)) + paragraphe(`<span style="color:#6B7280;font-size:13px;">📎 ${echapperHtml(pdfFileName)}</span>`),
+        societe: await societeEmail(),
+      }),
       attachments: [
         {
           filename: pdfFileName,

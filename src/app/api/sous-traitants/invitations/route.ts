@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
 import { sendEmail } from '@/lib/email-sender'
+import { gabaritEmail, paragraphe, encadre, echapperHtml } from '@/lib/email/gabarit'
+import { societeEmail } from '@/lib/email/societe'
 
 /**
  * Normalise un numéro de téléphone en format international pour un lien wa.me.
@@ -28,33 +30,25 @@ function buildInvitationEmailHtml(params: {
   nomSousTraitant: string
   companyName: string
   portalUrl: string
+  societe: { nom: string; adresse?: string; tva?: string }
 }): string {
-  const { nomSousTraitant, companyName, portalUrl } = params
-  return `
-  <div style="font-family: Arial, Helvetica, sans-serif; max-width: 560px; margin: 0 auto; color: #1f2937;">
-    <div style="background: linear-gradient(135deg, #2563eb, #4f46e5); border-radius: 14px 14px 0 0; padding: 28px 24px; color: #ffffff;">
-      <h1 style="margin: 0; font-size: 20px;">Votre espace ${companyName}</h1>
-      <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">Portail sous-traitant</p>
-    </div>
-    <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 14px 14px; padding: 24px;">
-      <p style="font-size: 15px; margin: 0 0 16px;">Bonjour ${nomSousTraitant},</p>
-      <p style="font-size: 15px; line-height: 1.5; margin: 0 0 16px;">
-        Nous vous invitons à utiliser votre espace en ligne pour nous transmettre facilement vos informations :
-        <strong>métrés</strong>, <strong>bons de régie</strong> et <strong>photos de chantier</strong>, et suivre leur traitement.
-      </p>
-      <div style="text-align: center; margin: 24px 0;">
-        <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #4f46e5); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px;">
-          Accéder à mon espace
-        </a>
-      </div>
-      <p style="font-size: 14px; line-height: 1.5; color: #4b5563; margin: 0 0 8px;">
-        Connectez-vous avec <strong>votre code PIN habituel</strong>. Si vous ne l'avez plus, contactez-nous et nous vous en communiquerons un nouveau.
-      </p>
-      <p style="font-size: 13px; color: #6b7280; margin: 16px 0 0; word-break: break-all;">
-        Lien direct : <a href="${portalUrl}" style="color: #2563eb;">${portalUrl}</a>
-      </p>
-    </div>
-  </div>`
+  const { nomSousTraitant, companyName, portalUrl, societe } = params
+  return gabaritEmail({
+    titre: `Votre espace ${companyName}`,
+    apercu: 'Votre portail sous-traitant : métrés, bons de régie et photos de chantier.',
+    contenuHtml:
+      paragraphe(`Bonjour ${echapperHtml(nomSousTraitant)},`) +
+      paragraphe(
+        'Nous vous invitons à utiliser votre espace en ligne pour nous transmettre facilement vos informations : ' +
+          '<strong>métrés</strong>, <strong>bons de régie</strong> et <strong>photos de chantier</strong>, et suivre leur traitement.'
+      ) +
+      encadre(
+        'Connectez-vous avec <strong>votre code PIN habituel</strong>. Si vous ne l’avez plus, contactez-nous : nous vous en communiquerons un nouveau.'
+      ),
+    bouton: { libelle: 'Accéder à mon espace', url: portalUrl },
+    lienEnClair: true,
+    societe,
+  })
 }
 
 // POST /api/sous-traitants/invitations
@@ -88,6 +82,7 @@ export async function POST(request: Request) {
     ])
 
     const companyName = companySettings?.name || 'Secotech'
+    const societe = await societeEmail()
     const pinSet = new Set(pins.map((p) => p.subjectId))
 
     const results = await Promise.all(
@@ -107,6 +102,7 @@ export async function POST(request: Request) {
             nomSousTraitant: st.nom,
             companyName,
             portalUrl,
+            societe,
           })
           sent = await sendEmail(st.email, `Votre espace ${companyName} — accès portail`, html)
         }

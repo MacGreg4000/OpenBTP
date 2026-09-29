@@ -1,3 +1,5 @@
+import { gabaritEmail, paragraphe, encadre, echapperHtml, texteEnHtml } from '@/lib/email/gabarit'
+import { societeEmail } from '@/lib/email/societe'
 import { prisma } from '@/lib/prisma/client'
 import { sendEmail } from '@/lib/email-sender'
 
@@ -276,7 +278,7 @@ export class NotificationService {
       // Template HTML de base si pas de template personnalisé
       const htmlContent = notificationType.emailTemplate 
         ? this.replaceTemplateVariables(notificationType.emailTemplate, metadata)
-        : this.generateDefaultEmailTemplate(name, titre, message, lien)
+        : this.generateDefaultEmailTemplate(name, titre, message, lien, await societeEmail())
 
       await sendEmail(email, subject, htmlContent)
     } catch (error) {
@@ -337,44 +339,21 @@ export class NotificationService {
     name: string,
     titre: string,
     message: string,
-    lien?: string
+    lien: string | undefined,
+    societe: { nom: string; adresse?: string; tva?: string }
   ): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-            .message { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
-            .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
-            .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔔 Nouvelle notification</h1>
-            </div>
-            <div class="content">
-              <p>Bonjour <strong>${name}</strong>,</p>
-              <div class="message">
-                <h2 style="margin-top: 0; color: #667eea;">${titre}</h2>
-                <p style="white-space: pre-wrap;">${message}</p>
-              </div>
-              ${lien ? `<a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${lien}" class="button">Voir les détails</a>` : ''}
-              <div class="footer">
-                <p>Vous recevez cet email car vous êtes inscrit aux notifications de l'application.</p>
-                <p>Pour gérer vos préférences de notifications, rendez-vous dans Configuration > Gestion des notifications.</p>
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
+    // Le message est souvent identique au titre : ne pas l'afficher deux fois.
+    const detail = message && message.trim() !== titre.trim() ? encadre(texteEnHtml(message)) : ''
+    return gabaritEmail({
+      titre,
+      apercu: message || titre,
+      contenuHtml: paragraphe(`Bonjour ${echapperHtml(name)},`) + detail,
+      bouton: lien ? { libelle: 'Voir dans OpenBTP', url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${lien}` } : undefined,
+      mention:
+        'Vous recevez cet email car vous êtes inscrit aux notifications de l’application. ' +
+        'Préférences : Configuration → Gestion des notifications.',
+      societe,
+    })
   }
 
   /**

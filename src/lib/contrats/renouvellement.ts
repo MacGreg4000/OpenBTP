@@ -9,6 +9,8 @@
 // Un récapitulatif est envoyé à l'adresse d'alerte quand il y a du nouveau.
 
 import { prisma } from '@/lib/prisma/client'
+import { gabaritEmail, paragraphe, sousTitre, liste } from '@/lib/email/gabarit'
+import { societeEmail } from '@/lib/email/societe'
 import { envoyerEmailRappel } from '@/lib/email-sender'
 import { champsRepresentantManquants } from '@/lib/soustraitants/representant'
 import { joursAvantEcheance, renouvellementConseille } from './echeance'
@@ -165,11 +167,15 @@ async function envoyerRecapitulatif(r: ResultatRenouvellements, destinataire: st
     r.enAttente ? `${r.enAttente} autre(s) renouvellement(s) en attente de signature (relance automatique après ${RELANCE_JOURS} jours).` : '',
     'Réglage : Configuration → Renouvellement automatique des contrats.',
   ].join('\n')
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111">
-<p>Renouvellement automatique des contrats-cadres :</p>
-${sections.map((s) => `<h3 style="font-size:15px;margin:16px 0 4px">${e(s.titre)} (${s.lignes.length})</h3><ul>${s.lignes.map((l) => `<li>${e(l)}</li>`).join('')}</ul>`).join('\n')}
-${r.enAttente ? `<p>${r.enAttente} autre(s) renouvellement(s) en attente de signature (relance automatique après ${RELANCE_JOURS} jours).</p>` : ''}
-<p style="color:#555">Réglage : Configuration → Renouvellement automatique des contrats.</p></div>`
+  const html = gabaritEmail({
+    titre: 'Renouvellement automatique des contrats',
+    apercu: sections.map((s) => `${s.titre} (${s.lignes.length})`).join(' · '),
+    contenuHtml:
+      sections.map((s) => sousTitre(`${e(s.titre)} (${s.lignes.length})`) + liste(s.lignes.map(e))).join('') +
+      (r.enAttente ? paragraphe(`${r.enAttente} autre(s) renouvellement(s) en attente de signature (relance automatique après ${RELANCE_JOURS} jours).`) : ''),
+    bouton: { libelle: 'Voir les sous-traitants', url: `${(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/sous-traitants` },
+    societe: await societeEmail(),
+  })
 
   const envoi = await envoyerEmailRappel({
     to: destinataire,

@@ -12,6 +12,8 @@
 //  - ACTIF     : envoi réel au représentant de chaque sous-traitant.
 
 import { prisma } from '@/lib/prisma/client'
+import { gabaritEmail, paragraphe, sousTitre, liste } from '@/lib/email/gabarit'
+import { societeEmail } from '@/lib/email/societe'
 import { envoyerEmailRappel } from '@/lib/email-sender'
 import { referenceContrat } from '@/lib/contract-generator-puppeteer'
 import { listerChantiersCheckin, lienCheckin } from './chantiers'
@@ -380,10 +382,16 @@ export async function executerAlerte(maintenant?: Date): Promise<{ envoyee: bool
     ...sections.flatMap((s) => [`${s.titre} (${s.lignes.length}) :`, ...s.lignes.map((l) => `- ${l}`), '']),
     'Réglages : Configuration → Rappel Checkinatwork quotidien.',
   ].join('\n')
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111">
-<p>Contrôle des rappels Checkinatwork du ${dateFr}${mode === 'TEST' ? ' (mode test)' : ''} :</p>
-${sections.map((s) => `<h3 style="font-size:15px;margin:16px 0 4px">${e(s.titre)} (${s.lignes.length})</h3><ul>${s.lignes.map((l) => `<li>${e(l)}</li>`).join('')}</ul>`).join('\n')}
-<p style="color:#555">Réglages : Configuration → Rappel Checkinatwork quotidien.</p></div>`
+  const html = gabaritEmail({
+    titre: `Rappels Checkinatwork du ${dateFr} — à vérifier`,
+    apercu: sections.map((s) => `${s.titre} (${s.lignes.length})`).join(' · '),
+    bandeau: mode === 'TEST' ? { texte: 'Mode test', couleur: '#6B7280' } : undefined,
+    contenuHtml:
+      paragraphe('Le contrôle du matin a relevé les points suivants :') +
+      sections.map((s) => sousTitre(`${e(s.titre)} (${s.lignes.length})`) + liste(s.lignes.map(e))).join(''),
+    bouton: { libelle: 'Ouvrir les réglages', url: `${(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/configuration` },
+    societe: await societeEmail(),
+  })
 
   const envoi = await envoyerEmailRappel({
     to: destinataire,

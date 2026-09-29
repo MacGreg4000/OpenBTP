@@ -7,6 +7,8 @@
 // c'est un texte juridique, relu une fois ; une modification doit laisser une
 // trace dans l'historique git.
 
+import { gabaritEmail } from '@/lib/email/gabarit'
+
 export interface DonneesRappel {
   /** Date du rappel AAAA-MM-JJ (Europe/Brussels) */
   dateRappel: string
@@ -144,19 +146,21 @@ export function construireRappel(d: DonneesRappel): ContenuRappel {
     .split(echapper(d.lien))
     .join(lienHtml)
     .replace(/\n/g, '<br>\n')
-  const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="utf-8"><title>${echapper(objet)}</title></head>
-<body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#111">
-<div style="max-width:680px;margin:0 auto;padding:16px">
-<p style="background:#b91c1c;color:#fff;font-weight:bold;padding:10px 12px;margin:0 0 16px">
-TOUTE PERSONNE NON ENREGISTRÉE N'EST PAS AUTORISÉE SUR LE CHANTIER.<br>
-QUALQUER PESSOA NÃO REGISTADA NÃO ESTÁ AUTORIZADA NA OBRA.<br>
-ORICE PERSOANĂ NEÎNREGISTRATĂ NU ARE ACCES PE ȘANTIER.<br>
-ANY UNREGISTERED PERSON IS NOT ALLOWED ON SITE.
-</p>
-<div>${corps}</div>
-</div>
-</body></html>`
+  const html = gabaritEmail({
+    titre: `Rappel quotidien — enregistrement Checkinatwork — ${date}`,
+    apercu: 'Toute personne non enregistrée dans Checkinatwork n’est pas autorisée sur chantier.',
+    bandeau: {
+      texte:
+        "TOUTE PERSONNE NON ENREGISTRÉE N'EST PAS AUTORISÉE SUR LE CHANTIER.\n" +
+        'QUALQUER PESSOA NÃO REGISTADA NÃO ESTÁ AUTORIZADA NA OBRA.\n' +
+        'ORICE PERSOANĂ NEÎNREGISTRATĂ NU ARE ACCES PE ȘANTIER.\n' +
+        'ANY UNREGISTERED PERSON IS NOT ALLOWED ON SITE.',
+    },
+    contenuHtml:
+      `<div style="font-size:14px;line-height:22px;color:#1F2937;">${corps}</div>`,
+    bouton: { libelle: 'Chantiers et numéros Checkinatwork', url: d.lien },
+    societe: d.societe,
+  })
 
   return { objet, texte, html }
 }

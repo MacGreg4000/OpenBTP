@@ -1,3 +1,5 @@
+import { gabaritEmail, paragraphe, ficheInfos, echapperHtml, texteEnHtml } from '@/lib/email/gabarit'
+import { societeEmail } from '@/lib/email/societe'
 import nodemailer from 'nodemailer';
 import { prisma } from '../prisma/client';
 
@@ -148,15 +150,18 @@ ${remarqueData.localisation ? `Localisation: ${remarqueData.localisation}` : ''}
 
 Veuillez vous connecter à l'application pour valider cette résolution.
       `,
-      html: `
-<h2>Remarque marquée comme résolue</h2>
-<p>Une remarque a été marquée comme résolue sur le chantier <strong>${remarqueData.nomChantier}</strong>.</p>
-<ul>
-  <li><strong>Description:</strong> ${remarqueData.description}</li>
-  ${remarqueData.localisation ? `<li><strong>Localisation:</strong> ${remarqueData.localisation}</li>` : ''}
-</ul>
-<p>Veuillez vous connecter à l'application pour valider cette résolution.</p>
-      `
+      html: gabaritEmail({
+        titre: 'Remarque marquée comme résolue',
+        apercu: `Chantier ${remarqueData.nomChantier} : une remarque est à valider.`,
+        contenuHtml:
+          paragraphe(`Une remarque a été marquée comme résolue sur le chantier <strong>${echapperHtml(remarqueData.nomChantier)}</strong>.`) +
+          ficheInfos([
+            ['Description', texteEnHtml(remarqueData.description)],
+            ...(remarqueData.localisation ? [['Localisation', echapperHtml(remarqueData.localisation)] as [string, string]] : []),
+          ]) +
+          paragraphe('Connectez-vous à OpenBTP pour valider cette résolution.'),
+        societe: await societeEmail(),
+      })
     };
 
     return await sendEmail(emailData);
@@ -230,12 +235,16 @@ Progression actuelle: ${reception.remarquesValidees}/${reception.totalRemarques}
 
 Veuillez vous connecter à l'application pour terminer la résolution des remarques en attente.
         `,
-        html: `
-<h2>RAPPEL IMPORTANT: Date limite qui approche</h2>
-<p>La date limite de la réception du chantier <strong>${reception.nomChantier}</strong> est dans <strong>7 jours</strong> (${new Date(reception.dateLimite).toLocaleDateString()}).</p>
-<p>Progression actuelle: ${reception.remarquesValidees}/${reception.totalRemarques} remarques validées (${progressPercent}%)</p>
-<p>Veuillez vous connecter à l'application pour terminer la résolution des remarques en attente.</p>
-        `
+        html: gabaritEmail({
+          titre: 'Date limite de réception dans 7 jours',
+          apercu: `Chantier ${reception.nomChantier} : ${reception.remarquesValidees}/${reception.totalRemarques} remarques validées.`,
+          bandeau: { texte: 'Rappel important : la date limite de réception approche.', couleur: '#B45309' },
+          contenuHtml:
+            paragraphe(`La date limite de la réception du chantier <strong>${echapperHtml(reception.nomChantier)}</strong> est dans <strong>7 jours</strong> (${new Date(reception.dateLimite).toLocaleDateString('fr-BE')}).`) +
+            ficheInfos([['Progression', `${reception.remarquesValidees} / ${reception.totalRemarques} remarques validées (${progressPercent} %)`]]) +
+            paragraphe('Connectez-vous à OpenBTP pour terminer la résolution des remarques en attente.'),
+          societe: await societeEmail(),
+        })
       };
 
       await sendEmail(emailData);

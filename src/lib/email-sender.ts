@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer'
+import { gabaritEmail, paragraphe, echapperHtml } from '@/lib/email/gabarit'
+import { societeEmail } from '@/lib/email/societe'
 import { prisma } from '@/lib/prisma/client'
 
 // Type pour les paramètres d'email
@@ -184,35 +186,18 @@ export async function sendContractSignatureEmail(
 
   const subject = `Contrat de sous-traitance à signer - ${nomEntreprise}`
   
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Contrat de sous-traitance à signer</h2>
-      
-      <p>Bonjour ${nomSousTraitant},</p>
-      
-      <p>Un contrat de sous-traitance a été généré pour vous par ${nomEntreprise}.</p>
-      
-      <p>Pour consulter et signer ce contrat, veuillez cliquer sur le lien ci-dessous :</p>
-      
-      <p style="text-align: center; margin: 30px 0;">
-        <a href="${signatureUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-          Consulter et signer le contrat
-        </a>
-      </p>
-      
-      <p>Ou copiez-collez ce lien dans votre navigateur :</p>
-      <p style="background-color: #f5f5f5; padding: 10px; border-radius: 4px;">${signatureUrl}</p>
-      
-      <p>Ce lien est personnel et ne doit pas être partagé.</p>
-      
-      <p>Cordialement,<br>L'équipe ${nomEntreprise}</p>
-      
-      <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;">
-      <p style="color: #666; font-size: 12px;">
-        Cet email a été envoyé automatiquement. Merci de ne pas y répondre.
-      </p>
-    </div>
-  `
+  const html = gabaritEmail({
+    titre: 'Contrat de sous-traitance à signer',
+    apercu: `${nomEntreprise} vous invite à signer votre contrat de sous-traitance.`,
+    contenuHtml:
+      paragraphe(`Bonjour ${echapperHtml(nomSousTraitant)},`) +
+      paragraphe(`Un contrat de sous-traitance a été préparé pour vous par <strong>${echapperHtml(nomEntreprise)}</strong>.`) +
+      paragraphe('Consultez-le, puis signez-le en ligne en quelques clics :'),
+    bouton: { libelle: 'Consulter et signer le contrat', url: signatureUrl },
+    lienEnClair: true,
+    mention: 'Ce lien est personnel et ne doit pas être partagé. Cet email a été envoyé automatiquement.',
+    societe: await societeEmail(),
+  })
 
   try {
     const transporter = await createTransporter()
