@@ -116,3 +116,19 @@ export async function validateImageFile(file: File): Promise<ImageValidationResu
   const bytes = await slice.arrayBuffer()
   return _checkMagicBytes(Buffer.from(bytes), file.name)
 }
+
+/** Taille maximale d'une vidéo de chantier (les photos gardent leurs limites). */
+export const TAILLE_MAX_VIDEO = 200 * 1024 * 1024
+
+/**
+ * Photo OU vidéo, validée par les magic bytes (16 premiers octets).
+ * Si le navigateur n'a pas fourni de Content-Type, on essaie les deux.
+ */
+export async function validateMediaFile(file: File): Promise<MediaValidationResult> {
+  const header = Buffer.from(await file.slice(0, 16).arrayBuffer())
+  const type = file.type || ''
+  if (type) return validateMediaBuffer(header, type, file.name)
+  const video = _checkVideoMagicBytes(header, file.name)
+  if (video.isValid) return video
+  return validateMediaBuffer(header, 'image/', file.name)
+}

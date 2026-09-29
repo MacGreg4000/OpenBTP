@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
 import { notifier } from '@/lib/services/notificationService';
-import { validateImageFile } from '@/lib/utils/image-validation';
+import { validateMediaFile, TAILLE_MAX_VIDEO } from '@/lib/utils/image-validation';
 
 /**
  * POST /api/chantiers/photos/upload
@@ -66,17 +66,19 @@ export async function POST(request: NextRequest) {
       const file = files[i];
       
       // Vérifier le type de fichier (Content-Type) + magic bytes réels
-      const validation = await validateImageFile(file);
+      // Photos et vidéos acceptées
+      const validation = await validateMediaFile(file);
       if (!validation.isValid) continue;
 
-      // Vérifier la taille (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
+      // Taille max : 10 Mo par photo, TAILLE_MAX_VIDEO par vidéo
+      const estVideo = validation.mediaType === 'video';
+      if (file.size > (estVideo ? TAILLE_MAX_VIDEO : 10 * 1024 * 1024)) {
         continue; // Ignorer les fichiers trop volumineux
       }
 
       try {
         // Générer un nom de fichier unique avec extension sécurisée
-        const fileName = `photo-manuelle-${timestamp}-${i + 1}.${validation.safeExtension}`;
+        const fileName = `${estVideo ? 'video' : 'photo'}-manuelle-${timestamp}-${i + 1}.${validation.safeExtension}`;
         const filePath = path.join(uploadDir, fileName);
 
         // Convertir le fichier en buffer et l'écrire

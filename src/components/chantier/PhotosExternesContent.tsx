@@ -1,5 +1,6 @@
 'use client'
 
+import MediaChantier from '@/components/media/MediaChantier'
 import React, { useState, useEffect } from 'react'
 import { TrashIcon, EyeIcon, CalendarIcon, UserIcon, DocumentIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
@@ -196,11 +197,7 @@ export default function PhotosExternesContent({ chantierId }: PhotosExternesCont
                   className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => openPhotoModal(photo)}
                 >
-                  <img
-                    src={url}
-                    alt={`Photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  <MediaChantier url={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
               {photo.urls.length > 6 && (
@@ -247,11 +244,7 @@ export default function PhotosExternesContent({ chantierId }: PhotosExternesCont
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {selectedPhoto.urls.map((url, index) => (
                   <div key={index} className="bg-gray-100 rounded-lg overflow-hidden">
-                    <img
-                      src={url}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full h-auto"
-                    />
+                    <MediaChantier url={url} alt={`Photo ${index + 1}`} className="w-full h-auto" mode="lecteur" />
                   </div>
                 ))}
               </div>

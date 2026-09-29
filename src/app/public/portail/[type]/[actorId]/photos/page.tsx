@@ -124,8 +124,8 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     
-    // Filtrer seulement les images
-    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+    // Photos et vidéos (limite serveur : 5 Mo par photo, 200 Mo par vidéo)
+    const imageFiles = files.filter(file => file.type.startsWith('image/') || file.type.startsWith('video/'))
     
     // Limiter à 20 photos
     const limitedFiles = imageFiles.slice(0, 20)
@@ -282,7 +282,7 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
                   id="photos"
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
@@ -308,13 +308,23 @@ function InnerPhotosPage(props: { params: { type: 'ouvrier'|'soustraitant'; acto
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {previewUrls.map((url, index) => (
                     <div key={index} className="relative">
-                      <Image
-                        src={url}
-                        alt={`preview-${index + 1}`}
-                        width={200}
-                        height={96}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
-                      />
+                      {selectedFiles[index]?.type.startsWith('video/') ? (
+                        <video
+                          src={url}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600 bg-black"
+                        />
+                      ) : (
+                        <Image
+                          src={url}
+                          alt={`preview-${index + 1}`}
+                          width={200}
+                          height={96}
+                          className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>

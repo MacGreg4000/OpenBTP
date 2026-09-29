@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useSelectedChantier } from '@/contexts/SelectedChantierContext'
 import { BottomNav } from '@/components/mobile/BottomNav'
 import { compressImages } from '@/lib/utils/image-compression'
+import MediaChantier, { estVideo } from '@/components/media/MediaChantier'
 import {
   CameraIcon,
   ArrowLeftIcon,
@@ -247,7 +248,7 @@ export default function MobilePhotosPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             multiple
             onChange={handleFileSelect}
             className="hidden"
@@ -257,7 +258,7 @@ export default function MobilePhotosPage() {
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             capture="environment"
             onChange={handleFileSelect}
             className="hidden"
@@ -278,7 +279,7 @@ export default function MobilePhotosPage() {
                 ) : (
                   <>
                     <CameraIcon className="h-5 w-5" />
-                    <span className="text-sm">Prendre une photo</span>
+                    <span className="text-sm">Photo / vidéo</span>
                   </>
                 )}
               </button>
@@ -306,11 +307,15 @@ export default function MobilePhotosPage() {
               <div className="grid grid-cols-2 gap-3">
                 {selectedPhotos.map((photo) => (
                   <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
-                    <img
-                      src={photo.preview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
+                    {photo.file.type.startsWith('video/') ? (
+                      <video src={photo.preview} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                    ) : (
+                      <img
+                        src={photo.preview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                     <button
                       onClick={() => handleRemovePhoto(photo.id)}
                       className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg"
@@ -336,7 +341,7 @@ export default function MobilePhotosPage() {
                   ) : (
                     <>
                       <CameraIcon className="h-5 w-5" />
-                      <span className="text-sm">Prendre une photo</span>
+                      <span className="text-sm">Photo / vidéo</span>
                     </>
                   )}
                 </button>
@@ -398,17 +403,21 @@ export default function MobilePhotosPage() {
                 key={photo.id}
                 className="relative aspect-square rounded-xl overflow-hidden bg-gray-100"
               >
-                <img
-                  src={photo.url}
-                  alt={photo.nom}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.src = '/placeholder-image.png'
-                  }}
-                />
+                {estVideo(photo.url) ? (
+                  <MediaChantier url={photo.url} mode="lecteur" className="w-full h-full object-cover bg-black" />
+                ) : (
+                  <img
+                    src={photo.url}
+                    alt={photo.nom}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = '/placeholder-image.png'
+                    }}
+                  />
+                )}
               </div>
             ))}
           </div>

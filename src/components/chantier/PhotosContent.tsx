@@ -1,5 +1,6 @@
 'use client'
 
+import MediaChantier, { estVideo } from '@/components/media/MediaChantier'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { EyeIcon, CalendarIcon, UserIcon, CameraIcon, TrashIcon, PencilIcon, TagIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
@@ -620,11 +621,7 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
               className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity group relative"
               onClick={() => openPhotoModal(photo, photo.type)}
             >
-              <img
-                src={photo.url}
-                alt="Photo"
-                className="w-full h-full object-cover"
-              />
+              <MediaChantier url={photo.url} className="w-full h-full object-cover" />
               
               {/* Badge du type */}
               <div className="absolute top-2 left-2">
@@ -765,6 +762,9 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
 
             {/* Image */}
             <div className="bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden relative">
+              {estVideo(selectedPhoto.url) ? (
+                <MediaChantier url={selectedPhoto.url} mode="lecteur" className="w-full h-auto max-h-[75vh] bg-black" />
+              ) : (
               <img
                 src={selectedPhoto.url}
                 alt="Photo"
@@ -782,9 +782,10 @@ export default function PhotosContent({ chantierId }: PhotosContentProps) {
                   }
                 }}
               />
+              )}
               
-              {/* Indicateurs de navigation sur l'image */}
-              {filteredPhotos.length > 1 && (
+              {/* Indicateurs de navigation sur l'image (pas sur une vidéo : ils masqueraient ses contrôles) */}
+              {filteredPhotos.length > 1 && !estVideo(selectedPhoto.url) && (
                 <>
                   {/* Zone de clic gauche */}
                   <div 

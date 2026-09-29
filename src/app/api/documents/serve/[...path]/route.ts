@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 import { readFile } from 'fs/promises'
+import { Readable } from 'stream'
 
 // Fonction pour obtenir le type MIME basé sur l'extension
 function getMimeType(filename: string): string {
@@ -20,6 +21,14 @@ function getMimeType(filename: string): string {
     '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     '.txt': 'text/plain',
     '.csv': 'text/csv',
+    '.webp': 'image/webp',
+    '.heic': 'image/heic',
+    '.avif': 'image/avif',
+    '.mp4': 'video/mp4',
+    '.m4v': 'video/mp4',
+    '.mov': 'video/quicktime',
+    '.webm': 'video/webm',
+    '.avi': 'video/x-msvideo',
   }
   
   return mimeTypes[ext] || 'application/octet-stream'
@@ -64,11 +73,47 @@ export async function GET(
       return NextResponse.json({ error: 'L\'élément n\'est pas un fichier' }, { status: 400 });
     }
     
-    // Lire le fichier
-    const fileBuffer = await readFile(fullPath);
-    
     // Déterminer le type MIME
     const mimeType = getMimeType(fullPath);
+
+    // Vidéos : envoi par plages (HTTP 206). Safari/iOS refuse de lire une
+    // vidéo sans « Range », et le streaming évite de charger tout le fichier
+    // en mémoire. Les autres fichiers gardent le comportement d'origine.
+    if (mimeType.startsWith('video/')) {
+      const range = request.headers.get('range')
+      const taille = stats.size
+      const communs = {
+        'Content-Type': mimeType,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=31536000',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Disposition': `inline; filename="${path.basename(fullPath)}"`,
+      }
+      if (range) {
+        const m = /bytes=(\d*)-(\d*)/.exec(range)
+        let debut = m && m[1] ? parseInt(m[1], 10) : 0
+        let fin = m && m[2] ? parseInt(m[2], 10) : taille - 1
+        if (m && !m[1] && m[2]) {
+          // « bytes=-N » : les N derniers octets
+          debut = Math.max(0, taille - parseInt(m[2], 10))
+          fin = taille - 1
+        }
+        fin = Math.min(fin, taille - 1)
+        if (!m || debut > fin || debut >= taille) {
+          return new NextResponse(null, { status: 416, headers: { 'Content-Range': `bytes */${taille}` } })
+        }
+        const flux = Readable.toWeb(fs.createReadStream(fullPath, { start: debut, end: fin })) as ReadableStream
+        return new NextResponse(flux, {
+          status: 206,
+          headers: { ...communs, 'Content-Range': `bytes ${debut}-${fin}/${taille}`, 'Content-Length': String(fin - debut + 1) },
+        })
+      }
+      const flux = Readable.toWeb(fs.createReadStream(fullPath)) as ReadableStream
+      return new NextResponse(flux, { headers: { ...communs, 'Content-Length': String(taille) } })
+    }
+
+    // Lire le fichier
+    const fileBuffer = await readFile(fullPath);
     
     // Retourner le fichier en ligne (pas comme pièce jointe)
     // Convertir le Buffer en Uint8Array pour compatibilité avec NextResponse

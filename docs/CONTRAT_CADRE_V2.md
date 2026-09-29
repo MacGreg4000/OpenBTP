@@ -155,3 +155,16 @@ contrat : les renvois existants restent valables).
   <p><strong>10.5.</strong> Le sous-traitant impose les obligations du présent article à ses propres sous-traitants et à toute personne qu'il fait intervenir sur les chantiers de l'entrepreneur principal, et se porte fort de leur respect.</p>
 </div>
 ```
+
+## Lieu et date de signature (v2.1)
+
+Les deux mentions « Fait à …, le … » (fin du contrat et annexe) sont
+remplies automatiquement :
+
+```html
+à <strong>Barchon</strong>, le <strong>{{dateGeneration}}</strong>
+Fait à <strong>Barchon</strong>, le <strong>{{dateGeneration}}</strong>
+```
+
+`{{dateGeneration}}` = date à laquelle le contrat est généré (identique sur le
+PDF envoyé et sur le PDF signé).

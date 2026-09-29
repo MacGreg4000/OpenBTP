@@ -5,7 +5,7 @@ import { join } from 'path';
 import { readPortalSessionFromCookie, unauthorized } from '@/app/public/portail/auth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { validateImageFile } from '@/lib/utils/image-validation';
+import { validateMediaFile, TAILLE_MAX_VIDEO } from '@/lib/utils/image-validation';
 
 // Chemin de base pour les photos externes
 const PHOTOS_BASE_PATH = join(process.cwd(), 'public', 'uploads', 'photos-externes');
@@ -85,16 +85,18 @@ export async function POST(request: NextRequest) {
       
       // Vérifier le type de fichier (Content-Type client, première barrière)
       // + magic bytes réels (seconde barrière, non falsifiable)
-      const validation = await validateImageFile(file);
+      // Photos et vidéos acceptées
+      const validation = await validateMediaFile(file);
       if (!validation.isValid) continue;
 
-      // Vérifier la taille (5MB max par photo)
-      if (file.size > 5 * 1024 * 1024) {
+      // Taille max : 5 Mo par photo, TAILLE_MAX_VIDEO par vidéo
+      const estVideo = validation.mediaType === 'video';
+      if (file.size > (estVideo ? TAILLE_MAX_VIDEO : 5 * 1024 * 1024)) {
         continue; // Ignorer les fichiers trop volumineux
       }
 
       // Générer un nom de fichier unique avec extension sécurisée
-      const fileName = `photo-${timestamp}-${i + 1}.${validation.safeExtension}`;
+      const fileName = `${estVideo ? 'video' : 'photo'}-${timestamp}-${i + 1}.${validation.safeExtension}`;
       const filePath = join(fullPath, fileName);
 
       // Convertir le fichier en buffer et l'écrire
