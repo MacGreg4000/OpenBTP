@@ -129,7 +129,11 @@ export async function POST(
                 </tr>
               </thead>
               <tbody>
-                ${lignes.map((ligne) => `
+                ${lignes.map((ligne) => (ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') ? `
+                  <tr>
+                    <td colspan="7" style="background:${ligne.type === 'TITRE' ? '#FFF1E6' : '#ffffff'};font-weight:700;${ligne.type === 'TITRE' ? 'text-transform:uppercase;color:#9A3412;' : ''}">${ligne.description || ligne.article}</td>
+                  </tr>
+                ` : `
                   <tr>
                     <td>${ligne.article}</td>
                     <td>${ligne.description}</td>

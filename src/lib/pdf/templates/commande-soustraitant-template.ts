@@ -298,6 +298,27 @@ export function generateCommandeSoustraitantHTML(
             font-weight: 600;
             color: var(--color-primary);
         }
+
+        /* Titres et sous-titres de section (lignes TITRE / SOUS_TITRE) */
+        .section-row.section-title td {
+            background: #FFF1E6;
+            color: #9A3412;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-top: 1px solid #FED7AA;
+        }
+
+        .section-row.section-subtitle td {
+            background: white;
+            color: #1f2937;
+            font-size: 9.5px;
+            font-weight: 700;
+            border-top: 1px solid #e2e8f0;
+        }
         
         /* Résumé financier */
         .financial-summary {
@@ -487,7 +508,11 @@ export function generateCommandeSoustraitantHTML(
                     </tr>
                 </thead>
                 <tbody>
-                    ${data.lignes.map((ligne) => `
+                    ${data.lignes.map((ligne) => (ligne.type === 'TITRE' || ligne.type === 'SOUS_TITRE') ? `
+                        <tr class="section-row ${ligne.type === 'TITRE' ? 'section-title' : 'section-subtitle'}">
+                            <td colspan="7">${ligne.description || ligne.article}</td>
+                        </tr>
+                    ` : `
                         <tr>
                             <td class="text-center font-bold">${ligne.article}</td>
                             <td>${ligne.description}</td>
