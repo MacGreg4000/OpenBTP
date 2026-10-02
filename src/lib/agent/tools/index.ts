@@ -44,6 +44,7 @@ import {
   documentsExpirants,
 } from './lecture'
 import { ajouterDocumentOuvrier, modifierDocumentOuvrier, listeDocumentsOuvrier } from './ouvriers'
+import { creerSousTraitant, modifierSousTraitant } from './soustraitants'
 
 const ALL_TOOLS: ToolDefinition[] = [
   // Lecture (aucune écriture)
@@ -83,6 +84,9 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Rentabilité / coût matière
   definirBaremeMateriau,
   definirCoutMatiereLigne,
+  // Sous-traitants (création / modification, pas de suppression)
+  creerSousTraitant,
+  modifierSousTraitant,
   // Documents d'ouvriers — pas de suppression, voir commentaire dans ouvriers.ts
   ajouterDocumentOuvrier,
   modifierDocumentOuvrier,
