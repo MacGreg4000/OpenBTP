@@ -138,3 +138,40 @@ ${pied ? `<p style="margin:16px 0 0 0;font-size:12px;line-height:18px;color:${c.
 </body>
 </html>`
 }
+
+/** Rangée de chiffres clés (valeurs et libellés en texte brut). 2 à 4 tuiles. */
+export function tuiles(items: { valeur: string; libelle: string; accent?: boolean }[]): string {
+  const largeur = Math.floor(100 / Math.max(1, items.length))
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0;">
+<tr>${items
+    .map(
+      (t, i) => `<td width="${largeur}%" valign="top" style="padding:${i ? '0 0 0 8px' : '0'};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="background:${t.accent ? COULEURS_EMAIL.encadre : '#F9FAFB'};border:1px solid ${t.accent ? '#FED7AA' : COULEURS_EMAIL.bordure};border-radius:10px;padding:14px 10px;text-align:center;">
+<div style="font-size:20px;line-height:26px;font-weight:700;color:${t.accent ? COULEURS_EMAIL.orange : COULEURS_EMAIL.nuit};">${echapperHtml(t.valeur)}</div>
+<div style="font-size:12px;line-height:16px;color:${COULEURS_EMAIL.texteDoux};margin-top:4px;">${echapperHtml(t.libelle)}</div>
+</td></tr></table>
+</td>`
+    )
+    .join('')}</tr>
+</table>`
+}
+
+/**
+ * Tableau simple. Cellules en HTML déjà échappé.
+ * @param alignDroite indices des colonnes alignées à droite (montants)
+ */
+export function tableau(entetes: string[], lignes: string[][], alignDroite: number[] = [], pied?: string[]): string {
+  const cell = (c: string, i: number, th = false) =>
+    `<${th ? 'th' : 'td'} style="padding:8px 10px;${th ? `background:#F9FAFB;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:${COULEURS_EMAIL.texteDoux};font-weight:700;` : `font-size:13px;color:${COULEURS_EMAIL.texte};border-top:1px solid ${COULEURS_EMAIL.bordure};`}text-align:${alignDroite.includes(i) ? 'right' : 'left'};vertical-align:top;">${c}</${th ? 'th' : 'td'}>`
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px 0;border:1px solid ${COULEURS_EMAIL.bordure};border-radius:8px;border-collapse:separate;overflow:hidden;">
+<tr>${entetes.map((e, i) => cell(echapperHtml(e), i, true)).join('')}</tr>
+${lignes.map((l) => `<tr>${l.map((c, i) => cell(c, i)).join('')}</tr>`).join('\n')}
+${pied ? `<tr>${pied.map((c, i) => cell(`<strong>${c}</strong>`, i)).join('')}</tr>` : ''}
+</table>`
+}
+
+/** Petite note grise. */
+export function note(html: string): string {
+  return `<p style="margin:-8px 0 16px 0;font-size:12px;line-height:18px;color:${COULEURS_EMAIL.texteDoux};">${html}</p>`
+}

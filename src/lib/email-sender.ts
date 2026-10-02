@@ -272,6 +272,8 @@ export async function envoyerEmailRappel(p: {
   html: string
   text: string
   replyTo?: string
+  /** Pièces jointes ; `cid` pour une image intégrée au corps (<img src="cid:…">) */
+  attachments?: Array<{ filename: string; content: Buffer; contentType?: string; cid?: string }>
 }): Promise<{ ok: boolean; messageId?: string; erreur?: string }> {
   if (process.env.EMAIL_DRY_RUN === 'true') {
     console.log(`[EMAIL_DRY_RUN] Rappel non envoyé → ${p.to} — ${p.subject}`)
@@ -289,6 +291,7 @@ export async function envoyerEmailRappel(p: {
       subject: p.subject,
       html: p.html,
       text: p.text,
+      attachments: p.attachments,
     })
     return { ok: true, messageId: info.messageId }
   } catch (error) {

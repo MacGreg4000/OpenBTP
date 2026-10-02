@@ -1,6 +1,5 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { fullRAGIndexing, incrementalRAGIndexing } from './ragIndexingTasks';
-import { sendMonthlyReport } from '@/lib/email/monthly-report';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -76,19 +75,21 @@ export class RAGIndexingScheduler {
     return task;
   }
 
-  // Rapport états d'avancement : chaque vendredi à 12h00 (mois en cours)
+  // Rapport d'activité hebdomadaire : chaque vendredi à 12h00
+  // (états d'avancement de la période en clôture, chantiers, commercial, à traiter)
   startMonthlyReport() {
     const cronExpression = '0 12 * * 5'; // Vendredi à 12h00
 
-    console.log(`🕐 [CRON] Planification rapport états d'avancement: ${cronExpression} (chaque vendredi midi)`);
+    console.log(`🕐 [CRON] Planification rapport d'activité hebdomadaire: ${cronExpression} (chaque vendredi midi)`);
 
     const task = cron.schedule(cronExpression, async () => {
-      console.log('⏰ [CRON] Exécution du rapport états d\'avancement (mois en cours)');
+      console.log('⏰ [CRON] Exécution du rapport d\'activité hebdomadaire');
       try {
-        const result = await sendMonthlyReport();
-        console.log(`📧 [CRON] Rapport états: ${result.message}`);
+        const { envoyerRapportHebdo } = await import('@/lib/rapports/rapport-hebdo');
+        const result = await envoyerRapportHebdo();
+        console.log(`📧 [CRON] Rapport d'activité: ${result.message}`);
       } catch (error) {
-        console.error('❌ [CRON] Erreur rapport états:', error);
+        console.error('❌ [CRON] Erreur rapport d\'activité:', error);
       }
     }, {
       timezone: "Europe/Brussels"
