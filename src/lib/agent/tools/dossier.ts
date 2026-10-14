@@ -7,6 +7,7 @@
 //    défauts documentés : pas de dédoublonnage, statuts en libellés français,
 //    totaux non calculés…)
 
+import { resolveContactClient } from './contacts'
 import { prisma } from '@/lib/prisma/client'
 import { generatePPSS } from '@/lib/ppss-generator'
 import { notifier } from '@/lib/services/notificationService'
@@ -334,12 +335,20 @@ async function validerChantier(args: Record<string, unknown>): Promise<Validatio
     }
   }
 
+  // Contact : id, ou — pour un client donné — email / « prénom nom »
   let contactId: string | null = null
   if (args.contactId) {
     const ref = String(args.contactId).trim()
     const contact = await prisma.contact.findUnique({ where: { id: ref }, select: { id: true } })
-    if (!contact) return { erreur: `Contact introuvable : « ${ref} ».` }
-    contactId = contact.id
+    if (contact) {
+      contactId = contact.id
+    } else if (clientId) {
+      const r = await resolveContactClient(clientId, ref)
+      if (!r.contact) return { erreur: r.erreur || `Contact introuvable : « ${ref} ».`, candidats: r.candidats }
+      contactId = r.contact.id
+    } else {
+      return { erreur: `Contact introuvable : « ${ref} » (préciser le client pour chercher par nom ou email).` }
+    }
   }
 
   return {
@@ -394,7 +403,7 @@ export const creerChantier: ToolDefinition = {
         description: 'Défaut EN_PREPARATION',
         enum: ['EN_PREPARATION', 'A_VENIR', 'EN_COURS', 'TERMINE'],
       },
-      contactId: { type: 'string', description: 'Id du contact client (optionnel)' },
+      contactId: { type: 'string', description: 'Contact du client (optionnel) : id, email ou « prénom nom » (voir liste_contacts_client)' },
     },
     required: ['nomChantier'],
   },

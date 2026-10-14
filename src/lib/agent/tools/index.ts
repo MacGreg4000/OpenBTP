@@ -45,12 +45,14 @@ import {
 } from './lecture'
 import { ajouterDocumentOuvrier, modifierDocumentOuvrier, listeDocumentsOuvrier } from './ouvriers'
 import { creerSousTraitant, modifierSousTraitant } from './soustraitants'
+import { listeContactsClient, mettreAJourContactsClient, modifierContactClient } from './contacts'
 
 const ALL_TOOLS: ToolDefinition[] = [
   // Lecture (aucune écriture)
   listeChantiers,
   detailChantier,
   listeClients,
+  listeContactsClient,
   listeSousTraitants,
   tarifsSousTraitant,
   listeNotesChantier,
@@ -71,6 +73,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   completerFicheChantier,
   creerCommandeChantier,
   modifierClient,
+  mettreAJourContactsClient,
+  modifierContactClient,
   // Notes
   creerNoteChantier,
   ajouterNoteDashboard,
