@@ -6,6 +6,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { PageHeader } from '@/components/PageHeader'
+import {
+  ArrowLeftIcon,
+  ArrowPathIcon,
+  ClipboardDocumentListIcon,
+  ClockIcon,
+  ExclamationCircleIcon,
+  MagnifyingGlassIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline'
 import { TYPES_DOCUMENT_OUVRIER, TYPES_DOCUMENT_SOCIETE, STATUTS_OUVRIER, NATIONALITES, estSocieteEtrangere } from '@/lib/documents/types'
 
 type Statut = 'ok' | 'bientot' | 'expire' | 'manquant' | 'absent'
@@ -205,52 +215,91 @@ export default function DocumentsSousTraitantsPage() {
     }
   }, [societes])
 
-  return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+  const tuile = (Icone: typeof UserGroupIcon, libelle: string, valeur: number, couleur: string) => (
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+      <div className="flex items-center gap-2">
+        <Icone className={`h-4 w-4 ${couleur}`} />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Documents des sous-traitants</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {totaux.personnes} personnes · <span className="text-red-600">{totaux.aCorriger} avec documents manquants ou expirés</span>
-            {' '}· <span className="text-amber-600">{totaux.bientot} avec un document qui expire sous 30 jours</span>
-          </p>
+          <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400">{libelle}</div>
+          <div className="text-sm font-bold text-gray-900 dark:text-white">{valeur}</div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <input
-            type="search"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher une personne ou une société…"
-            className="w-72 rounded-md border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
-          <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-            <input type="checkbox" checked={problemesSeuls} onChange={(e) => setProblemesSeuls(e.target.checked)} />
-            À corriger seulement
-          </label>
-          <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-            <input type="checkbox" checked={inactifs} onChange={(e) => setInactifs(e.target.checked)} />
-            Sous-traitants inactifs
-          </label>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-indigo-50/10 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <PageHeader
+        title="Documents des sous-traitants"
+        subtitle="Pièces exigées par personne, selon sa situation"
+        icon={ClipboardDocumentListIcon}
+        badgeColor="from-blue-600 via-indigo-600 to-purple-700"
+        gradientColor="from-blue-600/10 via-indigo-600/10 to-purple-700/10"
+        leftAction={
+          <Link
+            href="/sous-traitants"
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            title="Retour aux sous-traitants"
+          >
+            <ArrowLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          </Link>
+        }
+        stats={
+          <div className="flex items-center gap-2 flex-wrap">
+            {tuile(UserGroupIcon, 'Personnes', totaux.personnes, 'text-blue-600 dark:text-blue-400')}
+            {tuile(ExclamationCircleIcon, 'À corriger', totaux.aCorriger, 'text-red-600 dark:text-red-400')}
+            {tuile(ClockIcon, 'Expirent < 30 j', totaux.bientot, 'text-amber-600 dark:text-amber-400')}
+          </div>
+        }
+        actions={
           <button
             type="button"
             onClick={synchroniserNas}
-            className="rounded-md border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200"
+            className="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 rounded-lg shadow-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-200 text-sm font-semibold"
             title="Recopier sur le NAS les documents qui n'y sont pas encore (administrateurs)"
           >
-            Synchroniser le NAS
+            <ArrowPathIcon className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Synchroniser le NAS</span>
+            <span className="sm:hidden">NAS</span>
           </button>
-          {synchro && <span className="text-gray-600 dark:text-gray-300">{synchro}</span>}
-        </div>
-      </div>
+        }
+      />
 
-      <div className="mb-4 flex flex-wrap gap-3 text-xs text-gray-600 dark:text-gray-400">
-        {(['ok', 'bientot', 'manquant', 'absent'] as Statut[]).map((s) => (
-          <span key={s} className="flex items-center gap-1">
-            <span className={`inline-flex min-w-[1.5rem] justify-center rounded px-1 font-bold ${STYLE[s]}`}>{SYMBOLE[s]}</span>
-            {s === 'ok' ? 'valide' : s === 'bientot' ? 'expire sous 30 jours' : s === 'manquant' ? 'manquant ou expiré (exigé)' : 'non exigé'}
-          </span>
-        ))}
-        <span>· Cliquer sur une case ouvre le document, ou le dossier de la personne pour en ajouter un.</span>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {synchro && (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-200">{synchro}</div>
+      )}
+
+      <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <div className="relative flex-1 min-w-[16rem]">
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              value={recherche}
+              onChange={(e) => setRecherche(e.target.value)}
+              placeholder="Rechercher une personne ou une société…"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <input type="checkbox" checked={problemesSeuls} onChange={(e) => setProblemesSeuls(e.target.checked)} className="rounded text-blue-600" />
+            À corriger seulement
+          </label>
+          <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <input type="checkbox" checked={inactifs} onChange={(e) => setInactifs(e.target.checked)} className="rounded text-blue-600" />
+            Sous-traitants inactifs
+          </label>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3 border-t border-gray-100 pt-3 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-400">
+          {(['ok', 'bientot', 'manquant', 'absent'] as Statut[]).map((s) => (
+            <span key={s} className="flex items-center gap-1">
+              <span className={`inline-flex min-w-[1.5rem] justify-center rounded px-1 font-bold ${STYLE[s]}`}>{SYMBOLE[s]}</span>
+              {s === 'ok' ? 'valide' : s === 'bientot' ? 'expire sous 30 jours' : s === 'manquant' ? 'manquant ou expiré (exigé)' : 'non exigé'}
+            </span>
+          ))}
+          <span>· Cliquer sur une case ouvre le document, ou le dossier de la personne pour en ajouter un.</span>
+        </div>
       </div>
 
       {societes === null ? (
@@ -268,7 +317,7 @@ export default function DocumentsSousTraitantsPage() {
               (t) => st.requisSociete.includes(t.code) || st.documentsSociete[t.code]?.statut !== 'absent'
             )
             return (
-              <section key={st.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <section key={st.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200 overflow-hidden">
                 <div className="border-b border-gray-200 bg-gray-50 px-5 py-3 dark:border-gray-700 dark:bg-gray-700/40">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-3">
@@ -357,6 +406,7 @@ export default function DocumentsSousTraitantsPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }
