@@ -3,7 +3,14 @@
 // « Documents des sous-traitants » et les outils MCP.
 
 import { prisma } from '@/lib/prisma/client'
-import { documentsRequisOuvrier, documentsRequisSociete, TYPES_DOCUMENT_OUVRIER, TYPES_DOCUMENT_SOCIETE } from './types'
+import {
+  documentsRequisPersonne,
+  documentsSupplementairesOuvrier,
+  documentsRequisSociete,
+  libelleSituation,
+  TYPES_DOCUMENT_OUVRIER,
+  TYPES_DOCUMENT_SOCIETE,
+} from './types'
 
 export const JOURS_ALERTE_EXPIRATION = 30
 
@@ -23,6 +30,13 @@ export interface LigneOuvrier {
   nom: string
   prenom: string
   poste: string
+  statut: string | null
+  nationalite: string | null
+  /** « Indépendant · UE · détaché » */
+  situation: string
+  /** Situation incomplète : documents exigés calculés au mieux, à préciser */
+  situationIncomplete: boolean
+  requis: string[]
   documents: Record<string, CelluleDoc>
   manquants: number
   alertes: number
@@ -33,7 +47,8 @@ export interface SocieteConformite {
   nom: string
   tva: string | null
   actif: boolean
-  requisOuvrier: string[]
+  /** Documents supplémentaires exigés pour chaque personne (réglage de la fiche) */
+  supplementairesOuvrier: string[]
   requisSociete: string[]
   /** Contrat-cadre signé dans OpenBTP (calculé, pas un document déposé) */
   contratSigne: { statut: StatutDoc; dateFin: string | null }
@@ -86,14 +101,14 @@ export async function conformiteSousTraitants(opts: { soustraitantId?: string; i
   const ouvriers = await prisma.ouvrier.findMany({
     where: { sousTraitantId: { in: societes.map((s) => s.id) }, actif: true },
     select: {
-      id: true, nom: true, prenom: true, poste: true, sousTraitantId: true,
+      id: true, nom: true, prenom: true, poste: true, sousTraitantId: true, statut: true, nationalite: true,
       DocumentOuvrier: { where: { archive: false }, select: { id: true, type: true, url: true, dateExpiration: true, createdAt: true } },
     },
     orderBy: [{ nom: 'asc' }, { prenom: 'asc' }],
   })
 
   return societes.map((st) => {
-    const requisOuvrier = documentsRequisOuvrier(st)
+    const supplementairesOuvrier = documentsSupplementairesOuvrier(st)
     const requisSociete = documentsRequisSociete(st)
     const docsSte = parType(st.documentsSociete)
     const contrat = st.contrats[0]
@@ -105,7 +120,7 @@ export async function conformiteSousTraitants(opts: { soustraitantId?: string; i
       nom: st.nom,
       tva: st.tva,
       actif: st.actif,
-      requisOuvrier,
+      supplementairesOuvrier,
       requisSociete,
       contratSigne: { statut: contratSigne.statut, dateFin: contrat?.dateFin ? contrat.dateFin.toISOString().slice(0, 10) : null },
       documentsSociete: Object.fromEntries(
@@ -115,8 +130,9 @@ export async function conformiteSousTraitants(opts: { soustraitantId?: string; i
         .filter((o) => o.sousTraitantId === st.id)
         .map((o) => {
           const docs = parType(o.DocumentOuvrier)
+          const requis = documentsRequisPersonne(st, o)
           const documents = Object.fromEntries(
-            TYPES_DOCUMENT_OUVRIER.map((t) => [t.code, cellule(docs.get(t.code), requisOuvrier.includes(t.code), maintenant)])
+            TYPES_DOCUMENT_OUVRIER.map((t) => [t.code, cellule(docs.get(t.code), requis.includes(t.code), maintenant)])
           )
           const valeurs = Object.values(documents)
           return {
@@ -124,6 +140,11 @@ export async function conformiteSousTraitants(opts: { soustraitantId?: string; i
             nom: o.nom,
             prenom: o.prenom,
             poste: o.poste,
+            statut: o.statut,
+            nationalite: o.nationalite,
+            situation: libelleSituation(st.tva, o.statut, o.nationalite),
+            situationIncomplete: !o.statut || !o.nationalite,
+            requis,
             documents,
             manquants: valeurs.filter((c) => c.statut === 'manquant' || (c.requis && c.statut === 'expire')).length,
             alertes: valeurs.filter((c) => c.statut === 'bientot').length,

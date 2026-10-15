@@ -16,6 +16,13 @@ import { conformiteSousTraitants } from '@/lib/documents/conformite'
 const cle = (s: string | null | undefined) =>
   String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
+const STATUTS = ['INDEPENDANT', 'ASSOCIE_ACTIF', 'SALARIE']
+const NATIONALITES_CODES = ['BE', 'UE', 'HORS_UE']
+const valeurSituation = (v: unknown, codes: string[]) => {
+  const s = String(v ?? '').trim().toUpperCase()
+  return codes.includes(s) ? s : null
+}
+
 function texte(v: unknown): string | undefined {
   if (v === undefined || v === null) return undefined
   const s = String(v).trim()
@@ -46,11 +53,13 @@ export const listeOuvriers: ToolDefinition = {
       : []
     return {
       sousTraitant: conf.nom,
-      documentsExiges: conf.requisOuvrier.map(libelleType),
+      documentsSupplementairesSociete: conf.supplementairesOuvrier.map(libelleType),
       ouvriers: conf.ouvriers.map((o) => ({
         id: o.id,
         nom: `${o.prenom} ${o.nom}`.trim(),
         poste: o.poste,
+        situation: o.situation + (o.situationIncomplete ? ' — à préciser (statut / nationalité)' : ''),
+        documentsExiges: o.requis.map(libelleType),
         documents: Object.fromEntries(
           Object.entries(o.documents)
             .filter(([, c]) => c.statut !== 'absent')
@@ -91,6 +100,8 @@ async function preparerOuvrier(args: Record<string, unknown>) {
       poste: texte(args.poste) || 'Ouvrier',
       telephone: texte(args.telephone) || null,
       email: texte(args.email) || null,
+      statut: valeurSituation(args.statut, STATUTS),
+      nationalite: valeurSituation(args.nationalite, NATIONALITES_CODES),
     },
   }
 }
@@ -110,6 +121,8 @@ export const creerOuvrier: ToolDefinition = {
       poste: { type: 'string', description: 'Ex. Carreleur, Gérant, Associé (défaut : Ouvrier)' },
       telephone: { type: 'string' },
       email: { type: 'string' },
+      statut: { type: 'string', enum: ['INDEPENDANT', 'ASSOCIE_ACTIF', 'SALARIE'], description: 'Statut (détermine les documents exigés)' },
+      nationalite: { type: 'string', enum: ['BE', 'UE', 'HORS_UE'], description: 'Nationalité : belge, UE/EEE/Suisse, hors UE' },
     },
     required: ['sousTraitant', 'nom'],
   },
@@ -152,6 +165,10 @@ async function preparerModifOuvrier(args: Record<string, unknown>) {
     const v = texte(args[k])
     if (v !== undefined && v !== actuel[k]) data[k] = v
   }
+  const statut = valeurSituation(args.statut, STATUTS)
+  if (statut && statut !== actuel.statut) data.statut = statut
+  const nationalite = valeurSituation(args.nationalite, NATIONALITES_CODES)
+  if (nationalite && nationalite !== actuel.nationalite) data.nationalite = nationalite
   if (typeof args.actif === 'boolean' && args.actif !== actuel.actif) data.actif = args.actif
   return { id: actuel.id, libelle: `${actuel.prenom} ${actuel.nom}`.trim(), sousTraitantNom: st.value.nom, data }
 }
@@ -172,6 +189,8 @@ export const modifierOuvrier: ToolDefinition = {
       poste: { type: 'string' },
       telephone: { type: 'string' },
       email: { type: 'string' },
+      statut: { type: 'string', enum: ['INDEPENDANT', 'ASSOCIE_ACTIF', 'SALARIE'], description: 'Statut (détermine les documents exigés)' },
+      nationalite: { type: 'string', enum: ['BE', 'UE', 'HORS_UE'], description: 'Nationalité : belge, UE/EEE/Suisse, hors UE' },
       actif: { type: 'boolean', description: 'false = ne travaille plus pour ce sous-traitant' },
     },
     required: ['sousTraitant', 'ouvrier'],
@@ -244,6 +263,7 @@ export const ajouterDocumentSociete: ToolDefinition = {
       nomFichier: { type: 'string', description: "Nom d'origine du fichier" },
       dateExpiration: { type: 'string', description: 'Fin de validité, AAAA-MM-JJ' },
       remplacer: { type: 'boolean', description: 'Archiver le document en vigueur du même type (défaut : selon le type)' },
+      precision: { type: 'string', description: 'Précision dans le nom de fichier (ex. « 2026 », « page 2 »)' },
     },
     required: ['sousTraitant', 'type'],
   },
@@ -273,6 +293,7 @@ export const ajouterDocumentSociete: ToolDefinition = {
       nomOriginal: args.nomFichier ? String(args.nomFichier) : `${p.type}.${p.decode!.extension}`,
       dateExpiration: p.date,
       remplacer: p.remplacer,
+      precision: args.precision ? String(args.precision) : null,
     })
     return { succes: true, sousTraitant: p.st!.nom, documentId: d.id, documentsArchives: d.archives, nas: d.cheminNas || 'miroir NAS non configuré ou indisponible' }
   },

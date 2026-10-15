@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { TYPES_DOCUMENT_OUVRIER, TYPES_DOCUMENT_SOCIETE, documentsRequisParDefaut } from '@/lib/documents/types'
+import { TYPES_DOCUMENT_OUVRIER, TYPES_DOCUMENT_SOCIETE, STATUTS_OUVRIER, NATIONALITES, estSocieteEtrangere } from '@/lib/documents/types'
 
 type Statut = 'ok' | 'bientot' | 'expire' | 'manquant' | 'absent'
 interface Cellule {
@@ -20,6 +20,11 @@ interface Ouvrier {
   nom: string
   prenom: string
   poste: string
+  statut: string | null
+  nationalite: string | null
+  situation: string
+  situationIncomplete: boolean
+  requis: string[]
   documents: Record<string, Cellule>
   manquants: number
   alertes: number
@@ -29,7 +34,7 @@ interface Societe {
   nom: string
   tva: string | null
   actif: boolean
-  requisOuvrier: string[]
+  supplementairesOuvrier: string[]
   requisSociete: string[]
   contratSigne: { statut: Statut; dateFin: string | null }
   documentsSociete: Record<string, Cellule>
@@ -73,8 +78,33 @@ function Pastille({ c, libelle, href }: { c: Cellule; libelle: string; href?: st
   return contenu
 }
 
+function SituationPersonne({ st, o, onChange }: { st: Societe; o: Ouvrier; onChange: () => void }) {
+  const maj = async (champ: 'statut' | 'nationalite', valeur: string) => {
+    await fetch(`/api/sous-traitants/${st.id}/ouvriers/${o.id}/situation`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [champ]: valeur || null }),
+    })
+    onChange()
+  }
+  const champ = `rounded border px-1 py-0.5 text-xs ${o.situationIncomplete ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20' : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800'} text-gray-700 dark:text-gray-200`
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1">
+      <select value={o.statut || ''} onChange={(e) => maj('statut', e.target.value)} className={champ} title="Statut">
+        <option value="">Statut ?</option>
+        {STATUTS_OUVRIER.map((s) => <option key={s.code} value={s.code}>{s.libelle}</option>)}
+      </select>
+      <select value={o.nationalite || ''} onChange={(e) => maj('nationalite', e.target.value)} className={champ} title="Nationalité">
+        <option value="">Nationalité ?</option>
+        {NATIONALITES.map((n) => <option key={n.code} value={n.code}>{n.libelle}</option>)}
+      </select>
+      {estSocieteEtrangere(st.tva) && <span className="text-xs text-gray-500">détaché</span>}
+    </div>
+  )
+}
+
 function ReglageRequis({ st, onEnregistre }: { st: Societe; onEnregistre: () => void }) {
-  const [ouvrier, setOuvrier] = useState<string[]>(st.requisOuvrier)
+  const [ouvrier, setOuvrier] = useState<string[]>(st.supplementairesOuvrier)
   const [societe, setSociete] = useState<string[]>(st.requisSociete)
   const [enCours, setEnCours] = useState(false)
   const basculer = (liste: string[], set: (v: string[]) => void, code: string) =>
@@ -92,17 +122,18 @@ function ReglageRequis({ st, onEnregistre }: { st: Societe; onEnregistre: () => 
   return (
     <div className="mt-3 grid grid-cols-1 gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-gray-900/40 md:grid-cols-2">
       <div>
-        <p className="mb-2 font-semibold text-gray-900 dark:text-white">Exigés pour chaque personne</p>
+        <p className="mb-1 font-semibold text-gray-900 dark:text-white">Documents supplémentaires pour chaque personne</p>
+        <p className="mb-2 text-xs text-gray-500">
+          En plus des documents exigés selon la situation de chaque personne (pièce d&apos;identité et formation sécurité
+          pour tous ; {estSocieteEtrangere(st.tva) ? 'Limosa et A1 (société étrangère, personnes détachées)' : 'sécurité sociale, registre des parts pour un associé actif, permis de travail hors UE'}).
+        </p>
         {TYPES_DOCUMENT_OUVRIER.map((t) => (
           <label key={t.code} className="flex items-center gap-2 py-0.5 text-gray-700 dark:text-gray-300">
             <input type="checkbox" checked={ouvrier.includes(t.code)} onChange={() => basculer(ouvrier, setOuvrier, t.code)} />
             {t.libelle}
           </label>
         ))}
-        <p className="mt-2 text-xs text-gray-500">
-          Par défaut : {documentsRequisParDefaut(st.tva).map((c) => TYPES_DOCUMENT_OUVRIER.find((t) => t.code === c)?.court).join(', ')}
-          {' '}(selon le pays du n° de TVA).
-        </p>
+
       </div>
       <div>
         <p className="mb-2 font-semibold text-gray-900 dark:text-white">Exigés pour la société</p>
@@ -117,7 +148,7 @@ function ReglageRequis({ st, onEnregistre }: { st: Societe; onEnregistre: () => 
             Enregistrer
           </button>
           <button type="button" disabled={enCours} onClick={() => enregistrer(true)} className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700 dark:border-gray-600 dark:text-gray-200">
-            Revenir au défaut (personnes)
+            Aucun supplément
           </button>
         </div>
       </div>
@@ -230,8 +261,8 @@ export default function DocumentsSousTraitantsPage() {
         <div className="space-y-6">
           {filtrees.map((st) => {
             // Colonnes : types exigés + types présents chez au moins une personne
-            const colonnes = TYPES_DOCUMENT_OUVRIER.filter(
-              (t) => st.requisOuvrier.includes(t.code) || st.ouvriers.some((o) => o.documents[t.code]?.statut !== 'absent')
+            const colonnes = TYPES_DOCUMENT_OUVRIER.filter((t) =>
+              st.ouvriers.some((o) => o.requis.includes(t.code) || o.documents[t.code]?.statut !== 'absent')
             )
             const docsSte = TYPES_DOCUMENT_SOCIETE.filter(
               (t) => st.requisSociete.includes(t.code) || st.documentsSociete[t.code]?.statut !== 'absent'
@@ -262,7 +293,7 @@ export default function DocumentsSousTraitantsPage() {
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <button type="button" onClick={() => setReglage(reglage === st.id ? null : st.id)} className="text-blue-600 hover:underline dark:text-blue-400">
-                        Documents exigés
+                        Documents supplémentaires
                       </button>
                       <Link href={`/sous-traitants/${st.id}/ouvriers`} className="text-blue-600 hover:underline dark:text-blue-400">
                         Personnes
@@ -291,7 +322,7 @@ export default function DocumentsSousTraitantsPage() {
                           {colonnes.map((t) => (
                             <th key={t.code} className="px-2 py-2 text-center" title={t.libelle}>
                               {t.court}
-                              {st.requisOuvrier.includes(t.code) && <span className="text-red-500">*</span>}
+
                             </th>
                           ))}
                         </tr>
@@ -304,6 +335,7 @@ export default function DocumentsSousTraitantsPage() {
                                 {o.prenom} {o.nom}
                               </Link>
                               <span className="ml-2 text-xs text-gray-500">{o.poste}</span>
+                              <SituationPersonne st={st} o={o} onChange={charger} />
                             </td>
                             {colonnes.map((t) => (
                               <td key={t.code} className="px-2 py-2 text-center">

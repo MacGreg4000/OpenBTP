@@ -91,9 +91,25 @@ async function archiverSurNas(cheminNas: string | null | undefined): Promise<voi
   }
 }
 
-function nomFichierNas(libelleCourt: string, titulaire: string, dateExpiration: Date | null, ext: string) {
+/** Nom du type tel qu'il apparaît dans les noms de fichiers du NAS. */
+const NOMS_NAS: Record<string, string> = {
+  carte_identite: "Carte d'identité",
+  attestation_onss: 'Sécurité sociale',
+  certificat_medical: 'Formation sécurité',
+  a1: 'A1',
+  limosa: 'Limosa L-1',
+}
+function nomType(code: string): string {
+  if (NOMS_NAS[code]) return NOMS_NAS[code]
+  const def = typeOuvrier(code) || typeSociete(code)
+  return def ? def.libelle.split(/ \(| \//)[0] : code
+}
+
+/** « Carte d'identité (verso) - Lair Roque - valable jusqu'au 2029-04-04.jpg » */
+function nomFichierNas(type: string, titulaire: string, dateExpiration: Date | null, ext: string, precision?: string | null) {
   const fin = dateExpiration ? ` - valable jusqu'au ${isoJour(dateExpiration)}` : ''
-  return nettoyerNom(`${libelleCourt} - ${titulaire}${fin}`) + `.${ext}`
+  const prec = precision && precision.trim() ? ` (${precision.trim()})` : ''
+  return nettoyerNom(`${nomType(type)}${prec} - ${titulaire}${fin}`) + `.${ext}`
 }
 
 interface EntreeDocument {
@@ -105,6 +121,8 @@ interface EntreeDocument {
   dateExpiration?: Date | null
   /** Remplacer (archiver) le document en vigueur du même type. Défaut : selon le type. */
   remplacer?: boolean
+  /** Précision ajoutée au nom de fichier : « recto », « verso », « annexe 8 »… */
+  precision?: string | null
 }
 
 // ─── Ouvriers ────────────────────────────────────────────────────────────────
@@ -141,6 +159,7 @@ export async function enregistrerDocumentOuvrier(ouvrierId: string, e: EntreeDoc
         type: e.type,
         url,
         dateExpiration: e.dateExpiration ?? null,
+        precision: e.precision?.trim() || null,
         ouvrierId,
         createdAt: maintenant,
         updatedAt: maintenant,
@@ -155,7 +174,7 @@ export async function enregistrerDocumentOuvrier(ouvrierId: string, e: EntreeDoc
     st ? dossierSociete(st) : 'Sans société',
     'Ouvriers',
     nettoyerNom(titulaire),
-    nomFichierNas(def.court === 'ID' ? "Carte d'identité" : def.libelle.split(/ \(| \//)[0], titulaire, document.dateExpiration, e.extension)
+    nomFichierNas(e.type, titulaire, document.dateExpiration, e.extension, e.precision)
   )
   const cheminNas = await copierVersNas(url, relatif)
   if (cheminNas) await prisma.documentOuvrier.update({ where: { id: document.id }, data: { cheminNas } })
@@ -198,12 +217,12 @@ export async function enregistrerDocumentSociete(soustraitantId: string, e: Entr
       await tx.documentSousTraitant.updateMany({ where: { id: { in: anciens.map((a) => a.id) } }, data: { archive: true, archiveLe: maintenant } })
     }
     return tx.documentSousTraitant.create({
-      data: { soustraitantId, type: e.type, nom: e.nomOriginal, url, dateExpiration: e.dateExpiration ?? null },
+      data: { soustraitantId, type: e.type, nom: e.nomOriginal, url, dateExpiration: e.dateExpiration ?? null, precision: e.precision?.trim() || null },
     })
   })
 
   for (const a of anciens) await archiverSurNas(a.cheminNas)
-  const relatif = join(dossierSociete(st), 'Société', nomFichierNas(def.libelle.split(/ \(| \//)[0], st.nom, document.dateExpiration, e.extension))
+  const relatif = join(dossierSociete(st), 'Société', nomFichierNas(e.type, st.nom, document.dateExpiration, e.extension, e.precision))
   const cheminNas = await copierVersNas(url, relatif)
   if (cheminNas) await prisma.documentSousTraitant.update({ where: { id: document.id }, data: { cheminNas } })
 
@@ -233,7 +252,7 @@ export async function resynchroniserMiroirNas(): Promise<{ copies: number; echec
   const docsOuvriers = await prisma.documentOuvrier.findMany({
     where: { archive: false, cheminNas: null },
     select: {
-      id: true, type: true, url: true, dateExpiration: true,
+      id: true, type: true, url: true, dateExpiration: true, precision: true,
       Ouvrier: { select: { nom: true, prenom: true, sousTraitantId: true } },
     },
   })
@@ -242,14 +261,13 @@ export async function resynchroniserMiroirNas(): Promise<{ copies: number; echec
   )
   for (const d of docsOuvriers) {
     const st = societes.get(d.Ouvrier.sousTraitantId)
-    const def = typeOuvrier(d.type)
     const titulaire = `${d.Ouvrier.prenom} ${d.Ouvrier.nom}`.trim()
     const ext = (extname(d.url).slice(1) || 'pdf').toLowerCase()
     const relatif = join(
       st ? dossierSociete(st) : 'Sans société',
       'Ouvriers',
       nettoyerNom(titulaire),
-      nomFichierNas(def ? (def.court === 'ID' ? "Carte d'identité" : def.libelle.split(/ \(| \//)[0]) : d.type, titulaire, d.dateExpiration, ext)
+      nomFichierNas(d.type, titulaire, d.dateExpiration, ext, d.precision)
     )
     const c = await copierVersNas(d.url, relatif)
     if (c) {
@@ -259,12 +277,11 @@ export async function resynchroniserMiroirNas(): Promise<{ copies: number; echec
   }
   const docsSociete = await prisma.documentSousTraitant.findMany({
     where: { archive: false, cheminNas: null },
-    select: { id: true, type: true, url: true, dateExpiration: true, soustraitant: { select: { nom: true, tva: true } } },
+    select: { id: true, type: true, url: true, dateExpiration: true, precision: true, soustraitant: { select: { nom: true, tva: true } } },
   })
   for (const d of docsSociete) {
-    const def = typeSociete(d.type)
     const ext = (extname(d.url).slice(1) || 'pdf').toLowerCase()
-    const relatif = join(dossierSociete(d.soustraitant), 'Société', nomFichierNas(def ? def.libelle.split(/ \(| \//)[0] : d.type, d.soustraitant.nom, d.dateExpiration, ext))
+    const relatif = join(dossierSociete(d.soustraitant), 'Société', nomFichierNas(d.type, d.soustraitant.nom, d.dateExpiration, ext, d.precision))
     const c = await copierVersNas(d.url, relatif)
     if (c) {
       await prisma.documentSousTraitant.update({ where: { id: d.id }, data: { cheminNas: c } })
@@ -272,4 +289,36 @@ export async function resynchroniserMiroirNas(): Promise<{ copies: number; echec
     } else echecs++
   }
   return { copies, echecs, actif: true }
+}
+
+// ─── Renommage (précision, type ou date corrigés) ────────────────────────────
+
+/**
+ * Recalcule le nom NAS d'un document de personne en vigueur (après correction
+ * de la précision, du type ou de la date) et renomme le fichier dans son dossier.
+ */
+export async function renommerDocumentOuvrierNas(documentId: string): Promise<string | null> {
+  const racine = racineNas()
+  const d = await prisma.documentOuvrier.findUnique({
+    where: { id: documentId },
+    select: { id: true, type: true, url: true, dateExpiration: true, precision: true, cheminNas: true, archive: true,
+      Ouvrier: { select: { nom: true, prenom: true } } },
+  })
+  if (!racine || !d || !d.cheminNas || d.archive) return d?.cheminNas ?? null
+  try {
+    const source = join(racine, d.cheminNas)
+    if (!(await existe(source))) return d.cheminNas
+    const ext = (extname(d.url).slice(1) || 'pdf').toLowerCase()
+    const titulaire = `${d.Ouvrier.prenom} ${d.Ouvrier.nom}`.trim()
+    const nom = nomFichierNas(d.type, titulaire, d.dateExpiration, ext, d.precision)
+    if (basename(source) === nom) return d.cheminNas
+    const cible = await cheminLibre(join(dirname(source), nom))
+    await rename(source, cible)
+    const cheminNas = cible.slice(racine.length).replace(/^[/\\]+/, '')
+    await prisma.documentOuvrier.update({ where: { id: d.id }, data: { cheminNas } })
+    return cheminNas
+  } catch (e) {
+    console.error(`⚠️ [MIROIR NAS] Renommage impossible (${d.cheminNas}) :`, e)
+    return d.cheminNas
+  }
 }

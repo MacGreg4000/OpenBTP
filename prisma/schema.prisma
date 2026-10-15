@@ -912,6 +912,8 @@ model DocumentOuvrier {
   archiveLe      DateTime?
   // Copie miroir sur le NAS (chemin relatif à la racine Documents_OpenBTP)
   cheminNas      String?   @db.Text
+  // Précision du nom de fichier (« recto », « verso », « annexe 8 »…)
+  precision      String?
   Ouvrier        Ouvrier   @relation(fields: [ouvrierId], references: [id], onDelete: Cascade)
 
   @@index([ouvrierId])
@@ -930,6 +932,7 @@ model DocumentSousTraitant {
   archive        Boolean      @default(false)
   archiveLe      DateTime?
   cheminNas      String?      @db.Text
+  precision      String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   soustraitant   soustraitant @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
@@ -1031,6 +1034,10 @@ model Ouvrier {
   poste           String
   // false = ne travaille plus pour ce sous-traitant (masqué du tableau des documents)
   actif           Boolean           @default(true)
+  // Situation (détermine les documents exigés, cf. arbre ONSS/ADEB) :
+  // statut INDEPENDANT | ASSOCIE_ACTIF | SALARIE ; nationalite BE | UE | HORS_UE
+  statut          String?
+  nationalite     String?
   sousTraitantId  String
   createdAt       DateTime          @default(now())
   updatedAt       DateTime

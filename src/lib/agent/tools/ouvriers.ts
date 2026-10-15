@@ -20,7 +20,7 @@ import { prisma } from '@/lib/prisma/client'
 import { ToolDefinition } from '../types'
 import { resolveOuvrier, resolveSousTraitant } from './helpers'
 import { CODES_OUVRIER, TYPES_DOCUMENT_OUVRIER } from '@/lib/documents/types'
-import { enregistrerDocumentOuvrier } from '@/lib/documents/stockage'
+import { enregistrerDocumentOuvrier, renommerDocumentOuvrierNas } from '@/lib/documents/stockage'
 
 const TYPES_AUTORISES = CODES_OUVRIER
 
@@ -179,6 +179,10 @@ export const ajouterDocumentOuvrier: ToolDefinition = {
         type: 'boolean',
         description: 'Archiver le document en vigueur du même type (défaut : oui pour les types uniques, non pour diplôme / autre)',
       },
+      precision: {
+        type: 'string',
+        description: 'Précision dans le nom de fichier : « recto », « verso », « annexe 8 », « carte belge E », « page 2 »… Obligatoire quand plusieurs fichiers du même type coexistent (recto / verso).',
+      },
     },
     required: ['sousTraitant', 'ouvrier', 'type'],
   },
@@ -239,6 +243,7 @@ export const ajouterDocumentOuvrier: ToolDefinition = {
       nomOriginal: args.nomFichier ? String(args.nomFichier) : `${type}.${decode.extension}`,
       dateExpiration: dateRes.date,
       remplacer: doitRemplacer(type, args),
+      precision: args.precision ? String(args.precision) : null,
     })
     return {
       succes: true,
@@ -254,7 +259,7 @@ export const ajouterDocumentOuvrier: ToolDefinition = {
 export const modifierDocumentOuvrier: ToolDefinition = {
   name: 'modifier_document_ouvrier',
   description:
-    "Corrige le type ou la date d'expiration d'un document déjà existant dans le dossier d'un ouvrier. Ne remplace PAS le fichier — pour ça, ajouter un nouveau document. Fusion partielle : un champ non fourni reste inchangé.",
+    "Corrige le type, la date d'expiration ou la précision du nom (recto, verso…) d'un document existant ; le fichier est renommé sur le NAS. Ne remplace PAS le fichier — pour ça, ajouter un nouveau document. Fusion partielle : un champ non fourni reste inchangé.",
   requiresConfirmation: true,
   parameters: {
     type: 'object',
@@ -270,6 +275,10 @@ export const modifierDocumentOuvrier: ToolDefinition = {
         type: 'string',
         description:
           "Nouvelle date d'expiration, format AAAA-MM-JJ. Envoyer null pour l'effacer (facultatif).",
+      },
+      precision: {
+        type: 'string',
+        description: 'Précision du nom de fichier sur le NAS : « recto », « verso », « annexe 8 », « carte belge E »… (le fichier est renommé)',
       },
     },
     required: ['sousTraitant', 'ouvrier', 'documentId'],
@@ -327,7 +336,8 @@ export const modifierDocumentOuvrier: ToolDefinition = {
     })
     if (!document) return { erreur: "Document introuvable pour cet ouvrier." }
 
-    const data: { type?: string; dateExpiration?: Date | null } = {}
+    const data: { type?: string; dateExpiration?: Date | null; precision?: string | null } = {}
+    if (args.precision !== undefined) data.precision = args.precision ? String(args.precision).trim() : null
 
     if (args.type !== undefined) {
       const type = String(args.type)
@@ -344,10 +354,12 @@ export const modifierDocumentOuvrier: ToolDefinition = {
     }
 
     if (Object.keys(data).length === 0) {
-      return { erreur: 'Aucun champ à modifier (type ou dateExpiration).' }
+      return { erreur: 'Aucun champ à modifier (type, dateExpiration ou precision).' }
     }
 
     await prisma.documentOuvrier.update({ where: { id: document.id }, data })
+    // Le nom du fichier sur le NAS reflète type, précision et date : le renommer
+    const nas = await renommerDocumentOuvrierNas(document.id)
 
     return {
       succes: true,
@@ -355,6 +367,7 @@ export const modifierDocumentOuvrier: ToolDefinition = {
       ouvrier: cible.ouvrierNom,
       documentId: document.id,
       champsModifies: Object.keys(data),
+      ...(nas ? { nas } : {}),
     }
   },
 }
