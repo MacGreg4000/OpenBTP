@@ -45,7 +45,7 @@ export async function GET(
 
     // Récupérer séparément les documents de l'ouvrier
     const documents = await prisma.documentOuvrier.findMany({
-      where: { ouvrierId: params.ouvrierId }
+      where: { ouvrierId: params.ouvrierId, archive: false }
     });
 
     // Transformer la réponse pour maintenir la compatibilité avec le frontend

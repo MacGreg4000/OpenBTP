@@ -46,6 +46,14 @@ import {
 import { ajouterDocumentOuvrier, modifierDocumentOuvrier, listeDocumentsOuvrier } from './ouvriers'
 import { creerSousTraitant, modifierSousTraitant } from './soustraitants'
 import { listeContactsClient, mettreAJourContactsClient, modifierContactClient } from './contacts'
+import {
+  listeOuvriers,
+  creerOuvrier,
+  modifierOuvrier,
+  ajouterDocumentSociete,
+  listeDocumentsSociete,
+  conformiteDocuments,
+} from './documents-soustraitants'
 
 const ALL_TOOLS: ToolDefinition[] = [
   // Lecture (aucune écriture)
@@ -59,6 +67,9 @@ const ALL_TOOLS: ToolDefinition[] = [
   listeDocumentsChantier,
   documentsExpirants,
   listeDocumentsOuvrier,
+  listeOuvriers,
+  listeDocumentsSociete,
+  conformiteDocuments,
   listeEtatsAvancement,
   listeDevis,
   detailDevis,
@@ -94,6 +105,9 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Documents d'ouvriers — pas de suppression, voir commentaire dans ouvriers.ts
   ajouterDocumentOuvrier,
   modifierDocumentOuvrier,
+  creerOuvrier,
+  modifierOuvrier,
+  ajouterDocumentSociete,
 ]
 
 const TOOLS_BY_NAME = new Map(ALL_TOOLS.map((t) => [t.name, t]))

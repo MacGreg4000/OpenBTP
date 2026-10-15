@@ -12,6 +12,7 @@ import { ToolDefinition } from '../types'
 import { resolveSousTraitant, normalizeTva, normalizeNomEntreprise } from './helpers'
 import { normaliserRepresentant } from '@/lib/soustraitants/representant-serveur'
 import { emailFormatValide, champsRepresentantManquants } from '@/lib/soustraitants/representant'
+import { CODES_OUVRIER, CODES_SOCIETE } from '@/lib/documents/types'
 
 const CHAMPS_TEXTE = ['contact', 'telephone', 'adresse', 'tva'] as const
 const CHAMPS_REPRESENTANT: Record<string, string> = {
@@ -183,6 +184,14 @@ async function preparerModification(args: Record<string, unknown>): Promise<Prep
   for (const k of ['actif', 'rappelCheckinActif'] as const) {
     if (typeof args[k] === 'boolean' && args[k] !== actuel[k]) data[k] = args[k]
   }
+  for (const [k, codes] of [['documentsRequisOuvrier', CODES_OUVRIER], ['documentsRequisSociete', CODES_SOCIETE]] as const) {
+    if (!Array.isArray(args[k])) continue
+    const liste = (args[k] as unknown[]).map(String)
+    const inconnus = liste.filter((c) => !(codes as readonly string[]).includes(c))
+    if (inconnus.length) return { erreur: `${k} : types inconnus ${inconnus.join(', ')}.` }
+    const json = JSON.stringify([...new Set(liste)])
+    if (json !== actuel[k]) data[k] = json
+  }
 
   const apres = { ...actuel, ...data } as typeof actuel
   const avertissements: string[] = []
@@ -207,6 +216,16 @@ export const modifierSousTraitant: ToolDefinition = {
       email: { type: 'string', description: 'Email principal' },
       ...proprietesCommunes,
       actif: { type: 'boolean', description: 'false = sous-traitant inactif (plus de rappels ni de renouvellement)' },
+      documentsRequisOuvrier: {
+        type: 'array',
+        items: { type: 'string', enum: [...CODES_OUVRIER] },
+        description: 'Documents exigés pour chaque personne de cette société (remplace la règle par défaut : ID + A1 + Limosa si société étrangère, ID si belge)',
+      },
+      documentsRequisSociete: {
+        type: 'array',
+        items: { type: 'string', enum: [...CODES_SOCIETE] },
+        description: 'Documents exigés pour la société elle-même',
+      },
       rappelCheckinActif: { type: 'boolean', description: 'Recevoir le rappel Checkinatwork quotidien' },
     },
     required: ['sous_traitant'],

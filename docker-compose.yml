@@ -60,6 +60,9 @@ services:
       OPENBTP_AGENT_USER_EMAIL: ${OPENBTP_AGENT_USER_EMAIL:-agent-mcp@secotech.fr}
       # Utilisateur humain visé par les notes personnelles de la page d'accueil
       OPENBTP_AGENT_NOTES_USER_EMAIL: ${OPENBTP_AGENT_NOTES_USER_EMAIL:-}
+      # Miroir NAS des documents sous-traitants : actif seulement si
+      # NAS_DOCUMENTS_HOST_PATH est défini dans .env (voir volume ci-dessous)
+      NAS_DOCUMENTS_PATH: ${NAS_DOCUMENTS_HOST_PATH:+/app/nas-documents}
     extra_hosts:
       # Permet d'accéder aux services du NAS (PDF, Ollama) depuis le container
       - "nas-host:host-gateway"
@@ -75,6 +78,10 @@ services:
       - ./public/documents:/app/public/documents
       # Sauvegardes BDD persistantes
       - ${BACKUP_PATH:-./backups}:/app/backups
+      # Miroir NAS des documents sous-traitants (dossier lisible du partage
+      # Secotech). Ex. dans .env :
+      #   NAS_DOCUMENTS_HOST_PATH=/volume1/Secotech/Administratif Chantier/Sous-traitant/Documents_OpenBTP
+      - ${NAS_DOCUMENTS_HOST_PATH:-./nas-documents}:/app/nas-documents
       # Dossier d'import SQL : si un .sql est présent ET la base est vide,
       # le container web l'importe automatiquement au premier démarrage.
       - ./init-db:/app/init-db

@@ -1,4 +1,5 @@
 'use client'
+import { TYPES_DOCUMENT_OUVRIER, libelleType } from '@/lib/documents/types'
 import { useState, useEffect, useRef, use } from 'react';
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -116,15 +117,9 @@ function UploadModal({ isOpen, onClose, onUpload, isUploading }: UploadModalProp
             className="mt-1"
           >
             <option value="">Sélectionner un type</option>
-            <option value="carte_identite">Carte d'identité</option>
-            <option value="limosa">Certificat Limosa</option>
-            <option value="a1">Attestation A1</option>
-            <option value="livre_parts">Livre des parts</option>
-            <option value="attestation_onss">Attestation ONSS</option>
-            <option value="permis_travail">Permis de travail</option>
-            <option value="diplome">Diplôme</option>
-            <option value="certificat_medical">Attestation Sécurité</option>
-            <option value="autre">Autre document</option>
+            {TYPES_DOCUMENT_OUVRIER.map((t) => (
+              <option key={t.code} value={t.code}>{t.libelle}</option>
+            ))}
           </SelectField>
 
           <div>
@@ -291,20 +286,8 @@ export default function DocumentsOuvrierPage(
     </div>
   )
 
-  const getDocumentTypeName = (type: string) => {
-    const types: { [key: string]: string } = {
-      carte_identite: "Carte d'identité",
-      limosa: "Certificat Limosa",
-      a1: "Attestation A1",
-      livre_parts: "Livre des parts",
-      attestation_onss: "Attestation ONSS",
-      permis_travail: "Permis de travail",
-      diplome: "Diplôme",
-      certificat_medical: "Attestation Sécurité",
-      autre: "Autre document"
-    }
-    return types[type] || type
-  }
+  const getDocumentTypeName = (type: string) => libelleType(type)
+
 
   const isDocumentExpired = (dateExpiration: string | null) => {
     if (!dateExpiration) return false

@@ -24,6 +24,7 @@ export async function GET() {
     // Récupérer les documents expirés ou qui vont expirer dans les 30 jours
     const documents = await prisma.documentOuvrier.findMany({
       where: {
+        archive: false, // un document remplacé (archivé) n'est plus à surveiller
         dateExpiration: {
           not: null,
           lte: inOneMonth // Less than or equal to one month from now

@@ -7,34 +7,22 @@
 // chantier ou une commande. La suppression reste un geste humain, dans
 // l'interface.
 //
-// Le fichier lui-même n'est PAS remplaçable via `modifier` — seuls le type et
-// la date d'expiration le sont, à l'image de la seule correction qu'un
-// formulaire web permettrait sans tout ré-uploader. Un fichier erroné se
-// corrige en ajoutant le bon document ; l'ancien reste jusqu'à suppression
-// manuelle par un humain.
+// Remplacement : un nouveau document d'un type « unique » (carte d'identité,
+// A1, Limosa…) ARCHIVE le précédent — jamais de suppression, l'historique
+// reste consultable et sert de preuve. Tout passe par
+// src/lib/documents/stockage.ts, qui recopie aussi le document sur le NAS.
+//
+// Fichier : soit `cheminFichier` (chemin sur l'ordinateur de l'utilisateur,
+// lu et transmis par le serveur MCP local — pas de base64 dans la
+// conversation), soit `fichierBase64`.
 
-import { randomUUID } from 'crypto'
-import { existsSync } from 'fs'
-import { mkdir, writeFile } from 'fs/promises'
-import { join } from 'path'
 import { prisma } from '@/lib/prisma/client'
 import { ToolDefinition } from '../types'
 import { resolveOuvrier, resolveSousTraitant } from './helpers'
+import { CODES_OUVRIER, TYPES_DOCUMENT_OUVRIER } from '@/lib/documents/types'
+import { enregistrerDocumentOuvrier } from '@/lib/documents/stockage'
 
-// Identique à src/app/api/sous-traitants/[id]/ouvriers/[ouvrierId]/documents/route.ts —
-// deux listes qui divergeraient rendraient un document valide dans un sens,
-// refusé dans l'autre, selon qu'il a été créé par l'agent ou par l'interface.
-const TYPES_AUTORISES = [
-  'carte_identite',
-  'limosa',
-  'a1',
-  'livre_parts',
-  'attestation_onss',
-  'permis_travail',
-  'diplome',
-  'certificat_medical',
-  'autre',
-] as const
+const TYPES_AUTORISES = CODES_OUVRIER
 
 const EXTENSIONS_AUTORISEES: Record<string, string> = {
   'application/pdf': 'pdf',
@@ -42,6 +30,7 @@ const EXTENSIONS_AUTORISEES: Record<string, string> = {
   'image/jpg': 'jpg',
   'image/png': 'png',
   'image/heic': 'heic',
+  'image/webp': 'webp',
 }
 
 // 10 Mo décodés : largement suffisant pour un scan ou une photo de document,
@@ -65,9 +54,9 @@ interface FichierDecode {
  * `if (!x.ok) x.erreur` échoue alors à la compilation. Même convention que
  * `ResolveResult` dans helpers.ts.
  */
-function decoderFichier(fichierBase64: string, mimeExplicite?: string): FichierDecode {
+export function decoderFichier(fichierBase64: string, mimeExplicite?: string): FichierDecode {
   const brut = String(fichierBase64 || '').trim()
-  if (!brut) return { ok: false, erreur: 'fichierBase64 est vide.' }
+  if (!brut) return { ok: false, erreur: 'Aucun fichier : fournir cheminFichier (chemin local) ou fichierBase64.' }
 
   // [\s\S] plutôt que le flag /s (dotAll) : la cible TS du projet est ES2017.
   const matchDataUri = brut.match(/^data:([^;]+);base64,([\s\S]+)$/)
@@ -109,7 +98,7 @@ interface DateExpirationParsee {
 }
 
 /** Valide « AAAA-MM-JJ » sans dépendre du fuseau du serveur pour l'interprétation. */
-function parseDateExpiration(valeur: unknown): DateExpirationParsee {
+export function parseDateExpiration(valeur: unknown): DateExpirationParsee {
   if (valeur === undefined || valeur === null || valeur === '') return { ok: true, date: null }
   const s = String(valeur).trim()
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
@@ -144,111 +133,120 @@ async function resoudreOuvrierCible(args: Record<string, unknown>): Promise<Cibl
   }
 }
 
+/** Document en vigueur du même type (sera archivé si le type est « unique »). */
+async function documentRemplace(ouvrierId: string, type: string, remplacer: boolean) {
+  if (!remplacer) return null
+  return prisma.documentOuvrier.findFirst({
+    where: { ouvrierId, type, archive: false },
+    select: { id: true, nom: true, dateExpiration: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+function doitRemplacer(type: string, args: Record<string, unknown>): boolean {
+  if (typeof args.remplacer === 'boolean') return args.remplacer
+  return TYPES_DOCUMENT_OUVRIER.find((t) => t.code === type)?.unique ?? false
+}
+
 export const ajouterDocumentOuvrier: ToolDefinition = {
   name: 'ajouter_document_ouvrier',
   description:
-    "Ajoute un document (carte d'identité, LIMOSA, A1, attestation ONSS, permis de travail, diplôme, certificat médical…) au dossier d'un ouvrier d'un sous-traitant. Le fichier est fourni en base64.",
+    "Ajoute un document au dossier d'un ouvrier d'un sous-traitant (carte d'identité / titre de séjour, A1, Limosa, " +
+    'attestation ONSS, formation sécurité, permis de travail, certificat médical, livre des parts…). ' +
+    'Fournir de préférence cheminFichier (chemin du fichier sur cet ordinateur, ex. /Volumes/Secotech/...) — le serveur MCP ' +
+    'le lit lui-même ; sinon fichierBase64. Pour les types uniques (ID, A1, Limosa…), le document en vigueur est ARCHIVÉ ' +
+    '(jamais supprimé). Le document est aussi rangé automatiquement sur le NAS. Toujours renseigner dateExpiration quand ' +
+    'le document en porte une (Limosa : date de fin de la période ; A1 : date de fin de validité).',
   requiresConfirmation: true,
   parameters: {
     type: 'object',
     properties: {
       sousTraitant: { type: 'string', description: 'Identifiant ou nom du sous-traitant' },
-      ouvrier: { type: 'string', description: "Identifiant, nom ou prénom de l'ouvrier" },
+      ouvrier: { type: 'string', description: "Identifiant, nom ou prénom de l'ouvrier (voir liste_ouvriers ; creer_ouvrier s'il n'existe pas)" },
       type: { type: 'string', description: 'Type de document', enum: [...TYPES_AUTORISES] },
+      cheminFichier: {
+        type: 'string',
+        description: 'Chemin absolu du fichier sur cet ordinateur (lu par le serveur MCP local). Préféré à fichierBase64.',
+      },
       fichierBase64: {
         type: 'string',
-        description:
-          'Contenu du fichier encodé en base64. Idéalement en data URI (« data:application/pdf;base64,... ») ; sinon préciser « mime ».',
+        description: 'Contenu du fichier en base64 (data URI de préférence) — seulement si cheminFichier est impossible.',
       },
-      mime: {
-        type: 'string',
-        description:
-          'Type MIME du fichier (application/pdf, image/jpeg, image/png, image/heic) — requis seulement si fichierBase64 n’est pas une data URI.',
-      },
-      nomFichier: {
-        type: 'string',
-        description: "Nom d'origine du fichier, pour affichage (ex. carte-identite.pdf)",
-      },
-      dateExpiration: {
-        type: 'string',
-        description: "Date d'expiration du document, format AAAA-MM-JJ (facultatif)",
+      mime: { type: 'string', description: 'Type MIME si fichierBase64 n’est pas une data URI' },
+      nomFichier: { type: 'string', description: "Nom d'origine du fichier (affichage)" },
+      dateExpiration: { type: 'string', description: "Date d'expiration / fin de validité, AAAA-MM-JJ" },
+      remplacer: {
+        type: 'boolean',
+        description: 'Archiver le document en vigueur du même type (défaut : oui pour les types uniques, non pour diplôme / autre)',
       },
     },
-    required: ['sousTraitant', 'ouvrier', 'type', 'fichierBase64'],
+    required: ['sousTraitant', 'ouvrier', 'type'],
   },
   summarize: async (args) => {
     const cible = await resoudreOuvrierCible(args)
     if (cible.erreur) return `Ajout de document — ${cible.erreur}`
-    return `Ajouter un document « ${String(args.type)} » au dossier de ${cible.ouvrierNom} (${cible.sousTraitantNom})`
+    const type = String(args.type || '')
+    const ancien = await documentRemplace(cible.ouvrierId!, type, doitRemplacer(type, args))
+    return (
+      `Ajouter « ${type} » au dossier de ${cible.ouvrierNom} (${cible.sousTraitantNom})` +
+      (args.dateExpiration ? `, valable jusqu'au ${String(args.dateExpiration)}` : '') +
+      (ancien ? ` — l'ancien document (${ancien.nom}) sera archivé.` : '.')
+    )
   },
   preview: async (args) => {
+    if (args.cheminFichier && !args.fichierBase64) {
+      return { action: 'aucune', erreur: 'Le serveur MCP local n’a pas transmis le fichier : mettre à jour/redémarrer le serveur MCP OpenBTP.' }
+    }
     const cible = await resoudreOuvrierCible(args)
     if (cible.erreur) return { action: 'aucune', erreur: cible.erreur, candidats: cible.candidats }
-
     const type = String(args.type || '')
-    if (!TYPES_AUTORISES.includes(type as (typeof TYPES_AUTORISES)[number])) {
-      return { action: 'aucune', erreur: `Type invalide. Valeurs : ${TYPES_AUTORISES.join(', ')}.` }
-    }
-
+    if (!TYPES_AUTORISES.includes(type)) return { action: 'aucune', erreur: `Type invalide. Valeurs : ${TYPES_AUTORISES.join(', ')}.` }
     const decode = decoderFichier(String(args.fichierBase64 || ''), args.mime ? String(args.mime) : undefined)
     if (!decode.ok) return { action: 'aucune', erreur: decode.erreur }
-
     const dateRes = parseDateExpiration(args.dateExpiration)
     if (!dateRes.ok) return { action: 'aucune', erreur: dateRes.erreur }
-
+    const ancien = await documentRemplace(cible.ouvrierId!, type, doitRemplacer(type, args))
     return {
       action: 'ajout',
       sousTraitant: cible.sousTraitantNom,
       ouvrier: cible.ouvrierNom,
       type,
+      fichier: args.nomFichier || null,
       tailleFichier: `${((decode.buffer?.length ?? 0) / 1024).toFixed(1)} Ko`,
-      extensionDetectee: decode.extension,
       dateExpiration: dateRes.date ? dateRes.date.toISOString().slice(0, 10) : null,
+      ...(ancien
+        ? { archivera: { nom: ancien.nom, dateExpiration: ancien.dateExpiration?.toISOString().slice(0, 10) ?? null } }
+        : {}),
     }
   },
   execute: async (args) => {
+    if (args.cheminFichier && !args.fichierBase64) {
+      return { erreur: 'Le serveur MCP local n’a pas transmis le fichier : mettre à jour/redémarrer le serveur MCP OpenBTP.' }
+    }
     const cible = await resoudreOuvrierCible(args)
     if (cible.erreur) return { erreur: cible.erreur, candidats: cible.candidats }
-
     const type = String(args.type || '')
-    if (!TYPES_AUTORISES.includes(type as (typeof TYPES_AUTORISES)[number])) {
-      return { erreur: `Type invalide. Valeurs : ${TYPES_AUTORISES.join(', ')}.` }
-    }
-
+    if (!TYPES_AUTORISES.includes(type)) return { erreur: `Type invalide. Valeurs : ${TYPES_AUTORISES.join(', ')}.` }
     const decode = decoderFichier(String(args.fichierBase64 || ''), args.mime ? String(args.mime) : undefined)
     if (!decode.ok) return { erreur: decode.erreur }
-
     const dateRes = parseDateExpiration(args.dateExpiration)
     if (!dateRes.ok) return { erreur: dateRes.erreur }
 
-    // Même arborescence que l'upload web : un document créé par l'agent doit
-    // être indiscernable, au même endroit, d'un document créé depuis l'interface.
-    const dossier = join(process.cwd(), 'public', 'uploads', 'documents', 'ouvriers', cible.ouvrierId!)
-    if (!existsSync(dossier)) await mkdir(dossier, { recursive: true })
-
-    const nomFichier = `${type}_${Date.now()}.${decode.extension}`
-    await writeFile(join(dossier, nomFichier), decode.buffer!)
-
-    const document = await prisma.documentOuvrier.create({
-      data: {
-        id: randomUUID(),
-        nom: args.nomFichier ? String(args.nomFichier) : nomFichier,
-        type,
-        url: `/uploads/documents/ouvriers/${cible.ouvrierId}/${nomFichier}`,
-        dateExpiration: dateRes.date,
-        ouvrierId: cible.ouvrierId!,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      select: { id: true, url: true },
+    const document = await enregistrerDocumentOuvrier(cible.ouvrierId!, {
+      type,
+      contenu: decode.buffer!,
+      extension: decode.extension!,
+      nomOriginal: args.nomFichier ? String(args.nomFichier) : `${type}.${decode.extension}`,
+      dateExpiration: dateRes.date,
+      remplacer: doitRemplacer(type, args),
     })
-
     return {
       succes: true,
       sousTraitant: cible.sousTraitantNom,
       ouvrier: cible.ouvrierNom,
       documentId: document.id,
-      url: document.url,
+      documentsArchives: document.archives,
+      nas: document.cheminNas || 'miroir NAS non configuré ou indisponible',
     }
   },
 }
@@ -364,7 +362,7 @@ export const modifierDocumentOuvrier: ToolDefinition = {
 export const listeDocumentsOuvrier: ToolDefinition = {
   name: 'liste_documents_ouvrier',
   description:
-    "Liste les documents déjà déposés dans le dossier d'un ouvrier d'un sous-traitant (type, date d'expiration, identifiant du document).",
+    "Liste les documents du dossier d'un ouvrier : ceux en vigueur et l'historique archivé (type, date d'expiration, identifiant).",
   parameters: {
     type: 'object',
     properties: {
@@ -379,20 +377,20 @@ export const listeDocumentsOuvrier: ToolDefinition = {
 
     const documents = await prisma.documentOuvrier.findMany({
       where: { ouvrierId: cible.ouvrierId },
-      select: { id: true, nom: true, type: true, dateExpiration: true, url: true },
+      select: { id: true, nom: true, type: true, dateExpiration: true, url: true, archive: true, archiveLe: true },
       orderBy: { createdAt: 'desc' },
     })
+    const jour = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null)
 
     return {
       sousTraitant: cible.sousTraitantNom,
       ouvrier: cible.ouvrierNom,
-      documents: documents.map((d) => ({
-        id: d.id,
-        nom: d.nom,
-        type: d.type,
-        dateExpiration: d.dateExpiration ? d.dateExpiration.toISOString().slice(0, 10) : null,
-        url: d.url,
-      })),
+      enVigueur: documents
+        .filter((d) => !d.archive)
+        .map((d) => ({ id: d.id, nom: d.nom, type: d.type, dateExpiration: jour(d.dateExpiration), url: d.url })),
+      archives: documents
+        .filter((d) => d.archive)
+        .map((d) => ({ id: d.id, nom: d.nom, type: d.type, dateExpiration: jour(d.dateExpiration), archiveLe: jour(d.archiveLe) })),
     }
   },
 }

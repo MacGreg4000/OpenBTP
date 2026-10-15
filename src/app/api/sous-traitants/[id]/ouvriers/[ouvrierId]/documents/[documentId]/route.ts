@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { unlink } from 'fs/promises'
-import { join } from 'path'
+import { archiverDocumentOuvrier } from '@/lib/documents/stockage'
 
 export async function DELETE(
   request: Request,
@@ -34,19 +33,10 @@ export async function DELETE(
       )
     }
 
-    // Supprimer le fichier physique
-    const filePath = join(process.cwd(), 'public', document.url)
-    try {
-      await unlink(filePath)
-    } catch (error) {
-      console.error('Erreur lors de la suppression du fichier:', error)
-      // Continuer même si le fichier n'existe pas
-    }
-
-    // Supprimer l'entrée dans la base de données
-    await prisma.documentOuvrier.delete({
-      where: { id: params.documentId }
-    })
+    // Jamais de suppression : le document est ARCHIVÉ (preuve en cas de
+    // contrôle) — retiré des documents en vigueur, fichier conservé, et
+    // déplacé dans _Archives sur le NAS.
+    await archiverDocumentOuvrier(document.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

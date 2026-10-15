@@ -361,7 +361,7 @@ export const documentsExpirants: ToolDefinition = {
     limite.setDate(maintenant.getDate() + jours)
 
     const documents = await prisma.documentOuvrier.findMany({
-      where: { dateExpiration: { not: null, lte: limite } },
+      where: { archive: false, dateExpiration: { not: null, lte: limite } },
       select: {
         nom: true,
         type: true,

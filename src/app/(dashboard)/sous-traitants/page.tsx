@@ -804,6 +804,14 @@ export default function SousTraitantsPage() {
               <span className="sm:hidden">Inviter</span>
             </button>
             <Link
+              href="/sous-traitants/documents"
+              className="inline-flex items-center px-3 py-2 bg-white/90 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 rounded-lg shadow hover:shadow-md transition-all duration-200 text-sm font-semibold"
+              title="Tableau des documents de toutes les personnes"
+            >
+              <ClipboardDocumentListIcon className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Documents</span>
+            </Link>
+            <Link
               href="/sous-traitants/nouveau"
               className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-sm font-semibold"
             >

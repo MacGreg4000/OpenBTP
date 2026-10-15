@@ -16,6 +16,8 @@
  *   OPENBTP_API_KEY   la clé en clair (son SHA-256 est configuré côté serveur)
  */
 
+import { readFile, stat } from 'node:fs/promises'
+import { basename, extname } from 'node:path'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
@@ -94,6 +96,45 @@ function schemaAvecDryRun(entry: CatalogEntry): CatalogEntry['parameters'] {
   }
 }
 
+// ─── Fichiers locaux ─────────────────────────────────────────────────────────
+//
+// Un outil qui accepte `cheminFichier` reçoit le chemin d'un fichier de CET
+// ordinateur (ex. /Volumes/Secotech/...). Le serveur MCP le lit lui-même et
+// l'envoie à OpenBTP en `fichierBase64` : le contenu ne transite jamais par la
+// conversation (un PDF en base64 y coûterait des centaines de milliers de
+// tokens), et un document peut être rangé directement depuis le NAS.
+
+const TAILLE_MAX_FICHIER = 10 * 1024 * 1024
+const MIME_PAR_EXTENSION: Record<string, string> = {
+  '.pdf': 'application/pdf',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.heic': 'image/heic',
+  '.webp': 'image/webp',
+}
+
+async function joindreFichierLocal(args: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const chemin = typeof args.cheminFichier === 'string' ? args.cheminFichier.trim() : ''
+  if (!chemin) return args
+  const mime = MIME_PAR_EXTENSION[extname(chemin).toLowerCase()]
+  if (!mime) {
+    throw new Error(`Format non accepté pour « ${basename(chemin)} » : PDF, JPEG, PNG, HEIC ou WEBP uniquement.`)
+  }
+  const infos = await stat(chemin).catch(() => null)
+  if (!infos || !infos.isFile()) throw new Error(`Fichier introuvable : ${chemin}`)
+  if (infos.size > TAILLE_MAX_FICHIER) {
+    throw new Error(`Fichier trop volumineux (${(infos.size / 1024 / 1024).toFixed(1)} Mo, maximum 10 Mo) : ${basename(chemin)}`)
+  }
+  const contenu = await readFile(chemin)
+  const { cheminFichier: _chemin, ...reste } = args
+  return {
+    ...reste,
+    fichierBase64: `data:${mime};base64,${contenu.toString('base64')}`,
+    nomFichier: typeof args.nomFichier === 'string' && args.nomFichier ? args.nomFichier : basename(chemin),
+  }
+}
+
 async function chargerCatalogue(): Promise<CatalogEntry[]> {
   const data = (await appelOpenBTP('/api/agent/tools')) as {
     version?: string
@@ -127,11 +168,12 @@ server.setRequestHandler(CallToolRequestSchema, async (requete) => {
   const { dryRun, ...reste } = (args || {}) as Record<string, unknown>
 
   try {
+    const argsEnvoyes = await joindreFichierLocal(reste)
     const resultat = await appelOpenBTP('/api/agent/execute', {
       method: 'POST',
       body: JSON.stringify({
         tool: name,
-        args: reste,
+        args: argsEnvoyes,
         ...(dryRun === true ? { dryRun: true } : {}),
       }),
     })

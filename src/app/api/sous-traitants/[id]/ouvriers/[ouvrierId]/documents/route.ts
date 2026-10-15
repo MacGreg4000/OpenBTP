@@ -2,23 +2,12 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
-import crypto from 'crypto'
+import { CODES_OUVRIER } from '@/lib/documents/types'
+import { enregistrerDocumentOuvrier } from '@/lib/documents/stockage'
 
-// Types de documents autorisés
-const ALLOWED_TYPES = [
-  'carte_identite', 
-  'limosa', 
-  'a1', 
-  'livre_parts', 
-  'attestation_onss',
-  'permis_travail',
-  'diplome',
-  'certificat_medical',
-  'autre'
-]
+// Types de documents : catalogue commun (src/lib/documents/types.ts)
+const ALLOWED_TYPES = CODES_OUVRIER
+const EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'webp']
 
 export async function POST(
   request: Request,
@@ -69,34 +58,22 @@ export async function POST(
       )
     }
 
-    // Créer le dossier de stockage si nécessaire
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'documents', 'ouvriers', params.ouvrierId)
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
+    const extension = (file.name.split('.').pop() || '').toLowerCase()
+    if (!EXTENSIONS.includes(extension)) {
+      return NextResponse.json(
+        { error: `Format non accepté (.${extension}). Formats : ${EXTENSIONS.join(', ')}.` },
+        { status: 400 }
+      )
     }
 
-    // Générer un nom de fichier unique
-    const fileExtension = file.name.split('.').pop()
-    const fileName = `${type}_${Date.now()}.${fileExtension}`
-    const filePath = join(uploadDir, fileName)
-
-    // Lire et écrire le fichier
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
-
-    // Créer l'entrée dans la base de données
-    const document = await prisma.documentOuvrier.create({
-      data: {
-        id: crypto.randomUUID(),
-        nom: file.name,
-        type: type,
-        url: `/uploads/documents/ouvriers/${params.ouvrierId}/${fileName}`,
-        dateExpiration: dateExpiration ? new Date(dateExpiration) : null,
-        ouvrierId: params.ouvrierId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+    // Rangement central : archive le document en vigueur du même type (types
+    // uniques) et recopie le fichier sur le NAS.
+    const document = await enregistrerDocumentOuvrier(params.ouvrierId, {
+      type,
+      contenu: Buffer.from(await file.arrayBuffer()),
+      extension: extension === 'jpeg' ? 'jpg' : extension,
+      nomOriginal: file.name,
+      dateExpiration: dateExpiration ? new Date(dateExpiration) : null,
     })
 
     return NextResponse.json(document)
