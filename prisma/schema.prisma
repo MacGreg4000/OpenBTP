@@ -415,6 +415,33 @@ model RappelCheckinLog {
   @@map("rappel_checkin_log")
 }
 
+/// Registre des déclarations de sous-traitance envoyées aux clients (preuve en
+/// cas de contrôle) : contenu exact du mail, destinataire, sous-traitants,
+/// personnes et pièces jointes au moment de l'envoi. Pas de clé étrangère :
+/// l'entrée reste même si le chantier ou un sous-traitant est supprimé.
+model DeclarationSousTraitance {
+  id            Int      @id @default(autoincrement())
+  chantierId    String
+  chantierNom   String
+  mode          String   // SIMPLE | DOCUMENTS
+  destinataire  String
+  objet         String   @db.Text
+  contenuTexte  String   @db.LongText
+  contenuHtml   String   @db.LongText
+  soustraitants String   @db.LongText // JSON : [{ id, nom, tva, personnes[] }]
+  pieces        String   @db.LongText // JSON : [{ nomFichier, libelle, personne, taille, url }]
+  messageId     String?
+  statut        String   // ENVOYE | ECHEC
+  erreur        String?  @db.Text
+  envoyePar     String?  // id utilisateur
+  envoyeParNom  String?
+  createdAt     DateTime @default(now())
+
+  @@index([chantierId])
+  @@index([createdAt])
+  @@map("declaration_soustraitance")
+}
+
 model CommandeSousTraitant {
   id                           Int                            @id @default(autoincrement())
   chantierId                   String

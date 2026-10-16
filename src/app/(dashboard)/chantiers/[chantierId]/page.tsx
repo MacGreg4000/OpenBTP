@@ -5,6 +5,7 @@ import { DocumentExpirationAlert } from '@/components/DocumentExpirationAlert'
 import { PencilSquareIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon, ClockIcon, CurrencyEuroIcon, EyeIcon, ArrowUpTrayIcon, MapIcon, InformationCircleIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import ChantierGestionnaires from '@/components/chantier/ChantierGestionnaires'
 import DeclarationSousTraitanceModal from '@/components/chantier/DeclarationSousTraitanceModal'
+import RegistreDeclarations from '@/components/chantier/RegistreDeclarations'
 import toast from 'react-hot-toast'
 
 interface ChantierData {
@@ -52,6 +53,7 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
   const [error, setError] = useState<string | null>(null)
   
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [versionRegistre, setVersionRegistre] = useState(0)
 
   useEffect(() => {
     const fetchChantier = async () => {
@@ -360,6 +362,9 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
 
             {/* Gestionnaires du chantier */}
             <ChantierGestionnaires chantierId={params.chantierId} />
+
+            {/* Registre des déclarations de sous-traitance envoyées */}
+            <RegistreDeclarations chantierId={params.chantierId} rafraichir={versionRegistre} />
           </div>
 
           {/* Colonne latérale */}
@@ -472,7 +477,10 @@ export default function ChantierConsultationPage(props: { params: Promise<{ chan
           nomChantier={chantier.nomChantier}
           clientId={chantier.clientId}
           contactId={chantier.contactId}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false)
+            setVersionRegistre((v) => v + 1)
+          }}
         />
       )}
     </div>

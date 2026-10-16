@@ -43,7 +43,7 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
     if (!soustraitantIds.length) return NextResponse.json({ error: 'Sélectionnez au moins un sous-traitant' }, { status: 400 })
     if (!EMAIL.test(destinataire)) return NextResponse.json({ error: 'Adresse email du destinataire invalide' }, { status: 400 })
 
-    const r = await envoyerDeclaration({ chantierId, mode, soustraitantIds, destinataire, userId: session.user?.id })
+    const r = await envoyerDeclaration({ chantierId, mode, soustraitantIds, destinataire, userId: session.user?.id, userNom: session.user?.name || session.user?.email || undefined })
     if (!r.ok) return NextResponse.json({ error: r.erreur }, { status: r.status || 500 })
     return NextResponse.json({ success: true, attachmentsCount: r.pieces })
   } catch (error) {

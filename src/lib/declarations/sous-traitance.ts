@@ -156,6 +156,7 @@ export interface EnvoiDeclaration {
   soustraitantIds: string[]
   destinataire: string
   userId?: string
+  userNom?: string
 }
 
 /** ok : envoyé (pieces, taille) · sinon status HTTP + erreur lisible */
@@ -251,14 +252,38 @@ export async function envoyerDeclaration(p: EnvoiDeclaration): Promise<ResultatD
     societe.nom,
   ].filter((l, i, t) => l !== '' || t[i - 1] !== '').join('\n')
 
+  const objet = `Déclaration de sous-traitance — ${chantier.nomChantier}`
   const envoi = await envoyerEmailRappel({
     to: p.destinataire,
-    subject: `Déclaration de sous-traitance — ${chantier.nomChantier}`,
+    subject: objet,
     html,
     text: texte,
     replyTo: REPLY_TO,
     attachments,
   })
+
+  // Registre : chaque tentative est conservée (preuve en cas de contrôle)
+  await prisma.declarationSousTraitance
+    .create({
+      data: {
+        chantierId: chantier.chantierId,
+        chantierNom: chantier.nomChantier,
+        mode: avecDocuments ? 'DOCUMENTS' : 'SIMPLE',
+        destinataire: p.destinataire,
+        objet,
+        contenuTexte: texte,
+        contenuHtml: html,
+        soustraitants: JSON.stringify(societes.map((s) => ({ id: s.id, nom: s.nom, tva: s.tva, personnes: s.personnes }))),
+        pieces: JSON.stringify(pieces.map((x) => ({ nomFichier: x.nomFichier, libelle: x.libelle, personne: x.personne, taille: x.taille, url: x.url }))),
+        messageId: envoi.messageId || null,
+        statut: envoi.ok ? 'ENVOYE' : 'ECHEC',
+        erreur: envoi.ok ? null : envoi.erreur || null,
+        envoyePar: p.userId || null,
+        envoyeParNom: p.userNom || null,
+      },
+    })
+    .catch((e) => console.error('[DECLARATION] Registre non enregistré :', e))
+
   if (!envoi.ok) return { ok: false, status: 502, erreur: `Envoi impossible : ${envoi.erreur}` }
 
   await cocherTacheDeclaration(chantier.chantierId, p.userId).catch((e) =>
@@ -288,4 +313,51 @@ async function cocherTacheDeclaration(chantierId: string, userId?: string) {
       completedAt: maintenant, completedBy: userId || null, updatedAt: maintenant,
     },
   })
+}
+
+// ─── Registre ────────────────────────────────────────────────────────────────
+
+export interface EntreeRegistre {
+  id: number
+  chantierId: string
+  chantierNom: string
+  mode: string
+  destinataire: string
+  soustraitants: { id: string; nom: string; tva: string | null; personnes: string[] }[]
+  pieces: { nomFichier: string; libelle: string; personne: string | null; taille: number; url: string }[]
+  statut: string
+  erreur: string | null
+  envoyeParNom: string | null
+  createdAt: string
+}
+
+const lireJson = <T>(s: string, defaut: T): T => {
+  try {
+    return JSON.parse(s) as T
+  } catch {
+    return defaut
+  }
+}
+
+/** Déclarations envoyées, plus récentes d'abord (filtre facultatif par chantier ou sous-traitant). */
+export async function listerRegistre(opts: { chantierId?: string; soustraitantId?: string; limite?: number } = {}): Promise<EntreeRegistre[]> {
+  const lignes = await prisma.declarationSousTraitance.findMany({
+    where: {
+      ...(opts.chantierId ? { chantierId: opts.chantierId } : {}),
+      // Recherche dans le JSON des sous-traitants (identifiant entre guillemets)
+      ...(opts.soustraitantId ? { soustraitants: { contains: `"${opts.soustraitantId}"` } } : {}),
+    },
+    select: {
+      id: true, chantierId: true, chantierNom: true, mode: true, destinataire: true, soustraitants: true,
+      pieces: true, statut: true, erreur: true, envoyeParNom: true, createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' },
+    take: Math.min(opts.limite || 200, 500),
+  })
+  return lignes.map((l) => ({
+    ...l,
+    soustraitants: lireJson(l.soustraitants, []),
+    pieces: lireJson(l.pieces, []),
+    createdAt: l.createdAt.toISOString(),
+  }))
 }

@@ -12,6 +12,7 @@ import {
   ArrowPathIcon,
   ClipboardDocumentListIcon,
   ClockIcon,
+  EnvelopeIcon,
   ExclamationCircleIcon,
   MagnifyingGlassIcon,
   UserGroupIcon,
@@ -252,6 +253,15 @@ export default function DocumentsSousTraitantsPage() {
           </div>
         }
         actions={
+          <div className="flex items-center gap-2">
+          <Link
+            href="/sous-traitants/declarations"
+            className="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 rounded-lg shadow-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-200 text-sm font-semibold"
+            title="Registre des déclarations de sous-traitance envoyées"
+          >
+            <EnvelopeIcon className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Déclarations</span>
+          </Link>
           <button
             type="button"
             onClick={synchroniserNas}
@@ -262,6 +272,7 @@ export default function DocumentsSousTraitantsPage() {
             <span className="hidden sm:inline">Synchroniser le NAS</span>
             <span className="sm:hidden">NAS</span>
           </button>
+          </div>
         }
       />
 
