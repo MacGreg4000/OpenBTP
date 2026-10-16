@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma/client'
 import fs from 'fs'
 import path from 'path'
 import { RemotePDFGenerator } from './pdf-generator-remote'
+import { embarquerPolices } from './polices'
 
 export interface PDFOptions {
   format?: 'A4' | 'A3'
@@ -125,18 +126,25 @@ export class PDFGenerator {
     html: string,
     options: PDFOptions = {}
   ): Promise<Buffer> {
+    const debut = Date.now()
+    // Police embarquée : plus d'attente de fonts.googleapis.com avant l'impression
+    html = embarquerPolices(html)
+
     // Vérifier si un service PDF distant est configuré
     if (process.env.PDF_SERVICE_URL) {
-      console.log('📡 Utilisation du service PDF distant')
       try {
+        // Santé vérifiée en 3 s max et mémorisée 1 min (voir RemotePDFGenerator)
         const isHealthy = await RemotePDFGenerator.checkHealth()
         if (isHealthy) {
-          return await RemotePDFGenerator.generatePDF(html, options)
+          const buffer = await RemotePDFGenerator.generatePDF(html, options)
+          console.log(`📄 PDF généré (service distant) en ${Date.now() - debut} ms`)
+          return buffer
         } else {
           console.warn('⚠️ Service PDF distant non disponible, fallback vers Puppeteer local')
         }
       } catch (error) {
         console.warn('⚠️ Erreur service PDF distant, fallback vers Puppeteer local:', error)
+        RemotePDFGenerator.marquerIndisponible()
       }
     }
 
@@ -172,6 +180,7 @@ export class PDFGenerator {
       }
 
       const buffer = await page.pdf(pdfOptions)
+      console.log(`📄 PDF généré (Puppeteer local) en ${Date.now() - debut} ms`)
       return Buffer.from(buffer)
     } finally {
       await page.close()

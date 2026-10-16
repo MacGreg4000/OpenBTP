@@ -10,23 +10,42 @@ export class RemotePDFGenerator {
     this.provider = (process.env.PDF_SERVICE_PROVIDER as 'browserless' | 'custom') || 'custom'
   }
 
+  // Santé du service : la vérification ne doit jamais bloquer la génération.
+  // Sans délai maximum, un service injoignable faisait attendre la requête
+  // jusqu'au timeout TCP (plusieurs dizaines de secondes) avant le repli local.
+  private static sante: { ok: boolean; le: number } | null = null
+  private static readonly DUREE_CACHE_SANTE = 60_000
+  private static readonly DELAI_SANTE = 3_000
+  /** Au-delà, on abandonne le service distant et on génère en local. */
+  private static readonly DELAI_GENERATION = 60_000
+
+  static marquerIndisponible() {
+    this.sante = { ok: false, le: Date.now() }
+  }
+
   // Méthode pour vérifier la santé du service
   static async checkHealth(): Promise<boolean> {
+    if (this.sante && Date.now() - this.sante.le < this.DUREE_CACHE_SANTE) return this.sante.ok
+    let ok = false
     try {
       if (this.provider === 'browserless') {
         // Browserless n'expose pas /health de base; on teste la page d'accueil ou /sessions
-        const response = await fetch(`${this.pdfServiceUrl}`)
-        return response.ok
+        const response = await fetch(`${this.pdfServiceUrl}`, { signal: AbortSignal.timeout(this.DELAI_SANTE) })
+        ok = response.ok
+      } else {
+        const response = await fetch(`${this.pdfServiceUrl}/health`, { signal: AbortSignal.timeout(this.DELAI_SANTE) })
+        if (response.ok) {
+          const data = await response.json().catch(() => ({})) as { status?: string; browser?: string }
+          console.log('🏥 Service PDF:', data.status, '- Browser:', data.browser)
+          ok = data?.status === 'ok' || data?.browser === 'connected'
+        }
       }
-      const response = await fetch(`${this.pdfServiceUrl}/health`)
-      if (!response.ok) return false
-      const data = await response.json().catch(() => ({})) as { status?: string; browser?: string }
-      console.log('🏥 Service PDF:', data.status, '- Browser:', data.browser)
-      return data?.status === 'ok' || data?.browser === 'connected'
     } catch (error) {
-      console.error('❌ Service PDF inaccessible:', error)
-      return false
+      console.error('❌ Service PDF inaccessible:', error instanceof Error ? error.message : error)
+      ok = false
     }
+    this.sante = { ok, le: Date.now() }
+    return ok
   }
 
   // Méthode pour générer un PDF via le service distant
@@ -80,7 +99,8 @@ export class RemotePDFGenerator {
       const response = await fetch(`${this.pdfServiceUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(browserlessOptions)
+        body: JSON.stringify(browserlessOptions),
+        signal: AbortSignal.timeout(this.DELAI_GENERATION)
       })
 
       if (!response.ok) {
