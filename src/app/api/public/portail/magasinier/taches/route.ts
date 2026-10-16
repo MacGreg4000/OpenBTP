@@ -53,3 +53,44 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+/**
+ * Le magasinier ajoute lui-même une tâche (aide-mémoire) : { titre, description?, date? (AAAA-MM-JJ) }.
+ * Elle apparaît comme les autres dans sa liste et côté bureau (marquée « ajoutée par le magasinier »).
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const magasinierId = getMagasinierIdFromCookie(request.headers.get('cookie'))
+    if (!magasinierId) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const titre = typeof body.titre === 'string' ? body.titre.trim().slice(0, 190) : ''
+    const description = typeof body.description === 'string' && body.description.trim() ? body.description.trim() : null
+    if (!titre) {
+      return NextResponse.json({ error: 'Le titre est obligatoire' }, { status: 400 })
+    }
+
+    // Date d'exécution : jour choisi (midi, pour éviter tout décalage de fuseau), sinon maintenant
+    let dateExecution = new Date()
+    if (typeof body.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.date)) {
+      dateExecution = new Date(`${body.date}T12:00:00`)
+    }
+
+    const tache = await prisma.tacheMagasinier.create({
+      data: {
+        titre,
+        description,
+        dateExecution,
+        magasinierId,
+        creeParMagasinier: true,
+      },
+      include: { photos: { where: { type: 'A_FAIRE' }, orderBy: { ordre: 'asc' } } }
+    })
+    return NextResponse.json(tache, { status: 201 })
+  } catch (error) {
+    console.error('Erreur POST taches magasinier:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}

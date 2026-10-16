@@ -64,6 +64,7 @@ interface Tache {
   commentaire: string | null
   dateValidation: string | null
   magasinier: { id: string; nom: string }
+  creeParMagasinier?: boolean
   photos: { id: string; url: string; type: string }[]
 }
 
@@ -705,6 +706,11 @@ export default function LogistiquePage() {
                           <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                             <td className="px-5 py-4">
                               <div className="font-semibold text-gray-900 dark:text-white text-sm">{t.titre}</div>
+                              {t.creeParMagasinier && (
+                                <span className="inline-block mt-0.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                  Ajoutée par le magasinier
+                                </span>
+                              )}
                               {t.description && (
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-xs">{t.description}</div>
                               )}
@@ -1471,7 +1477,7 @@ export default function LogistiquePage() {
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
               <div>
                 <h3 className="font-bold text-lg text-gray-900 dark:text-white">{viewTache.titre}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{viewTache.magasinier.nom} · {formatDate(viewTache.dateExecution)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{viewTache.magasinier.nom} · {formatDate(viewTache.dateExecution)}{viewTache.creeParMagasinier ? ' · ajoutée par le magasinier' : ''}</p>
               </div>
               <button onClick={() => setViewTache(null)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg transition-colors">
                 <XMarkIcon className="h-5 w-5" />

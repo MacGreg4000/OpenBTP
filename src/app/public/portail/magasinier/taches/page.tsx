@@ -12,6 +12,7 @@ import {
   XMarkIcon,
   MapPinIcon,
   PrinterIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline'
 import { usePortalI18n } from '../../i18n'
 import Image from 'next/image'
@@ -23,6 +24,7 @@ interface Tache {
   description: string | null
   dateExecution: string
   statut: string
+  creeParMagasinier?: boolean
   photos: { id: string; url: string; type: string }[]
 }
 
@@ -54,6 +56,11 @@ export default function MagasinierTachesPage() {
   const [bonsPreparation, setBonsPreparation] = useState<BonPreparation[]>([])
   const [terminantBonId, setTerminantBonId] = useState<string | null>(null)
   const [printBon, setPrintBon] = useState<BonPreparation | null>(null)
+  const [ajoutOuvert, setAjoutOuvert] = useState(false)
+  const [ajoutTitre, setAjoutTitre] = useState('')
+  const [ajoutDescription, setAjoutDescription] = useState('')
+  const [ajoutDate, setAjoutDate] = useState('')
+  const [ajoutEnCours, setAjoutEnCours] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -139,6 +146,39 @@ export default function MagasinierTachesPage() {
     }
     return map
   }, [taches])
+
+  const ouvrirAjout = () => {
+    setAjoutTitre('')
+    setAjoutDescription('')
+    setAjoutDate(localDateKey(new Date()))
+    setAjoutOuvert(true)
+  }
+
+  const handleAjouter = async () => {
+    if (!ajoutTitre.trim()) return
+    setAjoutEnCours(true)
+    try {
+      const res = await fetch('/api/public/portail/magasinier/taches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ titre: ajoutTitre, description: ajoutDescription, date: ajoutDate }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Erreur')
+        return
+      }
+      const tache: Tache = await res.json()
+      setTaches((prev) => [...prev, tache])
+      if (me) setMe({ ...me, tachesAFaire: me.tachesAFaire + 1 })
+      setAjoutOuvert(false)
+    } catch {
+      alert('Erreur')
+    } finally {
+      setAjoutEnCours(false)
+    }
+  }
 
   const handleOpenValider = (tache: Tache) => {
     setModalTache(tache)
@@ -319,6 +359,14 @@ export default function MagasinierTachesPage() {
           </div>
         )}
 
+        <button
+          onClick={ouvrirAjout}
+          className="mb-4 w-full py-3 bg-white border-2 border-dashed border-blue-300 text-blue-700 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-blue-50 active:scale-[0.99] transition"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Ajouter une tâche
+        </button>
+
         <div className="space-y-4">
           {Array.from({ length: 14 }).map((_, idx) => {
             const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + idx)
@@ -360,6 +408,11 @@ export default function MagasinierTachesPage() {
                         className="bg-white rounded-xl p-4 shadow border border-gray-100"
                       >
                         <h3 className="font-semibold text-gray-900">{t.titre}</h3>
+                        {t.creeParMagasinier && (
+                          <span className="inline-block mt-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                            Ajoutée par moi
+                          </span>
+                        )}
                         {t.description && (
                           <p className="text-sm text-gray-600 mt-1">{t.description}</p>
                         )}
@@ -392,6 +445,73 @@ export default function MagasinierTachesPage() {
           })}
         </div>
       </div>
+
+      {/* Ajout d'une tâche par le magasinier */}
+      {ajoutOuvert && (
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b">
+              <h3 className="font-bold text-lg">Nouvelle tâche</h3>
+              <p className="text-sm text-gray-500 mt-1">Pour ne rien oublier : elle s’ajoute à ta liste.</p>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="ajout-titre">
+                  Quoi ?
+                </label>
+                <input
+                  id="ajout-titre"
+                  value={ajoutTitre}
+                  onChange={(e) => setAjoutTitre(e.target.value)}
+                  placeholder="Ex. : Recharger la camionnette pour demain"
+                  autoFocus
+                  className="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="ajout-description">
+                  Détails (optionnel)
+                </label>
+                <textarea
+                  id="ajout-description"
+                  value={ajoutDescription}
+                  onChange={(e) => setAjoutDescription(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="ajout-date">
+                  Pour quel jour ?
+                </label>
+                <input
+                  id="ajout-date"
+                  type="date"
+                  value={ajoutDate}
+                  min={localDateKey(new Date())}
+                  onChange={(e) => setAjoutDate(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAjoutOuvert(false)}
+                  className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleAjouter}
+                  disabled={ajoutEnCours || !ajoutTitre.trim()}
+                  className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium disabled:opacity-60 hover:bg-blue-700 transition-colors"
+                >
+                  {ajoutEnCours ? '...' : 'Ajouter'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox photo */}
       {lightboxUrl && (

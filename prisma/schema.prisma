@@ -1116,13 +1116,15 @@ model TacheMagasinier {
   dateExecution  DateTime @default(now())
   statut         String   @default("A_FAIRE") // A_FAIRE | VALIDEE
   magasinierId   String
-  creePar        String
+  // Utilisateur du bureau qui a créé la tâche ; vide quand le magasinier l'a ajoutée lui-même
+  creePar        String?
+  creeParMagasinier Boolean @default(false)
   dateValidation DateTime?
   commentaire   String?  @db.Text
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   magasinier    Magasinier @relation(fields: [magasinierId], references: [id], onDelete: Cascade)
-  createur      User     @relation("TacheMagasinierCreateur", fields: [creePar], references: [id], onDelete: Cascade)
+  createur      User?    @relation("TacheMagasinierCreateur", fields: [creePar], references: [id], onDelete: Cascade)
   photos        PhotoTacheMagasinier[]
 
   @@index([magasinierId])
