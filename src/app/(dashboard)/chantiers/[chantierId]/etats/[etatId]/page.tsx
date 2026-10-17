@@ -13,6 +13,7 @@ import {
 import { EtatAvancement } from '@/types/etat-avancement'
 // imports inutilisés retirés
 import EtatAvancementUnifie from '@/components/etat-avancement/EtatAvancementUnifie'
+import PiecesJointesEtat from '@/components/etat-avancement/PiecesJointesEtat'
 import { toast } from 'react-hot-toast'
 
 const MOIS_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
@@ -567,6 +568,11 @@ export default function EtatAvancementPage(props: PageProps) {
               etatId={params.etatId}
               onCommentairesChange={setCurrentCommentaires}
             />
+          </div>
+
+          {/* Photos et fichiers joints (joignables au mail d'envoi) */}
+          <div className="mt-6">
+            <PiecesJointesEtat chantierId={params.chantierId} etatId={params.etatId} />
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma/client';
 import nodemailer from 'nodemailer';
 import { generateEtatAvancementHTML } from '@/lib/pdf/templates/etat-avancement-template';
 import { roundToTwoDecimals } from '@/utils/calculs';
+import { piecesPourMail, TAILLE_MAX_MAIL } from '@/lib/etats/pieces-jointes';
 
 // Ancienne simulation PDF supprimée (non utilisée)
 
@@ -25,7 +26,9 @@ export async function POST(request: Request) {
       cc,
       subject,
       body: emailBody,
+      piecesJointesIds,
     } = body;
+    const idsPieces: number[] = Array.isArray(piecesJointesIds) ? piecesJointesIds.map(Number).filter(Number.isFinite) : [];
 
     if (!etatAvancementId || !chantierId || !subject || !emailBody) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
@@ -221,6 +224,16 @@ export async function POST(request: Request) {
     const pdfFileName = `Etat_Avancement_${templateData.chantier.chantierId}_N${templateData.numero}.pdf`;
     console.log('📄 Nom du fichier PDF:', pdfFileName);
 
+    // Photos et fichiers de l'état cochés dans la modale
+    const { attachments: piecesJointes, manquants } = await piecesPourMail(etatAvancement.id, idsPieces);
+    if (manquants.length) console.warn('⚠️ Pièces jointes introuvables sur disque :', manquants);
+    const tailleTotale = pdfBuffer.length + piecesJointes.reduce((t, p) => t + p.content.length, 0);
+    if (tailleTotale > TAILLE_MAX_MAIL) {
+      return NextResponse.json({
+        error: `Mail trop lourd (${(tailleTotale / 1048576).toFixed(1)} Mo, maximum ${TAILLE_MAX_MAIL / 1048576} Mo) : décochez des pièces jointes.`,
+      }, { status: 413 });
+    }
+
     // 5. Configurer Nodemailer
     const transporter = nodemailer.createTransport({
       host: companySettingsRaw.emailHost,
@@ -250,7 +263,7 @@ export async function POST(request: Request) {
       subject: subject,
       html: gabaritEmail({
         titre: subject,
-        contenuHtml: paragraphe(texteEnHtml(emailBody)) + paragraphe(`<span style="color:#6B7280;font-size:13px;">📎 ${echapperHtml(pdfFileName)}</span>`),
+        contenuHtml: paragraphe(texteEnHtml(emailBody)) + paragraphe(`<span style="color:#6B7280;font-size:13px;">📎 ${[pdfFileName, ...piecesJointes.map((p) => p.filename)].map(echapperHtml).join('<br>📎 ')}</span>`),
         societe: await societeEmail(),
       }),
       attachments: [
@@ -259,6 +272,7 @@ export async function POST(request: Request) {
           content: pdfBuffer,
           contentType: 'application/pdf',
         },
+        ...piecesJointes,
       ],
     };
 

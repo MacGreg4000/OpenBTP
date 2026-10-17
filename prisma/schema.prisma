@@ -291,10 +291,28 @@ model EtatAvancement {
   Chantier                     Chantier                       @relation(fields: [chantierId], references: [id])
   lignes                       LigneEtatAvancement[]
   soustraitant_etat_avancement soustraitant_etat_avancement[]
+  piecesJointes                PieceJointeEtatAvancement[]
 
   @@unique([chantierId, numero])
   @@index([chantierId])
   @@map("etat_avancement")
+}
+
+/// Photos et fichiers joints à un état d'avancement client ; peuvent être
+/// joints au mail d'envoi de l'état (case à cocher par fichier).
+model PieceJointeEtatAvancement {
+  id               Int            @id @default(autoincrement())
+  etatAvancementId Int
+  nom              String         // nom d'origine affiché
+  url              String         // /uploads/etats-avancement/<etatId>/<fichier>
+  mime             String
+  taille           Int
+  ajoutePar        String?
+  createdAt        DateTime       @default(now())
+  etatAvancement   EtatAvancement @relation(fields: [etatAvancementId], references: [id], onDelete: Cascade)
+
+  @@index([etatAvancementId])
+  @@map("piece_jointe_etat_avancement")
 }
 
 model LigneEtatAvancement {

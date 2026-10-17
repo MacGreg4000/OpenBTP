@@ -8,6 +8,7 @@ import { Chantier } from '@/types/chantier'; // Adapter le chemin si nécessaire
 type Contact = { id: string; prenom?: string; nom?: string; email?: string }
 import { toast } from 'react-hot-toast';
 import { Session } from 'next-auth'; // Importer le type Session
+import { type PieceJointe, tailleLisible } from '@/components/etat-avancement/PiecesJointesEtat';
 
 // Type guard pour vérifier si c'est un état sous-traitant
 function isSoustraitantEtat(etat: EtatAvancementEtendu): etat is EtatAvancementEtendu & { typeSoustraitant: true; soustraitantId: string } {
@@ -39,6 +40,27 @@ export default function EmailEtatAvancementModal({
   // const [clientName, setClientName] = useState<string>('');
   const [companyName, setCompanyName] = useState<string>(''); // État pour le nom de l'entreprise
   const [pdfFileName, setPdfFileName] = useState<string>(''); // État pour le nom du fichier PDF
+  // Photos et fichiers de l'état client, à joindre au mail (cochés par défaut)
+  const [pieces, setPieces] = useState<PieceJointe[]>([]);
+  const [piecesCochees, setPiecesCochees] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!isOpen || !chantier || isSoustraitantEtat(etatAvancement)) {
+      setPieces([]);
+      setPiecesCochees([]);
+      return;
+    }
+    fetch(`/api/chantiers/${chantier.chantierId}/etats-avancement/${etatAvancement.numero}/pieces-jointes`)
+      .then((r) => (r.ok ? r.json() : { pieces: [] }))
+      .then((d) => {
+        const liste: PieceJointe[] = d.pieces || [];
+        setPieces(liste);
+        setPiecesCochees(liste.map((p) => p.id));
+      })
+      .catch(() => setPieces([]));
+  }, [isOpen, chantier, etatAvancement]);
+
+  const taillePieces = pieces.filter((p) => piecesCochees.includes(p.id)).reduce((t, p) => t + p.taille, 0);
 
   useEffect(() => {
     if (isOpen && chantier) {
@@ -192,6 +214,7 @@ export default function EmailEtatAvancementModal({
           cc: ccEmails,
           subject,
           body,
+          piecesJointesIds: piecesCochees,
         }),
       });
 
@@ -331,6 +354,37 @@ export default function EmailEtatAvancementModal({
                 <span>Pièce jointe :</span>
                 <span className="ml-1 font-medium text-gray-800 dark:text-gray-200 truncate" title={pdfFileName}>{pdfFileName}</span>
               </div>
+            </div>
+          )}
+
+          {/* Photos et fichiers de l'état */}
+          {pieces.length > 0 && (
+            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Joindre aussi au mail</span>
+                <span className={`text-xs ${taillePieces > 18 * 1048576 ? 'text-red-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {piecesCochees.length}/{pieces.length} · {tailleLisible(taillePieces)}
+                </span>
+              </div>
+              <div className="space-y-1 max-h-40 overflow-auto">
+                {pieces.map((p) => (
+                  <label key={p.id} className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-100">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={piecesCochees.includes(p.id)}
+                      onChange={(e) =>
+                        setPiecesCochees((prev) => (e.target.checked ? [...prev, p.id] : prev.filter((id) => id !== p.id)))
+                      }
+                    />
+                    <span className="flex-1 truncate" title={p.nom}>{p.nom}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{tailleLisible(p.taille)}</span>
+                  </label>
+                ))}
+              </div>
+              {taillePieces > 18 * 1048576 && (
+                <p className="mt-2 text-xs text-red-600">Pièces trop lourdes pour un mail : décochez-en quelques-unes.</p>
+              )}
             </div>
           )}
 
