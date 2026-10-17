@@ -74,6 +74,15 @@ const nextConfig = {
   // remet sur le bon chemin sans qu'il faille les renvoyer.
   async redirects() {
     return [
+      // Guide carreleurs (site statique dans public/guide-carreleurs/, chemins
+      // relatifs) : Next ne sert pas index.html pour un dossier et retire le
+      // slash final — on envoie donc vers index.html, langue (?lang=) et ancre
+      // (#rule-…) conservées.
+      {
+        source: '/guide-carreleurs',
+        destination: '/guide-carreleurs/index.html',
+        permanent: false,
+      },
       {
         source: '/public/portail/:type(OUVRIER_INTERNE|ouvrier_interne|ouvrier-interne|ouvrierInterne)/:path*',
         destination: '/public/portail/ouvrier/:path*',
@@ -137,6 +146,16 @@ const nextConfig = {
             value: 'strict-origin-when-cross-origin',
           },
         ],
+      },
+      // Guide carreleurs : page et PDF revalidés à chaque visite (mises à jour
+      // visibles tout de suite), fichiers JS/CSS hachés mis en cache longtemps.
+      {
+        source: '/guide-carreleurs/:fichier(index.html|guides/.*)',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
+      },
+      {
+        source: '/guide-carreleurs/assets/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         source: '/sw.js',

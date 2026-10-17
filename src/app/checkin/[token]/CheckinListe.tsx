@@ -99,6 +99,26 @@ export default function CheckinListe({ chantiers, miseAJour }: { chantiers: Chan
           </a>
         </div>
 
+        {/* Guide de bonnes pratiques Secotech, dans la langue de chacun */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm">
+          <span className="font-semibold text-orange-800">
+            Guide de bonnes pratiques · Guia de boas práticas · Ghid de bune practici · Good practice guide
+          </span>
+          <span className="flex gap-1.5">
+            {(['fr', 'pt', 'ro', 'en'] as const).map((l) => (
+              <a
+                key={l}
+                href={`/guide-carreleurs/index.html?lang=${l}`}
+                target="_blank"
+                rel="noopener"
+                className="rounded-md bg-orange-500 px-2.5 py-1 text-xs font-bold uppercase text-white hover:bg-orange-600"
+              >
+                {l}
+              </a>
+            ))}
+          </span>
+        </div>
+
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-4">
           <input
             type="search"

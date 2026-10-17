@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon, LockClosedIcon, CalendarIcon, ClipboardDocumentListIcon, WrenchScrewdriverIcon, DocumentPlusIcon, ArrowRightIcon, BuildingOfficeIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, LockClosedIcon, CalendarIcon, ClipboardDocumentListIcon, WrenchScrewdriverIcon, DocumentPlusIcon, ArrowRightIcon, BuildingOfficeIcon, DocumentArrowUpIcon, BookOpenIcon } from '@heroicons/react/24/outline'
 import { PortalI18nProvider, usePortalI18n } from '../../i18n'
 
 function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId: string } }) {
@@ -256,6 +256,22 @@ function InnerPortail(props: { params: { type: 'ouvrier'|'soustraitant'; actorId
             </button>
           </div>
         </div>
+
+        {/* Guide de bonnes pratiques Secotech (site statique, dans la langue du portail) */}
+        <a
+          href={`/guide-carreleurs/index.html?lang=${lang}`}
+          target="_blank"
+          rel="noopener"
+          className="flex items-center gap-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl p-4 shadow hover:shadow-md active:scale-[0.99] transition"
+        >
+          <div className="h-11 w-11 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <BookOpenIcon className="h-6 w-6" />
+          </div>
+          <div className="min-w-0">
+            <div className="font-semibold">{t('guide_title')}</div>
+            <div className="text-xs text-white/90">{t('guide_desc')}</div>
+          </div>
+        </a>
 
         {/* Encart: Mes métrés soumis (suivi) */}
         {type === 'soustraitant' && (
