@@ -323,3 +323,29 @@ export async function renommerDocumentOuvrierNas(documentId: string): Promise<st
     return d.cheminNas
   }
 }
+
+/** Même chose pour un document de société en vigueur (dossier « Société »). */
+export async function renommerDocumentSocieteNas(documentId: string): Promise<string | null> {
+  const racine = racineNas()
+  const d = await prisma.documentSousTraitant.findUnique({
+    where: { id: documentId },
+    select: { id: true, type: true, url: true, dateExpiration: true, precision: true, cheminNas: true, archive: true,
+      soustraitant: { select: { nom: true } } },
+  })
+  if (!racine || !d || !d.cheminNas || d.archive) return d?.cheminNas ?? null
+  try {
+    const source = join(racine, d.cheminNas)
+    if (!(await existe(source))) return d.cheminNas
+    const ext = (extname(d.url).slice(1) || 'pdf').toLowerCase()
+    const nom = nomFichierNas(d.type, d.soustraitant.nom, d.dateExpiration, ext, d.precision)
+    if (basename(source) === nom) return d.cheminNas
+    const cible = await cheminLibre(join(dirname(source), nom))
+    await rename(source, cible)
+    const cheminNas = cible.slice(racine.length).replace(/^[/\\]+/, '')
+    await prisma.documentSousTraitant.update({ where: { id: d.id }, data: { cheminNas } })
+    return cheminNas
+  } catch (e) {
+    console.error(`⚠️ [MIROIR NAS] Renommage impossible (${d.cheminNas}) :`, e)
+    return d.cheminNas
+  }
+}

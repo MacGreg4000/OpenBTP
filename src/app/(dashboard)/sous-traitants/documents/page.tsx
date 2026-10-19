@@ -347,7 +347,7 @@ export default function DocumentsSousTraitantsPage() {
                       {docsSte.map((t) => (
                         <span key={t.code} className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
                           {t.court}
-                          <Pastille c={st.documentsSociete[t.code]} libelle={t.libelle} />
+                          <Pastille c={st.documentsSociete[t.code]} libelle={t.libelle} href={`/sous-traitants/${st.id}/documents-societe`} />
                         </span>
                       ))}
                     </div>
@@ -355,6 +355,9 @@ export default function DocumentsSousTraitantsPage() {
                       <button type="button" onClick={() => setReglage(reglage === st.id ? null : st.id)} className="text-blue-600 hover:underline dark:text-blue-400">
                         Documents supplémentaires
                       </button>
+                      <Link href={`/sous-traitants/${st.id}/documents-societe`} className="text-blue-600 hover:underline dark:text-blue-400">
+                        Documents société
+                      </Link>
                       <Link href={`/sous-traitants/${st.id}/ouvriers`} className="text-blue-600 hover:underline dark:text-blue-400">
                         Personnes
                       </Link>
