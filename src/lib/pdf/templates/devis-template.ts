@@ -549,8 +549,8 @@ export function generateDevisHTML(data: DevisData): string {
         }
 
         .cgv-content {
-            font-size: 7px;
-            line-height: 1.2;
+            font-size: 8px;
+            line-height: 1.25;
             color: #1f2937;
             /* Neutraliser les styles qui pourraient affecter la page */
             margin: 0 !important;
@@ -559,10 +559,12 @@ export function generateDevisHTML(data: DevisData): string {
             max-width: 100% !important;
             height: auto !important;
             box-sizing: border-box !important;
-            /* Optimisation pour tenir sur une page */
+            /* Deux colonnes ÉQUILIBRÉES sur toute la largeur. Avec column-fill:auto,
+               Chrome remplissait la 1re colonne sur toute la hauteur de la page avant
+               de passer à la 2e : des CGV d'une page restaient dans la moitié gauche. */
             column-count: 2;
-            column-gap: 12px;
-            column-fill: auto;
+            column-gap: 16px;
+            column-fill: balance;
         }
 
         .cgv-content * {
@@ -615,7 +617,7 @@ export function generateDevisHTML(data: DevisData): string {
 
         .cgv-content strong {
             font-weight: 600 !important;
-            font-size: 7px !important;
+            font-size: inherit !important;
         }
 
         .cgv-content em {
@@ -649,7 +651,7 @@ export function generateDevisHTML(data: DevisData): string {
         .cgv-content h4,
         .cgv-content h5,
         .cgv-content h6 {
-            font-size: 8px !important;
+            font-size: 9px !important;
             font-weight: 600 !important;
             margin-top: 4px !important;
             margin-bottom: 2px !important;
@@ -677,9 +679,11 @@ export function generateDevisHTML(data: DevisData): string {
             font-size: 6px !important;
         }
 
-        .cgv-content .cols {
-            column-count: 2 !important;
-            column-gap: 12px !important;
+        /* Les colonnes sont gérées par .cgv-content : pas de colonnes imbriquées
+           venant du modèle de CGV (sinon texte dans un quart de page) */
+        .cgv-content * {
+            columns: auto !important;
+            column-count: auto !important;
         }
 
         .cgv-content .doc {
@@ -1301,8 +1305,8 @@ export function generateDevisHTMLWithoutPrices(data: DevisData): string {
         }
 
         .cgv-content {
-            font-size: 7px;
-            line-height: 1.2;
+            font-size: 8px;
+            line-height: 1.25;
             color: #1f2937;
             /* Neutraliser les styles qui pourraient affecter la page */
             margin: 0 !important;
@@ -1314,7 +1318,7 @@ export function generateDevisHTMLWithoutPrices(data: DevisData): string {
             /* Optimisation pour tenir sur une page */
             column-count: 2;
             column-gap: 12px;
-            column-fill: auto;
+            column-fill: balance; /* colonnes équilibrées : voir devis-template */
         }
 
         .cgv-content * {
@@ -1367,7 +1371,7 @@ export function generateDevisHTMLWithoutPrices(data: DevisData): string {
 
         .cgv-content strong {
             font-weight: 600 !important;
-            font-size: 7px !important;
+            font-size: inherit !important;
         }
 
         .cgv-content em {
@@ -1429,9 +1433,9 @@ export function generateDevisHTMLWithoutPrices(data: DevisData): string {
             font-size: 6px !important;
         }
 
-        .cgv-content .cols {
-            column-count: 2 !important;
-            column-gap: 12px !important;
+        .cgv-content * {
+            columns: auto !important;
+            column-count: auto !important;
         }
 
         .cgv-content .doc {

@@ -468,8 +468,8 @@ export function generateCommandeHTML(data: CommandeData): string {
         }
 
         .cgv-content {
-            font-size: 7px;
-            line-height: 1.2;
+            font-size: 8px;
+            line-height: 1.25;
             color: #1f2937;
             /* Neutraliser les styles qui pourraient affecter la page */
             margin: 0 !important;
@@ -481,7 +481,7 @@ export function generateCommandeHTML(data: CommandeData): string {
             /* Optimisation pour tenir sur une page */
             column-count: 2;
             column-gap: 12px;
-            column-fill: auto;
+            column-fill: balance; /* colonnes équilibrées : voir devis-template */
         }
 
         .cgv-content * {
@@ -513,7 +513,7 @@ export function generateCommandeHTML(data: CommandeData): string {
 
         .cgv-content strong {
             font-weight: 600 !important;
-            font-size: 7px !important;
+            font-size: inherit !important;
         }
 
         .cgv-content em {
@@ -575,9 +575,9 @@ export function generateCommandeHTML(data: CommandeData): string {
             font-size: 6px !important;
         }
 
-        .cgv-content .cols {
-            column-count: 2 !important;
-            column-gap: 12px !important;
+        .cgv-content * {
+            columns: auto !important;
+            column-count: auto !important;
         }
 
         .cgv-content .doc {
