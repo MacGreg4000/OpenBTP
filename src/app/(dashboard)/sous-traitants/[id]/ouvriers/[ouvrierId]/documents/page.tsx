@@ -9,7 +9,8 @@ import {
   ArrowDownTrayIcon,
   ExclamationCircleIcon,
   DocumentTextIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -22,6 +23,7 @@ interface Document {
   type: string
   url: string
   dateExpiration: string | null
+  precision?: string | null
   createdAt: string
 }
 
@@ -51,10 +53,10 @@ function DeleteModal({ isOpen, document, onClose, onConfirm, isDeleting }: Delet
   return (
     <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Confirmer la suppression</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Retirer ce document ?</h3>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Êtes-vous sûr de vouloir supprimer le document "{document?.nom}" ? 
-          Cette action est irréversible.
+          Le document &quot;{document?.nom}&quot; ne sera plus en vigueur. Il est archivé (conservé comme
+          preuve, et dans _Archives sur le NAS), pas supprimé.
         </p>
         <div className="mt-4 flex justify-end space-x-3">
           <button
@@ -71,9 +73,110 @@ function DeleteModal({ isOpen, document, onClose, onConfirm, isDeleting }: Delet
             disabled={isDeleting}
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-500 border border-transparent rounded-md hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
           >
-            {isDeleting ? 'Suppression...' : 'Supprimer'}
+            {isDeleting ? 'Archivage...' : 'Archiver'}
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+interface EditModalProps {
+  document: Document | null
+  onClose: () => void
+  onSave: (doc: Document, valeurs: { type: string; dateExpiration: string; precision: string }) => Promise<void>
+  isSaving: boolean
+}
+
+// Corriger la nature d'un document mal classé (ex. VCA encodé en « diplôme »),
+// sa date d'expiration ou sa précision — le fichier ne change pas.
+function EditModal({ document, onClose, onSave, isSaving }: EditModalProps) {
+  const [type, setType] = useState('')
+  const [dateExpiration, setDateExpiration] = useState('')
+  const [precision, setPrecision] = useState('')
+
+  useEffect(() => {
+    if (document) {
+      setType(document.type)
+      setDateExpiration(document.dateExpiration ? document.dateExpiration.slice(0, 10) : '')
+      setPrecision(document.precision || '')
+    }
+  }, [document])
+
+  if (!document) return null
+
+  return (
+    <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Modifier le document</h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 truncate" title={document.nom}>{document.nom}</p>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault()
+            await onSave(document, { type, dateExpiration, precision })
+          }}
+          className="mt-4 space-y-4"
+        >
+          <SelectField
+            label="Type de document"
+            id="edit-type"
+            name="type"
+            required
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="mt-1"
+          >
+            {TYPES_DOCUMENT_OUVRIER.map((t) => (
+              <option key={t.code} value={t.code}>{t.libelle}</option>
+            ))}
+          </SelectField>
+
+          <div>
+            <label htmlFor="edit-precision" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Précision (facultatif)
+            </label>
+            <input
+              id="edit-precision"
+              value={precision}
+              onChange={(e) => setPrecision(e.target.value)}
+              placeholder="recto, verso, VCA, sécurité de base 8h…"
+              maxLength={60}
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="edit-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Date d&apos;expiration
+            </label>
+            <input
+              type="date"
+              id="edit-date"
+              value={dateExpiration}
+              onChange={(e) => setDateExpiration(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Laisser vide si le document n&apos;expire pas.</p>
+          </div>
+
+          <div className="mt-5 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 border border-transparent rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50"
+            >
+              {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
@@ -200,6 +303,8 @@ export default function DocumentsOuvrierPage(
     document: null
   })
   const [isDeleting, setIsDeleting] = useState(false)
+  const [docEnEdition, setDocEnEdition] = useState<Document | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (session) {
@@ -239,6 +344,27 @@ export default function DocumentsOuvrierPage(
       setError('Erreur lors de l\'envoi du document')
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleSave = async (doc: Document, v: { type: string; dateExpiration: string; precision: string }) => {
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/sous-traitants/${params.id}/ouvriers/${params.ouvrierId}/documents/${doc.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: v.type, dateExpiration: v.dateExpiration || null, precision: v.precision }),
+      })
+      if (!response.ok) {
+        const d = await response.json().catch(() => ({}))
+        throw new Error(d.error || 'Erreur lors de la modification')
+      }
+      await loadOuvrier()
+      setDocEnEdition(null)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erreur lors de la modification')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -357,6 +483,9 @@ export default function DocumentsOuvrierPage(
                             />
                           )}
                           {getDocumentTypeName(document.type)}
+                          {document.precision && (
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({document.precision})</span>
+                          )}
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -378,7 +507,15 @@ export default function DocumentsOuvrierPage(
                             <ArrowDownTrayIcon className="h-5 w-5" />
                           </a>
                           <button
+                            onClick={() => setDocEnEdition(document)}
+                            className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                            title="Modifier le type, la date ou la précision"
+                          >
+                            <PencilSquareIcon className="h-5 w-5" />
+                          </button>
+                          <button
                             onClick={() => setDeleteModal({ isOpen: true, document })}
+                            title="Archiver" 
                             className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                           >
                             <TrashIcon className="h-5 w-5" />
@@ -398,6 +535,13 @@ export default function DocumentsOuvrierPage(
         onClose={() => setUploadModal(false)}
         onUpload={handleUpload}
         isUploading={isUploading}
+      />
+
+      <EditModal
+        document={docEnEdition}
+        onClose={() => setDocEnEdition(null)}
+        onSave={handleSave}
+        isSaving={isSaving}
       />
 
       <DeleteModal
