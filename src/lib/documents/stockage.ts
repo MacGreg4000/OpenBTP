@@ -17,7 +17,7 @@ import { mkdir, writeFile, rename, copyFile, access } from 'fs/promises'
 import { join, dirname, basename, extname } from 'path'
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma/client'
-import { TYPES_DOCUMENT_OUVRIER, TYPES_DOCUMENT_SOCIETE } from './types'
+import { TYPES_DOCUMENT_OUVRIER, TYPES_DOCUMENT_SOCIETE, typeDocumentOuvrierCorrige } from './types'
 
 const RACINE_UPLOADS = join(process.cwd(), 'public')
 const racineNas = () => (process.env.NAS_DOCUMENTS_PATH || '').trim()
@@ -134,6 +134,7 @@ export async function enregistrerDocumentOuvrier(ouvrierId: string, e: EntreeDoc
   })
   if (!ouvrier) throw new Error('Ouvrier introuvable')
   const st = await prisma.soustraitant.findUnique({ where: { id: ouvrier.sousTraitantId }, select: { nom: true, tva: true } })
+  e = { ...e, type: typeDocumentOuvrierCorrige(e.type, e.precision, e.nomOriginal) }
   const def = typeOuvrier(e.type)
   if (!def) throw new Error(`Type de document inconnu : ${e.type}`)
   const remplacer = e.remplacer ?? def.unique

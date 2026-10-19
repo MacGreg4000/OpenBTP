@@ -22,7 +22,9 @@ export const TYPES_DOCUMENT_OUVRIER: TypeDocument[] = [
   // comme « Attestation Sécurité » — les documents existants sont des formations sécurité.
   { code: 'certificat_medical', libelle: 'Formation sécurité (VCA, sécurité de base)', court: 'Sécurité', unique: true },
   { code: 'livre_parts', libelle: 'Livre des parts / statut associé', court: 'Parts', unique: true },
-  { code: 'diplome', libelle: 'Diplôme / attestation de compétence', court: 'Diplôme', unique: false },
+  // Le VCA s'intitule « Diploma » : sans précision, il finissait ici au lieu de
+  // « Formation sécurité » (et la personne restait signalée sans formation).
+  { code: 'diplome', libelle: 'Diplôme métier (hors VCA et sécurité)', court: 'Diplôme', unique: false },
   { code: 'autre', libelle: 'Autre', court: 'Autre', unique: false },
 ]
 
@@ -37,6 +39,17 @@ export const TYPES_DOCUMENT_SOCIETE: TypeDocument[] = [
 ]
 
 export const CODES_OUVRIER = TYPES_DOCUMENT_OUVRIER.map((t) => t.code)
+
+const INDICES_FORMATION_SECURITE = /\b(vol-?)?vca\b|s[ée]curit[ée]\s+de\s+base|basic\s+(elements\s+of\s+)?safety|veiligheid/i
+
+/**
+ * Un « diplôme » qui est en réalité une formation sécurité (VCA, sécurité de
+ * base) est rangé comme tel : c'est ce type qui est exigé pour chaque personne.
+ */
+export function typeDocumentOuvrierCorrige(type: string, ...indices: (string | null | undefined)[]): string {
+  if (type !== 'diplome') return type
+  return indices.some((t) => t && INDICES_FORMATION_SECURITE.test(t)) ? 'certificat_medical' : type
+}
 export const CODES_SOCIETE = TYPES_DOCUMENT_SOCIETE.map((t) => t.code)
 
 export const libelleType = (code: string) =>
