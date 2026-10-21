@@ -255,6 +255,8 @@ export async function envoyerDeclaration(p: EnvoiDeclaration): Promise<ResultatD
   const objet = `Déclaration de sous-traitance — ${chantier.nomChantier}`
   const envoi = await envoyerEmailRappel({
     to: p.destinataire,
+    // Copie visible : la demande et la réponse de l'entreprise générale restent dans la boîte info@
+    cc: p.destinataire.toLowerCase() === REPLY_TO ? undefined : REPLY_TO,
     subject: objet,
     html,
     text: texte,

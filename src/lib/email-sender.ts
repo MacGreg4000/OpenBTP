@@ -268,6 +268,8 @@ export async function sendContractSignatureEmail(
  */
 export async function envoyerEmailRappel(p: {
   to: string
+  /** Copie visible (facultative) */
+  cc?: string
   subject: string
   html: string
   text: string
@@ -287,6 +289,7 @@ export async function envoyerEmailRappel(p: {
     const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: p.to,
+      cc: p.cc,
       replyTo: p.replyTo,
       subject: p.subject,
       html: p.html,
