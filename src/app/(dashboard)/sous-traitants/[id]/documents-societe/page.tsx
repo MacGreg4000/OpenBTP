@@ -10,8 +10,9 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import {
   PlusIcon, ArrowDownTrayIcon, ArrowLeftIcon, ExclamationCircleIcon, BuildingOfficeIcon,
-  PencilSquareIcon, ArchiveBoxIcon, ChevronDownIcon, ChevronRightIcon,
+  PencilSquareIcon, ArchiveBoxIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon,
 } from '@heroicons/react/24/outline'
+import ApercuDocument from '@/components/documents/ApercuDocument'
 import PageHeader from '@/components/PageHeader'
 import SelectField from '@/components/ui/SelectField'
 import { TYPES_DOCUMENT_SOCIETE, libelleType } from '@/lib/documents/types'
@@ -154,6 +155,7 @@ export default function DocumentsSocietePage(props: { params: Promise<{ id: stri
   const [ajout, setAjout] = useState(false)
   const [edition, setEdition] = useState<DocumentSociete | null>(null)
   const [aArchiver, setAArchiver] = useState<DocumentSociete | null>(null)
+  const [apercu, setApercu] = useState<DocumentSociete | null>(null)
   const [enCours, setEnCours] = useState(false)
   const [voirArchives, setVoirArchives] = useState(false)
   const base = `/api/sous-traitants/${id}/documents-societe`
@@ -252,7 +254,10 @@ export default function DocumentsSocietePage(props: { params: Promise<{ id: stri
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{d.dateExpiration ? dateFr(d.dateExpiration) : 'N/A'}</td>
                     <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm sm:pr-6">
                       <div className="flex justify-end gap-2">
-                        <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="Ouvrir">
+                        <button onClick={() => setApercu(d)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="Voir">
+                          <EyeIcon className="h-5 w-5" />
+                        </button>
+                        <a href={d.url} download={d.nom} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="Télécharger">
                           <ArrowDownTrayIcon className="h-5 w-5" />
                         </a>
                         <button onClick={() => setEdition(d)} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white" title="Modifier le type, la date ou la précision">
@@ -287,9 +292,9 @@ export default function DocumentsSocietePage(props: { params: Promise<{ id: stri
                         {d.dateExpiration ? ` · valable jusqu'au ${dateFr(d.dateExpiration)}` : ''}
                       </span>
                     </span>
-                    <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400" title="Ouvrir">
-                      <ArrowDownTrayIcon className="h-5 w-5" />
-                    </a>
+                    <button onClick={() => setApercu(d)} className="text-blue-600 dark:text-blue-400" title="Voir">
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -339,6 +344,8 @@ export default function DocumentsSocietePage(props: { params: Promise<{ id: stri
           </div>
         </Modale>
       )}
+
+      <ApercuDocument document={apercu} onClose={() => setApercu(null)} />
     </div>
   )
 }

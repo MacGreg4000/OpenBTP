@@ -10,8 +10,10 @@ import {
   ExclamationCircleIcon,
   DocumentTextIcon,
   ArrowLeftIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
+import ApercuDocument from '@/components/documents/ApercuDocument'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import PageHeader from '@/components/PageHeader'
@@ -304,6 +306,7 @@ export default function DocumentsOuvrierPage(
   })
   const [isDeleting, setIsDeleting] = useState(false)
   const [docEnEdition, setDocEnEdition] = useState<Document | null>(null)
+  const [docApercu, setDocApercu] = useState<Document | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -482,7 +485,13 @@ export default function DocumentsOuvrierPage(
                               }`}
                             />
                           )}
-                          {getDocumentTypeName(document.type)}
+                          <button
+                            onClick={() => setDocApercu(document)}
+                            className="text-left hover:text-blue-600 hover:underline dark:hover:text-blue-400"
+                            title="Voir le document"
+                          >
+                            {getDocumentTypeName(document.type)}
+                          </button>
                           {document.precision && (
                             <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({document.precision})</span>
                           )}
@@ -499,9 +508,17 @@ export default function DocumentsOuvrierPage(
                       </td>
                       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                         <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setDocApercu(document)}
+                            title="Voir"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            <EyeIcon className="h-5 w-5" />
+                          </button>
                           <a
                             href={document.url}
                             download={document.nom}
+                            title="Télécharger"
                             className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                           >
                             <ArrowDownTrayIcon className="h-5 w-5" />
@@ -543,6 +560,8 @@ export default function DocumentsOuvrierPage(
         onSave={handleSave}
         isSaving={isSaving}
       />
+
+      <ApercuDocument document={docApercu} onClose={() => setDocApercu(null)} />
 
       <DeleteModal
         isOpen={deleteModal.isOpen}
