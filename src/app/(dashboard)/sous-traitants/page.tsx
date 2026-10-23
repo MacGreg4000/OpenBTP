@@ -28,7 +28,8 @@ import { PageHeader } from '@/components/PageHeader'
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline'
 import { SearchInput } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
@@ -1248,11 +1249,16 @@ export default function SousTraitantsPage() {
                             {st.telephone || '-'}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                            <Link 
+                            <Link
                               href={`/sous-traitants/${st.id}/ouvriers`}
-                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline"
+                              title="Voir les ouvriers et leurs documents"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100 hover:border-blue-300 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors"
                             >
-                              {st._count?.ouvriers || 0}
+                              <UserGroupIcon className="h-4 w-4" />
+                              {(st._count?.ouvriers || 0) === 0
+                                ? 'Ajouter'
+                                : `${st._count?.ouvriers} ouvrier${(st._count?.ouvriers || 0) > 1 ? 's' : ''}`}
+                              <ChevronRightIcon className="h-3.5 w-3.5" />
                             </Link>
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
