@@ -90,12 +90,16 @@ export default function MetreDetailPage() {
   const loadChantiers = useCallback(async () => {
     try {
       setLoadingChantiers(true)
-      const response = await fetch('/api/chantiers?pageSize=1000')
-      if (response.ok) {
+      // L'API renvoie { chantiers, meta } par pages de 100 maximum : on parcourt toutes les pages
+      const chantiersList: Chantier[] = []
+      for (let page = 1, totalPages = 1; page <= totalPages; page++) {
+        const response = await fetch(`/api/chantiers?pageSize=100&page=${page}`)
+        if (!response.ok) break
         const data = await response.json()
-        const chantiersList = Array.isArray(data) ? data : (data.data || [])
-        setChantiers(chantiersList.filter((c: Chantier) => !c.chantierId.startsWith('CH-LIBRE-')))
+        chantiersList.push(...(Array.isArray(data) ? data : (data.chantiers ?? data.data ?? [])))
+        totalPages = data?.meta?.totalPages ?? 1
       }
+      setChantiers(chantiersList.filter((c: Chantier) => !c.chantierId.startsWith('CH-LIBRE-')))
     } catch (err) {
       console.error('Erreur lors du chargement des chantiers:', err)
     } finally {
