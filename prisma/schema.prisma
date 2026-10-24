@@ -558,12 +558,13 @@ model soustraitant_etat_avancement {
   createdAt                            DateTime                               @default(now())
   updatedAt                            DateTime                               @updatedAt
   commandeSousTraitantId               Int?
-  etatAvancementId                     Int
+  /// État client du moment (facultatif : un état sous-traitant ne dépend plus d'un état client)
+  etatAvancementId                     Int?
   avenant_soustraitant_etat_avancement avenant_soustraitant_etat_avancement[]
   ligne_soustraitant_etat_avancement   ligne_soustraitant_etat_avancement[]
   photos                               photo_soustraitant_etat_avancement[]
   commande_soustraitant                CommandeSousTraitant?                  @relation(fields: [commandeSousTraitantId], references: [id])
-  etat_avancement                      EtatAvancement                         @relation(fields: [etatAvancementId], references: [id], onDelete: Cascade)
+  etat_avancement                      EtatAvancement?                        @relation(fields: [etatAvancementId], references: [id], onDelete: SetNull)
   soustraitant                         soustraitant                           @relation(fields: [soustraitantId], references: [id], onDelete: Cascade)
 
   @@unique([etatAvancementId, soustraitantId, numero])

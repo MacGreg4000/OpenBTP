@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { etatsSoustraitantDuChantier } from '@/lib/etats/soustraitant'
 
 // GET /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]
 // Récupère un état d'avancement spécifique
@@ -52,6 +53,9 @@ export async function GET(
             chantierId: true,
             numero: true
           }
+        },
+        commande_soustraitant: {
+          select: { chantierId: true }
         }
       }
     })
@@ -64,10 +68,12 @@ export async function GET(
     }
 
     // Vérifier que l'état appartient bien au bon chantier
-    if (etat.etat_avancement.chantierId !== chantierData.id) {
-      console.error('[GET État Soustraitant] Chantier mismatch:', { 
-        expected: chantierData.id, 
-        actual: etat.etat_avancement.chantierId 
+    // (par la commande sous-traitant, ou l'état client pour les anciens états)
+    const chantierDeLEtat = etat.commande_soustraitant?.chantierId ?? etat.etat_avancement?.chantierId
+    if (chantierDeLEtat !== chantierData.id) {
+      console.error('[GET État Soustraitant] Chantier mismatch:', {
+        expected: chantierData.id,
+        actual: chantierDeLEtat
       })
       return NextResponse.json({ error: 'État d\'avancement non trouvé pour ce chantier' }, { status: 404 })
     }
@@ -141,9 +147,7 @@ export async function PUT(
       where: {
         id: etatIdNum,
         soustraitantId,
-        etat_avancement: {
-          chantierId: chantierData.id
-        }
+        ...etatsSoustraitantDuChantier(chantierData.id)
       }
     })
 
@@ -282,9 +286,7 @@ export async function DELETE(
     const dernierEtat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
         soustraitantId,
-        etat_avancement: {
-          chantierId: chantierData.id
-        }
+        ...etatsSoustraitantDuChantier(chantierData.id)
       },
       orderBy: {
         numero: 'desc'

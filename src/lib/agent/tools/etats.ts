@@ -20,6 +20,7 @@
 import { prisma } from '@/lib/prisma/client'
 import { ToolDefinition, ToolContext } from '../types'
 import { resolveChantier, arrondi2 } from './helpers'
+import { etatsSoustraitantDuChantier } from '@/lib/etats/soustraitant'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Lecture
@@ -78,9 +79,9 @@ export const listeEtatsAvancement: ToolDefinition = {
 
     if (!type || type === 'soustraitant') {
       // soustraitant_etat_avancement n'a pas de chantierId : le lien passe par
-      // l'état client auquel il est rattaché.
+      // la commande sous-traitant (ou l'état client pour les anciens états).
       const etats = await prisma.soustraitant_etat_avancement.findMany({
-        where: { etat_avancement: { chantierId: cuid } },
+        where: { ...etatsSoustraitantDuChantier(cuid) },
         include: {
           ligne_soustraitant_etat_avancement: true,
           avenant_soustraitant_etat_avancement: true,

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { etatsSoustraitantDuChantier } from '@/lib/etats/soustraitant'
 
 // Schéma de validation pour la création d'un état d'avancement
 const createSchema = z.object({
@@ -62,9 +63,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ chant
     const etats = await prisma.soustraitant_etat_avancement.findMany({
       where: {
         soustraitantId: soustraitantId,
-        etat_avancement: {
-          chantierId: chantierIdInterne
-        }
+        ...etatsSoustraitantDuChantier(chantierIdInterne)
       },
       include: {
         ligne_soustraitant_etat_avancement: true,
@@ -144,63 +143,22 @@ export async function POST(request: NextRequest, props: { params: Promise<{ chan
 
     const chantierIdInterne = chantier.id
 
-    // Récupérer ou créer un état d'avancement client (nécessaire pour la contrainte DB)
-    let etatAvancement = await prisma.etatAvancement.findFirst({
+    // Dernier état client : rattachement indicatif seulement (facultatif). On ne
+    // crée plus d'état client fictif pour pouvoir créer un état sous-traitant.
+    const etatAvancement = await prisma.etatAvancement.findFirst({
       where: {
         chantierId: chantierIdInterne
+      },
+      orderBy: {
+        numero: 'desc'
       }
     })
-
-    // Si aucun état client n'existe, en créer un automatiquement
-    if (!etatAvancement) {
-      console.log('Aucun état d\'avancement client trouvé, création automatique d\'un état par défaut')
-      
-      // Récupérer la commande du chantier pour initialiser l'état
-      const commande = await prisma.commande.findFirst({
-        where: { chantierId: chantierIdInterne },
-        include: { lignes: true }
-      })
-
-      etatAvancement = await prisma.etatAvancement.create({
-        data: {
-          chantierId: chantierIdInterne,
-          numero: 1,
-          date: new Date(),
-          commentaires: 'État créé automatiquement pour permettre les états sous-traitants',
-          estFinalise: false,
-          commandeId: commande?.id,
-          totalHT: 0,
-          totalTTC: 0,
-          // Créer des lignes vides si une commande existe
-          lignes: commande?.lignes ? {
-            create: commande.lignes.map(ligne => ({
-              ligneCommandeId: ligne.id,
-              quantitePrecedente: 0,
-              quantiteActuelle: 0,
-              quantiteTotale: 0,
-              montantPrecedent: 0,
-              montantActuel: 0,
-              montantTotal: 0,
-              article: ligne.article,
-              description: ligne.description,
-              prixUnitaire: ligne.prixUnitaire,
-              quantite: ligne.quantite,
-              type: ligne.type,
-              unite: ligne.unite
-            }))
-          } : undefined
-        }
-      })
-      console.log('État d\'avancement client créé automatiquement:', etatAvancement.id)
-    }
 
     // Trouver le dernier numéro d'état d'avancement pour ce sous-traitant
     const lastEtat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
         soustraitantId,
-        etat_avancement: {
-          chantierId: chantierIdInterne
-        }
+        ...etatsSoustraitantDuChantier(chantierIdInterne)
       },
       orderBy: {
         numero: 'desc'
@@ -231,7 +189,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ chan
     const newEtat = await prisma.soustraitant_etat_avancement.create({
       data: {
         soustraitantId,
-        etatAvancementId: etatAvancement.id,
+        etatAvancementId: etatAvancement?.id ?? null,
         numero: nextNumero,
         date: new Date(),
         commentaires: '',

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { etatsSoustraitantDuChantier } from '@/lib/etats/soustraitant'
 // import { Prisma } from '@prisma/client'
 
 // Normalise une chaîne pour comparaison (trim, lowercase, espaces multiples → 1)
@@ -90,9 +91,7 @@ export async function GET(
     const etatsAvancement = await prisma.soustraitant_etat_avancement.findMany({
       where: {
         soustraitantId: soustraitantId,
-        etat_avancement: {
-          chantierId: chantierIdInterne
-        }
+        ...etatsSoustraitantDuChantier(chantierIdInterne)
       },
       orderBy: {
         numero: 'desc'
@@ -288,9 +287,7 @@ export async function POST(
     const existingEtats = await prisma.soustraitant_etat_avancement.count({
       where: {
         soustraitantId: soustraitantId,
-        etat_avancement: {
-          chantierId: chantierIdInterne
-        }
+        ...etatsSoustraitantDuChantier(chantierIdInterne)
       }
     })
 
@@ -300,9 +297,7 @@ export async function POST(
     const lastEtat = await prisma.soustraitant_etat_avancement.findFirst({
       where: {
         soustraitantId: soustraitantId,
-        etat_avancement: {
-          chantierId: chantierIdInterne
-        }
+        ...etatsSoustraitantDuChantier(chantierIdInterne)
       },
       orderBy: {
         numero: 'desc'
@@ -321,7 +316,8 @@ export async function POST(
       )
     }
 
-    // Récupérer dernier état client (nécessaire pour lier à l'état sous-traitant)
+    // Dernier état client : rattachement indicatif seulement. Un état sous-traitant
+    // peut être créé sans aucun état client (le chantier passe par la commande).
     const dernierEtatClient = await prisma.etatAvancement.findFirst({
       where: {
         chantierId: chantierIdInterne
@@ -330,13 +326,6 @@ export async function POST(
         numero: 'desc'
       }
     })
-
-    if (!dernierEtatClient) {
-      return NextResponse.json(
-        { error: 'Aucun état d\'avancement client trouvé pour ce chantier' },
-        { status: 404 }
-      )
-    }
 
     const nextNumero = lastEtat ? lastEtat.numero + 1 : 1
     console.log('Prochain numéro:', nextNumero)
@@ -348,7 +337,7 @@ export async function POST(
         commandeSousTraitantId: commande.id,
         numero: nextNumero,
         date: new Date(),
-        etatAvancementId: dernierEtatClient.id,
+        etatAvancementId: dernierEtatClient?.id ?? null,
         estFinalise: body.estFinalise,
         commentaires: body.commentaires,
         updatedAt: new Date()

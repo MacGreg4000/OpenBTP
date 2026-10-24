@@ -50,6 +50,7 @@ import {
   verifierUniteCategorie,
 } from './categories'
 import type { CategorieMateriau } from './categories'
+import { etatsSoustraitantDuChantier } from '@/lib/etats/soustraitant'
 
 /** Arrondi monétaire, même convention que le reste de l'application. */
 function arrondi2(n: number): number {
@@ -425,7 +426,7 @@ export async function calculerRentabiliteChantier(
     // SLUG, pas le cuid — voir note ci-dessus
     prisma.depense.aggregate({ where: { chantierId: chantierSlug }, _sum: { montant: true } }),
     prisma.soustraitant_etat_avancement.findMany({
-      where: { etat_avancement: { chantierId: chantierCuid } },
+      where: { ...etatsSoustraitantDuChantier(chantierCuid) },
       include: {
         ligne_soustraitant_etat_avancement: true,
         avenant_soustraitant_etat_avancement: true,
