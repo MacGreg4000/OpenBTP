@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   })
 }
 
-/** Envoi : { mode: 'simple' | 'documents', soustraitantIds: string[], destinataireEmail } */
+/** Envoi : { mode: 'simple' | 'documents', soustraitantIds: string[], destinataireEmail, zip?: boolean (défaut oui) } */
 export async function POST(request: Request, props: { params: Promise<{ chantierId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
@@ -43,9 +43,9 @@ export async function POST(request: Request, props: { params: Promise<{ chantier
     if (!soustraitantIds.length) return NextResponse.json({ error: 'Sélectionnez au moins un sous-traitant' }, { status: 400 })
     if (!EMAIL.test(destinataire)) return NextResponse.json({ error: 'Adresse email du destinataire invalide' }, { status: 400 })
 
-    const r = await envoyerDeclaration({ chantierId, mode, soustraitantIds, destinataire, userId: session.user?.id, userNom: session.user?.name || session.user?.email || undefined })
+    const r = await envoyerDeclaration({ chantierId, mode, soustraitantIds, destinataire, zip: body.zip !== false, userId: session.user?.id, userNom: session.user?.name || session.user?.email || undefined })
     if (!r.ok) return NextResponse.json({ error: r.erreur }, { status: r.status || 500 })
-    return NextResponse.json({ success: true, attachmentsCount: r.pieces })
+    return NextResponse.json({ success: true, attachmentsCount: r.pieces, zip: !!r.zip })
   } catch (error) {
     console.error("Erreur lors de l'envoi de la déclaration:", error)
     return NextResponse.json({ error: "Erreur lors de l'envoi de la déclaration" }, { status: 500 })

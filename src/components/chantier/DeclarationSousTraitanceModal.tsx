@@ -54,6 +54,7 @@ export default function DeclarationSousTraitanceModal(props: {
   const [tailleMax, setTailleMax] = useState(20 * 1048576)
   const [chargementApercu, setChargementApercu] = useState(false)
   const [envoi, setEnvoi] = useState(false)
+  const [zip, setZip] = useState(true)
 
   useEffect(() => {
     fetch('/api/soustraitants?activeOnly=1')
@@ -125,13 +126,13 @@ export default function DeclarationSousTraitanceModal(props: {
       const res = await fetch(`/api/chantiers/${chantierId}/declaration-sous-traitance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode, soustraitantIds: selection, destinataireEmail: destinataire }),
+        body: JSON.stringify({ mode, soustraitantIds: selection, destinataireEmail: destinataire, zip }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Erreur lors de l'envoi")
       toast.success(
         mode === 'documents'
-          ? `Déclaration envoyée à ${destinataire} avec ${data.attachmentsCount} document${data.attachmentsCount > 1 ? 's' : ''}`
+          ? `Déclaration envoyée à ${destinataire} avec ${data.attachmentsCount} document${data.attachmentsCount > 1 ? 's' : ''}${data.zip ? ' (fichier ZIP)' : ''}`
           : `Déclaration envoyée à ${destinataire}`
       )
       onClose()
@@ -274,6 +275,20 @@ export default function DeclarationSousTraitanceModal(props: {
                       )}
                     </div>
                   ))}
+                  {nbPieces > 1 && (
+                    <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={zip}
+                        onChange={(e) => setZip(e.target.checked)}
+                        className="mt-0.5 rounded text-sky-600 focus:ring-sky-500"
+                      />
+                      <span>
+                        Regrouper les {nbPieces} documents dans <strong>un seul fichier ZIP</strong>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">Un dossier par société, puis par personne.</span>
+                      </span>
+                    </label>
+                  )}
                   {tropLourd && (
                     <p className="text-sm text-red-600">
                       Trop de pièces jointes pour un seul mail : envoyez les sous-traitants en plusieurs fois.

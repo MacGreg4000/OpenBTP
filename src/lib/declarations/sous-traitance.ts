@@ -9,10 +9,13 @@
 //                    et les attestations de la société.
 //
 // Les pièces sont choisies automatiquement : ce qui manque ou est expiré est
-// signalé dans la modale avant l'envoi, jamais joint en silence.
+// signalé dans la modale avant l'envoi, jamais joint en silence. Par défaut,
+// elles partent dans UN fichier ZIP (un dossier par société, puis par personne)
+// plutôt qu'en dizaines de pièces jointes.
 
 import { readFile, stat } from 'fs/promises'
 import { extname, join } from 'path'
+import JSZip from 'jszip'
 import { prisma } from '@/lib/prisma/client'
 import { envoyerEmailRappel } from '@/lib/email-sender'
 import { echapperHtml, encadre, ficheInfos, gabaritEmail, liste, paragraphe, sousTitre } from '@/lib/email/gabarit'
@@ -155,6 +158,8 @@ export interface EnvoiDeclaration {
   mode: ModeDeclaration
   soustraitantIds: string[]
   destinataire: string
+  /** Mode « documents » : regrouper les pièces dans un seul fichier ZIP (défaut : oui) */
+  zip?: boolean
   userId?: string
   userNom?: string
 }
@@ -163,6 +168,8 @@ export interface EnvoiDeclaration {
 export interface ResultatDeclaration {
   ok: boolean
   pieces?: number
+  /** Pièces envoyées dans un seul fichier ZIP */
+  zip?: boolean
   taille?: number
   status?: number
   erreur?: string
@@ -191,9 +198,14 @@ export async function envoyerDeclaration(p: EnvoiDeclaration): Promise<ResultatD
       erreur: `Pièces jointes trop lourdes (${(taille / 1048576).toFixed(1)} Mo, maximum ${TAILLE_MAX_PIECES / 1048576} Mo). Envoyez les sous-traitants en plusieurs fois.`,
     }
   }
-  const attachments = await Promise.all(
-    pieces.map(async (x) => ({ filename: x.nomFichier, content: await readFile(join(RACINE_UPLOADS, x.url.replace(/^\//, ''))) }))
+  const fichiers = await Promise.all(
+    pieces.map(async (x) => ({ piece: x, content: await readFile(join(RACINE_UPLOADS, x.url.replace(/^\//, ''))) }))
   )
+  const enZip = avecDocuments && p.zip !== false && fichiers.length > 1
+  const nomZip = `${nettoyer(`Déclaration sous-traitance - ${chantier.nomChantier}`)}.zip`
+  const attachments = enZip
+    ? [{ filename: nomZip, content: await creerZip(fichiers, societes) }]
+    : fichiers.map((f) => ({ filename: f.piece.nomFichier, content: f.content }))
 
   const adresse = [chantier.adresseChantier, chantier.villeChantier].filter(Boolean).join(', ')
   const pluriel = societes.length > 1
@@ -222,9 +234,11 @@ export async function envoyerDeclaration(p: EnvoiDeclaration): Promise<ResultatD
       ficheInfos(lignesChantier) +
       sousTitre(pluriel ? 'Sous-traitants' : 'Sous-traitant') +
       societes.map(blocSte).join('') +
-      (avecDocuments && attachments.length
+      (avecDocuments && pieces.length
         ? paragraphe(
-            `Vous trouverez en pièces jointes les documents ${pluriel ? 'de ces sociétés' : 'de cette société'} et de leurs travailleurs (${attachments.length} fichier${attachments.length > 1 ? 's' : ''}) :`
+            enZip
+              ? `Vous trouverez dans le fichier ZIP joint (${echapperHtml(nomZip)}) les documents ${pluriel ? 'de ces sociétés' : 'de cette société'} et de leurs travailleurs, classés par société et par personne (${pieces.length} fichiers) :`
+              : `Vous trouverez en pièces jointes les documents ${pluriel ? 'de ces sociétés' : 'de cette société'} et de leurs travailleurs (${pieces.length} fichier${pieces.length > 1 ? 's' : ''}) :`
           ) + liste(pieces.map((x) => echapperHtml(x.nomFichier)))
         : '') +
       paragraphe('Je vous remercie par avance.') +
@@ -245,7 +259,11 @@ export async function envoyerDeclaration(p: EnvoiDeclaration): Promise<ResultatD
       (avecDocuments && s.personnes.length ? ` — Personnes : ${s.personnes.join(', ')}` : '')
     ),
     '',
-    avecDocuments && attachments.length ? `Documents en pièces jointes (${attachments.length}).` : '',
+    avecDocuments && pieces.length
+      ? enZip
+        ? `Documents dans le fichier ZIP joint : ${nomZip} (${pieces.length} fichiers).`
+        : `Documents en pièces jointes (${pieces.length}).`
+      : '',
     'Je vous remercie par avance.',
     '',
     'Cordialement,',
@@ -291,7 +309,29 @@ export async function envoyerDeclaration(p: EnvoiDeclaration): Promise<ResultatD
   await cocherTacheDeclaration(chantier.chantierId, p.userId).catch((e) =>
     console.error('[DECLARATION] Tâche administrative non cochée :', e)
   )
-  return { ok: true, pieces: attachments.length, taille }
+  return { ok: true, pieces: pieces.length, zip: enZip, taille }
+}
+
+/** Un dossier par société, puis « Société » et un sous-dossier par personne. */
+async function creerZip(
+  fichiers: { piece: PieceJointe; content: Buffer }[],
+  societes: PiecesSousTraitant[]
+): Promise<Buffer> {
+  const zip = new JSZip()
+  const utilises = new Set<string>()
+  for (const { piece, content } of fichiers) {
+    const ste = nettoyer(societes.find((s) => s.id === piece.soustraitantId)?.nom || 'Sous-traitant')
+    const dossier = `${ste}/${piece.personne || 'Société'}`
+    // Deux fichiers du même nom (ex. deux faces sans précision) : suffixe (2), (3)…
+    let chemin = `${dossier}/${piece.nomFichier}`
+    for (let i = 2; utilises.has(chemin.toLowerCase()); i++) {
+      const ext = extname(piece.nomFichier)
+      chemin = `${dossier}/${piece.nomFichier.slice(0, piece.nomFichier.length - ext.length)} (${i})${ext}`
+    }
+    utilises.add(chemin.toLowerCase())
+    zip.file(chemin, content, { date: new Date() })
+  }
+  return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 6 } })
 }
 
 /** Coche la tâche administrative « Déclaration de sous-traitance » du chantier. */
