@@ -43,6 +43,8 @@ interface SousTraitantData {
   updatedAt: string
   conditionsGenerales: string | null
   conditionsParticulieres: string | null
+  parent?: { id: string; nom: string } | null
+  rattaches?: Array<{ id: string; nom: string; tva: string | null; actif: boolean }>
   ouvriers?: Array<{
     id: string
     nom: string
@@ -489,6 +491,42 @@ export default function SousTraitantConsultationPage(
                 </div>
               </div>
             </div>
+
+            {/* Rattachement (sous-traitant principal / indépendants rattachés) */}
+            {(sousTraitant.parent || (sousTraitant.rattaches && sousTraitant.rattaches.length > 0)) && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                      <UserGroupIcon className="w-5 h-5" />
+                    </div>
+                    <span className="font-semibold text-lg text-gray-900 dark:text-white">
+                      {sousTraitant.parent ? 'Rattaché à' : `Sous-traitants rattachés (${sousTraitant.rattaches!.length})`}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-6">
+                  {sousTraitant.parent ? (
+                    <Link href={`/sous-traitants/${sousTraitant.parent.id}`} className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                      {sousTraitant.parent.nom} →
+                    </Link>
+                  ) : (
+                    <ul className="space-y-2">
+                      {sousTraitant.rattaches!.map((r) => (
+                        <li key={r.id} className="flex items-center justify-between gap-3">
+                          <Link href={`/sous-traitants/${r.id}`} className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                            ↳ {r.nom}
+                          </Link>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {r.tva || 'TVA non communiquée'}{r.actif === false ? ' · inactif' : ''}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Ouvriers */}
             {sousTraitant.ouvriers && sousTraitant.ouvriers.length > 0 && (

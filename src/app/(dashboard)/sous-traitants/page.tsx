@@ -35,6 +35,7 @@ import { SearchInput } from '@/components/ui'
 import { useNotification } from '@/hooks/useNotification'
 import HistoriqueContratsModal from '@/components/sous-traitants/HistoriqueContratsModal'
 import { statutEcheance } from '@/lib/contrats/echeance'
+import { ordonnerEnArbre } from '@/lib/soustraitants/arbre'
 // import { useRouter } from 'next/navigation'
 
 interface SousTraitant {
@@ -45,6 +46,8 @@ interface SousTraitant {
   telephone: string | null
   adresse: string | null
   actif?: boolean
+  /** Sous-traitant principal auquel celui-ci est rattaché (indépendant) */
+  parentId?: string | null
   _count: {
     ouvriers: number
   }
@@ -628,6 +631,11 @@ export default function SousTraitantsPage() {
       }
     })
   }
+  // Arborescence : chaque sous-traitant principal suivi de ses rattachés
+  sousTraitantsFiltres = ordonnerEnArbre(sousTraitantsFiltres)
+  const nomParId = new Map(sousTraitants.map((s) => [s.id, s.nom]))
+  const estRattacheVisible = (st: SousTraitant) =>
+    !!st.parentId && sousTraitantsFiltres.some((s) => s.id === st.parentId)
 
   // ---- Invitation portail ----
   const openInviteModal = async () => {
@@ -925,6 +933,9 @@ export default function SousTraitantsPage() {
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                         {st.nom}
                       </h3>
+                      {st.parentId && nomParId.get(st.parentId) && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">↳ rattaché à {nomParId.get(st.parentId)}</p>
+                      )}
                       <div className="mt-2">
                         <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                           <input
@@ -1238,9 +1249,23 @@ export default function SousTraitantsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                       {sousTraitantsFiltres.map((st) => (
-                        <tr key={st.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <tr key={st.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${estRattacheVisible(st) ? 'bg-gray-50/60 dark:bg-gray-800/60' : ''}`}>
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-200 sm:pl-6">
-                            {st.nom}
+                            {estRattacheVisible(st) ? (
+                              <span className="flex items-center gap-1.5 pl-5" title={`Rattaché à ${nomParId.get(st.parentId!) || ''}`}>
+                                <span className="text-gray-400">↳</span>
+                                {st.nom}
+                              </span>
+                            ) : (
+                              <>
+                                {st.nom}
+                                {st.parentId && nomParId.get(st.parentId) && (
+                                  <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                                    rattaché à {nomParId.get(st.parentId)}
+                                  </span>
+                                )}
+                              </>
+                            )}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {st.email || '-'}

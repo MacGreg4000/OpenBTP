@@ -13,6 +13,7 @@ import { resolveSousTraitant, normalizeTva, normalizeNomEntreprise } from './hel
 import { normaliserRepresentant } from '@/lib/soustraitants/representant-serveur'
 import { emailFormatValide, champsRepresentantManquants } from '@/lib/soustraitants/representant'
 import { CODES_OUVRIER, CODES_SOCIETE } from '@/lib/documents/types'
+import { verifierRattachement } from '@/lib/soustraitants/rattachement'
 
 const CHAMPS_TEXTE = ['contact', 'telephone', 'adresse', 'tva'] as const
 const CHAMPS_REPRESENTANT: Record<string, string> = {
@@ -193,6 +194,19 @@ async function preparerModification(args: Record<string, unknown>): Promise<Prep
     if (json !== actuel[k]) data[k] = json
   }
 
+  // Rattachement à un sous-traitant principal (null / "" = détacher)
+  if (args.rattache_a !== undefined) {
+    let parentId: string | null = null
+    if (args.rattache_a !== null && String(args.rattache_a).trim()) {
+      const parent = await resolveSousTraitant(String(args.rattache_a))
+      if (!parent.ok || !parent.value) return { erreur: `Sous-traitant principal : ${parent.message || 'introuvable'}`, candidats: parent.candidats }
+      parentId = parent.value.id
+    }
+    const erreur = await verifierRattachement(actuel.id, parentId)
+    if (erreur) return { erreur }
+    if (parentId !== actuel.parentId) data.parentId = parentId
+  }
+
   const apres = { ...actuel, ...data } as typeof actuel
   const avertissements: string[] = []
   const manquants = champsRepresentantManquants(apres)
@@ -205,7 +219,8 @@ export const modifierSousTraitant: ToolDefinition = {
   name: 'modifier_sous_traitant',
   description:
     'Complète ou corrige une fiche sous-traitant : coordonnées, TVA, représentant légal (prénom, nom, fonction, ' +
-    'email, GSM), actif / inactif, rappel Checkinatwork. Fusion partielle : seuls les champs fournis changent ; ' +
+    'email, GSM), actif / inactif, rappel Checkinatwork, rattachement à un sous-traitant principal. ' +
+    'Fusion partielle : seuls les champs fournis changent ; ' +
     'chaîne vide ignorée, null pour vider un champ facultatif. Faire un dryRun avant.',
   requiresConfirmation: true,
   parameters: {
@@ -227,6 +242,10 @@ export const modifierSousTraitant: ToolDefinition = {
         description: 'Documents exigés pour la société elle-même',
       },
       rappelCheckinActif: { type: 'boolean', description: 'Recevoir le rappel Checkinatwork quotidien' },
+      rattache_a: {
+        type: 'string',
+        description: 'Sous-traitant principal (identifiant ou nom) avec / pour lequel travaille cet indépendant ; chaîne vide ou null pour détacher',
+      },
     },
     required: ['sous_traitant'],
   },

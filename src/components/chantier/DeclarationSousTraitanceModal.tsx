@@ -8,13 +8,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { ordonnerEnArbre } from '@/lib/soustraitants/arbre'
 import {
   XMarkIcon, EnvelopeIcon, PaperClipIcon, MagnifyingGlassIcon, ExclamationTriangleIcon, CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 
 type Mode = 'simple' | 'documents'
 
-interface SousTraitant { id: string; nom: string; tva?: string | null }
+interface SousTraitant { id: string; nom: string; tva?: string | null; parentId?: string | null }
 interface Contact { id: string; prenom: string; nom: string; email: string | null }
 interface Manque { personne: string | null; libelle: string; raison: 'manquant' | 'expire' | 'fichier_introuvable' }
 interface Apercu {
@@ -105,11 +106,18 @@ export default function DeclarationSousTraitanceModal(props: {
 
   const filtres = useMemo(() => {
     const q = recherche.trim().toLowerCase()
-    return q ? soustraitants.filter((s) => s.nom.toLowerCase().includes(q) || (s.tva || '').toLowerCase().includes(q)) : soustraitants
+    const liste = q ? soustraitants.filter((s) => s.nom.toLowerCase().includes(q) || (s.tva || '').toLowerCase().includes(q)) : soustraitants
+    return ordonnerEnArbre(liste)
   }, [soustraitants, recherche])
 
+  // Cocher un sous-traitant principal coche aussi ses rattachés (décochables un par un)
   const basculer = (id: string) =>
-    setSelection((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]))
+    setSelection((sel) => {
+      if (sel.includes(id)) return sel.filter((x) => x !== id)
+      const rattaches = soustraitants.filter((s) => s.parentId === id && !sel.includes(s.id)).map((s) => s.id)
+      return [...sel, id, ...rattaches]
+    })
+  const estRattacheVisible = (s: SousTraitant) => !!s.parentId && filtres.some((x) => x.id === s.parentId)
 
   const tailleTotale = apercu.reduce((t, s) => t + s.pieces.reduce((u, p) => u + p.taille, 0), 0)
   const nbPieces = apercu.reduce((t, s) => t + s.pieces.length, 0)
@@ -213,14 +221,20 @@ export default function DeclarationSousTraitanceModal(props: {
                 <div className="p-4 text-sm text-gray-500">Aucun sous-traitant</div>
               ) : (
                 filtres.map((s) => (
-                  <label key={s.id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                  <label
+                    key={s.id}
+                    className={`flex items-center gap-3 py-2 pr-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer ${estRattacheVisible(s) ? 'pl-9' : 'pl-3'}`}
+                  >
                     <input
                       type="checkbox"
                       checked={selection.includes(s.id)}
                       onChange={() => basculer(s.id)}
                       className="rounded border-gray-300 text-sky-600 focus:ring-sky-500"
                     />
-                    <span className="flex-1 text-sm text-gray-900 dark:text-gray-100">{s.nom}</span>
+                    <span className="flex-1 text-sm text-gray-900 dark:text-gray-100">
+                      {estRattacheVisible(s) && <span className="text-gray-400 mr-1">↳</span>}
+                      {s.nom}
+                    </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">{s.tva || 'TVA ?'}</span>
                   </label>
                 ))

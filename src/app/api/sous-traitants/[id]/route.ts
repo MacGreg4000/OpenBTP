@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { normaliserRepresentant } from '@/lib/soustraitants/representant-serveur'
+import { verifierRattachement } from '@/lib/soustraitants/rattachement'
 // Retrait de l'import Prisma non nécessaire
 
 export async function DELETE(
@@ -87,7 +88,10 @@ export async function GET(
         conditionsGenerales: true,
         conditionsParticulieres: true,
         commandes: true,
-        contrats: true
+        contrats: true,
+        parentId: true,
+        parent: { select: { id: true, nom: true } },
+        rattaches: { select: { id: true, nom: true, tva: true, actif: true }, orderBy: { nom: 'asc' } }
       }
     })
 
@@ -162,6 +166,12 @@ export async function PUT(
     }
 
     const updateData: Record<string, unknown> = { updatedAt: new Date(), ...representant.data }
+    if (body.parentId !== undefined) {
+      const parentId = typeof body.parentId === 'string' && body.parentId ? body.parentId : null
+      const erreur = await verifierRattachement(id, parentId)
+      if (erreur) return NextResponse.json({ error: erreur }, { status: 400 })
+      updateData.parentId = parentId
+    }
     if (body.nom !== undefined) updateData.nom = body.nom
     if (body.email !== undefined) updateData.email = body.email
     if (body.contact !== undefined) updateData.contact = body.contact || null

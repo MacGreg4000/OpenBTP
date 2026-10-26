@@ -112,6 +112,13 @@ model soustraitant {
   conditionsParticulieres  String?                  @db.Text
   // Liste de prix
   tarifs                   LigneTarifSousTraitant[]
+  // Rattachement : indépendant qui travaille avec / pour un sous-traitant
+  // principal (un seul niveau : un sous-traitant principal n'est pas rattaché).
+  parentId                 String?
+  parent                   soustraitant?            @relation("RattachementSousTraitant", fields: [parentId], references: [id], onDelete: SetNull)
+  rattaches                soustraitant[]           @relation("RattachementSousTraitant")
+
+  @@index([parentId])
 }
 
 model LigneTarifSousTraitant {

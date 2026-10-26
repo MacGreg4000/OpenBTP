@@ -21,7 +21,10 @@ interface FormData extends RepresentantValeurs {
   adresse: string
   tva: string
   logo?: string
+  parentId: string
 }
+
+interface Option { id: string; nom: string; parentId?: string | null }
 
 export default function EditSousTraitantPage(
   props: { 
@@ -41,7 +44,11 @@ export default function EditSousTraitantPage(
     logo: '',
     ...REPRESENTANT_VIDE,
     rappelCheckinActif: false,
+    parentId: '',
   })
+  // Rattachement : sous-traitants principaux possibles, et rattachés de celui-ci
+  const [principaux, setPrincipaux] = useState<Option[]>([])
+  const [rattaches, setRattaches] = useState<Option[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,6 +62,12 @@ export default function EditSousTraitantPage(
 
   useEffect(() => {
     if (session) {
+      fetch('/api/soustraitants')
+        .then(res => res.json())
+        .then((liste: Option[]) =>
+          setPrincipaux((Array.isArray(liste) ? liste : []).filter((s) => s.id !== params.id && !s.parentId))
+        )
+        .catch(() => {})
       fetch(`/api/sous-traitants/${params.id}`)
         .then(res => res.json())
         .then(data => {
@@ -72,7 +85,9 @@ export default function EditSousTraitantPage(
             representantEmail: data.representantEmail || '',
             representantGsm: data.representantGsm || '',
             rappelCheckinActif: !!data.rappelCheckinActif,
+            parentId: data.parentId || '',
           })
+          setRattaches(Array.isArray(data.rattaches) ? data.rattaches : [])
           if (data.logo) {
             setLogoPreview(data.logo)
           }
@@ -121,6 +136,7 @@ export default function EditSousTraitantPage(
         representantEmail: formData.representantEmail,
         representantGsm: formData.representantGsm,
         rappelCheckinActif: formData.rappelCheckinActif,
+        parentId: formData.parentId || null,
       };
       
       console.log('Données fusionnées pour mise à jour:', updatedData);
@@ -324,6 +340,36 @@ export default function EditSousTraitantPage(
             value={formData.adresse}
             onChange={handleChange}
           />
+
+          <div>
+            <label htmlFor="parentId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Rattaché à (sous-traitant principal)
+            </label>
+            {rattaches.length > 0 ? (
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Sous-traitant principal de : {rattaches.map((r) => r.nom).join(', ')}. Il ne peut pas être rattaché à son tour.
+              </p>
+            ) : (
+              <>
+                <select
+                  id="parentId"
+                  name="parentId"
+                  value={formData.parentId}
+                  onChange={(e) => setFormData((f) => ({ ...f, parentId: e.target.value }))}
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                >
+                  <option value="">— Aucun (sous-traitant indépendant de tout autre)</option>
+                  {principaux.map((p) => (
+                    <option key={p.id} value={p.id}>{p.nom}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Pour un indépendant qui travaille avec un autre sous-traitant : il s&apos;affiche sous lui dans la liste et
+                  dans la déclaration de sous-traitance.
+                </p>
+              </>
+            )}
+          </div>
 
           <RepresentantFields valeurs={formData} onChange={handleChange} />
 
