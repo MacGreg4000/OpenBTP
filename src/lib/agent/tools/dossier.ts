@@ -535,7 +535,8 @@ export const completerFicheChantier: ToolDefinition = {
   name: 'completer_fiche_chantier',
   description:
     "Complète la fiche d'un chantier existant : maître d'ouvrage, bureau d'architecture, " +
-    "adresse/ville, budget, numéro Checkinatwork, durée. Fusion partielle : seuls les champs fournis sont " +
+    "adresse/ville, budget, numéro Checkinatwork, durée, contact du client, gestionnaires Secotech " +
+    "(ajout seulement). Fusion partielle : seuls les champs fournis sont " +
     "modifiés, les autres restent intacts. Une chaîne vide est ignorée ; envoyer null pour vider " +
     "un champ. Cet outil ne peut pas modifier le statut du chantier.",
   requiresConfirmation: true,
@@ -564,6 +565,18 @@ export const completerFicheChantier: ToolDefinition = {
       dateDebut: { type: 'string', description: 'Date de début, format AAAA-MM-JJ' },
       dureeEnJours: { type: 'number', description: 'Durée prévue en jours' },
       typeDuree: { type: 'string', description: 'CALENDRIER ou OUVRABLE', enum: ['CALENDRIER', 'OUVRABLE'] },
+      contactId: {
+        type: 'string',
+        description:
+          'Contact du client pour ce chantier : id, email ou « prénom nom » (voir liste_contacts_client) ; null pour le retirer',
+      },
+      ajouterGestionnaires: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          "Utilisateurs OpenBTP (email ou nom) à ajouter comme gestionnaires du chantier — conducteur Secotech " +
+          'qui suit le chantier, mentionné dans les emails aux clients. Ajout seulement, aucun retrait.',
+      },
     },
     required: ['chantier'],
   },
@@ -572,8 +585,11 @@ export const completerFicheChantier: ToolDefinition = {
     const nom = res.ok && res.value ? res.value.nomChantier : String(args.chantier)
     const champs: string[] = []
     for (const c of CHAMPS_TEXTE_FICHE) if (champFourni(args, c)) champs.push(c)
-    for (const c of ['numeroIdentification', 'dateDebut', 'dureeEnJours', 'typeDuree', 'budget']) {
+    for (const c of ['numeroIdentification', 'dateDebut', 'dureeEnJours', 'typeDuree', 'budget', 'contactId']) {
       if (champFourni(args, c)) champs.push(c)
+    }
+    if (Array.isArray(args.ajouterGestionnaires) && args.ajouterGestionnaires.length) {
+      champs.push(`gestionnaires (+${args.ajouterGestionnaires.join(', ')})`)
     }
     if (champs.length === 0) return `Aucun champ à modifier sur « ${nom} ».`
     const alerte = champFourni(args, 'budget')
@@ -584,13 +600,16 @@ export const completerFicheChantier: ToolDefinition = {
   preview: async (args) => {
     const prep = await preparerFiche(args)
     if (prep.erreur) return { action: 'aucune', erreur: prep.erreur, candidats: prep.candidats }
-    if (Object.keys(prep.data!).length === 0) {
+    if (Object.keys(prep.data!).length === 0 && !prep.gestionnaires!.length) {
       return { action: 'aucune', raison: 'aucun champ fourni' }
     }
     return {
       action: 'mise_a_jour',
       chantier: prep.chantierNom,
       champsModifies: prep.data,
+      ...(prep.contactLibelle ? { contact: prep.contactLibelle } : {}),
+      ...(prep.gestionnaires!.length ? { gestionnairesAjoutes: prep.gestionnaires!.map((g) => g.libelle) } : {}),
+      ...(prep.dejaGestionnaires!.length ? { dejaGestionnaires: prep.dejaGestionnaires } : {}),
       inchange: 'statut (non modifiable par cet outil), et tout champ non fourni',
       ...(prep.avertissement ? { avertissement: prep.avertissement } : {}),
     }
@@ -599,8 +618,12 @@ export const completerFicheChantier: ToolDefinition = {
     const prep = await preparerFiche(args)
     if (prep.erreur) return { erreur: prep.erreur, candidats: prep.candidats }
     const data = prep.data!
-    if (Object.keys(data).length === 0) {
+    if (Object.keys(data).length === 0 && !prep.gestionnaires!.length) {
       return { erreur: 'Aucun champ à modifier : fournis au moins une valeur.' }
+    }
+
+    for (const g of prep.gestionnaires!) {
+      await prisma.chantierGestionnaire.create({ data: { chantierId: prep.chantierSlug!, userId: g.id } })
     }
 
     const maj = await prisma.chantier.update({
@@ -622,6 +645,9 @@ export const completerFicheChantier: ToolDefinition = {
       succes: true,
       chantier: maj,
       champsModifies: Object.keys(data),
+      ...(prep.contactLibelle ? { contact: prep.contactLibelle } : {}),
+      ...(prep.gestionnaires!.length ? { gestionnairesAjoutes: prep.gestionnaires!.map((g) => g.libelle) } : {}),
+      ...(prep.dejaGestionnaires!.length ? { dejaGestionnaires: prep.dejaGestionnaires } : {}),
       ...(prep.avertissement ? { avertissement: prep.avertissement } : {}),
     }
   },
@@ -631,9 +657,35 @@ interface PreparationFiche {
   erreur?: string
   candidats?: { id: string; nom: string }[]
   chantierIdInterne?: string
+  /** chantierId lisible (CH-…) : clé des gestionnaires */
+  chantierSlug?: string
   chantierNom?: string
   data?: Record<string, unknown>
+  contactLibelle?: string
+  gestionnaires?: { id: string; libelle: string }[]
+  dejaGestionnaires?: string[]
   avertissement?: string
+}
+
+const sansAccents = (v: string) =>
+  v.normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]', 'g'), '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+/** Utilisateur OpenBTP (hors comptes techniques) par email ou nom exact, sans tenir compte des accents. */
+async function resoudreUtilisateur(ref: string): Promise<{ id: string; libelle: string } | { erreur: string }> {
+  const r = String(ref || '').trim()
+  if (!r) return { erreur: 'Gestionnaire non précisé.' }
+  const users = await prisma.user.findMany({
+    where: { role: { not: 'BOT' } },
+    select: { id: true, name: true, email: true },
+  })
+  const cible = sansAccents(r)
+  const trouves = users.filter(
+    (u: { id: string; name: string | null; email: string }) =>
+      u.email.toLowerCase() === r.toLowerCase() || (u.name && sansAccents(u.name) === cible)
+  )
+  if (trouves.length === 1) return { id: trouves[0].id, libelle: trouves[0].name || trouves[0].email }
+  if (trouves.length > 1) return { erreur: `Plusieurs utilisateurs correspondent à « ${r} » : précise l'email.` }
+  return { erreur: `Utilisateur OpenBTP introuvable : « ${r} » (email ou nom complet).` }
 }
 
 /** Résout le chantier et construit le patch partiel, sans rien écrire. */
@@ -644,6 +696,53 @@ async function preparerFiche(args: Record<string, unknown>): Promise<Preparation
   }
 
   const data: Record<string, unknown> = {}
+  const chantierBd = await prisma.chantier.findUnique({
+    where: { id: res.value.id },
+    select: { chantierId: true, clientId: true },
+  })
+  if (!chantierBd) return { erreur: 'Chantier introuvable.' }
+
+  // Contact du client : id, ou email / « prénom nom » parmi les contacts du client du chantier
+  let contactLibelle: string | undefined
+  if (champFourni(args, 'contactId')) {
+    if (args.contactId === null) {
+      data.contactId = null
+      contactLibelle = '(retiré)'
+    } else {
+      const ref = String(args.contactId).trim()
+      const parId = await prisma.contact.findUnique({ where: { id: ref }, select: { id: true, prenom: true, nom: true, clientId: true } })
+      if (parId) {
+        if (chantierBd.clientId && parId.clientId !== chantierBd.clientId) {
+          return { erreur: 'Ce contact n’appartient pas au client du chantier.' }
+        }
+        data.contactId = parId.id
+        contactLibelle = `${parId.prenom || ''} ${parId.nom}`.trim()
+      } else {
+        if (!chantierBd.clientId) return { erreur: 'Le chantier n’a pas de client : impossible de chercher le contact par nom ou email.' }
+        const r = await resolveContactClient(chantierBd.clientId, ref)
+        if (!r.contact) return { erreur: r.erreur || `Contact introuvable : « ${ref} ».`, candidats: r.candidats }
+        data.contactId = r.contact.id
+        contactLibelle = `${(r.contact as { prenom?: string | null }).prenom || ''} ${(r.contact as { nom: string }).nom}`.trim()
+      }
+    }
+  }
+
+  // Gestionnaires à ajouter (jamais de retrait ici)
+  const gestionnaires: { id: string; libelle: string }[] = []
+  const dejaGestionnaires: string[] = []
+  if (Array.isArray(args.ajouterGestionnaires)) {
+    const existants = await prisma.chantierGestionnaire.findMany({
+      where: { chantierId: chantierBd.chantierId },
+      select: { userId: true },
+    })
+    const ids = new Set(existants.map((e: { userId: string }) => e.userId))
+    for (const ref of args.ajouterGestionnaires) {
+      const u = await resoudreUtilisateur(String(ref))
+      if ('erreur' in u) return { erreur: u.erreur }
+      if (ids.has(u.id)) dejaGestionnaires.push(u.libelle)
+      else if (!gestionnaires.some((g) => g.id === u.id)) gestionnaires.push(u)
+    }
+  }
 
   for (const cle of CHAMPS_TEXTE_FICHE) {
     if (champFourni(args, cle)) data[cle] = valeurTexte(args, cle)
@@ -711,8 +810,12 @@ async function preparerFiche(args: Record<string, unknown>): Promise<Preparation
 
   return {
     chantierIdInterne: res.value.id,
+    chantierSlug: chantierBd.chantierId,
     chantierNom: res.value.nomChantier,
     data,
+    contactLibelle,
+    gestionnaires,
+    dejaGestionnaires,
     avertissement:
       'budget' in data
         ? "Le budget saisi sera écrasé par le recalcul automatique dès qu'une commande du chantier sera validée."
