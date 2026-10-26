@@ -32,6 +32,15 @@ export interface CreateNotificationParams {
 /**
  * Service principal de gestion des notifications
  */
+/** Coupe un texte trop long sur une limite de mot, avec « … ». */
+function titreCourt(texte: string, max: number): string {
+  const t = texte.trim()
+  if (t.length <= max) return t
+  const coupe = t.slice(0, max - 1)
+  const espace = coupe.lastIndexOf(' ')
+  return `${(espace > max * 0.6 ? coupe.slice(0, espace) : coupe).trimEnd()}…`
+}
+
 export class NotificationService {
   /**
    * Créer et envoyer une notification
@@ -208,8 +217,8 @@ export class NotificationService {
       content = content.replace(directRegex, String(value || ''))
     })
 
-    // Générer un titre court (première ligne ou 80 premiers caractères)
-    const titre = content.split('\n')[0].substring(0, 80)
+    // Titre court pour la cloche : première ligne, coupée sur un mot (jamais au milieu)
+    const titre = titreCourt(content.split('\n')[0], 120)
     const message = content
 
     return { titre, message }
@@ -278,7 +287,7 @@ export class NotificationService {
       // Template HTML de base si pas de template personnalisé
       const htmlContent = notificationType.emailTemplate 
         ? this.replaceTemplateVariables(notificationType.emailTemplate, metadata)
-        : this.generateDefaultEmailTemplate(name, titre, message, lien, await societeEmail())
+        : this.generateDefaultEmailTemplate(name, notificationType.libelle, titre, message, lien, await societeEmail())
 
       await sendEmail(email, subject, htmlContent)
     } catch (error) {
@@ -337,17 +346,19 @@ export class NotificationService {
    */
   private static generateDefaultEmailTemplate(
     name: string,
+    libelle: string,
     titre: string,
     message: string,
     lien: string | undefined,
     societe: { nom: string; adresse?: string; tva?: string }
   ): string {
-    // Le message est souvent identique au titre : ne pas l'afficher deux fois.
-    const detail = message && message.trim() !== titre.trim() ? encadre(texteEnHtml(message)) : ''
+    // Gros titre = type de notification (court, ex. « Chantier modifié ») ; le
+    // message complet, jamais tronqué, est repris dans l'encadré.
+    const texte = (message || titre).trim()
     return gabaritEmail({
-      titre,
-      apercu: message || titre,
-      contenuHtml: paragraphe(`Bonjour ${echapperHtml(name)},`) + detail,
+      titre: libelle || titre,
+      apercu: texte,
+      contenuHtml: paragraphe(`Bonjour ${echapperHtml(name)},`) + (texte ? encadre(texteEnHtml(texte)) : ''),
       bouton: lien ? { libelle: 'Voir dans OpenBTP', url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${lien}` } : undefined,
       mention:
         'Vous recevez cet email car vous êtes inscrit aux notifications de l’application. ' +
