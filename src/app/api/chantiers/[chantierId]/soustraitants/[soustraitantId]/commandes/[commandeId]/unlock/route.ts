@@ -42,12 +42,10 @@ export async function POST(
       )
     }
 
-    // Vérifier si la commande est verrouillée
+    // Déjà déverrouillée (double clic, deux onglets) : le résultat voulu est
+    // atteint, ce n'est pas une erreur
     if (!commande[0].estVerrouillee) {
-      return NextResponse.json(
-        { error: 'La commande n\'est pas verrouillée' },
-        { status: 400 }
-      )
+      return NextResponse.json({ success: true, estVerrouillee: false, dejaDeverrouillee: true })
     }
 
     // Déverrouiller la commande
@@ -60,20 +58,10 @@ export async function POST(
       WHERE id = ${parseInt(params.commandeId)}
     `
 
-    // Récupérer la commande mise à jour
-    const commandeMiseAJour = await prisma.$queryRaw<Array<Record<string, unknown>>>`
-      SELECT 
-        c.*,
-        ch.nomChantier,
-        s.nom as soustraitantNom,
-        s.email as soustraitantEmail
-      FROM commande_soustraitant c
-      JOIN chantier ch ON c.chantierId = ch.id
-      JOIN soustraitant s ON c.soustraitantId = s.id
-      WHERE c.id = ${parseInt(params.commandeId)}
-    `
-
-    return NextResponse.json(commandeMiseAJour[0])
+    // Réponse minimale : l'écran recharge la commande complète. (Renvoyer la
+    // ligne brute pouvait échouer après coup et afficher une erreur alors que
+    // le déverrouillage était bien fait.)
+    return NextResponse.json({ success: true, estVerrouillee: false })
   } catch (error) {
     console.error('Erreur:', error)
     return NextResponse.json(

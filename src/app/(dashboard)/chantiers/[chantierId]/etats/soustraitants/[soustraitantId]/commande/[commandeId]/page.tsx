@@ -403,9 +403,14 @@ export default function CommandeSousTraitantPage(
       // La réponse est OK, recharger les données complètes pour avoir toutes les informations à jour (y compris les lignes)
       // On ne parse pas la réponse car elle peut ne pas contenir toutes les données (pas de lignes)
       // fetchCommande() récupérera toutes les données complètes
-      await fetchCommande();
-
       toast.success(`Commande ${nouvelEtatVerrouillage ? 'verrouillée' : 'déverrouillée'} avec succès`);
+      // Rechargement séparé : un souci de rechargement ne doit pas faire croire
+      // que l'action a échoué
+      try {
+        await fetchCommande();
+      } catch (e) {
+        console.error('Rechargement de la commande après (dé)verrouillage :', e);
+      }
 
     } catch (error: unknown) {
       console.error('Erreur dans handleVerrouillage:', error);
