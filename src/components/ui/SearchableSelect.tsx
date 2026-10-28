@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDownIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import MenuFlottant from './MenuFlottant'
 
 interface Option {
   value: string
@@ -31,11 +32,14 @@ export function SearchableSelect({
   const [searchTerm, setSearchTerm] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  // Le menu est rendu dans un portail (MenuFlottant) : il n'est plus dans containerRef
+  const menuRef = useRef<HTMLDivElement | null>(null)
 
   // Fermer le menu quand on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const cible = event.target as Node
+      if (containerRef.current && !containerRef.current.contains(cible) && !menuRef.current?.contains(cible)) {
         setIsOpen(false)
       }
     }
@@ -109,7 +113,7 @@ export function SearchableSelect({
 
       {/* Menu déroulant */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-80 flex flex-col">
+        <MenuFlottant largeurAncre menuRef={menuRef} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-80 flex flex-col">
           {/* Champ de recherche */}
           <div className="p-2 border-b border-gray-200 dark:border-gray-600">
             <div className="relative">
@@ -153,7 +157,7 @@ export function SearchableSelect({
               </div>
             )}
           </div>
-        </div>
+        </MenuFlottant>
       )}
     </div>
   )

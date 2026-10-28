@@ -28,6 +28,7 @@ import { Pagination } from '@/components/Pagination'
 import { PageHeader } from '@/components/PageHeader'
 import { useNotification } from '@/hooks/useNotification'
 import { SearchInput } from '@/components/ui'
+import MenuFlottant from '@/components/ui/MenuFlottant'
 
 function getStatusStyle(status: string) {
   switch (status) {
@@ -141,7 +142,7 @@ function ChantierCard({
             </button>
             
             {statusMenuOpen === chantier.chantierId && (
-              <div className="absolute z-50 right-0 mt-1 w-48 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+              <MenuFlottant alignement="droite" className="status-menu-container w-48 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
                 <div className="py-1">
                   {statusOptions.map((option) => (
                     <button
@@ -161,7 +162,7 @@ function ChantierCard({
                     </button>
                   ))}
                 </div>
-              </div>
+              </MenuFlottant>
             )}
           </div>
         </div>
@@ -918,7 +919,7 @@ export default function ChantiersPage() {
                               </button>
                               
                               {statusMenuOpen === chantier.chantierId && (
-                                <div className="absolute z-50 mt-1 w-48 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+                                <MenuFlottant className="status-menu-container w-48 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
                                   <div className="py-1">
                                     {statusOptions.map((option) => (
                                       <button
@@ -938,7 +939,7 @@ export default function ChantiersPage() {
                                       </button>
                                     ))}
                                   </div>
-                                </div>
+                                </MenuFlottant>
                               )}
                             </div>
                           </td>

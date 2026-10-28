@@ -36,6 +36,7 @@ import { useNotification } from '@/hooks/useNotification'
 import HistoriqueContratsModal from '@/components/sous-traitants/HistoriqueContratsModal'
 import { statutEcheance } from '@/lib/contrats/echeance'
 import { ordonnerEnArbre } from '@/lib/soustraitants/arbre'
+import MenuFlottant from '@/components/ui/MenuFlottant'
 // import { useRouter } from 'next/navigation'
 
 interface SousTraitant {
@@ -1314,7 +1315,7 @@ export default function SousTraitantsPage() {
                               </button>
                               
                               {statusMenuOpen === st.id && (
-                                <div className="absolute z-50 mt-1 w-40 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+                                <MenuFlottant className="status-menu-container w-40 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
                                   <div className="py-1">
                                     <button
                                       type="button"
@@ -1345,7 +1346,7 @@ export default function SousTraitantsPage() {
                                       )}
                                     </button>
                                   </div>
-                                </div>
+                                </MenuFlottant>
                               )}
                             </div>
                           </td>

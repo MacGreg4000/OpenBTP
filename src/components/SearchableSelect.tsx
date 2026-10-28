@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+import MenuFlottant from '@/components/ui/MenuFlottant'
 
 export interface SearchableSelectOption {
   value: string | number | null
@@ -43,6 +44,8 @@ export function SearchableSelect({
   const [searchTerm, setSearchTerm] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  // Le menu est rendu dans un portail (MenuFlottant) : il n'est plus dans containerRef
+  const menuRef = useRef<HTMLDivElement | null>(null)
 
   // Couleurs dynamiques selon le colorScheme
   const colors = {
@@ -94,7 +97,8 @@ export function SearchableSelect({
   // Fermer le dropdown quand on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const cible = event.target as Node
+      if (containerRef.current && !containerRef.current.contains(cible) && !menuRef.current?.contains(cible)) {
         setIsOpen(false)
         setSearchTerm('')
       }
@@ -140,7 +144,7 @@ export function SearchableSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-2xl max-h-80 flex flex-col overflow-hidden">
+        <MenuFlottant largeurAncre menuRef={menuRef} className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-2xl max-h-80 flex flex-col overflow-hidden">
           {/* Champ de recherche */}
           <div className="p-2 border-b-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
             <div className="relative">
@@ -218,7 +222,7 @@ export function SearchableSelect({
               </div>
             )}
           </div>
-        </div>
+        </MenuFlottant>
       )}
     </div>
   )
