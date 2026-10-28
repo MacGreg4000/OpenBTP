@@ -145,6 +145,26 @@ export default function SelectionPostesPage() {
     setSelectedLignes(newSelectedLignes);
   };
 
+  // « Tout cocher » : coche toutes les lignes (titres compris, comme un clic ligne
+  // par ligne) en gardant les quantités / prix déjà modifiés ; décoche tout sinon.
+  const lignesCommande = commande?.lignes || []
+  const toutCoche = lignesCommande.length > 0 && lignesCommande.every((l) => selectedLignes.has(l.id))
+  const handleToutCocher = () => {
+    if (toutCoche) {
+      setSelectedLignes(new Map())
+      setModifiedLignes(new Map())
+      return
+    }
+    const nouvellesSel = new Map(selectedLignes)
+    const nouvellesMod = new Map(modifiedLignes)
+    for (const l of lignesCommande) {
+      nouvellesSel.set(l.id, l)
+      if (!nouvellesMod.has(l.id)) nouvellesMod.set(l.id, { quantite: l.quantite, prixUnitaire: l.prixUnitaire })
+    }
+    setSelectedLignes(nouvellesSel)
+    setModifiedLignes(nouvellesMod)
+  }
+
   const handleQuantiteChange = (ligneId: number, value: string) => {
     const newModifiedLignes = new Map(modifiedLignes);
     const current = newModifiedLignes.get(ligneId) || { quantite: 0, prixUnitaire: 0 };
@@ -320,7 +340,17 @@ export default function SelectionPostesPage() {
                       <thead>
                         <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border-b border-gray-200 dark:border-gray-600">
                           <th className="px-4 py-3 text-left">
-                            <CheckCircleIcon className="h-4 w-4 text-gray-400" />
+                            <input
+                              type="checkbox"
+                              checked={toutCoche}
+                              ref={(el) => {
+                                if (el) el.indeterminate = !toutCoche && selectedLignes.size > 0
+                              }}
+                              onChange={handleToutCocher}
+                              title={toutCoche ? 'Tout décocher' : 'Tout cocher'}
+                              aria-label={toutCoche ? 'Tout décocher' : 'Tout cocher'}
+                              className="h-5 w-5 text-blue-600 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                            />
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
                             <div className="flex items-center gap-1"><HashtagIcon className="h-3.5 w-3.5" />Art.</div>
