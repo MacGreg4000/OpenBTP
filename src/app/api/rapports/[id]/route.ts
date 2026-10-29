@@ -2,28 +2,11 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma/client'
-import { unlink } from 'fs/promises'
-import { join } from 'path'
-import {
-  persistRapportPhoto,
-  generateRapportDocuments,
-  cleanTags,
-  type RapportNoteInput,
-  type RapportPhotoInput,
-} from '@/lib/rapports/service'
+import { enregistrerRapport, RapportInvalideError, supprimerFichierPublic as removeFileForUrl } from '@/lib/rapports/service'
 
 export const dynamic = 'force-dynamic'
-
-const PUBLIC_DIR = join(process.cwd(), 'public')
-
-async function removeFileForUrl(url: string | null | undefined) {
-  if (!url || !url.startsWith('/uploads/')) return
-  try {
-    await unlink(join(PUBLIC_DIR, url))
-  } catch {
-    // fichier déjà absent : ignorer
-  }
-}
+// Génération des PDF (général + un par tag) côté serveur
+export const maxDuration = 300
 
 // GET /api/rapports/[id] — rapport complet pour l'édition
 export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
@@ -44,7 +27,8 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
   return NextResponse.json(rapport)
 }
 
-// PUT /api/rapports/[id] — mise à jour (remplace notes/photos, régénère les PDF)
+// PUT /api/rapports/[id] — mise à jour (remplace notes/photos, régénère les PDF).
+// L'ancienne version n'est retirée qu'une fois la nouvelle entièrement générée.
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
   try {
@@ -54,78 +38,33 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const existing = await prisma.rapport.findUnique({
       where: { id },
       include: {
-        documents: { select: { id: true, url: true } },
-        photos: { select: { url: true } },
         chantier: { select: { id: true, chantierId: true, nomChantier: true, clientNom: true, adresseChantier: true } },
       },
     })
     if (!existing) return NextResponse.json({ error: 'Rapport non trouvé' }, { status: 404 })
 
     const body = await request.json()
-    const date: string = body.date || existing.date.toISOString()
-    const personnes: Array<{ id?: string; nom: string; fonction: string }> = Array.isArray(body.personnes) ? body.personnes : []
-    const notesInput: RapportNoteInput[] = Array.isArray(body.notes) ? body.notes : []
-    const photosInput: RapportPhotoInput[] = Array.isArray(body.photos) ? body.photos : []
-
-    // 1) Supprimer les anciens PDF (Document + fichiers) et anciennes photos durables
-    for (const doc of existing.documents) {
-      await removeFileForUrl(doc.url)
-    }
-    await prisma.document.deleteMany({ where: { rapportId: id } })
-    for (const ph of existing.photos) {
-      await removeFileForUrl(ph.url)
-    }
-    await prisma.rapportPhoto.deleteMany({ where: { rapportId: id } })
-    await prisma.rapportNote.deleteMany({ where: { rapportId: id } })
-
-    // 2) Mettre à jour le rapport
-    await prisma.rapport.update({
-      where: { id },
-      data: { date: new Date(date), personnes: personnes as unknown as object },
-    })
-
-    // 3) Recréer notes
-    const notes = notesInput
-      .filter(n => (n.contenu || '').trim().length > 0)
-      .map((n, i) => ({ contenu: n.contenu.trim(), tags: cleanTags(n.tags), ordre: i }))
-    if (notes.length > 0) {
-      await prisma.rapportNote.createMany({
-        data: notes.map(n => ({ rapportId: id, contenu: n.contenu, tags: n.tags, ordre: n.ordre })),
-      })
-    }
-
-    // 4) Recréer photos (copie durable)
-    const photos: Array<{ url: string; annotation: string; tags: string[] }> = []
-    for (let i = 0; i < photosInput.length; i++) {
-      const p = photosInput[i]
-      const durableUrl = await persistRapportPhoto(id, p.url, i)
-      const tags = cleanTags(p.tags)
-      const annotation = p.annotation || ''
-      await prisma.rapportPhoto.create({
-        data: { rapportId: id, url: durableUrl, annotation, tags, ordre: i, documentId: p.documentId ?? null },
-      })
-      photos.push({ url: durableUrl, annotation, tags })
-    }
-
-    // 5) Régénérer les PDF
-    await generateRapportDocuments({
+    await enregistrerRapport({
       rapportId: id,
       chantier: existing.chantier,
       createdBy: session.user.id,
-      date,
-      personnes,
-      notes: notes.map(n => ({ contenu: n.contenu, tags: n.tags })),
-      photos,
+      date: body.date || existing.date.toISOString(),
+      personnes: Array.isArray(body.personnes) ? body.personnes : [],
+      notes: Array.isArray(body.notes) ? body.notes : [],
+      photos: Array.isArray(body.photos) ? body.photos : [],
     })
 
     const full = await prisma.rapport.findUnique({
       where: { id },
-      include: { notes: true, photos: true, documents: { select: { id: true, type: true, url: true, nom: true, tagKey: true } } },
+      include: { documents: { select: { id: true, type: true, url: true, nom: true, tagKey: true } } },
     })
     return NextResponse.json(full)
   } catch (error) {
+    if (error instanceof RapportInvalideError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     console.error('Erreur mise à jour rapport:', error)
-    return NextResponse.json({ error: 'Erreur lors de la mise à jour du rapport' }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur lors de la génération du rapport. L\'ancienne version est conservée : réessayez.' }, { status: 500 })
   }
 }
 
