@@ -136,6 +136,20 @@ export async function POST(
       )
     }
 
+    // Le premier état reprend les lignes de la commande : sans commande validée, il serait vide
+    if (existingEtats === 0) {
+      const commandeValidee = await prisma.commande.findFirst({
+        where: { chantierId: chantier.id, statut: 'VALIDEE', lignes: { some: {} } },
+        select: { id: true }
+      })
+      if (!commandeValidee) {
+        return NextResponse.json(
+          { error: 'Validez d\'abord la commande client avant de créer un état d\'avancement.' },
+          { status: 400 }
+        )
+      }
+    }
+
     const nextNumero = lastEtat ? lastEtat.numero + 1 : 1
     console.log('Prochain numéro:', nextNumero)
     
@@ -204,7 +218,8 @@ export async function POST(
       const commande = await prisma.commande.findFirst({
         where: {
           chantierId: chantier.id, // Utiliser le CUID du chantier
-          statut: 'VALIDEE'
+          statut: 'VALIDEE',
+          lignes: { some: {} }
         },
         include: {
           lignes: true

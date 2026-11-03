@@ -99,7 +99,7 @@ export async function POST(request: Request, props: { params: Promise<{ type: 'o
       if (!existeCommande) return NextResponse.json({ error: 'Commande non autorisée' }, { status: 403 })
     } else {
       existeCommande = await prisma.commandeSousTraitant.findFirst({
-        where: { soustraitantId: actorId, chantierId },
+        where: { soustraitantId: actorId, chantierId, lignes: { some: {} } },
         select: { id: true }
       })
     }

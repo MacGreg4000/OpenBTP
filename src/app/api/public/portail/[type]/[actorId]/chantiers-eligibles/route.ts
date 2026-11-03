@@ -17,7 +17,7 @@ export async function GET(request: Request, props: { params: Promise<{ type: 'ou
 
     // Lister les chantiers ayant une commande pour ce sous-traitant
     const commandes = await prisma.commandeSousTraitant.findMany({
-      where: { soustraitantId: actorId },
+      where: { soustraitantId: actorId, lignes: { some: {} } },
       select: {
         id: true,
         Chantier: {

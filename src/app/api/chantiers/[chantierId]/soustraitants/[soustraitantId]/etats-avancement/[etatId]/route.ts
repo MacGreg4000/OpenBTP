@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { etatsSoustraitantDuChantier } from '@/lib/etats/soustraitant'
+import { estCommandeBlanche, etatsSoustraitantDuChantier } from '@/lib/etats/soustraitant'
 
 // GET /api/chantiers/[chantierId]/soustraitants/[soustraitantId]/etats-avancement/[etatId]
 // Récupère un état d'avancement spécifique
@@ -314,7 +314,25 @@ export async function DELETE(
       where: { id: etatIdNum }
     })
 
-    return NextResponse.json({ success: true })
+    // Dernier état d'une commande blanche : retirer aussi la commande technique,
+    // sinon le sous-traitant resterait affiché sur le chantier sans raison
+    let commandeSupprimee = false
+    if (etatExistant.commandeSousTraitantId) {
+      const commande = await prisma.commandeSousTraitant.findUnique({
+        where: { id: etatExistant.commandeSousTraitantId },
+        select: {
+          id: true,
+          estVerrouillee: true,
+          _count: { select: { lignes: true, soustraitant_etat_avancement: true } }
+        }
+      })
+      if (commande && estCommandeBlanche(commande) && commande._count.soustraitant_etat_avancement === 0) {
+        await prisma.commandeSousTraitant.delete({ where: { id: commande.id } })
+        commandeSupprimee = true
+      }
+    }
+
+    return NextResponse.json({ success: true, commandeSupprimee })
   } catch (error) {
     console.error('Erreur lors de la suppression:', error)
     return NextResponse.json(

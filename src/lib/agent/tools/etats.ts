@@ -276,10 +276,13 @@ async function preparerNouvelEtat(args: Record<string, unknown>): Promise<Prepar
   if (!dernier) {
     // Premier état : on part de la commande client validée
     const commande = await prisma.commande.findFirst({
-      where: { chantierId: cuid, statut: 'VALIDEE' },
+      where: { chantierId: cuid, statut: 'VALIDEE', lignes: { some: {} } },
       include: { lignes: { orderBy: { ordre: 'asc' } } },
     })
-    lignes = (commande?.lignes || []).map((l) => ({
+    if (!commande) {
+      return { erreur: "Validez d'abord la commande client : sans elle, le premier état serait vide." }
+    }
+    lignes = commande.lignes.map((l) => ({
       ligneCommandeId: l.id,
       article: l.article,
       description: l.description,

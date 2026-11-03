@@ -356,6 +356,10 @@ export default function NouvelEtatAvancementPage(
   }
 
   const handleValidation = async () => {
+    if (etatAvancement && etatAvancement.lignes.length === 0 && (etatAvancement.avenants ?? []).length === 0) {
+      toast.error('Ajoutez au moins un avenant avant de valider cet état')
+      return
+    }
     return handleSaveEtat(true)
   }
 

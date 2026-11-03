@@ -42,7 +42,8 @@ export async function GET(
             nom: true,
             email: true,
           }
-        }
+        },
+        _count: { select: { lignes: true } }
       },
       orderBy: {
         dateCommande: 'asc',

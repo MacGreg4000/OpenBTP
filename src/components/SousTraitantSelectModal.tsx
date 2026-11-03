@@ -14,12 +14,15 @@ interface SousTraitantSelectModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (sousTraitantId: string) => void
+  /** Si fourni : propose de créer un état « blanc », sans commande */
+  onEtatBlanc?: (sousTraitantId: string) => void
 }
 
 export default function SousTraitantSelectModal({
   isOpen,
   onClose,
-  onSubmit
+  onSubmit,
+  onEtatBlanc
 }: SousTraitantSelectModalProps) {
   const [sousTraitants, setSousTraitants] = useState<SousTraitant[]>([])
   const [selectedSousTraitantId, setSelectedSousTraitantId] = useState<string>('')
@@ -193,17 +196,27 @@ export default function SousTraitantSelectModal({
                 </p>
               )}
 
-              <div className="pt-2 flex justify-end space-x-3">
+              <div className="pt-2 flex flex-wrap justify-end gap-3">
                 <Button type="button" variant="outline" onClick={onClose}>
                   Annuler
                 </Button>
+                {onEtatBlanc && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!selectedSousTraitantId}
+                    onClick={() => onEtatBlanc(selectedSousTraitantId)}
+                  >
+                    État blanc (sans commande)
+                  </Button>
+                )}
                 <Button
                   type="submit"
                   variant="primary"
                   isLoading={isSubmitting}
                   disabled={!selectedSousTraitantId}
                 >
-                  {isSubmitting ? 'Chargement...' : 'Confirmer'}
+                  {isSubmitting ? 'Chargement...' : onEtatBlanc ? 'Créer une commande' : 'Confirmer'}
                 </Button>
               </div>
             </form>

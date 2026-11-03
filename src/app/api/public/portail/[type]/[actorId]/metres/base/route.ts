@@ -17,7 +17,7 @@ export async function GET(request: Request, props: { params: Promise<{ type: 'ou
 
   try {
     const commande = await prisma.commandeSousTraitant.findFirst({
-      where: { soustraitantId: actorId, chantierId },
+      where: { soustraitantId: actorId, chantierId, lignes: { some: {} } },
       select: {
         id: true,
         lignes: {

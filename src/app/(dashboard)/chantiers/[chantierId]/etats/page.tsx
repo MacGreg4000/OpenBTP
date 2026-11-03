@@ -20,6 +20,7 @@ import CardFinancialSummary from '@/components/CardFinancialSummary'
 import React from 'react'
 import type { Chantier } from '@/types/chantier'
 import EmailEtatAvancementModal from '@/components/EmailEtatAvancementModal'
+import { estCommandeBlanche } from '@/lib/etats/soustraitant'
 
 interface SousTraitant {
   soustraitantId: string;
@@ -31,6 +32,7 @@ interface SousTraitant {
     dateCommande: string;
     total: number;
     estVerrouillee: boolean;
+    estBlanche: boolean;
   };
 }
 
@@ -42,6 +44,7 @@ interface CommandeSousTraitant {
   dateCommande: string
   total: number
   estVerrouillee: boolean
+  _count?: { lignes: number }
 }
 
 interface PageProps {
@@ -152,7 +155,13 @@ export default function ChantierEtatsPage(props: PageProps) {
         setEtatsAvancement(etatData);
         
         // Pour chaque sous-traitant avec commande, récupérer les états d'avancement en parallèle
-        const etatsPromises = commandesData.map(async (commande: CommandeSousTraitant) => {
+        // La section « Hors commande » s'efface si le sous-traitant a aussi une vraie commande :
+        // ses états (lus par sous-traitant) restent listés sous celle-ci
+        const commandesAffichees = (commandesData as CommandeSousTraitant[]).filter((commande, _i, toutes) =>
+          !estCommandeBlanche(commande) ||
+          !toutes.some(c => c.soustraitantId === commande.soustraitantId && !estCommandeBlanche(c))
+        );
+        const etatsPromises = commandesAffichees.map(async (commande: CommandeSousTraitant) => {
           try {
             const etatsResponse = await fetch(`/api/chantiers/${chantierId}/soustraitants/${commande.soustraitantId}/etats-avancement`);
             
@@ -176,7 +185,8 @@ export default function ChantierEtatsPage(props: PageProps) {
                   reference: commande.reference,
                   dateCommande: commande.dateCommande,
                   total: commande.total,
-                  estVerrouillee: commande.estVerrouillee
+                  estVerrouillee: commande.estVerrouillee,
+                  estBlanche: estCommandeBlanche(commande)
                 }
               };
             }
@@ -239,7 +249,7 @@ export default function ChantierEtatsPage(props: PageProps) {
       toast.success('État d\'avancement créé avec succès');
     } catch (error) {
       console.error(error);
-      toast.error('Erreur lors de la création de l\'état d\'avancement');
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la création de l\'état d\'avancement');
     } finally {
       setIsCreating(false);
     }
@@ -290,6 +300,31 @@ export default function ChantierEtatsPage(props: PageProps) {
   }
 
   
+
+  const handleCreateEtatBlanc = async (sousTraitantId: string) => {
+    if (!chantierId) return;
+
+    try {
+      setIsCreating(true);
+      setShowSelectModal(false);
+
+      const response = await fetch(`/api/chantiers/${chantierId}/soustraitants/${sousTraitantId}/etat-blanc`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de la création');
+      }
+
+      toast.success(`État d'avancement n°${data.numero} créé : ajoutez vos postes en avenants`);
+      router.push(`/chantiers/${chantierId}/etats/soustraitants/${sousTraitantId}/etat/nouveau?etatId=${data.id}`);
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la création');
+    } finally {
+      setIsCreating(false);
+    }
+  }
 
   const navigateToNewSoustraitantCommandePage = (sousTraitantId: string) => {
     if (!chantierId) return;
@@ -408,9 +443,13 @@ export default function ChantierEtatsPage(props: PageProps) {
         }
         
         toast.success(`État d'avancement n°${etat.numero} supprimé avec succès`);
+        const resultat = await response.json().catch(() => null);
         
         // Rafraîchir la liste des états en fonction du type
-        if (etat.typeSoustraitant && etat.soustraitantId) {
+        if (resultat?.commandeSupprimee && etat.soustraitantId) {
+          // Plus aucun état « hors commande » : le sous-traitant quitte la page
+          setSousTraitants(prev => prev.filter(st => st.soustraitantId !== etat.soustraitantId));
+        } else if (etat.typeSoustraitant && etat.soustraitantId) {
           // Rafraîchir les états sous-traitants avec notre fonction optimisée
           await refreshSoustraitantData(etat.soustraitantId);
         } else {
@@ -701,6 +740,12 @@ export default function ChantierEtatsPage(props: PageProps) {
                 <div className="bg-gradient-to-r from-amber-50 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/30 rounded-xl p-4 mb-6 border border-amber-200 dark:border-amber-800">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex-1">
+                      {st.commande.estBlanche ? (
+                        <span className="inline-flex items-center px-3 py-1 bg-amber-500 text-white text-sm font-semibold rounded-full shadow-sm">
+                          Hors commande — état en avenants
+                        </span>
+                      ) : (
+                      <>
                       <div className="flex items-center gap-3 mb-2">
                         <span className="inline-flex items-center px-3 py-1 bg-amber-500 text-white text-sm font-semibold rounded-full shadow-sm">
                           Commande {st.commande.reference || `#${st.commande.id}`}
@@ -728,8 +773,11 @@ export default function ChantierEtatsPage(props: PageProps) {
                           Commande modifiable
                         </span>
                       )}
+                      </>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      {!st.commande.estBlanche && (
                       <button
                         onClick={() => {
                           console.log('Bouton Voir commande cliqué - chantierId:', chantierId, 'soustraitantId:', st.soustraitantId, 'commandeId:', st.commande.id);
@@ -743,6 +791,7 @@ export default function ChantierEtatsPage(props: PageProps) {
                         <EyeIcon className="h-4 w-4 mr-1" />
                         Voir commande
                       </button>
+                      )}
                       {st.commande.estVerrouillee && (
                         <button
                           onClick={() => {
@@ -886,6 +935,7 @@ export default function ChantierEtatsPage(props: PageProps) {
             isOpen={showSelectModal}
             onClose={() => setShowSelectModal(false)}
             onSubmit={navigateToNewSoustraitantCommandePage}
+            onEtatBlanc={handleCreateEtatBlanc}
           />
         )}
       </div>

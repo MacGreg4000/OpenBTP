@@ -13,3 +13,14 @@ export function etatsSoustraitantDuChantier(chantierCuid: string) {
     ],
   }
 }
+
+/** Référence de la commande technique portant les états « blancs » (tout en avenants). */
+export const REFERENCE_HORS_COMMANDE = 'Hors commande'
+
+/**
+ * Commande « blanche » : verrouillée et sans ligne. Elle rattache au chantier un
+ * sous-traitant qui intervient sans commande ; ses états sont saisis en avenants.
+ */
+export function estCommandeBlanche(commande: { estVerrouillee: boolean; _count?: { lignes: number } }) {
+  return commande.estVerrouillee && commande._count?.lignes === 0
+}

@@ -26,7 +26,8 @@ export async function GET(request: Request, props: { params: Promise<{ chantierI
     const commandesSousTraitants = await prisma.commandeSousTraitant.findMany({
       where: {
         chantierId: params.chantierId,
-        estVerrouillee: true
+        estVerrouillee: true,
+        lignes: { some: {} }
       },
       include: {
         soustraitant: {
