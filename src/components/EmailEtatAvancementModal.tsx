@@ -95,7 +95,9 @@ export default function EmailEtatAvancementModal({
           }
 
           setContacts(contactsData);
-          if (contactsData.length > 0) setSelectedContactIds([contactsData[0].id]);
+          // Contacts client : aucun coché par défaut, pour éviter un envoi au mauvais destinataire.
+          // Sous-traitant : il est le seul destinataire possible.
+          setSelectedContactIds(isSoustraitant ? contactsData.map((c) => c.id) : []);
 
           // Récupérer les paramètres de l'entreprise (pour le nom)
           const settingsResponse = await fetch('/api/settings/company'); // Supposant une API pour les companySettings
