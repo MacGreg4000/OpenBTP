@@ -23,7 +23,13 @@ import {
   ajouterTodoDashboard,
   creerNoteChantier,
 } from './notes'
-import { listeEtatsAvancement, creerEtatAvancement, ajouterAvenantEtat } from './etats'
+import {
+  listeEtatsAvancement,
+  detailEtatAvancement,
+  creerEtatAvancement,
+  saisirQuantitesEtat,
+  ajouterAvenantEtat,
+} from './etats'
 import { creerDevis, listeDevis, detailDevis, modifierDevis } from './devis'
 import {
   lireBaremeMateriau,
@@ -71,6 +77,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   listeDocumentsSociete,
   conformiteDocuments,
   listeEtatsAvancement,
+  detailEtatAvancement,
   listeDevis,
   detailDevis,
   lireNotesDashboard,
@@ -92,6 +99,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   ajouterTodoDashboard,
   // États d'avancement
   creerEtatAvancement,
+  saisirQuantitesEtat,
   ajouterAvenantEtat,
   // Devis
   creerDevis,

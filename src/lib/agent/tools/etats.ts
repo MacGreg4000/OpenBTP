@@ -111,6 +111,77 @@ export const listeEtatsAvancement: ToolDefinition = {
   },
 }
 
+export const detailEtatAvancement: ToolDefinition = {
+  name: 'detail_etat_avancement',
+  description:
+    "Détail ligne par ligne d'un état d'avancement CLIENT : id de chaque ligne et avenant, article, " +
+    'description, unité, prix unitaire, quantité commandée, quantités et montants précédents, de la ' +
+    'période et cumulés. Sert à faire correspondre un état fourni par le client avant ' +
+    "saisir_quantites_etat. Par défaut, le dernier état du chantier.",
+  parameters: {
+    type: 'object',
+    properties: {
+      chantier: { type: 'string', description: 'Identifiant ou nom du chantier' },
+      numero: { type: 'number', description: "Numéro de l'état (défaut : le dernier)" },
+    },
+    required: ['chantier'],
+  },
+  execute: async (args) => {
+    const res = await resolveChantier(String(args.chantier))
+    if (!res.ok || !res.value) return { erreur: res.message, candidats: res.candidats }
+
+    const numero = args.numero === undefined || args.numero === null ? null : Number(args.numero)
+    const etat = await prisma.etatAvancement.findFirst({
+      where: { chantierId: res.value.id, ...(numero === null ? {} : { numero }) },
+      orderBy: { numero: 'desc' },
+      include: { lignes: { orderBy: { id: 'asc' } }, avenants: { orderBy: { id: 'asc' } } },
+    })
+    if (!etat) {
+      return {
+        erreur:
+          numero === null
+            ? `Aucun état d'avancement sur « ${res.value.nomChantier} ».`
+            : `L'état n° ${numero} n'existe pas sur « ${res.value.nomChantier} ».`,
+      }
+    }
+
+    const poste = (p: (typeof etat.lignes)[number] | (typeof etat.avenants)[number]) => ({
+      id: p.id,
+      article: p.article,
+      description: p.description,
+      type: p.type,
+      unite: p.unite,
+      prixUnitaire: p.prixUnitaire,
+      quantiteCommandee: p.quantite,
+      quantitePrecedente: p.quantitePrecedente,
+      quantiteActuelle: p.quantiteActuelle,
+      quantiteTotale: p.quantiteTotale,
+      montantPrecedent: p.montantPrecedent,
+      montantActuel: p.montantActuel,
+      montantTotal: p.montantTotal,
+    })
+
+    return {
+      chantier: res.value.nomChantier,
+      id: etat.id,
+      numero: etat.numero,
+      date: etat.date,
+      mois: etat.mois,
+      finalise: etat.estFinalise,
+      montantPeriode: arrondi2(
+        etat.lignes.reduce((s, l) => s + l.montantActuel, 0) +
+          etat.avenants.reduce((s, a) => s + a.montantActuel, 0)
+      ),
+      montantCumule: arrondi2(
+        etat.lignes.reduce((s, l) => s + l.montantTotal, 0) +
+          etat.avenants.reduce((s, a) => s + a.montantTotal, 0)
+      ),
+      lignes: etat.lignes.map(poste),
+      avenants: etat.avenants.map(poste),
+    }
+  },
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers d'écriture
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,6 +200,9 @@ async function auteurAgent(ctx: ToolContext): Promise<string> {
   const u = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { email: true } })
   return u?.email || ctx.userId
 }
+
+const eur = (n: number) =>
+  n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 
 /** Prochain numéro d'article d'avenant, robuste aux suppressions (AV-1, AV-2…). */
 function prochainArticleAvenant(articles: string[]): string {
@@ -342,6 +416,239 @@ async function preparerNouvelEtat(args: Record<string, unknown>): Promise<Prepar
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// saisir_quantites_etat (client, état en brouillon uniquement)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface PosteSaisi {
+  genre: 'ligne' | 'avenant'
+  id: number
+  article: string
+  description: string
+  unite: string
+  prixUnitaire: number
+  quantiteCommandee: number
+  quantitePrecedente: number
+  quantiteActuelle: number
+  quantiteTotale: number
+  montantPrecedent: number
+  montantActuel: number
+  montantTotal: number
+  depasseCommande: boolean
+}
+
+interface PreparationSaisie {
+  erreur?: string
+  candidats?: { id: string; nom: string }[]
+  etatId?: number
+  numeroEtat?: number
+  chantierNom?: string
+  mois?: string
+  postes?: PosteSaisi[]
+  montantPeriode?: number
+  montantCumule?: number
+  ecartAttendu?: number
+}
+
+/**
+ * Calcule la saisie sans rien écrire. Mêmes formules que l'écran d'état :
+ * cumul = précédent + période ; montant = quantité × prix, arrondi à 2 décimales.
+ * Les postes non cités gardent leurs valeurs.
+ */
+async function preparerSaisie(args: Record<string, unknown>): Promise<PreparationSaisie> {
+  const res = await resolveChantier(String(args.chantier || ''))
+  if (!res.ok || !res.value) return { erreur: res.message, candidats: res.candidats }
+
+  const saisies = Array.isArray(args.quantites) ? (args.quantites as Record<string, unknown>[]) : []
+  if (saisies.length === 0) return { erreur: 'quantites doit contenir au moins un poste.' }
+
+  // PROTECTION PAR SÉLECTION : on ne cible QUE l'état en brouillon.
+  const etat = await prisma.etatAvancement.findFirst({
+    where: { chantierId: res.value.id, estFinalise: false },
+    orderBy: { numero: 'desc' },
+    include: { lignes: true, avenants: true },
+  })
+  if (!etat) {
+    return {
+      erreur:
+        `Aucun état d'avancement en brouillon sur « ${res.value.nomChantier} ». ` +
+        `Crée-en un avec creer_etat_avancement, puis relance la saisie.`,
+    }
+  }
+
+  const postes: PosteSaisi[] = []
+  const vus = new Set<string>()
+  for (const s of saisies) {
+    const ligneId = s.ligneId === undefined || s.ligneId === null ? null : Number(s.ligneId)
+    const avenantId = s.avenantId === undefined || s.avenantId === null ? null : Number(s.avenantId)
+    if ((ligneId === null) === (avenantId === null)) {
+      return { erreur: 'Chaque poste doit indiquer soit ligneId, soit avenantId.' }
+    }
+    const genre = ligneId !== null ? 'ligne' : 'avenant'
+    const id = (ligneId ?? avenantId) as number
+    const cle = `${genre}-${id}`
+    if (vus.has(cle)) return { erreur: `Le poste ${cle} est cité deux fois.` }
+    vus.add(cle)
+
+    const source =
+      genre === 'ligne'
+        ? etat.lignes.find((l) => l.id === id)
+        : etat.avenants.find((a) => a.id === id)
+    if (!source) {
+      return { erreur: `Le poste ${cle} n'appartient pas à l'état n° ${etat.numero}.` }
+    }
+
+    const quantiteActuelle = Number(s.quantiteActuelle)
+    if (!Number.isFinite(quantiteActuelle)) {
+      return { erreur: `quantiteActuelle du poste ${cle} doit être un nombre.` }
+    }
+    const quantiteTotale = source.quantitePrecedente + quantiteActuelle
+    if (quantiteTotale < 0) {
+      return { erreur: `Le poste ${cle} aurait un cumul négatif (${quantiteTotale}).` }
+    }
+
+    const montantActuel = arrondi2(quantiteActuelle * source.prixUnitaire)
+    postes.push({
+      genre,
+      id,
+      article: source.article,
+      description: source.description,
+      unite: source.unite,
+      prixUnitaire: source.prixUnitaire,
+      quantiteCommandee: source.quantite,
+      quantitePrecedente: source.quantitePrecedente,
+      quantiteActuelle,
+      quantiteTotale,
+      montantPrecedent: source.montantPrecedent,
+      montantActuel,
+      montantTotal: arrondi2(montantActuel + source.montantPrecedent),
+      depasseCommande: quantiteTotale > source.quantite,
+    })
+  }
+
+  // Totaux de l'état après saisie : postes saisis + postes laissés tels quels
+  const nouveau = new Map(postes.map((p) => [`${p.genre}-${p.id}`, p]))
+  const tous = [
+    ...etat.lignes.map((l) => ({ cle: `ligne-${l.id}`, actuel: l.montantActuel, total: l.montantTotal })),
+    ...etat.avenants.map((a) => ({ cle: `avenant-${a.id}`, actuel: a.montantActuel, total: a.montantTotal })),
+  ]
+  const montantPeriode = arrondi2(
+    tous.reduce((s, p) => s + (nouveau.get(p.cle)?.montantActuel ?? p.actuel), 0)
+  )
+  const montantCumule = arrondi2(
+    tous.reduce((s, p) => s + (nouveau.get(p.cle)?.montantTotal ?? p.total), 0)
+  )
+
+  const attendu =
+    args.totalPeriodeAttendu === undefined || args.totalPeriodeAttendu === null
+      ? null
+      : Number(args.totalPeriodeAttendu)
+
+  return {
+    etatId: etat.id,
+    numeroEtat: etat.numero,
+    chantierNom: res.value.nomChantier,
+    mois: args.mois ? String(args.mois).trim() : undefined,
+    postes,
+    montantPeriode,
+    montantCumule,
+    ecartAttendu:
+      attendu !== null && Number.isFinite(attendu) ? arrondi2(montantPeriode - attendu) : undefined,
+  }
+}
+
+export const saisirQuantitesEtat: ToolDefinition = {
+  name: 'saisir_quantites_etat',
+  description:
+    "Saisit les quantités de la PÉRIODE sur l'état d'avancement CLIENT en brouillon d'un chantier " +
+    "(encodage d'un état fourni par le client). Récupérer d'abord les id avec detail_etat_avancement. " +
+    "Les cumuls et montants sont calculés serveur ; les postes non cités ne changent pas. Refuse " +
+    "d'écrire dans un état finalisé et ne finalise jamais : la validation reste dans l'application. " +
+    'Toujours passer par dryRun et comparer le total avec totalPeriodeAttendu.',
+  requiresConfirmation: true,
+  parameters: {
+    type: 'object',
+    properties: {
+      chantier: { type: 'string', description: 'Identifiant ou nom du chantier' },
+      quantites: {
+        type: 'array',
+        description: 'Postes à saisir : ligneId OU avenantId, avec la quantité de la période.',
+        items: {
+          type: 'object',
+          properties: {
+            ligneId: { type: 'number', description: "Id de la ligne de l'état" },
+            avenantId: { type: 'number', description: "Id de l'avenant de l'état" },
+            quantiteActuelle: { type: 'number', description: 'Quantité de la période' },
+          },
+          required: ['quantiteActuelle'],
+        },
+      },
+      mois: { type: 'string', description: "Mois de l'état, ex. « Octobre 2026 »" },
+      totalPeriodeAttendu: {
+        type: 'number',
+        description: "Montant de la période sur le document du client, pour contrôle de l'écart",
+      },
+    },
+    required: ['chantier', 'quantites'],
+  },
+  summarize: async (args) => {
+    const p = await preparerSaisie(args)
+    if (p.erreur) return `Saisie impossible : ${p.erreur}`
+    return (
+      `Saisir ${p.postes!.length} poste(s) sur l'état n° ${p.numeroEtat} de « ${p.chantierNom} » : ` +
+      `période ${eur(p.montantPeriode!)}, cumul ${eur(p.montantCumule!)}.`
+    )
+  },
+  preview: async (args) => {
+    const p = await preparerSaisie(args)
+    if (p.erreur) return { action: 'aucune', erreur: p.erreur, candidats: p.candidats }
+    return {
+      action: 'modification',
+      chantier: p.chantierNom,
+      etat: { id: p.etatId, numero: p.numeroEtat, statut: 'BROUILLON', mois: p.mois },
+      postes: p.postes,
+      montantPeriode: p.montantPeriode,
+      montantCumule: p.montantCumule,
+      ecartAvecAttendu: p.ecartAttendu,
+    }
+  },
+  execute: async (args) => {
+    const p = await preparerSaisie(args)
+    if (p.erreur) return { erreur: p.erreur, candidats: p.candidats }
+
+    const valeurs = (x: PosteSaisi) => ({
+      quantiteActuelle: x.quantiteActuelle,
+      quantiteTotale: x.quantiteTotale,
+      montantActuel: x.montantActuel,
+      montantTotal: x.montantTotal,
+    })
+
+    await prisma.$transaction(async (tx) => {
+      for (const x of p.postes!) {
+        if (x.genre === 'ligne') {
+          await tx.ligneEtatAvancement.update({ where: { id: x.id }, data: valeurs(x) })
+        } else {
+          await tx.avenantEtatAvancement.update({ where: { id: x.id }, data: valeurs(x) })
+        }
+      }
+      if (p.mois) {
+        await tx.etatAvancement.update({ where: { id: p.etatId! }, data: { mois: p.mois } })
+      }
+    })
+
+    return {
+      succes: true,
+      chantier: p.chantierNom,
+      etatNumero: p.numeroEtat,
+      statut: 'BROUILLON',
+      postesSaisis: p.postes!.length,
+      montantPeriode: p.montantPeriode,
+      montantCumule: p.montantCumule,
+      ecartAvecAttendu: p.ecartAttendu,
+    }
+  },
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ajouter_avenant_etat (client, état en brouillon uniquement)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -402,9 +709,6 @@ async function preparerAvenant(args: Record<string, unknown>): Promise<Preparati
     montant,
   }
 }
-
-const eur = (n: number) =>
-  n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 
 export const ajouterAvenantEtat: ToolDefinition = {
   name: 'ajouter_avenant_etat',
