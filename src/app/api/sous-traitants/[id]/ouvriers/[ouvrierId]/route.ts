@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { normaliserNumeroNational, normaliserNumeroEntreprise } from '@/lib/soustraitants/identifiants'
 
 export async function GET(
   request: Request,
@@ -101,7 +102,14 @@ export async function PUT(
         email: body.email || null,
         telephone: body.telephone || null,
         dateEntree: new Date(body.dateEntree),
-        poste: body.poste
+        poste: body.poste,
+        // Champs Checkinatwork : modifiés seulement s'ils sont envoyés
+        ...(body.numeroNational !== undefined
+          ? { numeroNational: normaliserNumeroNational(body.numeroNational) }
+          : {}),
+        ...(body.numeroEntreprise !== undefined
+          ? { numeroEntreprise: normaliserNumeroEntreprise(body.numeroEntreprise) }
+          : {})
       }
     })
 

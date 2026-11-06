@@ -17,6 +17,7 @@ import { mkdir, writeFile, rename, copyFile, access } from 'fs/promises'
 import { join, dirname, basename, extname } from 'path'
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma/client'
+import { normaliserNumeroDocument } from '@/lib/soustraitants/identifiants'
 import { TYPES_DOCUMENT_OUVRIER, TYPES_DOCUMENT_SOCIETE, typeDocumentOuvrierCorrige } from './types'
 
 const RACINE_UPLOADS = join(process.cwd(), 'public')
@@ -123,6 +124,8 @@ interface EntreeDocument {
   remplacer?: boolean
   /** Précision ajoutée au nom de fichier : « recto », « verso », « annexe 8 »… */
   precision?: string | null
+  /** Numéro du document (ex. déclaration Limosa L-1). Documents d'ouvrier seulement. */
+  numero?: string | null
 }
 
 // ─── Ouvriers ────────────────────────────────────────────────────────────────
@@ -161,6 +164,7 @@ export async function enregistrerDocumentOuvrier(ouvrierId: string, e: EntreeDoc
         url,
         dateExpiration: e.dateExpiration ?? null,
         precision: e.precision?.trim() || null,
+        numero: normaliserNumeroDocument(e.numero),
         ouvrierId,
         createdAt: maintenant,
         updatedAt: maintenant,

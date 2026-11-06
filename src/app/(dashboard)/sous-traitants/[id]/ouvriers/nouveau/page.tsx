@@ -10,6 +10,8 @@ interface FormData {
   telephone: string
   dateEntree: string
   poste: string
+  numeroNational: string
+  numeroEntreprise: string
 }
 
 export default function NouvelOuvrierPage(
@@ -26,7 +28,9 @@ export default function NouvelOuvrierPage(
     email: '',
     telephone: '',
     dateEntree: new Date().toISOString().split('T')[0],
-    poste: ''
+    poste: '',
+    numeroNational: '',
+    numeroEntreprise: ''
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +60,9 @@ export default function NouvelOuvrierPage(
         email: '',
         telephone: '',
         poste: '',
-        dateEntree: ''
+        dateEntree: '',
+        numeroNational: '',
+        numeroEntreprise: ''
       })
       router.push(`/sous-traitants/${params.id}/ouvriers`)
       router.refresh()
@@ -151,6 +157,27 @@ export default function NouvelOuvrierPage(
             type="text"
             label="Poste"
             value={formData.poste}
+            onChange={handleChange}
+          />
+
+          <FormInput
+            id="numeroNational"
+            name="numeroNational"
+            type="text"
+            label="Numéro national (Checkinatwork)"
+            placeholder="00.00.00-000.00"
+            helperText="Pour un travailleur détaché, c'est le numéro Limosa qui est utilisé (document Limosa)."
+            value={formData.numeroNational}
+            onChange={handleChange}
+          />
+
+          <FormInput
+            id="numeroEntreprise"
+            name="numeroEntreprise"
+            type="text"
+            label="Numéro d'entreprise (si différent du sous-traitant)"
+            placeholder="BE 0123.456.789"
+            value={formData.numeroEntreprise}
             onChange={handleChange}
           />
         </div>

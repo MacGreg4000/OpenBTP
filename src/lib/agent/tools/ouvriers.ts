@@ -18,6 +18,7 @@
 
 import { prisma } from '@/lib/prisma/client'
 import { ToolDefinition } from '../types'
+import { normaliserNumeroDocument } from '@/lib/soustraitants/identifiants'
 import { resolveOuvrier, resolveSousTraitant } from './helpers'
 import { CODES_OUVRIER, TYPES_DOCUMENT_OUVRIER } from '@/lib/documents/types'
 import { enregistrerDocumentOuvrier, renommerDocumentOuvrierNas } from '@/lib/documents/stockage'
@@ -183,6 +184,10 @@ export const ajouterDocumentOuvrier: ToolDefinition = {
         type: 'string',
         description: 'Précision dans le nom de fichier : « recto », « verso », « annexe 8 », « carte belge E », « page 2 »… Obligatoire quand plusieurs fichiers du même type coexistent (recto / verso).',
       },
+      numero: {
+        type: 'string',
+        description: 'Numéro du document : pour un Limosa, le numéro de déclaration L-1 (repris dans le volet Checkinatwork). Toujours le relever quand le document en porte un.',
+      },
     },
     required: ['sousTraitant', 'ouvrier', 'type'],
   },
@@ -218,6 +223,7 @@ export const ajouterDocumentOuvrier: ToolDefinition = {
       fichier: args.nomFichier || null,
       tailleFichier: `${((decode.buffer?.length ?? 0) / 1024).toFixed(1)} Ko`,
       dateExpiration: dateRes.date ? dateRes.date.toISOString().slice(0, 10) : null,
+      numero: normaliserNumeroDocument(args.numero),
       ...(ancien
         ? { archivera: { nom: ancien.nom, dateExpiration: ancien.dateExpiration?.toISOString().slice(0, 10) ?? null } }
         : {}),
@@ -244,6 +250,7 @@ export const ajouterDocumentOuvrier: ToolDefinition = {
       dateExpiration: dateRes.date,
       remplacer: doitRemplacer(type, args),
       precision: args.precision ? String(args.precision) : null,
+      numero: args.numero ? String(args.numero) : null,
     })
     return {
       succes: true,
@@ -259,7 +266,7 @@ export const ajouterDocumentOuvrier: ToolDefinition = {
 export const modifierDocumentOuvrier: ToolDefinition = {
   name: 'modifier_document_ouvrier',
   description:
-    "Corrige le type, la date d'expiration ou la précision du nom (recto, verso…) d'un document existant ; le fichier est renommé sur le NAS. Ne remplace PAS le fichier — pour ça, ajouter un nouveau document. Fusion partielle : un champ non fourni reste inchangé.",
+    "Corrige le type, la date d'expiration, le numéro (ex. numéro Limosa) ou la précision du nom (recto, verso…) d'un document existant ; le fichier est renommé sur le NAS. Ne remplace PAS le fichier — pour ça, ajouter un nouveau document. Fusion partielle : un champ non fourni reste inchangé.",
   requiresConfirmation: true,
   parameters: {
     type: 'object',
@@ -279,6 +286,10 @@ export const modifierDocumentOuvrier: ToolDefinition = {
       precision: {
         type: 'string',
         description: 'Précision du nom de fichier sur le NAS : « recto », « verso », « annexe 8 », « carte belge E »… (le fichier est renommé)',
+      },
+      numero: {
+        type: 'string',
+        description: 'Numéro du document : pour un Limosa, le numéro de déclaration L-1 (repris dans le volet Checkinatwork). Toujours le relever quand le document en porte un.',
       },
     },
     required: ['sousTraitant', 'ouvrier', 'documentId'],
@@ -315,9 +326,11 @@ export const modifierDocumentOuvrier: ToolDefinition = {
       avant: {
         type: document.type,
         dateExpiration: document.dateExpiration ? document.dateExpiration.toISOString().slice(0, 10) : null,
+        numero: document.numero,
       },
       apres: {
         type: args.type !== undefined ? String(args.type) : document.type,
+        numero: args.numero !== undefined ? normaliserNumeroDocument(args.numero) : document.numero,
         dateExpiration:
           nouvelleDateExpiration !== undefined
             ? nouvelleDateExpiration
@@ -336,8 +349,9 @@ export const modifierDocumentOuvrier: ToolDefinition = {
     })
     if (!document) return { erreur: "Document introuvable pour cet ouvrier." }
 
-    const data: { type?: string; dateExpiration?: Date | null; precision?: string | null } = {}
+    const data: { type?: string; dateExpiration?: Date | null; precision?: string | null; numero?: string | null } = {}
     if (args.precision !== undefined) data.precision = args.precision ? String(args.precision).trim() : null
+    if (args.numero !== undefined) data.numero = normaliserNumeroDocument(args.numero)
 
     if (args.type !== undefined) {
       const type = String(args.type)
@@ -354,7 +368,7 @@ export const modifierDocumentOuvrier: ToolDefinition = {
     }
 
     if (Object.keys(data).length === 0) {
-      return { erreur: 'Aucun champ à modifier (type, dateExpiration ou precision).' }
+      return { erreur: 'Aucun champ à modifier (type, dateExpiration, numero ou precision).' }
     }
 
     await prisma.documentOuvrier.update({ where: { id: document.id }, data })
@@ -390,7 +404,7 @@ export const listeDocumentsOuvrier: ToolDefinition = {
 
     const documents = await prisma.documentOuvrier.findMany({
       where: { ouvrierId: cible.ouvrierId },
-      select: { id: true, nom: true, type: true, dateExpiration: true, url: true, archive: true, archiveLe: true },
+      select: { id: true, nom: true, type: true, numero: true, dateExpiration: true, url: true, archive: true, archiveLe: true },
       orderBy: { createdAt: 'desc' },
     })
     const jour = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null)
@@ -400,10 +414,10 @@ export const listeDocumentsOuvrier: ToolDefinition = {
       ouvrier: cible.ouvrierNom,
       enVigueur: documents
         .filter((d) => !d.archive)
-        .map((d) => ({ id: d.id, nom: d.nom, type: d.type, dateExpiration: jour(d.dateExpiration), url: d.url })),
+        .map((d) => ({ id: d.id, nom: d.nom, type: d.type, numero: d.numero, dateExpiration: jour(d.dateExpiration), url: d.url })),
       archives: documents
         .filter((d) => d.archive)
-        .map((d) => ({ id: d.id, nom: d.nom, type: d.type, dateExpiration: jour(d.dateExpiration), archiveLe: jour(d.archiveLe) })),
+        .map((d) => ({ id: d.id, nom: d.nom, type: d.type, numero: d.numero, dateExpiration: jour(d.dateExpiration), archiveLe: jour(d.archiveLe) })),
     }
   },
 }

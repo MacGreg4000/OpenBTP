@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { archiverDocumentOuvrier, renommerDocumentOuvrierNas } from '@/lib/documents/stockage'
 import { CODES_OUVRIER } from '@/lib/documents/types'
+import { normaliserNumeroDocument } from '@/lib/soustraitants/identifiants'
 
 export async function DELETE(
   request: Request,
@@ -52,7 +53,7 @@ export async function DELETE(
 /**
  * Corrige la nature (type), la date d'expiration ou la précision d'un document
  * déjà encodé — sans changer le fichier. Le fichier miroir du NAS est renommé.
- * Corps : { type?, dateExpiration? (AAAA-MM-JJ ou null), precision? }
+ * Corps : { type?, dateExpiration? (AAAA-MM-JJ ou null), precision?, numero? }
  */
 export async function PATCH(
   request: Request,
@@ -69,7 +70,7 @@ export async function PATCH(
     if (!document) return NextResponse.json({ error: 'Document non trouvé' }, { status: 404 })
 
     const body = await request.json().catch(() => ({}))
-    const data: { type?: string; dateExpiration?: Date | null; precision?: string | null; updatedAt: Date } = { updatedAt: new Date() }
+    const data: { type?: string; dateExpiration?: Date | null; precision?: string | null; numero?: string | null; updatedAt: Date } = { updatedAt: new Date() }
 
     if (body.type !== undefined) {
       if (!CODES_OUVRIER.includes(String(body.type))) {
@@ -88,6 +89,9 @@ export async function PATCH(
     }
     if (body.precision !== undefined) {
       data.precision = typeof body.precision === 'string' && body.precision.trim() ? body.precision.trim().slice(0, 60) : null
+    }
+    if (body.numero !== undefined) {
+      data.numero = normaliserNumeroDocument(body.numero)
     }
 
     const misAJour = await prisma.documentOuvrier.update({ where: { id: document.id }, data })

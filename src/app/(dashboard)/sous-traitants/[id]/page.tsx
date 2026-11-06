@@ -28,6 +28,7 @@ import {
 import { useNotification } from '@/hooks/useNotification'
 import LigneTarif, { LigneTarifData } from '@/components/tarifs/LigneTarif'
 import RappelsCheckinSection from '@/components/sous-traitants/RappelsCheckinSection'
+import CheckinatworkSection from '@/components/sous-traitants/CheckinatworkSection'
 
 interface SousTraitantData {
   id: string
@@ -549,6 +550,9 @@ export default function SousTraitantConsultationPage(
                 </div>
               </div>
             )}
+
+            {/* Infos Checkinatwork des ouvriers (volet repliable) */}
+            <CheckinatworkSection soustraitantId={params.id} />
 
             {/* Rappels Checkinatwork (journal de preuve) */}
             <RappelsCheckinSection soustraitantId={params.id} />

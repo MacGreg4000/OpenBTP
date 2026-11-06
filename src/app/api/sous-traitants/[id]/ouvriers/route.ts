@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { normaliserNumeroNational, normaliserNumeroEntreprise } from '@/lib/soustraitants/identifiants'
 
 export async function GET(
   request: Request,
@@ -127,6 +128,8 @@ export async function POST(
       telephone: body.telephone || null,
       dateEntree: new Date(body.dateEntree),
       poste: body.poste,
+      numeroNational: normaliserNumeroNational(body.numeroNational),
+      numeroEntreprise: normaliserNumeroEntreprise(body.numeroEntreprise),
       sousTraitantId: id,
       updatedAt: new Date()
     };

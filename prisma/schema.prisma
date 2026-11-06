@@ -967,6 +967,8 @@ model DocumentOuvrier {
   cheminNas      String?   @db.Text
   // Précision du nom de fichier (« recto », « verso », « annexe 8 »…)
   precision      String?
+  // Numéro du document (ex. numéro de déclaration Limosa L-1)
+  numero         String?
   Ouvrier        Ouvrier   @relation(fields: [ouvrierId], references: [id], onDelete: Cascade)
 
   @@index([ouvrierId])
@@ -1091,6 +1093,10 @@ model Ouvrier {
   // statut INDEPENDANT | ASSOCIE_ACTIF | SALARIE ; nationalite BE | UE | HORS_UE
   statut          String?
   nationalite     String?
+  // Checkinatwork : numéro national (NISS ou bis), et numéro d'entreprise
+  // propre à l'ouvrier (vide = celui du sous-traitant, soustraitant.tva).
+  numeroNational   String?
+  numeroEntreprise String?
   sousTraitantId  String
   createdAt       DateTime          @default(now())
   updatedAt       DateTime

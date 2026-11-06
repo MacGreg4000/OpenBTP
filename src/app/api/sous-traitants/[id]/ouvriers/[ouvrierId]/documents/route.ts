@@ -27,6 +27,7 @@ export async function POST(
     const file = formData.get('file') as File
     const type = formData.get('type') as string
     const dateExpiration = formData.get('dateExpiration') as string
+    const numero = formData.get('numero')
 
     // Validation basique
     if (!file || !type) {
@@ -74,6 +75,7 @@ export async function POST(
       extension: extension === 'jpeg' ? 'jpg' : extension,
       nomOriginal: file.name,
       dateExpiration: dateExpiration ? new Date(dateExpiration) : null,
+      numero: typeof numero === 'string' ? numero : null,
     })
 
     return NextResponse.json(document)

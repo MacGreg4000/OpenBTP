@@ -26,6 +26,7 @@ interface Document {
   url: string
   dateExpiration: string | null
   precision?: string | null
+  numero?: string | null
   createdAt: string
 }
 
@@ -86,7 +87,7 @@ function DeleteModal({ isOpen, document, onClose, onConfirm, isDeleting }: Delet
 interface EditModalProps {
   document: Document | null
   onClose: () => void
-  onSave: (doc: Document, valeurs: { type: string; dateExpiration: string; precision: string }) => Promise<void>
+  onSave: (doc: Document, valeurs: { type: string; dateExpiration: string; precision: string; numero: string }) => Promise<void>
   isSaving: boolean
 }
 
@@ -96,12 +97,14 @@ function EditModal({ document, onClose, onSave, isSaving }: EditModalProps) {
   const [type, setType] = useState('')
   const [dateExpiration, setDateExpiration] = useState('')
   const [precision, setPrecision] = useState('')
+  const [numero, setNumero] = useState('')
 
   useEffect(() => {
     if (document) {
       setType(document.type)
       setDateExpiration(document.dateExpiration ? document.dateExpiration.slice(0, 10) : '')
       setPrecision(document.precision || '')
+      setNumero(document.numero || '')
     }
   }, [document])
 
@@ -115,7 +118,7 @@ function EditModal({ document, onClose, onSave, isSaving }: EditModalProps) {
         <form
           onSubmit={async (e) => {
             e.preventDefault()
-            await onSave(document, { type, dateExpiration, precision })
+            await onSave(document, { type, dateExpiration, precision, numero })
           }}
           className="mt-4 space-y-4"
         >
@@ -146,6 +149,22 @@ function EditModal({ document, onClose, onSave, isSaving }: EditModalProps) {
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
+
+          {(type === 'limosa' || numero) && (
+            <div>
+              <label htmlFor="edit-numero" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Numéro de déclaration Limosa
+              </label>
+              <input
+                id="edit-numero"
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                placeholder="Repris dans le volet Checkinatwork"
+                maxLength={60}
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor="edit-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -246,6 +265,21 @@ function UploadModal({ isOpen, onClose, onUpload, isUploading }: UploadModalProp
                 dark:hover:file:bg-blue-800"
             />
           </div>
+
+          {selectedType === 'limosa' && (
+            <div>
+              <label htmlFor="numero" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Numéro de déclaration Limosa
+              </label>
+              <input
+                id="numero"
+                name="numero"
+                placeholder="Repris dans le volet Checkinatwork"
+                maxLength={60}
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor="dateExpiration" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -350,13 +384,13 @@ export default function DocumentsOuvrierPage(
     }
   }
 
-  const handleSave = async (doc: Document, v: { type: string; dateExpiration: string; precision: string }) => {
+  const handleSave = async (doc: Document, v: { type: string; dateExpiration: string; precision: string; numero: string }) => {
     setIsSaving(true)
     try {
       const response = await fetch(`/api/sous-traitants/${params.id}/ouvriers/${params.ouvrierId}/documents/${doc.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: v.type, dateExpiration: v.dateExpiration || null, precision: v.precision }),
+        body: JSON.stringify({ type: v.type, dateExpiration: v.dateExpiration || null, precision: v.precision, numero: v.numero }),
       })
       if (!response.ok) {
         const d = await response.json().catch(() => ({}))
@@ -494,6 +528,9 @@ export default function DocumentsOuvrierPage(
                           </button>
                           {document.precision && (
                             <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({document.precision})</span>
+                          )}
+                          {document.numero && (
+                            <span className="ml-2 font-mono text-xs text-gray-500 dark:text-gray-400">n° {document.numero}</span>
                           )}
                         </div>
                       </td>

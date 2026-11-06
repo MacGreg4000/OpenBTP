@@ -12,6 +12,7 @@ import { decoderFichier, parseDateExpiration } from './ouvriers'
 import { CODES_SOCIETE, TYPES_DOCUMENT_SOCIETE, CODES_OUVRIER, libelleType } from '@/lib/documents/types'
 import { enregistrerDocumentSociete } from '@/lib/documents/stockage'
 import { conformiteSousTraitants } from '@/lib/documents/conformite'
+import { normaliserNumeroNational, normaliserNumeroEntreprise } from '@/lib/soustraitants/identifiants'
 
 const cle = (s: string | null | undefined) =>
   String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -48,6 +49,12 @@ export const listeOuvriers: ToolDefinition = {
     const st = await resolveSousTraitant(String(args.sousTraitant || ''))
     if (!st.ok || !st.value) return { erreur: st.message, candidats: st.candidats }
     const [conf] = await conformiteSousTraitants({ soustraitantId: st.value.id })
+    type Numeros = { id: string; numeroNational: string | null; numeroEntreprise: string | null }
+    const lignesNumeros: Numeros[] = await prisma.ouvrier.findMany({
+      where: { sousTraitantId: st.value.id },
+      select: { id: true, numeroNational: true, numeroEntreprise: true },
+    })
+    const numeros = new Map(lignesNumeros.map((o) => [o.id, o]))
     const inactifs = args.inclureInactifs
       ? await prisma.ouvrier.findMany({ where: { sousTraitantId: st.value.id, actif: false }, select: { id: true, prenom: true, nom: true } })
       : []
@@ -58,6 +65,8 @@ export const listeOuvriers: ToolDefinition = {
         id: o.id,
         nom: `${o.prenom} ${o.nom}`.trim(),
         poste: o.poste,
+        numeroNational: numeros.get(o.id)?.numeroNational || null,
+        numeroEntreprise: numeros.get(o.id)?.numeroEntreprise || null,
         situation: o.situation + (o.situationIncomplete ? ' — à préciser (statut / nationalité)' : ''),
         documentsExiges: o.requis.map(libelleType),
         documents: Object.fromEntries(
@@ -102,6 +111,8 @@ async function preparerOuvrier(args: Record<string, unknown>) {
       email: texte(args.email) || null,
       statut: valeurSituation(args.statut, STATUTS),
       nationalite: valeurSituation(args.nationalite, NATIONALITES_CODES),
+      numeroNational: normaliserNumeroNational(args.numeroNational),
+      numeroEntreprise: normaliserNumeroEntreprise(args.numeroEntreprise),
     },
   }
 }
@@ -123,6 +134,8 @@ export const creerOuvrier: ToolDefinition = {
       email: { type: 'string' },
       statut: { type: 'string', enum: ['INDEPENDANT', 'ASSOCIE_ACTIF', 'SALARIE'], description: 'Statut (détermine les documents exigés)' },
       nationalite: { type: 'string', enum: ['BE', 'UE', 'HORS_UE'], description: 'Nationalité : belge, UE/EEE/Suisse, hors UE' },
+      numeroNational: { type: 'string', description: 'Numéro national belge (NISS ou bis), lu sur la carte d’identité ou le titre de séjour — sert à Checkinatwork' },
+      numeroEntreprise: { type: 'string', description: 'Numéro d’entreprise de la société à laquelle la personne est liée, seulement s’il diffère de celui du sous-traitant (ex. lu sur l’A1 ou le Limosa)' },
     },
     required: ['sousTraitant', 'nom'],
   },
@@ -170,13 +183,22 @@ async function preparerModifOuvrier(args: Record<string, unknown>) {
   const nationalite = valeurSituation(args.nationalite, NATIONALITES_CODES)
   if (nationalite && nationalite !== actuel.nationalite) data.nationalite = nationalite
   if (typeof args.actif === 'boolean' && args.actif !== actuel.actif) data.actif = args.actif
+  // Numéros Checkinatwork : chaîne vide = effacer, absent = inchangé
+  if (args.numeroNational !== undefined) {
+    const v = normaliserNumeroNational(args.numeroNational)
+    if (v !== actuel.numeroNational) data.numeroNational = v
+  }
+  if (args.numeroEntreprise !== undefined) {
+    const v = normaliserNumeroEntreprise(args.numeroEntreprise)
+    if (v !== actuel.numeroEntreprise) data.numeroEntreprise = v
+  }
   return { id: actuel.id, libelle: `${actuel.prenom} ${actuel.nom}`.trim(), sousTraitantNom: st.value.nom, data }
 }
 
 export const modifierOuvrier: ToolDefinition = {
   name: 'modifier_ouvrier',
   description:
-    'Corrige une personne d’un sous-traitant (prénom, nom, poste, téléphone, email) ou la marque partie (actif: false) / ' +
+    'Corrige une personne d’un sous-traitant (prénom, nom, poste, téléphone, email, numéro national, numéro d’entreprise ; chaîne vide = effacer) ou la marque partie (actif: false) / ' +
     'de retour (actif: true). Une personne partie disparaît du tableau des documents ; ses documents sont conservés.',
   requiresConfirmation: true,
   parameters: {
@@ -191,6 +213,8 @@ export const modifierOuvrier: ToolDefinition = {
       email: { type: 'string' },
       statut: { type: 'string', enum: ['INDEPENDANT', 'ASSOCIE_ACTIF', 'SALARIE'], description: 'Statut (détermine les documents exigés)' },
       nationalite: { type: 'string', enum: ['BE', 'UE', 'HORS_UE'], description: 'Nationalité : belge, UE/EEE/Suisse, hors UE' },
+      numeroNational: { type: 'string', description: 'Numéro national belge (NISS ou bis), lu sur la carte d’identité ou le titre de séjour — sert à Checkinatwork' },
+      numeroEntreprise: { type: 'string', description: 'Numéro d’entreprise de la société à laquelle la personne est liée, seulement s’il diffère de celui du sous-traitant (ex. lu sur l’A1 ou le Limosa)' },
       actif: { type: 'boolean', description: 'false = ne travaille plus pour ce sous-traitant' },
     },
     required: ['sousTraitant', 'ouvrier'],

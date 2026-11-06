@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { FormInput, Button } from '@/components/ui'
 import PageHeader from '@/components/PageHeader'
 import { PencilSquareIcon } from '@heroicons/react/24/outline'
+import { formaterNumeroEntreprise, formaterNumeroNational } from '@/lib/soustraitants/identifiants'
 
 interface FormData {
   nom: string
@@ -13,6 +14,8 @@ interface FormData {
   telephone: string
   dateEntree: string
   poste: string
+  numeroNational: string
+  numeroEntreprise: string
 }
 
 export default function EditOuvrierPage(
@@ -29,7 +32,9 @@ export default function EditOuvrierPage(
     email: '',
     telephone: '',
     dateEntree: '',
-    poste: ''
+    poste: '',
+    numeroNational: '',
+    numeroEntreprise: ''
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +57,9 @@ export default function EditOuvrierPage(
             email: data.email || '',
             telephone: data.telephone || '',
             dateEntree: new Date(data.dateEntree).toISOString().split('T')[0],
-            poste: data.poste
+            poste: data.poste,
+            numeroNational: formaterNumeroNational(data.numeroNational),
+            numeroEntreprise: formaterNumeroEntreprise(data.numeroEntreprise)
           })
           if (data.sousTraitant?.nom) {
             setSousTraitantNom(data.sousTraitant.nom)
@@ -194,6 +201,32 @@ export default function EditOuvrierPage(
             value={formData.poste}
             onChange={handleChange}
           />
+
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Checkinatwork</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+              <FormInput
+                id="numeroNational"
+                name="numeroNational"
+                type="text"
+                label="Numéro national"
+                placeholder="00.00.00-000.00"
+                helperText="Pour un travailleur détaché, c'est le numéro Limosa qui est utilisé (document Limosa)."
+                value={formData.numeroNational}
+                onChange={handleChange}
+              />
+              <FormInput
+                id="numeroEntreprise"
+                name="numeroEntreprise"
+                type="text"
+                label="Numéro d'entreprise"
+                placeholder="BE 0123.456.789"
+                helperText={`Seulement s'il est lié à une autre entreprise que ${sousTraitantNom || 'le sous-traitant'}.`}
+                value={formData.numeroEntreprise}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
 
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Accès Portail (PIN)</h3>
