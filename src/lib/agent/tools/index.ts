@@ -29,6 +29,8 @@ import {
   creerEtatAvancement,
   saisirQuantitesEtat,
   ajouterAvenantEtat,
+  etatsSansNumeroFacture,
+  renseignerFacturesEtats,
 } from './etats'
 import { creerDevis, listeDevis, detailDevis, modifierDevis } from './devis'
 import {
@@ -78,6 +80,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   conformiteDocuments,
   listeEtatsAvancement,
   detailEtatAvancement,
+  etatsSansNumeroFacture,
   listeDevis,
   detailDevis,
   lireNotesDashboard,
@@ -101,6 +104,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   creerEtatAvancement,
   saisirQuantitesEtat,
   ajouterAvenantEtat,
+  renseignerFacturesEtats,
   // Devis
   creerDevis,
   modifierDevis,

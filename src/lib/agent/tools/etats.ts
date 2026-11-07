@@ -790,3 +790,230 @@ export const ajouterAvenantEtat: ToolDefinition = {
     }
   },
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Numéro de facture des états CLIENT (rapprochement avec la facturation Odoo)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Le numéro de facture d'un état se saisit aussi à la main dans la page
+// « États d'avancement » (PATCH /api/etats-avancement/[id]/facture). Ces deux
+// outils servent à le faire en lot après rapprochement avec Odoo :
+//  - etats_sans_numero_facture : liste, tous chantiers confondus, ce qui reste à renseigner
+//  - renseigner_factures_etats : écrit le numéro, uniquement sur des états FINALISÉS,
+//    tout ou rien, sans jamais écraser un numéro existant sauf demande explicite.
+
+const MODELE_NUMERO_FACTURE = /^FAC\/\d{4}\/\d{5}$/
+
+export const etatsSansNumeroFacture: ToolDefinition = {
+  name: 'etats_sans_numero_facture',
+  description:
+    "Liste, tous chantiers confondus, les états d'avancement CLIENT finalisés dont le numéro de facture " +
+    "n'est pas encore renseigné : id de l'état, chantier, client, numéro, mois, date, montant de la période " +
+    "et cumulé (HT). Sert à les rapprocher des factures d'Odoo avant renseigner_factures_etats.",
+  parameters: {
+    type: 'object',
+    properties: {
+      inclureBrouillons: {
+        type: 'boolean',
+        description: 'Inclure aussi les états encore en brouillon (défaut : non, finalisés seulement)',
+      },
+    },
+  },
+  execute: async (args) => {
+    const etats = await prisma.etatAvancement.findMany({
+      where: {
+        ...(args.inclureBrouillons === true ? {} : { estFinalise: true }),
+        OR: [{ factureNumero: null }, { factureNumero: '' }],
+      },
+      include: {
+        Chantier: { select: { chantierId: true, nomChantier: true, clientNom: true } },
+        lignes: { select: { montantActuel: true, montantTotal: true } },
+        avenants: { select: { montantActuel: true, montantTotal: true } },
+      },
+      orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      take: 300,
+    })
+    return {
+      total: etats.length,
+      etats: etats.map((e) => ({
+        id: e.id,
+        chantierId: e.Chantier.chantierId,
+        chantier: e.Chantier.nomChantier,
+        client: e.Chantier.clientNom,
+        numero: e.numero,
+        mois: e.mois,
+        date: e.date,
+        finalise: e.estFinalise,
+        montantPeriode: arrondi2(
+          e.lignes.reduce((s, l) => s + l.montantActuel, 0) +
+            e.avenants.reduce((s, a) => s + a.montantActuel, 0)
+        ),
+        montantCumule: arrondi2(
+          e.lignes.reduce((s, l) => s + l.montantTotal, 0) +
+            e.avenants.reduce((s, a) => s + a.montantTotal, 0)
+        ),
+      })),
+    }
+  },
+}
+
+interface LigneFactureEtat {
+  etatId: number
+  factureNumero: string
+  ok: boolean
+  dejaFait?: boolean
+  refus?: string
+  avertissement?: string
+  chantier?: string
+  etatNumero?: number
+  mois?: string | null
+  montantPeriode?: number
+  numeroActuel?: string | null
+}
+
+async function preparerFacturesEtats(
+  args: Record<string, unknown>
+): Promise<{ erreur?: string; lignes?: LigneFactureEtat[] }> {
+  const brut = Array.isArray(args.associations) ? (args.associations as Record<string, unknown>[]) : []
+  if (brut.length === 0) return { erreur: 'associations est vide.' }
+  if (brut.length > 100) return { erreur: 'Maximum 100 associations par appel.' }
+  const ecraser = args.ecraser === true
+
+  const ids = brut.map((a) => Number(a?.etatId)).filter((n) => Number.isInteger(n))
+  const numeros = brut.map((a) => String(a?.factureNumero ?? '').trim()).filter(Boolean)
+
+  const etats = await prisma.etatAvancement.findMany({
+    where: { id: { in: ids } },
+    include: {
+      Chantier: { select: { nomChantier: true } },
+      lignes: { select: { montantActuel: true } },
+      avenants: { select: { montantActuel: true } },
+    },
+  })
+  const parId = new Map<number, (typeof etats)[number]>()
+  for (const x of etats) parId.set(x.id, x)
+  const dejaPris = await prisma.etatAvancement.findMany({
+    where: { factureNumero: { in: numeros } },
+    select: { id: true, numero: true, factureNumero: true, Chantier: { select: { nomChantier: true } } },
+  })
+
+  const lignes: LigneFactureEtat[] = []
+  const vus = new Set<number>()
+  for (const a of brut) {
+    const etatId = Number(a?.etatId)
+    const factureNumero = String(a?.factureNumero ?? '').trim()
+    const l: LigneFactureEtat = { etatId, factureNumero, ok: false }
+    lignes.push(l)
+
+    if (!Number.isInteger(etatId)) { l.refus = 'etatId invalide'; continue }
+    if (vus.has(etatId)) { l.refus = "état cité deux fois dans l'appel"; continue }
+    vus.add(etatId)
+    if (!factureNumero) { l.refus = 'factureNumero vide'; continue }
+    if (factureNumero.length > 50) { l.refus = 'factureNumero trop long (50 caractères max)'; continue }
+
+    const e = parId.get(etatId)
+    if (!e) { l.refus = 'état introuvable'; continue }
+    l.chantier = e.Chantier.nomChantier
+    l.etatNumero = e.numero
+    l.mois = e.mois
+    l.numeroActuel = e.factureNumero
+    l.montantPeriode = arrondi2(
+      e.lignes.reduce((s, x) => s + x.montantActuel, 0) + e.avenants.reduce((s, x) => s + x.montantActuel, 0)
+    )
+
+    if (!e.estFinalise) { l.refus = 'état non finalisé : seuls les états validés reçoivent un numéro'; continue }
+    if (e.factureNumero && e.factureNumero === factureNumero) { l.ok = true; l.dejaFait = true; continue }
+    if (e.factureNumero && !ecraser) {
+      l.refus = `un numéro existe déjà (${e.factureNumero}) ; passer ecraser=true pour le remplacer`
+      continue
+    }
+
+    const avertissements: string[] = []
+    if (!MODELE_NUMERO_FACTURE.test(factureNumero)) avertissements.push('format inhabituel (attendu FAC/AAAA/NNNNN)')
+    const ailleurs = dejaPris.find((p) => p.id !== etatId && p.factureNumero === factureNumero)
+    if (ailleurs) avertissements.push(`déjà utilisé par l'état n° ${ailleurs.numero} de « ${ailleurs.Chantier.nomChantier} »`)
+    if (brut.filter((b) => String(b?.factureNumero ?? '').trim() === factureNumero).length > 1) {
+      avertissements.push('même numéro cité sur plusieurs états de cet appel')
+    }
+    if (avertissements.length) l.avertissement = avertissements.join(' ; ')
+    l.ok = true
+  }
+  return { lignes }
+}
+
+export const renseignerFacturesEtats: ToolDefinition = {
+  name: 'renseigner_factures_etats',
+  description:
+    "Renseigne le numéro de facture d'états d'avancement CLIENT FINALISÉS (rapprochement avec Odoo, " +
+    "jusqu'à 100 à la fois). Récupérer d'abord les id avec etats_sans_numero_facture. Tout ou rien : " +
+    "si une association est refusée, rien n'est écrit. N'écrase jamais un numéro existant sauf ecraser=true. " +
+    'Toujours passer par dryRun et faire confirmer la liste.',
+  requiresConfirmation: true,
+  parameters: {
+    type: 'object',
+    properties: {
+      associations: {
+        type: 'array',
+        description: 'Un objet par état : son id et le numéro de la facture Odoo (ex. FAC/2026/00240).',
+        items: {
+          type: 'object',
+          properties: {
+            etatId: { type: 'number', description: "Id de l'état d'avancement" },
+            factureNumero: { type: 'string', description: 'Numéro de la facture, ex. FAC/2026/00240' },
+          },
+          required: ['etatId', 'factureNumero'],
+        },
+      },
+      ecraser: { type: 'boolean', description: 'Autoriser le remplacement d\'un numéro déjà renseigné (défaut : non)' },
+    },
+    required: ['associations'],
+  },
+  summarize: async (args) => {
+    const p = await preparerFacturesEtats(args)
+    if (p.erreur) return `Saisie impossible : ${p.erreur}`
+    const l = p.lignes!
+    const refus = l.filter((x) => !x.ok).length
+    const aEcrire = l.filter((x) => x.ok && !x.dejaFait).length
+    return refus
+      ? `Rien ne sera écrit : ${refus} association(s) refusée(s) sur ${l.length}.`
+      : `Renseigner le numéro de facture de ${aEcrire} état(s) d'avancement.`
+  },
+  preview: async (args) => {
+    const p = await preparerFacturesEtats(args)
+    if (p.erreur) return { action: 'aucune', erreur: p.erreur }
+    const l = p.lignes!
+    return {
+      action: 'modification',
+      aEcrire: l.filter((x) => x.ok && !x.dejaFait).length,
+      dejaRenseignes: l.filter((x) => x.dejaFait).length,
+      refuses: l.filter((x) => !x.ok).length,
+      lignes: l,
+    }
+  },
+  execute: async (args) => {
+    const p = await preparerFacturesEtats(args)
+    if (p.erreur) return { erreur: p.erreur }
+    const l = p.lignes!
+    if (l.some((x) => !x.ok)) {
+      return { erreur: 'Rien écrit : au moins une association est refusée.', lignes: l.filter((x) => !x.ok) }
+    }
+    const aEcrire = l.filter((x) => !x.dejaFait)
+    await prisma.$transaction(
+      aEcrire.map((x) =>
+        prisma.etatAvancement.update({ where: { id: x.etatId }, data: { factureNumero: x.factureNumero } })
+      )
+    )
+    return {
+      succes: true,
+      ecrits: aEcrire.length,
+      dejaRenseignes: l.length - aEcrire.length,
+      lignes: aEcrire.map((x) => ({
+        etatId: x.etatId,
+        chantier: x.chantier,
+        etatNumero: x.etatNumero,
+        factureNumero: x.factureNumero,
+        avertissement: x.avertissement,
+      })),
+    }
+  },
+}
